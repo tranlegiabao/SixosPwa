@@ -3,16 +3,19 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
+using SixosPwa.Services;
 
 namespace SixosPwa.Controllers;
 
 public class DangNhapController : Controller
 {
     private readonly IMemoryCache _cache;
+    private readonly ITaiKhoanService _taiKhoanService;
 
-    public DangNhapController(IMemoryCache cache)
+    public DangNhapController(IMemoryCache cache, ITaiKhoanService taiKhoanService)
     {
         _cache = cache;
+        _taiKhoanService = taiKhoanService;
     }
 
     [HttpGet]
@@ -65,11 +68,22 @@ public class DangNhapController : Controller
         // Chap nhan neu dung ma trong cache hoac dung ma mac dinh "123456" cho tien test
         if (otpInput == "123456" || (cachedOtp != null && cachedOtp == otpInput))
         {
+            // Tìm tài khoản từ database theo SĐT
+            var taiKhoan = await _taiKhoanService.DangNhapAsync(sdt, "");
+            
+            string role = "User";
+            
+            if (taiKhoan != null)
+            {
+                role = taiKhoan.Role;
+            }
+
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, sdt),
                 new Claim(ClaimTypes.Name, sdt),
-                new Claim(ClaimTypes.MobilePhone, sdt)
+                new Claim(ClaimTypes.MobilePhone, sdt),
+                new Claim(ClaimTypes.Role, role)
             };
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);

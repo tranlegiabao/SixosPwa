@@ -26,6 +26,9 @@
                 <p class="mb-0 text-white-50">Mã bệnh nhân: <strong>BN-2026-8892</strong> | Trạng thái BHYT: <span class="text-warning">Còn hạn</span></p>
             </div>
             <div class="d-flex gap-2">
+                <button type="button" class="btn btn-info fw-bold text-white rounded-pill px-4 shadow-sm" onclick="sendSmsDemo()">
+                    💬 Gửi tin nhắn test
+                </button>
                 <button type="button" class="btn btn-warning fw-bold text-dark rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalDangKyKham">
                     ➕ Đăng ký Khám Mới
                 </button>
@@ -303,6 +306,29 @@
 
 @section Scripts {
     <script>
+        async function sendSmsDemo() {
+            try {
+                const response = await fetch('/Home/GuiTinNhan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: "test api gửi tin nhắn" })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    const toastEl = document.getElementById('bookingToast');
+                    document.getElementById('toastMessage').innerHTML = `💬 <strong>Gửi tin thành công!</strong><br/>${data.message}<br/><small class="text-white-50">${data.details}</small>`;
+                    const toast = new bootstrap.Toast(toastEl);
+                    toast.show();
+                } else {
+                    alert("Lỗi: " + data.message);
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Lỗi kết nối máy chủ!");
+            }
+        }
+
         function selectPackage(packageName) {
             document.getElementById('cboGoiKham').value = packageName;
             var myModal = new bootstrap.Modal(document.getElementById('modalDangKyKham'));

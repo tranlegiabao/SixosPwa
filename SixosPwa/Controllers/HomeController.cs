@@ -26,4 +26,29 @@ public class HomeController : Controller
     {
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
+
+    [HttpPost]
+    public IActionResult GuiTinNhan([FromBody] SendSmsRequest model)
+    {
+        var sdt = User.Identity?.Name;
+        if (string.IsNullOrEmpty(sdt))
+        {
+            return Json(new { success = false, message = "Không tìm thấy thông tin đăng nhập!" });
+        }
+
+        var smsMessage = string.IsNullOrWhiteSpace(model.Message) ? "test api gửi tin nhắn" : model.Message.Trim();
+
+        _logger.LogInformation("Gửi SMS đến {Sdt}: {Message}", sdt, smsMessage);
+
+        return Json(new { 
+            success = true, 
+            message = $"Đã gửi thành công tin nhắn tới số {sdt}!",
+            details = $"[SMS Simulated] To: {sdt} | Content: {smsMessage}"
+        });
+    }
+}
+
+public class SendSmsRequest
+{
+    public string Message { get; set; } = string.Empty;
 }
