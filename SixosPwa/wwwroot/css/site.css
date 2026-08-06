@@ -1,0 +1,220 @@
+/* ==========================================================================
+   Khuôn mẫu SixosPwa — CSS dùng chung.
+   Màu thương hiệu lấy từ chính logo Sixos (#3854A4), khớp theme_color trong
+   manifest.webmanifest để thanh trạng thái trên điện thoại cùng tông.
+   ========================================================================== */
+
+:root {
+    --sx-blue: #3854A4;
+    --sx-blue-dark: #2e4589;
+    --sx-bg: #f5f7fb;
+}
+
+body {
+    background: var(--sx-bg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                 "Helvetica Neue", Arial, sans-serif;
+}
+
+.btn-primary {
+    --bs-btn-bg: var(--sx-blue);
+    --bs-btn-border-color: var(--sx-blue);
+    --bs-btn-hover-bg: var(--sx-blue-dark);
+    --bs-btn-hover-border-color: var(--sx-blue-dark);
+    --bs-btn-active-bg: var(--sx-blue-dark);
+    --bs-btn-active-border-color: var(--sx-blue-dark);
+}
+
+.btn-outline-primary {
+    --bs-btn-color: var(--sx-blue);
+    --bs-btn-border-color: var(--sx-blue);
+    --bs-btn-hover-bg: var(--sx-blue);
+    --bs-btn-hover-border-color: var(--sx-blue);
+    --bs-btn-active-bg: var(--sx-blue);
+    --bs-btn-active-border-color: var(--sx-blue);
+}
+
+/* --------------------------------------------------------------- Đăng nhập */
+
+.page-center {
+    min-height: 100vh;
+    /* dvh: tránh bị thanh công cụ trình duyệt di động che mất đáy trang */
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem 1rem;
+}
+
+.auth {
+    width: 100%;
+    max-width: 25rem;
+}
+
+.auth__brand {
+    text-align: center;
+    margin-bottom: 1.25rem;
+}
+
+.auth__brand h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: .75rem 0 .15rem;
+}
+
+.auth__brand p {
+    margin: 0;
+    color: #6b7280;
+    font-size: .9rem;
+}
+
+.auth__card {
+    border: 0;
+    border-radius: .9rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, .08), 0 10px 30px rgba(15, 23, 42, .06);
+}
+
+.auth__card .card-body {
+    padding: 1.75rem;
+}
+
+.auth__foot {
+    text-align: center;
+    margin: 1rem 0 0;
+    font-size: .8rem;
+    color: #9ca3af;
+}
+
+/* ------------------------------------------------------- Khối cài đặt PWA */
+
+.pwa-install__sep {
+    position: relative;
+    text-align: center;
+    margin: 1.5rem 0 1rem;
+}
+
+.pwa-install__sep::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    border-top: 1px solid #e5e7eb;
+}
+
+.pwa-install__sep span {
+    position: relative;
+    background: #fff;
+    padding: 0 .75rem;
+    color: #9ca3af;
+    font-size: .8rem;
+}
+
+#btnPwaInstall {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    font-weight: 600;
+}
+
+.pwa-install__hint {
+    margin: .6rem 0 0;
+    font-size: .78rem;
+    line-height: 1.45;
+    color: #9ca3af;
+    text-align: center;
+}
+
+.pwa-guide {
+    padding-left: 1.2rem;
+    margin-bottom: .75rem;
+}
+
+.pwa-guide li {
+    margin-bottom: .6rem;
+    line-height: 1.5;
+}
+
+.pwa-guide__icon {
+    vertical-align: -.2em;
+    color: var(--sx-blue);
+}
+
+.pwa-guide__note {
+    margin: 0;
+    padding: .6rem .8rem;
+    background: #f1f5f9;
+    border-radius: .5rem;
+    font-size: .85rem;
+    color: #475569;
+}
+
+/* -------------------------------------------------- Layout sau đăng nhập */
+
+.app-nav {
+    background: var(--sx-blue);
+    color: #fff;
+    padding: .6rem 0;
+}
+
+.app-nav .container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.app-nav__brand {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    color: #fff;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.app-nav__brand img {
+    border-radius: .35rem;
+    background: #fff;
+}
+
+.app-foot {
+    padding: 1.5rem 0 2rem;
+    color: #9ca3af;
+    font-size: .8rem;
+}
+
+.hello {
+    max-width: 40rem;
+}
+
+.hello h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+}
+
+.hello__card {
+    border: 0;
+    border-radius: .75rem;
+    margin-top: 1.5rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, .08);
+}
+
+.hello__mode {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+}
+
+.hello__dot {
+    width: .6rem;
+    height: .6rem;
+    border-radius: 50%;
+    background: #16a34a;
+    flex: 0 0 auto;
+}
+
+.hello__dot--grey {
+    background: #9ca3af;
+}

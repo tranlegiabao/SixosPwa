@@ -1,0 +1,20 @@
+@*
+    Khai báo bắt buộc để trình duyệt coi trang này là một PWA cài đặt được.
+    Nhúng partial này vào <head> của MỌI trang — đặc biệt là trang đăng nhập,
+    vì đó chính là start_url khai trong manifest.
+*@
+
+<link rel="manifest" href="~/manifest.webmanifest" />
+<meta name="theme-color" content="#3854A4" />
+<link rel="icon" type="image/png" href="~/static/icon-192.png" />
+
+@*
+    iOS KHÔNG đọc manifest — Safari có bộ khai báo riêng của Apple.
+    Thiếu nhóm dưới đây thì trên iPhone shortcut vẫn mở kèm thanh Safari,
+    tức là hỏng đúng thứ khách cần (mở ra phải giống app).
+*@
+<link rel="apple-touch-icon" href="~/static/apple-touch-icon-180.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="HisSoft" />

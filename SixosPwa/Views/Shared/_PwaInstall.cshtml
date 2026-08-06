@@ -1,0 +1,86 @@
+@*
+    Khối "Cài đặt" đặt ngay dưới nút Đăng nhập.
+
+    Toàn bộ chữ tiếng Việt nằm ở đây (Razor), file pwa-install.js chỉ bật/tắt —
+    làm vậy để không có tiếng Việt nào nằm trong .js (tránh rủi ro sai bảng mã).
+
+    Mặc định khối này ẨN (class d-none). pwa-install.js mới là thứ quyết định có
+    hiện hay không: đã cài rồi thì giữ nguyên ẩn.
+*@
+
+<div id="pwaInstall" class="pwa-install d-none">
+    <div class="pwa-install__sep"><span>hoặc</span></div>
+
+    <button type="button" id="btnPwaInstall" class="btn btn-outline-primary w-100">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+             stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+            <polyline points="7 11 12 16 17 11" />
+            <line x1="12" y1="4" x2="12" y2="16" />
+        </svg>
+        <span>Cài HisSoft vào máy</span>
+    </button>
+
+    <p class="pwa-install__hint">
+        Cài xong sẽ có biểu tượng ngoài màn hình chính. Mở lên là vào thẳng phần mềm,
+        không cần gõ địa chỉ.
+    </p>
+</div>
+
+@* ------------------------------------------------------------------ *@
+@* Bảng hướng dẫn — chỉ dùng khi trình duyệt không cho cài một chạm.   *@
+@* ------------------------------------------------------------------ *@
+<div class="modal fade" id="pwaGuideModal" tabindex="-1" aria-labelledby="pwaGuideTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="pwaGuideTitle">Thêm HisSoft vào màn hình chính</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+
+            <div class="modal-body">
+                @* --- Nhánh iPhone / iPad --- *@
+                @* Apple không cho website tự gọi cài đặt, nên đây là cách DUY NHẤT trên iOS. *@
+                <div data-pwa-guide="ios" class="d-none">
+                    <ol class="pwa-guide">
+                        <li>
+                            Bấm nút <strong>Chia sẻ</strong>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                 stroke-linejoin="round" class="pwa-guide__icon" aria-hidden="true">
+                                <path d="M12 16V4" />
+                                <polyline points="8 8 12 4 16 8" />
+                                <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" />
+                            </svg>
+                            ở thanh công cụ của Safari.
+                        </li>
+                        <li>Kéo xuống, chọn <strong>Thêm vào MH chính</strong>.</li>
+                        <li>Bấm <strong>Thêm</strong> ở góc trên bên phải.</li>
+                    </ol>
+                    <p class="pwa-guide__note">
+                        Lưu ý: trên iPhone phải mở bằng <strong>Safari</strong> thì mới có bước này.
+                    </p>
+                </div>
+
+                @* --- Nhánh trình duyệt khác không hỗ trợ cài một chạm --- *@
+                <div data-pwa-guide="other" class="d-none">
+                    <p>Trình duyệt này chưa hỗ trợ cài đặt bằng một nút bấm.</p>
+                    <ol class="pwa-guide">
+                        <li>Mở menu của trình duyệt (biểu tượng ba chấm hoặc ba gạch).</li>
+                        <li>Chọn <strong>Cài đặt ứng dụng</strong> hoặc <strong>Thêm vào màn hình chính</strong>.</li>
+                    </ol>
+                    <p class="pwa-guide__note">
+                        Nếu không thấy mục nào như vậy, hãy mở lại trang bằng
+                        <strong>Chrome</strong>, <strong>Edge</strong> (máy tính, Android)
+                        hoặc <strong>Safari</strong> (iPhone, iPad).
+                    </p>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Đã hiểu</button>
+            </div>
+        </div>
+    </div>
+</div>

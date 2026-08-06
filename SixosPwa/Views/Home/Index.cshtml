@@ -1,0 +1,32 @@
+@{
+    ViewData["Title"] = "Trang chính";
+}
+
+<div class="hello">
+    <h1>Xin chào, @ViewData["UserName"]!</h1>
+    <p class="lead">
+        Đây là bản <strong>hello world</strong> của khuôn mẫu SixosPwa.
+        Bạn đã vào được phần mềm — phần nghiệp vụ thật sẽ được dựng lên từ khung này.
+    </p>
+
+    @*
+        Ô này để KIỂM CHỨNG bằng mắt là chế độ standalone có ăn không.
+        pwa-install.js sẽ bật đúng một trong hai dòng dưới.
+    *@
+    <div class="card hello__card">
+        <div class="card-body">
+            <h2 class="h6 text-uppercase text-muted mb-3">Chế độ đang chạy</h2>
+
+            <p id="modeStandalone" class="hello__mode hello__mode--app d-none">
+                <span class="hello__dot"></span>
+                Đang chạy như <strong>ứng dụng đã cài</strong> — không có thanh địa chỉ.
+            </p>
+
+            <p id="modeBrowser" class="hello__mode d-none">
+                <span class="hello__dot hello__dot--grey"></span>
+                Đang chạy <strong>trong trình duyệt</strong>.
+                Quay lại màn đăng nhập để thấy nút cài đặt.
+            </p>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,61 @@
+@{
+    // Layout = null giống Views/HT_DangNhap/Login.cshtml của HisSoft:
+    // màn đăng nhập tự dựng trang, không đội menu của layout chính.
+    Layout = null;
+    ViewData["Title"] = "Đăng nhập";
+}
+
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Đăng nhập — HisSoft</title>
+
+    @* Trang này là start_url của manifest nên BẮT BUỘC phải có khai báo PWA. *@
+    <partial name="_PwaHead" />
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="page-center">
+
+    <main class="auth">
+        <div class="auth__brand">
+            <img src="~/static/icon-192.png" alt="HisSoft" width="72" height="72" />
+            <h1>HisSoft</h1>
+            <p>Hệ thống thông tin bệnh viện</p>
+        </div>
+
+        <div class="card auth__card">
+            <div class="card-body">
+                <form asp-controller="DangNhap" asp-action="Login" method="post">
+                    <div class="mb-3">
+                        <label class="form-label" for="userName">Tài khoản</label>
+                        <input type="text" class="form-control" id="userName" name="userName"
+                               placeholder="Nhập tài khoản" autocomplete="off" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="passWord">Mật khẩu</label>
+                        <input type="password" class="form-control" id="passWord" name="passWord"
+                               placeholder="Nhập mật khẩu" autocomplete="off" />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">Đăng nhập</button>
+                </form>
+
+                @* Khối cài đặt nằm ngay dưới nút Đăng nhập — đúng vị trí đã chốt. *@
+                <partial name="_PwaInstall" />
+            </div>
+        </div>
+
+        <p class="auth__foot">
+            Bản mẫu &mdash; đăng nhập chưa kiểm tra tài khoản, bấm là vào.
+        </p>
+    </main>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/pwa-install.js" asp-append-version="true"></script>
+</body>
+</html>

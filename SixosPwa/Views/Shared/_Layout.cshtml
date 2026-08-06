@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>@ViewData["Title"] — HisSoft</title>
+
+    <partial name="_PwaHead" />
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="app-nav">
+        <div class="container">
+            <a class="app-nav__brand" asp-controller="Home" asp-action="Index">
+                <img src="~/static/icon-192.png" alt="" width="32" height="32" />
+                <span>HisSoft</span>
+            </a>
+            <a class="btn btn-sm btn-light" asp-controller="DangNhap" asp-action="Login">Đăng xuất</a>
+        </div>
+    </header>
+
+    <main class="container py-4">
+        @RenderBody()
+    </main>
+
+    <footer class="container app-foot">
+        &copy; @DateTime.Now.Year Sixos &mdash; khuôn mẫu SixosPwa
+    </footer>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/pwa-install.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
