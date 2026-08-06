@@ -11,13 +11,17 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
-    <header class="app-nav">
+    <header class="app-nav shadow-sm py-2">
         <div class="container">
-            <a class="app-nav__brand" asp-controller="Home" asp-action="Index">
-                <img src="~/static/icon-192.png" alt="" width="32" height="32" />
-                <span>HisSoft</span>
+            <a class="app-nav__brand text-white text-decoration-none d-flex align-items-center gap-2 fw-bold" asp-controller="Home" asp-action="Index">
+                <img src="~/static/icon-192.png" alt="HisSoft" width="36" height="36" class="rounded-2" />
+                <span class="fs-5">HisSoft Medical</span>
             </a>
-            <a class="btn btn-sm btn-light" asp-controller="DangNhap" asp-action="Login">Đăng xuất</a>
+            <div class="d-flex align-items-center gap-2">
+                <a class="btn btn-sm btn-outline-light rounded-pill px-3" asp-controller="DangNhap" asp-action="DangXuat">
+                    🚪 Đăng xuất
+                </a>
+            </div>
         </div>
     </header>
 

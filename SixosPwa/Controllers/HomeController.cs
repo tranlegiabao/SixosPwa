@@ -1,9 +1,11 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SixosPwa.Models;
 
 namespace SixosPwa.Controllers;
 
+[Authorize]
 public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;
@@ -15,7 +17,7 @@ public class HomeController : Controller
 
     public IActionResult Index()
     {
-        ViewData["UserName"] = TempData["UserName"] as string ?? "khách";
+        ViewData["UserName"] = User.Identity?.Name ?? "Khách hàng";
         return View();
     }
 

@@ -1,8 +1,21 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.StaticFiles;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddMemoryCache();
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/DangNhap/Login";
+        options.LogoutPath = "/DangNhap/DangXuat";
+        options.ExpireTimeSpan = TimeSpan.FromDays(365);
+        options.SlidingExpiration = true;
+        options.Cookie.Name = "SixosPwaAuthCookie";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.IsEssential = true;
+    });
 
 var app = builder.Build();
 
@@ -48,6 +61,7 @@ app.UseStaticFiles(new StaticFileOptions
 
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 // Vao thang la ra man dang nhap - cung chinh la start_url trong manifest.
@@ -56,3 +70,4 @@ app.MapControllerRoute(
     pattern: "{controller=DangNhap}/{action=Login}/{id?}");
 
 app.Run();
+
