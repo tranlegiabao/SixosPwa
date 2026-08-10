@@ -1,0 +1,62 @@
+@model List<SixosPwa.Models.LichSuTinNhan>
+
+@{
+    ViewData["Title"] = "Lịch sử tin nhắn";
+    var benhNhan = ViewBag.BenhNhan as SixosPwa.Models.BenhNhan;
+}
+
+<link rel="stylesheet" href="~/css/healthcare.css" />
+
+<div class="health-header">
+    <div class="container">
+        <h1>💬 Lịch sử tin nhắn</h1>
+        <div class="subtitle">@benhNhan?.HoTen - @benhNhan?.MaBenhNhan</div>
+    </div>
+</div>
+
+<div class="container mt-4">
+    <div class="mb-3">
+        <a href="@Url.Action("Index", "BenhNhan")" class="btn btn-secondary">← Quay lại</a>
+    </div>
+
+    <div class="health-card">
+        @if (Model.Any())
+        {
+            <div class="health-timeline">
+                @foreach (var tin in Model)
+                {
+                    <div class="health-timeline-item">
+                        <div class="health-timeline-content">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <strong>@tin.LoaiTinNhan</strong>
+                                    @if (!string.IsNullOrEmpty(tin.DoiTac))
+                                    {
+                                        <span class="text-muted">- @tin.DoiTac</span>
+                                    }
+                                </div>
+                                <span class="health-status @(tin.TrangThai == "DaGui" ? "success" : "danger")">
+                                    @tin.TrangThai
+                                </span>
+                            </div>
+                            <p class="mb-2">@tin.NoiDung</p>
+                            <small class="text-muted">
+                                📅 @tin.ThoiGianGui.ToString("dd/MM/yyyy HH:mm")
+                            </small>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <div class="health-card-icon primary mx-auto mb-3" style="width: 80px; height: 80px; font-size: 2.5rem;">
+                    💬
+                </div>
+                <h5>Chưa có tin nhắn</h5>
+                <p class="text-muted">Bạn chưa nhận được tin nhắn nào từ hệ thống.</p>
+            </div>
+        }
+    </div>
+</div>

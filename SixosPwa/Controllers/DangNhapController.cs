@@ -3,16 +3,19 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
+using SixosPwa.Services;
 
 namespace SixosPwa.Controllers;
 
 public class DangNhapController : Controller
 {
     private readonly IMemoryCache _cache;
+    private readonly ITaiKhoanService _taiKhoanService;
 
-    public DangNhapController(IMemoryCache cache)
+    public DangNhapController(IMemoryCache cache, ITaiKhoanService taiKhoanService)
     {
         _cache = cache;
+        _taiKhoanService = taiKhoanService;
     }
 
     [HttpGet]
@@ -65,19 +68,40 @@ public class DangNhapController : Controller
         // Chap nhan neu dung ma trong cache hoac dung ma mac dinh "123456" cho tien test
         if (otpInput == "123456" || (cachedOtp != null && cachedOtp == otpInput))
         {
+            // Kiểm tra loại tài khoản
+            var taiKhoan = await _taiKhoanService.DangNhapAsync(sdt, ""); // Tìm theo SĐT
+            
+            string loaiTaiKhoan = "BenhNhan"; // Mặc định
+            string hoTen = sdt;
+            string? benhNhanId = null;
+            
+            if (taiKhoan != null)
+            {
+                loaiTaiKhoan = taiKhoan.LoaiTaiKhoan;
+                hoTen = taiKhoan.HoTen;
+                benhNhanId = taiKhoan.BenhNhanId?.ToString();
+            }
+
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, sdt),
                 new Claim(ClaimTypes.Name, sdt),
-                new Claim(ClaimTypes.MobilePhone, sdt)
+                new Claim(ClaimTypes.MobilePhone, sdt),
+                new Claim(ClaimTypes.Role, loaiTaiKhoan),
+                new Claim("HoTen", hoTen)
             };
+
+            if (benhNhanId != null)
+            {
+                claims.Add(new Claim("BenhNhanId", benhNhanId));
+            }
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
             var authProperties = new AuthenticationProperties
             {
-                IsPersistent = true, // Ghi nho dang nhap truong ton
-                ExpiresUtc = DateTimeOffset.UtcNow.AddDays(365) // Het han sau 1 nam
+                IsPersistent = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddDays(365)
             };
 
             await HttpContext.SignInAsync(
@@ -87,7 +111,15 @@ public class DangNhapController : Controller
 
             _cache.Remove($"OTP_{sdt}");
 
-            return Json(new { success = true, redirectUrl = Url.Action("Index", "Home") });
+            // Chuyển hướng theo loại tài khoản
+            var redirectUrl = loaiTaiKhoan switch
+            {
+                "Admin" => Url.Action("Index", "Sms"),
+                "DoiTac" => Url.Action("Index", "Sms"),
+                _ => Url.Action("Index", "BenhNhan")
+            };
+
+            return Json(new { success = true, redirectUrl });
         }
 
         return Json(new { success = false, message = "Mã OTP không chính xác hoặc đã hết hạn!" });

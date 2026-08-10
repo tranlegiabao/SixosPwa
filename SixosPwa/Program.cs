@@ -1,10 +1,27 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.StaticFiles;
+using SixosPwa.Services;
+using SixosPwa.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddMemoryCache();
+
+// Dang ky SignalR
+builder.Services.AddSignalR();
+
+// Dang ky dich vu SMS
+builder.Services.AddScoped<ISmsService, TwilioSmsService>();
+
+// Dang ky dich vu benh nhan
+builder.Services.AddSingleton<IBenhNhanService, InMemoryBenhNhanService>();
+builder.Services.AddSingleton<ILichSuTinNhanService, InMemoryLichSuTinNhanService>();
+builder.Services.AddSingleton<IMauTinNhanService, InMemoryMauTinNhanService>();
+builder.Services.AddSingleton<IHoaDonService, InMemoryHoaDonService>();
+
+// Dang ky dich vu tai khoan
+builder.Services.AddSingleton<ITaiKhoanService, InMemoryTaiKhoanService>();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -68,6 +85,9 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=DangNhap}/{action=Login}/{id?}");
+
+// Map SignalR Hub
+app.MapHub<ThongBaoHub>("/thongBaoHub");
 
 app.Run();
 

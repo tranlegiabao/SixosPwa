@@ -1,13 +1,13 @@
 @{
-    ViewData["Title"] = "Cổng Khám Sức Khỏe Định Kỳ";
+    ViewData["Title"] = "Trung Tâm CSKH & Cổng Thông Tin Bệnh Nhân";
 }
 
-<!-- TOAST THÔNG BÁO -->
+<!-- TOAST THÔNG BÁO TƯƠNG TÁC -->
 <div class="position-fixed top-0 end-0 p-3" style="z-index: 1080">
-    <div id="bookingToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div id="appToast" class="toast align-items-center text-white bg-teal border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
         <div class="d-flex">
-            <div class="toast-body" id="toastMessage">
-                🎉 Đăng ký lịch khám sức khỏe thành công!
+            <div class="toast-body d-flex align-items-center gap-2" id="toastMessage">
+                <i class="bi bi-check-circle-fill fs-5"></i> Thao tác thành công!
             </div>
             <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
         </div>
@@ -15,285 +15,332 @@
 </div>
 
 <div class="health-portal">
-    <!-- BANNER XIN CHÀO & TÀI KHOẢN -->
-    <div class="card border-0 shadow-sm rounded-4 mb-4 bg-gradient bg-primary text-white p-3 p-md-4">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
-            <div>
-                <span class="badge bg-white text-primary fw-semibold px-3 py-2 rounded-pill mb-2">
-                    🏥 Cổng thông tin Bệnh nhân & Khám Sức Khỏe
-                </span>
-                <h1 class="h3 fw-bold mb-1">Xin chào, <span class="text-warning">@ViewData["UserName"]</span>!</h1>
-                <p class="mb-0 text-white-50">Mã bệnh nhân: <strong>BN-2026-8892</strong> | Trạng thái BHYT: <span class="text-warning">Còn hạn</span></p>
+    <!-- 1. BANNER XIN CHÀO & TÀI KHOẢN BỆNH NHÂN VIP -->
+    <div class="glass-header p-4 p-md-5 mb-4 shadow-sm">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-8">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="badge bg-white text-dark fw-bold px-3 py-1 rounded-pill">
+                        <i class="bi bi-shield-check text-teal me-1"></i> BHYT: GD479201920 (Còn hạn)
+                    </span>
+                    <span class="badge bg-warning text-dark fw-bold px-3 py-1 rounded-pill">
+                        <i class="bi bi-star-fill me-1"></i> Thẻ VIP Care
+                    </span>
+                </div>
+                <h1 class="h2 fw-extrabold mb-1">Xin chào, <span class="text-warning">@ViewData["UserName"]</span> 👋</h1>
+                <p class="mb-0 text-white-50 fs-6">
+                    Mã Bệnh nhân: <strong class="text-white">BN-2026-8892</strong> &bull; Hồ sơ sức khỏe cá nhân được cập nhật 2 giờ trước.
+                </p>
             </div>
-            <div class="d-flex gap-2">
-                <button type="button" class="btn btn-warning fw-bold text-dark rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalDangKyKham">
-                    ➕ Đăng ký Khám Mới
-                </button>
-                <a asp-controller="DangNhap" asp-action="DangXuat" class="btn btn-outline-light rounded-pill px-3">
-                    🚪 Đăng xuất
+            <div class="col-lg-4 text-lg-end">
+                <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                    <button type="button" class="btn btn-warning fw-bold text-dark rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalDangKyKham">
+                        <i class="bi bi-calendar-plus-fill me-1"></i> Đặt Khám Nhanh
+                    </button>
+                    <button type="button" class="btn btn-outline-light rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalQrId">
+                        <i class="bi bi-qr-code-scan me-1"></i> Thẻ QR Bệnh Nhân
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. THANH THAO TÁC NHANH CSKH (QUICK ACTION GRID) -->
+    <div class="mb-4">
+        <h5 class="fw-bold text-main mb-3 d-flex align-items-center gap-2">
+            <i class="bi bi-grid-fill text-teal"></i> Thao Tác Chăm Sóc Nhanh
+        </h5>
+        <div class="row g-3">
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="quick-action-btn" data-bs-toggle="modal" data-bs-target="#modalDangKyKham">
+                    <div class="quick-action-icon">
+                        <i class="bi bi-calendar2-check-fill"></i>
+                    </div>
+                    <span class="fw-bold fs-7 text-center">Đặt Lịch Khám</span>
+                    <small class="text-muted" style="font-size: 0.72rem;">Trực tuyến / Tại chỗ</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="quick-action-btn" onclick="openCsChat();">
+                    <div class="quick-action-icon" style="background: rgba(2, 132, 199, 0.1); color: #0284c7;">
+                        <i class="bi bi-chat-dots-fill"></i>
+                    </div>
+                    <span class="fw-bold fs-7 text-center">Hỏi Trợ Lý AI</span>
+                    <small class="text-muted" style="font-size: 0.72rem;">Hỗ trợ CSKH 24/7</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="quick-action-btn" data-bs-toggle="modal" data-bs-target="#modalKetQuaXetNghiem">
+                    <div class="quick-action-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+                        <i class="bi bi-file-earmark-medical-fill"></i>
+                    </div>
+                    <span class="fw-bold fs-7 text-center">KQ Xét Nghiệm</span>
+                    <small class="text-muted" style="font-size: 0.72rem;">Tra cứu mới nhất</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="quick-action-btn" data-bs-toggle="modal" data-bs-target="#modalDonThuoc">
+                    <div class="quick-action-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+                        <i class="bi bi-capsule"></i>
+                    </div>
+                    <span class="fw-bold fs-7 text-center">Đơn Thuốc Số</span>
+                    <small class="text-muted" style="font-size: 0.72rem;">Liều dùng & Nhắc nhở</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="quick-action-btn" onclick="scrollToNps();">
+                    <div class="quick-action-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">
+                        <i class="bi bi-star-fill"></i>
+                    </div>
+                    <span class="fw-bold fs-7 text-center">Đánh Giá CSKH</span>
+                    <small class="text-muted" style="font-size: 0.72rem;">Góp ý dịch vụ</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <a href="tel:115" class="quick-action-btn border-danger text-decoration-none">
+                    <div class="quick-action-icon bg-danger-subtle text-danger">
+                        <i class="bi bi-telephone-outbound-fill"></i>
+                    </div>
+                    <span class="fw-bold fs-7 text-center text-danger">Cấp Cứu 115</span>
+                    <small class="text-muted" style="font-size: 0.72rem;">Đường dây khẩn cấp</small>
                 </a>
             </div>
         </div>
     </div>
 
-    <!-- KHỐI 1: CHỈ SỐ SỨC KHỎE CÁ NHÂN -->
-    <div class="row g-3 mb-4">
-        <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 text-center p-3 h-100 border-start border-4 border-danger">
-                <div class="text-danger mb-1 display-6">❤️</div>
-                <div class="text-muted small">Huyết áp</div>
-                <div class="fw-bold fs-5 text-dark">120/80 <small class="fs-6 text-muted">mmHg</small></div>
-                <span class="badge bg-danger-subtle text-danger rounded-pill mt-2">Bình thường</span>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 text-center p-3 h-100 border-start border-4 border-primary">
-                <div class="text-primary mb-1 display-6">🫀</div>
-                <div class="text-muted small">Nhịp tim</div>
-                <div class="fw-bold fs-5 text-dark">72 <small class="fs-6 text-muted">bpm</small></div>
-                <span class="badge bg-primary-subtle text-primary rounded-pill mt-2">Tốt</span>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 text-center p-3 h-100 border-start border-4 border-success">
-                <div class="text-success mb-1 display-6">⚖️</div>
-                <div class="text-muted small">Chỉ số BMI</div>
-                <div class="fw-bold fs-5 text-dark">21.5 <small class="fs-6 text-muted">(62kg)</small></div>
-                <span class="badge bg-success-subtle text-success rounded-pill mt-2">Cân đối</span>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 text-center p-3 h-100 border-start border-4 border-warning">
-                <div class="text-warning mb-1 display-6">🩸</div>
-                <div class="text-muted small">Nhóm máu</div>
-                <div class="fw-bold fs-5 text-dark">O Rh+</div>
-                <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill mt-2">Đã lưu trữ</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- KHỐI 2: LỊCH KHÁM SẮP TỚI & THÔNG BÁO -->
-    <div class="row g-4 mb-4">
-        <div class="col-md-7">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-header bg-white border-0 pt-3 px-4 d-flex justify-content-between align-items-center">
-                    <h5 class="fw-bold mb-0 text-primary">📅 Lịch Khám Sức Khỏe Sắp Tới</h5>
-                    <span class="badge bg-success">Đã xác nhận</span>
-                </div>
-                <div class="card-body px-4">
-                    <div class="p-3 bg-light rounded-3 mb-3 border">
-                        <div class="row align-items-center">
-                            <div class="col-md-8">
-                                <h6 class="fw-bold text-dark mb-1">Gói Khám Sức Khỏe Tổng Quát Định Kỳ</h6>
-                                <p class="small text-muted mb-2">Bác sĩ: <strong>BS. CKI Trần Văn Nam</strong> &bull; Khoa Khám bệnh</p>
-                                <div class="d-flex align-items-center gap-3 text-secondary small">
-                                    <span>🕒 <strong>08:30 AM</strong></span>
-                                    <span>📆 <strong>15/08/2026</strong></span>
-                                    <span>📍 <strong>Phòng 302 - Lầu 3</strong></span>
-                                </div>
-                            </div>
-                            <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                                <button class="btn btn-sm btn-outline-primary rounded-pill w-100 mb-1" onclick="showAppointmentDetail()">Xem Phiếu Hẹn</button>
-                                <button class="btn btn-sm btn-link text-danger text-decoration-none w-100" onclick="cancelAppointment()">Hủy Lịch</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="alert alert-info py-2 px-3 mb-0 small rounded-3">
-                        💡 <strong>Lưu ý trước khi khám:</strong> Vui lòng nhịn ăn sáng ít nhất 8 tiếng để thực hiện xét nghiệm máu chính xác nhất.
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-5">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-header bg-white border-0 pt-3 px-4">
-                    <h5 class="fw-bold mb-0 text-primary">🔔 Nhắc Nhở Y Tế & Dịch Vụ</h5>
-                </div>
-                <div class="card-body px-4">
-                    <div class="list-group list-group-flush">
-                        <div class="list-group-item px-0 border-0 mb-2">
-                            <div class="d-flex w-100 justify-content-between align-items-center">
-                                <h6 class="mb-1 fw-bold text-dark">💊 Đơn thuốc: Kháng sinh & Vitamin C</h6>
-                                <small class="text-muted">18:00 Tối nay</small>
-                            </div>
-                            <p class="mb-1 small text-muted">Uống 1 viên sau khi ăn tối 30 phút.</p>
-                        </div>
-                        <div class="list-group-item px-0 border-0 mb-2">
-                            <div class="d-flex w-100 justify-content-between align-items-center">
-                                <h6 class="mb-1 fw-bold text-dark">🧪 Kết quả Xét nghiệm Máu & Nước tiểu</h6>
-                                <small class="text-success">Đã có KQ</small>
-                            </div>
-                            <p class="mb-1 small text-muted">Lần khám ngày 05/05/2026. Chỉ số Đường huyết ổn định.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- KHỐI 3: CÁC GÓI KHÁM SỨC KHỎE NỔI BẬT -->
+    <!-- 3. CHỈ SỐ SINH HIỆU SỨC KHỎE CÁ NHÂN -->
     <div class="mb-4">
-        <h4 class="fw-bold text-dark mb-3">🩺 Danh Mục Gói Khám Sức Khỏe Định Kỳ</h4>
+        <h5 class="fw-bold text-main mb-3 d-flex align-items-center gap-2">
+            <i class="bi bi-heart-pulse-fill text-danger"></i> Chỉ Số Sinh Hiệu Mới Nhất
+        </h5>
         <div class="row g-3">
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm rounded-4 h-100 hover-lift">
-                    <div class="card-body p-4 d-flex flex-column">
-                        <span class="badge bg-primary-subtle text-primary rounded-pill w-fit mb-2">Gói Phổ Thông</span>
-                        <h5 class="fw-bold text-dark">Khám Sức Khỏe Cơ Bản</h5>
-                        <h4 class="text-primary fw-bold mb-3">1.500.000 <small class="fs-6 text-muted">VNĐ</small></h4>
-                        <ul class="list-unstyled small text-muted mb-4 flex-grow-1">
-                            <li class="mb-2">✅ Khám Nội tổng quát & Đo sinh hiệu</li>
-                            <li class="mb-2">✅ Xét nghiệm Công thức máu 24 chỉ số</li>
-                            <li class="mb-2">✅ Siêu âm tổng quát vùng bụng</li>
-                            <li class="mb-2">✅ Chụp X-Quang phổi thẳng</li>
-                        </ul>
-                        <button type="button" class="btn btn-outline-primary rounded-pill w-100 fw-bold" onclick="selectPackage('Gói Khám Sức Khỏe Cơ Bản')">
-                            Đăng ký gói này
-                        </button>
+            <div class="col-6 col-md-3">
+                <div class="hc-card p-3 h-100 border-start border-4 border-danger">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-muted small">Huyết Áp</span>
+                        <i class="bi bi-activity text-danger fs-5"></i>
                     </div>
+                    <div class="fw-bold fs-4 text-main mb-1">120/80 <small class="fs-6 text-muted">mmHg</small></div>
+                    <span class="badge bg-success-subtle text-success rounded-pill">Bình thường</span>
                 </div>
             </div>
-
-            <div class="col-md-4">
-                <div class="card border-primary border-2 shadow-sm rounded-4 h-100 position-relative hover-lift">
-                    <span class="position-absolute top-0 end-0 bg-warning text-dark px-3 py-1 rounded-bl fw-bold small">NỔI BẬT BAN CHẠY</span>
-                    <div class="card-body p-4 d-flex flex-column">
-                        <span class="badge bg-success-subtle text-success rounded-pill w-fit mb-2">Gói Nâng Cao</span>
-                        <h5 class="fw-bold text-dark">Khám Sức Khỏe Toàn Diện</h5>
-                        <h4 class="text-success fw-bold mb-3">3.200.000 <small class="fs-6 text-muted">VNĐ</small></h4>
-                        <ul class="list-unstyled small text-muted mb-4 flex-grow-1">
-                            <li class="mb-2">✅ Tất cả danh mục của Gói Cơ bản</li>
-                            <li class="mb-2">✅ Tầm soát nguy cơ Tim mạch & Mỡ máu</li>
-                            <li class="mb-2">✅ Kiểm tra Chức năng Gan & Thận</li>
-                            <li class="mb-2">✅ Tầm soát Ung thư tuyến giáp / Vú / Tiền liệt tuyến</li>
-                        </ul>
-                        <button type="button" class="btn btn-primary rounded-pill w-100 fw-bold shadow-sm" onclick="selectPackage('Gói Khám Sức Khỏe Toàn Diện')">
-                            Đăng ký gói này
-                        </button>
+            <div class="col-6 col-md-3">
+                <div class="hc-card p-3 h-100 border-start border-4 border-primary">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-muted small">Nhịp Tim</span>
+                        <i class="bi bi-heart-fill text-primary fs-5"></i>
                     </div>
+                    <div class="fw-bold fs-4 text-main mb-1">72 <small class="fs-6 text-muted">bpm</small></div>
+                    <span class="badge bg-primary-subtle text-primary rounded-pill">Ổn định</span>
                 </div>
             </div>
-
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm rounded-4 h-100 hover-lift">
-                    <div class="card-body p-4 d-flex flex-column">
-                        <span class="badge bg-purple-subtle text-purple rounded-pill w-fit mb-2" style="background:#f3e8ff; color:#7e22ce;">Gói Vip</span>
-                        <h5 class="fw-bold text-dark">Tầm Soát Chuyên Sâu VIP</h5>
-                        <h4 class="text-purple fw-bold mb-3" style="color:#7e22ce;">5.800.000 <small class="fs-6 text-muted">VNĐ</small></h4>
-                        <ul class="list-unstyled small text-muted mb-4 flex-grow-1">
-                            <li class="mb-2">✅ Đầy đủ các xét nghiệm chuyên sâu</li>
-                            <li class="mb-2">✅ Chụp Cộng hưởng từ MRI / CT-Scanner</li>
-                            <li class="mb-2">✅ Nội soi dạ dày & đại tràng không đau</li>
-                            <li class="mb-2">✅ Khám & Tư vấn 1-1 với Giáo sư / Tiến sĩ</li>
-                        </ul>
-                        <button type="button" class="btn btn-outline-dark rounded-pill w-100 fw-bold" onclick="selectPackage('Gói Tầm Soát VIP')">
-                            Đăng ký gói này
-                        </button>
+            <div class="col-6 col-md-3">
+                <div class="hc-card p-3 h-100 border-start border-4 border-success">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-muted small">Chỉ Số BMI</span>
+                        <i class="bi bi-person-badge-fill text-success fs-5"></i>
                     </div>
+                    <div class="fw-bold fs-4 text-main mb-1">21.5 <small class="fs-6 text-muted">(62kg)</small></div>
+                    <span class="badge bg-success-subtle text-success rounded-pill">Cân đối</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="hc-card p-3 h-100 border-start border-4 border-warning">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-muted small">Đường Huyết</span>
+                        <i class="bi bi-droplet-fill text-warning fs-5"></i>
+                    </div>
+                    <div class="fw-bold fs-4 text-main mb-1">95 <small class="fs-6 text-muted">mg/dL</small></div>
+                    <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill">An toàn</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- KHỐI 4: LỊCH SỬ KẾT QUẢ KHÁM BỆNH -->
-    <div class="card border-0 shadow-sm rounded-4 mb-4">
-        <div class="card-header bg-white border-0 pt-4 px-4">
-            <h5 class="fw-bold text-dark mb-0">📜 Lịch Sử Kết Quả Khám Bệnh</h5>
-        </div>
-        <div class="card-body px-4">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Mã Phiếu</th>
-                            <th>Ngày Khám</th>
-                            <th>Loại Khám</th>
-                            <th>Bác Sĩ Khám</th>
-                            <th>Kết Luận Chẩn Đoán</th>
-                            <th>Hồ Sơ</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong class="text-primary">KSK-8812</strong></td>
-                            <td>05/05/2026</td>
-                            <td>Khám Tổng Quát 定期</td>
-                            <td>BS. CKI Nguyễn Văn A</td>
-                            <td><span class="badge bg-success-subtle text-success">Sức khỏe tốt, phổi trong</span></td>
-                            <td><button class="btn btn-sm btn-light border" onclick="viewReport('KSK-8812')">📄 Xem Chi Tiết</button></td>
-                        </tr>
-                        <tr>
-                            <td><strong class="text-primary">KSK-7741</strong></td>
-                            <td>12/01/2026</td>
-                            <td>Tầm Soát Tim Mạnh</td>
-                            <td>BS. CKI Lê Thị B</td>
-                            <td><span class="badge bg-warning-subtle text-warning-emphasis">Triglyceride nhẹ, tập thể dục</span></td>
-                            <td><button class="btn btn-sm btn-light border" onclick="viewReport('KSK-7741')">📄 Xem Chi Tiết</button></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+    <!-- 4. LỊCH KHÁM SẮP TỚI & HÀNH TRÌNH CHĂM SÓC -->
+    <div class="row g-4 mb-4">
+        <!-- Lịch khám sắp tới -->
+        <div class="col-lg-7">
+            <div class="hc-card h-100 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0 text-main d-flex align-items-center gap-2">
+                        <i class="bi bi-calendar-event-fill text-teal"></i> Lịch Khám Định Kỳ Sắp Tới
+                    </h5>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">
+                        <i class="bi bi-check-circle-fill me-1"></i> Đã Xác Nhận
+                    </span>
+                </div>
 
-    <!-- KHỐI 5: TRẠNG THÁI PWA -->
-    <div class="card border-0 shadow-sm rounded-4 p-3 bg-light">
-        <div class="d-flex align-items-center justify-content-between">
-            <div class="d-flex align-items-center gap-2">
-                <span class="hello__dot"></span>
-                <small class="text-muted" id="modeStandalone">Ứng dụng PWA Khám Sức Khỏe đang hoạt động hoàn hảo trên thiết bị của bạn.</small>
-            </div>
-            <small class="text-muted">HisSoft Medical PWA &copy; 2026</small>
-        </div>
-    </div>
-</div>
-
-<!-- MODAL ĐĂNG KÝ KHÁM MỚI -->
-<div class="modal fade" id="modalDangKyKham" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-header bg-primary text-white rounded-top-4">
-                <h5 class="modal-title fw-bold" id="modalLabel">📋 Đặt Lịch Khám Sức Khỏe Mới</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4">
-                <form id="formBooking" onsubmit="event.preventDefault(); submitBooking();">
-                    <div class="mb-3">
-                        <label class="form-label font-semibold">Chọn Gói / Chuyên Khoa Khám</label>
-                        <select class="form-select form-select-lg" id="cboGoiKham" required>
-                            <option value="Gói Khám Sức Khỏe Cơ Bản">Gói Khám Sức Khỏe Cơ Bản (1.500.000đ)</option>
-                            <option value="Gói Khám Sức Khỏe Toàn Diện" selected>Gói Khám Sức Khỏe Toàn Diện (3.200.000đ)</option>
-                            <option value="Gói Tầm Soát VIP">Gói Tầm Soát VIP (5.800.000đ)</option>
-                            <option value="Khám Chuyên Khoa Nội">Khám Chuyên Khoa Nội Tổng Quát</option>
-                            <option value="Khám Mắt - Tai Mũi Họng">Khám Mắt - Tai Mũi Họng</option>
-                        </select>
-                    </div>
-
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
-                            <label class="form-label font-semibold">Chọn Ngày Khám</label>
-                            <input type="date" class="form-control form-control-lg" id="txtNgayKham" value="2026-08-15" required />
+                <div class="p-3 rounded-3 mb-3 bg-body-tertiary border">
+                    <div class="row align-items-center g-3">
+                        <div class="col-md-8">
+                            <span class="badge bg-teal text-white mb-2" style="font-size: 0.72rem;">Chuyên Khoa Nội Tổng Quát</span>
+                            <h6 class="fw-bold text-main mb-1">Gói Khám Sức Khỏe Định Kỳ Toàn Diện</h6>
+                            <p class="small text-muted mb-2">
+                                <i class="bi bi-person-circle me-1"></i> Bác sĩ: <strong>BS. CKI Trần Văn Nam</strong>
+                            </p>
+                            <div class="d-flex flex-wrap align-items-center gap-3 text-secondary small">
+                                <span><i class="bi bi-clock-fill text-teal me-1"></i> <strong>08:30 AM</strong></span>
+                                <span><i class="bi bi-calendar3 text-teal me-1"></i> <strong>15/08/2026</strong></span>
+                                <span><i class="bi bi-geo-alt-fill text-teal me-1"></i> <strong>Phòng 302 - Lầu 3</strong></span>
+                            </div>
                         </div>
-                        <div class="col-6">
-                            <label class="form-label font-semibold">Chọn Giờ Khám</label>
-                            <select class="form-select form-select-lg" id="cboGioKham" required>
-                                <option value="08:00 AM">08:00 AM</option>
-                                <option value="09:00 AM" selected>09:00 AM</option>
-                                <option value="10:00 AM">10:00 AM</option>
-                                <option value="14:00 PM">14:00 PM</option>
-                                <option value="15:00 PM">15:00 PM</option>
-                            </select>
+                        <div class="col-md-4 text-md-end">
+                            <button class="btn btn-sm btn-primary rounded-pill w-100 mb-2" onclick="showTicketQrModal()">
+                                <i class="bi bi-qr-code me-1"></i> Phiếu Hẹn QR
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger rounded-pill w-100" onclick="cancelAppointment()">
+                                <i class="bi bi-x-circle me-1"></i> Hủy / Đổi Lịch
+                            </button>
                         </div>
                     </div>
+                </div>
 
-                    <div class="mb-3">
-                        <label class="form-label font-semibold">Ghi Chú Triệu Chứng / Tiền Sử</label>
-                        <textarea class="form-control" id="txtGhiChu" rows="2" placeholder="Ví dụ: Khám định kỳ công ty, tiền sử dị ứng thuốc..."></textarea>
+                <div class="alert alert-info py-2 px-3 mb-0 small rounded-3 d-flex align-items-center gap-2 border-0">
+                    <i class="bi bi-info-circle-fill text-info fs-5"></i>
+                    <div>
+                        <strong>Lưu ý từ Bác sĩ:</strong> Vui lòng nhịn ăn sáng trước 8 tiếng để xét nghiệm máu chuẩn xác nhất.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline Hành trình Chăm sóc Bệnh nhân -->
+        <div class="col-lg-5">
+            <div class="hc-card h-100 p-4">
+                <h5 class="fw-bold mb-3 text-main d-flex align-items-center gap-2">
+                    <i class="bi bi-clock-history text-teal"></i> Nhật Ký Chăm Sóc Sức Khỏe
+                </h5>
+
+                <div class="care-timeline mt-3">
+                    <div class="care-timeline-item">
+                        <div class="care-timeline-dot"></div>
+                        <div class="fw-bold small text-teal">15/08/2026 (Sắp tới)</div>
+                        <div class="fw-bold text-main">Tái khám Sức khỏe Tổng quát</div>
+                        <p class="small text-muted mb-0">Đã đăng ký nhắc lịch qua Zalo & SMS.</p>
                     </div>
 
-                    <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill fw-bold shadow-sm">
-                        ✅ Xác Nhận Đăng Ký Lịch Khám
+                    <div class="care-timeline-item">
+                        <div class="care-timeline-dot" style="background: #10b981; box-shadow: 0 0 0 2px #10b981;"></div>
+                        <div class="fw-bold small text-success">05/05/2026 (Đã xong)</div>
+                        <div class="fw-bold text-main">Xét nghiệm Máu & Sinh hóa</div>
+                        <p class="small text-muted mb-1">Chỉ số bình thường, Bác sĩ khuyên duy trì tập thể thao.</p>
+                        <button class="btn btn-xs btn-soft-primary py-1 px-2 text-decoration-none rounded-2" data-bs-toggle="modal" data-bs-target="#modalKetQuaXetNghiem" style="font-size: 0.75rem;">
+                            <i class="bi bi-eye-fill me-1"></i> Xem Kết Quả
+                        </button>
+                    </div>
+
+                    <div class="care-timeline-item">
+                        <div class="care-timeline-dot" style="background: #64748b; box-shadow: 0 0 0 2px #64748b;"></div>
+                        <div class="fw-bold small text-muted">10/01/2026</div>
+                        <div class="fw-bold text-main">Tiêm vắc xin Cúm Mùa 2026</div>
+                        <p class="small text-muted mb-0">Hoàn thành mũi 1 tại Trung tâm Vắc-xin HisSoft.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. GÓI DỊCH VỤ CSKH & CHĂM SÓC SỨC KHỎE NỔI BẬT -->
+    <div class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h4 class="fw-bold text-main mb-1">🩺 Gói Chăm Sóc Sức Khỏe Gia Đình</h4>
+                <p class="text-muted small mb-0">Các gói dịch vụ y tế được đăng ký nhiều nhất trong tháng</p>
+            </div>
+            <button class="btn btn-sm btn-outline-teal rounded-pill px-3" onclick="openCsChat();">
+                <i class="bi bi-headset me-1"></i> Tư vấn chọn gói
+            </button>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="hc-card hc-card-hover p-4 d-flex flex-column h-100 border-top border-4 border-teal">
+                    <span class="badge bg-teal-subtle text-teal rounded-pill w-fit mb-2">Phổ thông</span>
+                    <h5 class="fw-bold text-main">Khám Sức Khỏe Cơ Bản</h5>
+                    <h4 class="text-teal fw-extrabold mb-3">1.500.000 <small class="fs-6 text-muted">VNĐ</small></h4>
+                    <ul class="list-unstyled small text-muted mb-4 flex-grow-1">
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-teal me-2"></i> Khám Nội tổng quát & Sinh hiệu</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-teal me-2"></i> Công thức máu 24 chỉ số</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-teal me-2"></i> Siêu âm tổng quát bụng</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-teal me-2"></i> Chụp X-Quang Phổi thẳng</li>
+                    </ul>
+                    <button class="btn btn-outline-teal w-100 rounded-pill fw-bold" onclick="selectPackage('Gói Cơ Bản')">
+                        Đăng Ký Khám
+                    </button>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="hc-card hc-card-hover p-4 d-flex flex-column h-100 border-top border-4 border-primary position-relative overflow-hidden">
+                    <span class="position-absolute top-0 end-0 bg-warning text-dark font-weight-bold px-3 py-1 fs-7 rounded-bl" style="border-bottom-left-radius: 0.8rem;">
+                        🔥 Được chọn nhiều nhất
+                    </span>
+                    <span class="badge bg-primary-subtle text-primary rounded-pill w-fit mb-2">Chuyên sâu</span>
+                    <h5 class="fw-bold text-main">Khám Tổng Quát Nâng Cao</h5>
+                    <h4 class="text-primary fw-extrabold mb-3">3.200.000 <small class="fs-6 text-muted">VNĐ</small></h4>
+                    <ul class="list-unstyled small text-muted mb-4 flex-grow-1">
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-primary me-2"></i> Bao gồm toàn bộ Gói Cơ Bản</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-primary me-2"></i> Tầm soát Đái tháo đường & Gút</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-primary me-2"></i> Đo Điện tim ECG & Siêu âm Tim</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-primary me-2"></i> Nội soi Tai Mũi Họng vi giáp</li>
+                    </ul>
+                    <button class="btn btn-primary w-100 rounded-pill fw-bold shadow-sm" onclick="selectPackage('Gói Nâng Cao')">
+                        Đăng Ký Khám
+                    </button>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="hc-card hc-card-hover p-4 d-flex flex-column h-100 border-top border-4 border-warning">
+                    <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill w-fit mb-2">Vip Care</span>
+                    <h5 class="fw-bold text-main">Tầm Soát Ung Thư VIP</h5>
+                    <h4 class="text-warning-emphasis fw-extrabold mb-3">6.800.000 <small class="fs-6 text-muted">VNĐ</small></h4>
+                    <ul class="list-unstyled small text-muted mb-4 flex-grow-1">
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-warning me-2"></i> Bao gồm Gói Nâng Cao</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-warning me-2"></i> Xét nghiệm Marker tầm soát 6 loại Ung thư</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-warning me-2"></i> Chụp MRI / CT Scanner theo chỉ định</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-warning me-2"></i> Bác sĩ Trưởng khoa trực tiếp tư vấn</li>
+                    </ul>
+                    <button class="btn btn-outline-warning text-dark w-100 rounded-pill fw-bold" onclick="selectPackage('Gói VIP Tầm Soát')">
+                        Đăng Ký Khám
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. PHẦN ĐÁNH GIÁ CHẤT LƯỢNG CSKH (NPS SATISFACTION SURVEY) -->
+    <div class="hc-card p-4 p-md-5 mb-4" id="npsSection">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-6">
+                <h4 class="fw-bold text-main mb-2">⭐ Đánh Giá Trải Nghiệm Khách Hàng (NPS)</h4>
+                <p class="text-muted mb-0">Ý kiến đóng góp của bạn giúp Bệnh viện HisSoft nâng cao chất lượng phục vụ mỗi ngày.</p>
+            </div>
+            <div class="col-lg-6">
+                <form id="npsForm" onsubmit="submitNps(event)">
+                    <div class="mb-3 text-center text-lg-start">
+                        <label class="form-label text-muted small mb-1">Mức độ hài lòng của bạn trong lần khám gần nhất:</label>
+                        <div>
+                            <div class="star-rating">
+                                <input type="radio" id="star5" name="rating" value="5" required />
+                                <label for="star5" title="Rất hài lòng">★</label>
+                                <input type="radio" id="star4" name="rating" value="4" />
+                                <label for="star4" title="Hài lòng">★</label>
+                                <input type="radio" id="star3" name="rating" value="3" />
+                                <label for="star3" title="Bình thường">★</label>
+                                <input type="radio" id="star2" name="rating" value="2" />
+                                <label for="star2" title="Chưa hài lòng">★</label>
+                                <input type="radio" id="star1" name="rating" value="1" />
+                                <label for="star1" title="Rất kém">★</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <textarea class="form-control rounded-3" id="npsComment" rows="2" placeholder="Nhập nhận xét hoặc góp ý dịch vụ (Thái độ bác sĩ, thời gian chờ, CSKH...)..."></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-teal rounded-pill px-4 fw-bold">
+                        <i class="bi bi-send-fill me-1"></i> Gửi Đánh Giá CSKH
                     </button>
                 </form>
             </div>
@@ -301,44 +348,413 @@
     </div>
 </div>
 
+<!-- ========================================================================= -->
+<!-- 7. WIDGET TRỢ LÝ AI & CHAT CSKH FLOATING (GÓC DƯỚI BÊN PHẢI) -->
+<!-- ========================================================================= -->
+<div class="cs-chat-widget">
+    <!-- Nút tròn mở chat -->
+    <button class="cs-chat-trigger" id="csChatTrigger" onclick="toggleCsChat()">
+        <i class="bi bi-chat-heart-fill"></i>
+        <span class="cs-chat-badge">1</span>
+    </button>
+
+    <!-- Khung hộp chat -->
+    <div class="cs-chat-box" id="csChatBox">
+        <div class="cs-chat-header">
+            <div class="d-flex align-items-center gap-2">
+                <div class="position-relative">
+                    <img src="~/static/icon-192.png" alt="HisSoft CSKH" width="34" height="34" class="rounded-circle bg-white p-1" />
+                    <span class="position-absolute bottom-0 end-0 p-1 bg-success border border-light rounded-circle"></span>
+                </div>
+                <div>
+                    <h6 class="mb-0 fw-bold text-white fs-6">Trợ Lý CSKH HisSoft AI</h6>
+                    <small class="text-white-50" style="font-size: 0.72rem;">● Đang trực tuyến 24/7</small>
+                </div>
+            </div>
+            <button type="button" class="btn-close btn-close-white" onclick="toggleCsChat()"></button>
+        </div>
+
+        <div class="cs-chat-body" id="csChatBody">
+            <div class="cs-msg cs-msg-bot">
+                👋 Xin chào <strong>@ViewData["UserName"]</strong>! Tôi là Trợ lý CSKH Y Tế HisSoft. Bạn cần hỗ trợ thông tin gì hôm nay?
+            </div>
+        </div>
+
+        <div class="cs-chat-quick-replies">
+            <span class="cs-chip" onclick="sendQuickReply('Giờ làm việc khám bệnh?')">🕒 Giờ làm việc</span>
+            <span class="cs-chip" onclick="sendQuickReply('Thủ tục BHYT thế nào?')">💳 Thủ tục BHYT</span>
+            <span class="cs-chip" onclick="sendQuickReply('Hướng dẫn đặt lịch khám')">📅 Hướng dẫn đặt lịch</span>
+            <span class="cs-chip" onclick="sendQuickReply('Gặp tổng đài viên CSKH')">🎧 Gặp CSKH</span>
+        </div>
+
+        <div class="cs-chat-input-area">
+            <input type="text" class="form-control form-control-sm rounded-pill px-3" id="csInput" placeholder="Nhập thắc mắc cần hỗ trợ..." onkeydown="if(event.key==='Enter') sendCsMessage()" />
+            <button class="btn btn-sm btn-primary rounded-circle px-2" onclick="sendCsMessage()" style="width: 34px; height: 34px;">
+                <i class="bi bi-send-fill"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 8. MODAL ĐẶT LỊCH KHÁM WIZARD -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="modalDangKyKham" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0">
+            <div class="modal-header bg-teal text-white rounded-top-4">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-calendar-plus me-2"></i> Đăng Ký Lịch Khám Sức Khỏe
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="formBooking" onsubmit="submitBooking(event)">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-main">Chọn Chuyên Khoa Khám</label>
+                            <select class="form-select rounded-3" id="bookSpecialty" required>
+                                <option value="Nội tổng quát">Nội Tổng Quát</option>
+                                <option value="Tim mạch">Khoa Tim Mạch</option>
+                                <option value="Nhi khoa">Khoa Nhi</option>
+                                <option value="Sản phụ khoa">Sản Phụ Khoa</option>
+                                <option value="Tai Mũi Họng">Khoa Tai Mũi Họng</option>
+                                <option value="Mắt">Khoa Mắt</option>
+                                <option value="Chẩn đoán hình ảnh">Khám Tổng Quát VIP</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-main">Chọn Bác Sĩ Tư Vấn</label>
+                            <select class="form-select rounded-3" id="bookDoctor">
+                                <option value="BS. CKI Trần Văn Nam">BS. CKI Trần Văn Nam (Trưởng khoa Nội)</option>
+                                <option value="BS. CKII Lê Thị Mai">BS. CKII Lê Thị Mai (Chuyên gia Tim mạch)</option>
+                                <option value="ThS.BS Nguyễn Văn An">ThS.BS Nguyễn Văn An (Chuyên khoa Nhi)</option>
+                                <option value="Phân bổ tự động">Hệ thống tự động xếp bác sĩ phù hợp</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-main">Ngày Khám Mong Muốn</label>
+                            <input type="date" class="form-control rounded-3" id="bookDate" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-main">Khung Giờ Khám</label>
+                            <select class="form-select rounded-3" id="bookTime" required>
+                                <option value="07:30 - 08:30">07:30 - 08:30 sáng</option>
+                                <option value="08:30 - 09:30">08:30 - 09:30 sáng</option>
+                                <option value="09:30 - 10:30">09:30 - 10:30 sáng</option>
+                                <option value="13:30 - 14:30">13:30 - 14:30 chiều</option>
+                                <option value="14:30 - 15:30">14:30 - 15:30 chiều</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold text-main">Mô Tả Triệu Chứng / Ghi Chú CSKH</label>
+                            <textarea class="form-control rounded-3" id="bookNote" rows="2" placeholder="Ví dụ: Đau đầu nhẹ, cần kiểm tra lại huyết áp..."></textarea>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="checkBhyt" checked>
+                                <label class="form-check-label text-muted small" for="checkBhyt">
+                                    Sử dụng Thẻ BHYT (GD479201920) để khấu trừ chi phí theo quy định.
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-end">
+                        <button type="button" class="btn btn-light rounded-pill me-2" data-bs-dismiss="modal">Hủy Bỏ</button>
+                        <button type="submit" class="btn btn-teal rounded-pill px-4 fw-bold">
+                            <i class="bi bi-check2-circle me-1"></i> Xác Nhận Đăng Ký
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 9. MODAL KẾT QUẢ XÉT NGHIỆM CHI TIẾT -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="modalKetQuaXetNghiem" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4 border-0">
+            <div class="modal-header bg-primary text-white rounded-top-4">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-file-earmark-medical me-2"></i> Phiếu Kết Quả Xét Nghiệm Sinh Hóa
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <div>
+                        <h6 class="fw-bold mb-0 text-main">Mẫu XN số: #LAB-2026-9918</h6>
+                        <small class="text-muted">Ngày thực hiện: 05/05/2026 &bull; Khoa Xét nghiệm Central</small>
+                    </div>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill">Đã duyệt bởi Trưởng khoa</span>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Tên Chỉ Số Xét Nghiệm</th>
+                                <th>Kết Quả</th>
+                                <th>Tham Chiếu Standard</th>
+                                <th>Đánh Giá</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Glucose (Đường huyết lúc đói)</strong></td>
+                                <td class="fw-bold text-success">5.2 mmol/L</td>
+                                <td>3.9 - 6.4 mmol/L</td>
+                                <td><span class="badge bg-success-subtle text-success rounded-pill">Bình thường</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Cholesterol TP (Mỡ máu)</strong></td>
+                                <td class="fw-bold text-success">4.8 mmol/L</td>
+                                <td>3.6 - 5.2 mmol/L</td>
+                                <td><span class="badge bg-success-subtle text-success rounded-pill">Bình thường</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Triglycerides</strong></td>
+                                <td class="fw-bold text-warning">1.8 mmol/L</td>
+                                <td>&lt; 1.7 mmol/L</td>
+                                <td><span class="badge bg-warning-subtle text-warning-emphasis rounded-pill">Hơi cao</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>GOT / AST (Men gan)</strong></td>
+                                <td class="fw-bold text-success">24 U/L</td>
+                                <td>0 - 40 U/L</td>
+                                <td><span class="badge bg-success-subtle text-success rounded-pill">Bình thường</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>GPT / ALT (Men gan)</strong></td>
+                                <td class="fw-bold text-success">28 U/L</td>
+                                <td>0 - 41 U/L</td>
+                                <td><span class="badge bg-success-subtle text-success rounded-pill">Bình thường</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="p-3 bg-light rounded-3 mt-3">
+                    <h6 class="fw-bold text-main mb-1">👨‍⚕️ Kết luận & Lời khuyên Bác sĩ:</h6>
+                    <p class="small text-muted mb-0">Các chỉ số sinh hóa máu ổn định. Lưu ý chỉ số Triglycerides hơi cao nhẹ, nên hạn chế đồ chiên mỡ và tăng cường chạy bộ 30 phút/ngày.</p>
+                </div>
+            </div>
+            <div class="modal-footer bg-light rounded-bottom-4">
+                <button type="button" class="btn btn-outline-primary rounded-pill btn-sm" onclick="alert('Đã gửi tệp PDF kết quả qua Zalo / Email đăng ký!');">
+                    <i class="bi bi-download me-1"></i> Tải File PDF
+                </button>
+                <button type="button" class="btn btn-secondary rounded-pill btn-sm" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 10. MODAL ĐƠN THUỐC SỐ CHI TIẾT -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="modalDonThuoc" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0">
+            <div class="modal-header bg-warning text-dark rounded-top-4">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-capsule me-2"></i> Đơn Thuốc Điện Tử #RX-8821
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="border-bottom pb-2 mb-3">
+                    <div class="fw-bold text-main">Đơn thuốc chỉ định theo khám ngày 05/05/2026</div>
+                    <small class="text-muted">Bác sĩ kê đơn: BS. CKI Trần Văn Nam</small>
+                </div>
+
+                <div class="list-group list-group-flush mb-3">
+                    <div class="list-group-item px-0 py-2">
+                        <div class="d-flex justify-content-between fw-bold text-main">
+                            <span>1. Vitamin C 500mg (Redoxon)</span>
+                            <span class="text-primary">30 viên</span>
+                        </div>
+                        <div class="small text-muted">Liều dùng: Uống 1 viên/ngày sau ăn sáng.</div>
+                    </div>
+                    <div class="list-group-item px-0 py-2">
+                        <div class="d-flex justify-content-between fw-bold text-main">
+                            <span>2. Omega 3 Fish Oil 1000mg</span>
+                            <span class="text-primary">60 viên</span>
+                        </div>
+                        <div class="small text-muted">Liều dùng: Uống 2 viên/ngày (Sáng 1, Tối 1).</div>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning py-2 px-3 small rounded-3 mb-0">
+                    🔔 <strong>Nhắc nhở uống thuốc:</strong> Hệ thống tự động gửi thông báo nhắc uống thuốc lúc 08:00 AM và 19:00 PM mỗi ngày trên ứng dụng PWA.
+                </div>
+            </div>
+            <div class="modal-footer bg-light rounded-bottom-4">
+                <button type="button" class="btn btn-secondary rounded-pill btn-sm" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- 11. MODAL QR CODE BỆNH NHÂN -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="modalQrId" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content rounded-4 border-0 text-center p-4">
+            <h5 class="fw-bold text-main mb-1">Mã Định Danh Bệnh Nhân</h5>
+            <p class="small text-muted mb-3">Quét mã tại quầy tiếp đón để check-in tự động</p>
+            <div class="p-3 bg-white border rounded-3 d-inline-block mx-auto mb-3 shadow-sm">
+                <!-- SVG QR Code Demo -->
+                <svg width="160" height="160" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="100" height="100" fill="white"/>
+                    <path d="M10 10H40V40H10V10ZM15 15V35H35V15H15Z" fill="#0d9488"/>
+                    <path d="M20 20H30V30H20V20Z" fill="#0d9488"/>
+                    <path d="M60 10H90V40H60V10ZM65 15V35H85V15H65Z" fill="#0d9488"/>
+                    <path d="M70 20H80V30H70V20Z" fill="#0d9488"/>
+                    <path d="M10 60H40V90H10V60ZM15 65V85H35V65H15Z" fill="#0d9488"/>
+                    <path d="M20 70H30V80H20V70Z" fill="#0d9488"/>
+                    <rect x="50" y="50" width="10" height="10" fill="#0f172a"/>
+                    <rect x="70" y="50" width="20" height="10" fill="#0f172a"/>
+                    <rect x="50" y="70" width="20" height="20" fill="#0f172a"/>
+                    <rect x="80" y="80" width="10" height="10" fill="#0f172a"/>
+                </svg>
+            </div>
+            <div class="fw-bold text-teal fs-5 mb-1">BN-2026-8892</div>
+            <div class="small text-muted mb-3">@ViewData["UserName"]</div>
+            <button type="button" class="btn btn-sm btn-teal rounded-pill w-100 fw-bold" data-bs-dismiss="modal">Đóng</button>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
-        function selectPackage(packageName) {
-            document.getElementById('cboGoiKham').value = packageName;
-            var myModal = new bootstrap.Modal(document.getElementById('modalDangKyKham'));
-            myModal.show();
-        }
+        // Set default date for booking picker to tomorrow
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        document.getElementById('bookDate').valueAsDate = tomorrow;
 
-        function submitBooking() {
-            const goiKham = document.getElementById('cboGoiKham').value;
-            const ngayKham = document.getElementById('txtNgayKham').value;
-            const gioKham = document.getElementById('cboGioKham').value;
-
-            // Đóng Modal
-            const modalEl = document.getElementById('modalDangKyKham');
-            const modalInstance = bootstrap.Modal.getInstance(modalEl);
-            if (modalInstance) modalInstance.hide();
-
-            // Hiển thị Toast thông báo
-            const toastEl = document.getElementById('bookingToast');
-            document.getElementById('toastMessage').innerHTML = `🎉 <strong>Đăng ký thành công!</strong><br/>${goiKham} vào ${gioKham} ngày ${ngayKham}. Nhân viên y tế sẽ gọi xác nhận!`;
+        // Toast Helper
+        function showToast(message, bgClass = 'bg-teal') {
+            const toastEl = document.getElementById('appToast');
+            const toastMsg = document.getElementById('toastMessage');
+            toastEl.className = `toast align-items-center text-white border-0 shadow-lg ${bgClass}`;
+            toastMsg.innerHTML = `<i class="bi bi-check-circle-fill fs-5"></i> ${message}`;
             const toast = new bootstrap.Toast(toastEl);
             toast.show();
         }
 
-        function showAppointmentDetail() {
-            alert("📋 CHI TIẾT PHIẾU HẸN KHÁM:\n\n- Mã Phiếu: KSK-2026-9902\n- Gói Khám: Khám Sức Khỏe Tổng Quát\n- Thời gian: 08:30 AM - 15/08/2026\n- Địa điểm: Phòng 302, Lầu 3, Bệnh viện HisSoft.\n\nVui lòng mang theo CCCD và thẻ BHYT khi tới khám.");
-        }
-
-        function cancelAppointment() {
-            if (confirm("Bạn có chắc chắn muốn hủy lịch khám này không?")) {
-                alert("Đã hủy lịch khám thành công!");
+        // Toggle Floating CS Chat Box
+        function toggleCsChat() {
+            const box = document.getElementById('csChatBox');
+            box.classList.toggle('show');
+            if (box.classList.contains('show')) {
+                document.getElementById('csInput').focus();
             }
         }
 
-        function viewReport(maPhieu) {
-            alert(`📄 Đang mở Hồ sơ Kết quả Khám sức khỏe mã phiếu [${maPhieu}]...\nChỉ số sức khỏe bình thường, không phát hiện bất thường.`);
+        function openCsChat() {
+            const box = document.getElementById('csChatBox');
+            if (!box.classList.contains('show')) {
+                box.classList.add('show');
+            }
+            document.getElementById('csInput').focus();
+        }
+
+        // Send CS Message Chat Simulation
+        function sendCsMessage() {
+            const input = document.getElementById('csInput');
+            const val = input.value.trim();
+            if (!val) return;
+
+            appendMsg(val, 'user');
+            input.value = '';
+
+            // Simulated AI Response
+            setTimeout(() => {
+                let botReply = 'Cảm ơn bạn đã liên hệ! Trung tâm CSKH HisSoft đang hỗ trợ bạn. Vui lòng cho biết thêm thông tin hoặc chọn mục tư vấn nhanh.';
+                
+                const textLower = val.toLowerCase();
+                if (textLower.includes('giờ') || textLower.includes('thời gian')) {
+                    botReply = '🕒 Bệnh viện HisSoft làm việc từ 07:00 đến 17:00 (Thứ 2 - Thứ 7). Cấp cứu & Khám vi giáp trực 24/7.';
+                } else if (textLower.includes('bhyt') || textLower.includes('bảo hiểm')) {
+                    botReply = '💳 Thẻ BHYT của bạn (GD479201920) còn hạn đến 12/2027 và được hưởng 80% chi phí khám chữa bệnh theo tuyến.';
+                } else if (textLower.includes('lịch') || textLower.includes('đặt khám')) {
+                    botReply = '📅 Bạn có thể bấm nút "Đăng Ký Khám Mới" phía trên để chọn bác sĩ và giờ khám ưu tiên nhé!';
+                } else if (textLower.includes('tổng đài') || textLower.includes('gặp')) {
+                    botReply = '🎧 Tổng đài viên CSKH đang gọi lại theo số điện thoại đăng ký của bạn trong 2 phút nữa...';
+                }
+
+                appendMsg(botReply, 'bot');
+            }, 700);
+        }
+
+        function sendQuickReply(text) {
+            document.getElementById('csInput').value = text;
+            sendCsMessage();
+        }
+
+        function appendMsg(text, sender) {
+            const body = document.getElementById('csChatBody');
+            const div = document.createElement('div');
+            div.className = `cs-msg ${sender === 'user' ? 'cs-msg-user' : 'cs-msg-bot'}`;
+            div.innerHTML = text;
+            body.appendChild(div);
+            body.scrollTop = body.scrollHeight;
+        }
+
+        // Submit Booking Form
+        function submitBooking(e) {
+            e.preventDefault();
+            const specialty = document.getElementById('bookSpecialty').value;
+            const time = document.getElementById('bookTime').value;
+            const date = document.getElementById('bookDate').value;
+            
+            const modalEl = document.getElementById('modalDangKyKham');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            modal.hide();
+
+            showToast(`🎉 Đăng ký khám chuyên khoa <strong>${specialty}</strong> ngày ${date} (${time}) thành công! Phiếu hẹn đã tạo.`);
+        }
+
+        // Submit NPS Survey
+        function submitNps(e) {
+            e.preventDefault();
+            const form = document.getElementById('npsForm');
+            form.innerHTML = `
+                <div class="alert alert-success p-4 rounded-4 text-center border-0 mb-0">
+                    <i class="bi bi-heart-fill fs-1 text-danger mb-2 d-block"></i>
+                    <h5 class="fw-bold">Cảm Ơn Đóng Góp Ý Kiến Của Bạn!</h5>
+                    <p class="mb-0 text-muted small">Đánh giá của bạn đã được chuyển trực tiếp tới Ban Quản Lý Chất Lượng Dịch Vụ HisSoft.</p>
+                </div>
+            `;
+        }
+
+        // Package selection
+        function selectPackage(packageName) {
+            document.getElementById('bookSpecialty').value = 'Chẩn đoán hình ảnh';
+            const modal = new bootstrap.Modal(document.getElementById('modalDangKyKham'));
+            modal.show();
+        }
+
+        // Show ticket QR
+        function showTicketQrModal() {
+            const modal = new bootstrap.Modal(document.getElementById('modalQrId'));
+            modal.show();
+        }
+
+        // Cancel appointment demo
+        function cancelAppointment() {
+            if (confirm('Bạn có chắc chắn muốn yêu cầu đổi hoặc hủy lịch khám này không?')) {
+                showToast('Yêu cầu đổi lịch khám đã được gửi tới bộ phận CSKH.', 'bg-warning text-dark');
+            }
+        }
+
+        // Scroll to NPS
+        function scrollToNps() {
+            document.getElementById('npsSection').scrollIntoView({ behavior: 'smooth' });
         }
     </script>
 }
-

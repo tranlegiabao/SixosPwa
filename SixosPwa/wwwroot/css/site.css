@@ -1,92 +1,406 @@
 /* ==========================================================================
-   Khuôn mẫu SixosPwa — CSS dùng chung.
-   Màu thương hiệu lấy từ chính logo Sixos (#3854A4), khớp theme_color trong
-   manifest.webmanifest để thanh trạng thái trên điện thoại cùng tông.
+   SixosPwa — Healthcare Customer Service & Patient Care Portal
+   Design System & Styling Rules
    ========================================================================== */
 
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
 :root {
-    --sx-blue: #3854A4;
-    --sx-blue-dark: #2e4589;
-    --sx-bg: #f5f7fb;
+    --hc-primary: #0d9488;
+    --hc-primary-hover: #0f766e;
+    --hc-primary-light: #ccfbf1;
+    --hc-secondary: #0284c7;
+    --hc-accent: #3b82f6;
+    --hc-success: #10b981;
+    --hc-warning: #f59e0b;
+    --hc-danger: #ef4444;
+    
+    --hc-bg: #f8fafc;
+    --hc-surface: #ffffff;
+    --hc-border: #e2e8f0;
+    --hc-text-main: #0f172a;
+    --hc-text-muted: #64748b;
+    --hc-card-shadow: 0 4px 20px -2px rgba(13, 148, 136, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+    --hc-glass-bg: rgba(255, 255, 255, 0.85);
+    --hc-glass-border: rgba(255, 255, 255, 0.4);
+}
+
+[data-bs-theme="dark"] {
+    --hc-bg: #0f172a;
+    --hc-surface: #1e293b;
+    --hc-border: #334155;
+    --hc-text-main: #f8fafc;
+    --hc-text-muted: #94a3b8;
+    --hc-card-shadow: 0 4px 25px rgba(0, 0, 0, 0.3);
+    --hc-glass-bg: rgba(30, 41, 59, 0.85);
+    --hc-glass-border: rgba(255, 255, 255, 0.1);
 }
 
 body {
-    background: var(--sx-bg);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-                 "Helvetica Neue", Arial, sans-serif;
-}
-
-.btn-primary {
-    --bs-btn-bg: var(--sx-blue);
-    --bs-btn-border-color: var(--sx-blue);
-    --bs-btn-hover-bg: var(--sx-blue-dark);
-    --bs-btn-hover-border-color: var(--sx-blue-dark);
-    --bs-btn-active-bg: var(--sx-blue-dark);
-    --bs-btn-active-border-color: var(--sx-blue-dark);
-}
-
-.btn-outline-primary {
-    --bs-btn-color: var(--sx-blue);
-    --bs-btn-border-color: var(--sx-blue);
-    --bs-btn-hover-bg: var(--sx-blue);
-    --bs-btn-hover-border-color: var(--sx-blue);
-    --bs-btn-active-bg: var(--sx-blue);
-    --bs-btn-active-border-color: var(--sx-blue);
-}
-
-/* --------------------------------------------------------------- Đăng nhập */
-
-.page-center {
+    background-color: var(--hc-bg);
+    color: var(--hc-text-main);
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
     min-height: 100vh;
-    /* dvh: tránh bị thanh công cụ trình duyệt di động che mất đáy trang */
-    min-height: 100dvh;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+[data-bs-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: #475569;
+}
+
+/* --------------------------------------------------------------- Buttons & Badges */
+.btn-primary {
+    background-color: var(--hc-primary);
+    border-color: var(--hc-primary);
+    color: #ffffff;
+    font-weight: 600;
+}
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+    background-color: var(--hc-primary-hover) !important;
+    border-color: var(--hc-primary-hover) !important;
+}
+
+.btn-soft-primary {
+    background-color: var(--hc-primary-light);
+    color: var(--hc-primary-hover);
+    border: none;
+    font-weight: 600;
+}
+.btn-soft-primary:hover {
+    background-color: #99f6e4;
+    color: #042f2e;
+}
+
+.badge-hc {
+    padding: 0.45em 0.85em;
+    border-radius: 50rem;
+    font-weight: 600;
+    font-size: 0.78rem;
+    letter-spacing: 0.2px;
+}
+
+/* --------------------------------------------------------------- Layout Components */
+.app-nav {
+    background: linear-gradient(135deg, #0f766e 0%, #0369a1 100%);
+    color: #ffffff;
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.app-nav__brand img {
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.app-foot {
+    padding: 2rem 0;
+    color: var(--hc-text-muted);
+    font-size: 0.85rem;
+    border-top: 1px solid var(--hc-border);
+    margin-top: 3rem;
+}
+
+/* --------------------------------------------------------------- Glassmorphism & Cards */
+.hc-card {
+    background: var(--hc-surface);
+    border: 1px solid var(--hc-border);
+    border-radius: 1rem;
+    box-shadow: var(--hc-card-shadow);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.hc-card-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px -5px rgba(13, 148, 136, 0.15);
+}
+
+.glass-header {
+    background: linear-gradient(135deg, rgba(13, 148, 136, 0.95) 0%, rgba(2, 132, 199, 0.9) 100%);
+    backdrop-filter: blur(10px);
+    color: #ffffff;
+    border-radius: 1.25rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.glass-header::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/* --------------------------------------------------------------- Quick Actions Grid */
+.quick-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem 0.75rem;
+    background: var(--hc-surface);
+    border: 1px solid var(--hc-border);
+    border-radius: 1rem;
+    text-decoration: none;
+    color: var(--hc-text-main);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--hc-card-shadow);
+    cursor: pointer;
+}
+
+.quick-action-btn:hover {
+    transform: translateY(-4px);
+    border-color: var(--hc-primary);
+    color: var(--hc-primary);
+}
+
+.quick-action-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 1.5rem 1rem;
+    font-size: 1.6rem;
+    margin-bottom: 0.6rem;
+    background: rgba(13, 148, 136, 0.08);
+    color: var(--hc-primary);
+    transition: all 0.2s ease;
 }
 
-.auth {
-    width: 100%;
-    max-width: 25rem;
+.quick-action-btn:hover .quick-action-icon {
+    background: var(--hc-primary);
+    color: #ffffff;
+    transform: scale(1.08);
 }
 
-.auth__brand {
-    text-align: center;
-    margin-bottom: 1.25rem;
+/* --------------------------------------------------------------- Floating CS & AI Chat Widget */
+.cs-chat-widget {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 1050;
 }
 
-.auth__brand h1 {
-    font-size: 1.5rem;
+.cs-chat-trigger {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    box-shadow: 0 8px 25px rgba(13, 148, 136, 0.4);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.cs-chat-trigger:hover {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 12px 30px rgba(13, 148, 136, 0.5);
+}
+
+.cs-chat-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 18px;
+    height: 18px;
+    background: var(--hc-danger);
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    font-size: 0.65rem;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-weight: 700;
-    margin: .75rem 0 .15rem;
 }
 
-.auth__brand p {
-    margin: 0;
-    color: #6b7280;
-    font-size: .9rem;
+.cs-chat-box {
+    position: fixed;
+    bottom: 5rem;
+    right: 1.5rem;
+    width: 380px;
+    max-width: calc(100vw - 2rem);
+    height: 520px;
+    max-height: calc(100vh - 7rem);
+    background: var(--hc-surface);
+    border: 1px solid var(--hc-border);
+    border-radius: 1.25rem;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 1050;
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.auth__card {
-    border: 0;
-    border-radius: .9rem;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, .08), 0 10px 30px rgba(15, 23, 42, .06);
+.cs-chat-box.show {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: all;
 }
 
-.auth__card .card-body {
-    padding: 1.75rem;
+.cs-chat-header {
+    background: linear-gradient(135deg, #0f766e 0%, #0284c7 100%);
+    color: #ffffff;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
-.auth__foot {
-    text-align: center;
-    margin: 1rem 0 0;
-    font-size: .8rem;
-    color: #9ca3af;
+.cs-chat-body {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    background: var(--hc-bg);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
 }
 
-/* ------------------------------------------------------- Khối cài đặt PWA */
+.cs-msg {
+    max-width: 82%;
+    padding: 0.75rem 1rem;
+    border-radius: 1rem;
+    font-size: 0.88rem;
+    line-height: 1.45;
+}
 
+.cs-msg-bot {
+    background: var(--hc-surface);
+    color: var(--hc-text-main);
+    border: 1px solid var(--hc-border);
+    align-self: flex-start;
+    border-bottom-left-radius: 0.2rem;
+}
+
+.cs-msg-user {
+    background: var(--hc-primary);
+    color: #ffffff;
+    align-self: flex-end;
+    border-bottom-right-radius: 0.2rem;
+}
+
+.cs-chat-quick-replies {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    background: var(--hc-surface);
+    border-top: 1px solid var(--hc-border);
+}
+
+.cs-chip {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 50rem;
+    background: rgba(13, 148, 136, 0.08);
+    color: var(--hc-primary);
+    border: 1px solid rgba(13, 148, 136, 0.2);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cs-chip:hover {
+    background: var(--hc-primary);
+    color: #ffffff;
+}
+
+.cs-chat-input-area {
+    padding: 0.75rem;
+    background: var(--hc-surface);
+    border-top: 1px solid var(--hc-border);
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* --------------------------------------------------------------- Timeline & Status */
+.care-timeline {
+    position: relative;
+    padding-left: 1.75rem;
+}
+
+.care-timeline::before {
+    content: '';
+    position: absolute;
+    left: 0.55rem;
+    top: 0.25rem;
+    bottom: 0.25rem;
+    width: 2px;
+    background: var(--hc-border);
+}
+
+.care-timeline-item {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.care-timeline-item:last-child {
+    margin-bottom: 0;
+}
+
+.care-timeline-dot {
+    position: absolute;
+    left: -1.75rem;
+    top: 0.2rem;
+    width: 1.1rem;
+    height: 1.1rem;
+    border-radius: 50%;
+    background: var(--hc-primary);
+    border: 3px solid var(--hc-surface);
+    box-shadow: 0 0 0 2px var(--hc-primary);
+}
+
+/* --------------------------------------------------------------- Star Rating NPS */
+.star-rating {
+    display: inline-flex;
+    flex-direction: row-reverse;
+    gap: 0.3rem;
+}
+
+.star-rating input {
+    display: none;
+}
+
+.star-rating label {
+    font-size: 1.6rem;
+    color: #cbd5e1;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.star-rating input:checked ~ label,
+.star-rating label:hover,
+.star-rating label:hover ~ label {
+    color: #fbbf24;
+}
+
+/* --------------------------------------------------------------- PWA Setup intact */
 .pwa-install__sep {
     position: relative;
     text-align: center;
@@ -99,14 +413,14 @@ body {
     top: 50%;
     left: 0;
     right: 0;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--hc-border);
 }
 
 .pwa-install__sep span {
     position: relative;
-    background: #fff;
+    background: var(--hc-surface);
     padding: 0 .75rem;
-    color: #9ca3af;
+    color: var(--hc-text-muted);
     font-size: .8rem;
 }
 
@@ -122,7 +436,7 @@ body {
     margin: .6rem 0 0;
     font-size: .78rem;
     line-height: 1.45;
-    color: #9ca3af;
+    color: var(--hc-text-muted);
     text-align: center;
 }
 
@@ -138,83 +452,66 @@ body {
 
 .pwa-guide__icon {
     vertical-align: -.2em;
-    color: var(--sx-blue);
+    color: var(--hc-primary);
 }
 
 .pwa-guide__note {
     margin: 0;
     padding: .6rem .8rem;
-    background: #f1f5f9;
+    background: var(--hc-bg);
     border-radius: .5rem;
     font-size: .85rem;
-    color: #475569;
+    color: var(--hc-text-muted);
 }
 
-/* -------------------------------------------------- Layout sau đăng nhập */
-
-.app-nav {
-    background: var(--sx-blue);
-    color: #fff;
-    padding: .6rem 0;
-}
-
-.app-nav .container {
+/* -------------------------------------------------- Auth Page Center */
+.page-center {
+    min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
+    padding: 1.5rem 1rem;
+    background: radial-gradient(circle at 50% 10%, rgba(13, 148, 136, 0.12) 0%, transparent 60%), var(--hc-bg);
 }
 
-.app-nav__brand {
-    display: flex;
-    align-items: center;
-    gap: .6rem;
-    color: #fff;
-    font-weight: 700;
-    text-decoration: none;
+.auth {
+    width: 100%;
+    max-width: 26rem;
 }
 
-.app-nav__brand img {
-    border-radius: .35rem;
-    background: #fff;
+.auth__brand {
+    text-align: center;
+    margin-bottom: 1.25rem;
 }
 
-.app-foot {
-    padding: 1.5rem 0 2rem;
-    color: #9ca3af;
-    font-size: .8rem;
-}
-
-.hello {
-    max-width: 40rem;
-}
-
-.hello h1 {
+.auth__brand h1 {
     font-size: 1.6rem;
-    font-weight: 700;
+    font-weight: 800;
+    margin: .75rem 0 .15rem;
+    color: var(--hc-primary);
 }
 
-.hello__card {
-    border: 0;
-    border-radius: .75rem;
-    margin-top: 1.5rem;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, .08);
-}
-
-.hello__mode {
+.auth__brand p {
     margin: 0;
-    display: flex;
-    align-items: center;
-    gap: .6rem;
+    color: var(--hc-text-muted);
+    font-size: .9rem;
 }
 
-.hello__dot {
-    width: .6rem;
-    height: .6rem;
-    border-radius: 50%;
-    background: #16a34a;
-    flex: 0 0 auto;
+.auth__card {
+    border: 1px solid var(--hc-border);
+    border-radius: 1.25rem;
+    background: var(--hc-surface);
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.07);
 }
 
-.hello__dot--grey {
-    background: #9ca3af;
+.auth__card .card-body {
+    padding: 2rem;
+}
+
+.auth__foot {
+    text-align: center;
+    margin: 1.25rem 0 0;
+    font-size: .82rem;
+    color: var(--hc-text-muted);
 }

@@ -1,0 +1,306 @@
+@{
+    ViewData["Title"] = "Gửi SMS cho Bệnh nhân";
+}
+
+<link rel="stylesheet" href="~/css/healthcare.css" />
+
+<div class="health-header">
+    <div class="container">
+        <h1>📱 Hệ thống gửi tin nhắn SMS</h1>
+        <div class="subtitle">Admin/Đối tác - Xin chào @User.FindFirst("HoTen")?.Value</div>
+    </div>
+</div>
+
+<div class="container mt-4">
+    <!-- Alert -->
+    <div class="health-alert info mb-4">
+        <strong>✅ Đăng nhập thành công!</strong><br>
+        Tài khoản: <strong>@User.Identity?.Name</strong> (@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value)
+        <a href="@Url.Action("DangXuat", "DangNhap")" class="btn btn-sm btn-secondary float-end">Đăng xuất</a>
+    </div>
+
+    <div class="row">
+        <!-- CỘT TRÁI: Danh sách bệnh nhân -->
+        <div class="col-md-5">
+            <div class="health-card">
+                <div class="health-card-header">
+                    <div class="health-card-icon primary">👥</div>
+                    <div class="flex-grow-1">
+                        <h5 class="mb-0">Danh sách bệnh nhân</h5>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-health-primary" onclick="document.getElementById('fileImport').click()">
+                        📥 Import CSV
+                    </button>
+                    <input type="file" id="fileImport" accept=".csv" style="display:none" onchange="importFile()">
+                </div>
+
+                <!-- Tìm kiếm -->
+                <div class="mb-3">
+                    <label class="health-form-label">🔍 Tìm kiếm (Loc)</label>
+                    <input type="text" 
+                           class="form-control health-form-control" 
+                           id="searchSoDienThoai" 
+                           placeholder="Tìm theo SĐT, tên, mã BN...">
+                </div>
+
+                <!-- Danh sách (không có thanh trượt) -->
+                <div style="border: 1px solid #E9ECEF; border-radius: 8px; padding: 0.75rem; background: #F8F9FA;">
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="checkAll">
+                        <label class="form-check-label fw-bold" for="checkAll">
+                            ☑️ Chọn tất cả
+                        </label>
+                    </div>
+                    <hr class="my-2">
+                    <div id="danhSachBenhNhan">
+                        @if (ViewBag.DanhSachBenhNhan != null)
+                        {
+                            @foreach (var bn in ViewBag.DanhSachBenhNhan)
+                            {
+                                <div class="form-check mb-2 benh-nhan-item" 
+                                     data-sdt="@bn.SoDienThoai" 
+                                     data-ten="@bn.HoTen.ToLower()" 
+                                     data-ma="@bn.MaBenhNhan">
+                                    <input class="form-check-input benh-nhan-checkbox" 
+                                           type="checkbox" 
+                                           value="@bn.Id" 
+                                           id="bn@(bn.Id)" 
+                                           @(bn.ChoPhepNhanTinNhan ? "" : "disabled")>
+                                    <label class="form-check-label small" for="bn@(bn.Id)">
+                                        <strong>@bn.HoTen</strong><br>
+                                        <span class="text-muted">@bn.SoDienThoai - @bn.MaBenhNhan</span>
+                                        @if (!bn.ChoPhepNhanTinNhan)
+                                        {
+                                            <br><span class="health-status danger">Đã tắt</span>
+                                        }
+                                    </label>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+                
+                <div class="mt-2 text-center">
+                    <strong>Đã chọn: <span id="soLuongDaChon" class="text-primary">0</span> bệnh nhân</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- CỘT PHẢI: Form gửi tin nhắn -->
+        <div class="col-md-7">
+            <div class="health-card">
+                <div class="health-card-header">
+                    <div class="health-card-icon success">✉️</div>
+                    <div>
+                        <h5 class="mb-0">Soạn tin nhắn</h5>
+                    </div>
+                </div>
+
+                <form id="formGuiSmsHangLoat">
+                    <!-- 2. Chọn mẫu -->
+                    <div class="mb-3">
+                        <label class="health-form-label">✅ Chọn mẫu tin nhắn</label>
+                        <select class="form-select health-form-control" id="chonMau">
+                            <option value="">-- Chọn mẫu có sẵn --</option>
+                            @if (ViewBag.DanhSachMau != null)
+                            {
+                                @foreach (var mau in ViewBag.DanhSachMau)
+                                {
+                                    <option value="@mau.Id" data-noidung="@mau.NoiDung" data-loai="@mau.LoaiTinNhan">
+                                        @mau.TenMau
+                                    </option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <!-- 3. Đối tác -->
+                    <div class="mb-3">
+                        <label class="health-form-label">✅ Đối tác gửi</label>
+                        <input type="text" class="form-control health-form-control" name="doiTac" placeholder="Phòng khám ABC, Bệnh viện XYZ...">
+                    </div>
+
+                    <!-- Nội dung -->
+                    <div class="mb-3">
+                        <label class="health-form-label">Nội dung tin nhắn</label>
+                        <textarea class="form-control health-form-control" name="noiDung" rows="8" placeholder="Nhập nội dung..." required></textarea>
+                        <small class="text-muted">
+                            Dùng {TenBenhNhan}, {MaBenhNhan}<br>
+                            Độ dài: <span id="smsLength">0</span>/160 ký tự
+                        </small>
+                    </div>
+
+                    <!-- Button gửi -->
+                    <button type="submit" class="btn btn-health-primary btn-lg w-100">
+                        📤 Gửi tin nhắn
+                    </button>
+                </form>
+
+                <!-- Links quản lý -->
+                <hr class="my-3">
+                <div class="d-flex justify-content-between">
+                    <a href="@Url.Action("LichSu", "Sms")" class="btn btn-sm btn-health-outline">
+                        📜 Lịch sử
+                    </a>
+                    <a href="@Url.Action("MauTinNhan", "Sms")" class="btn btn-sm btn-health-outline">
+                        📝 Mẫu
+                    </a>
+                </div>
+            </div>
+
+            <!-- Alert lưu lịch sử -->
+            <div class="health-alert success mt-3">
+                <strong>✅ Lưu lịch sử không xóa</strong><br>
+                Tất cả tin nhắn đã gửi được lưu vĩnh viễn.
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // Tìm kiếm bệnh nhân
+    document.getElementById('searchSoDienThoai').addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const items = document.querySelectorAll('.benh-nhan-item');
+        
+        items.forEach(item => {
+            const sdt = item.dataset.sdt || '';
+            const ten = item.dataset.ten || '';
+            const ma = item.dataset.ma || '';
+            
+            if (sdt.includes(searchTerm) || ten.includes(searchTerm) || ma.toLowerCase().includes(searchTerm)) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+
+    // Chọn mẫu
+    document.getElementById('chonMau').addEventListener('change', (e) => {
+        const option = e.target.selectedOptions[0];
+        if (option.value) {
+            document.querySelector('[name="noiDung"]').value = option.dataset.noidung;
+            updateSmsLength();
+        }
+    });
+
+    // Đếm ký tự
+    function updateSmsLength() {
+        const length = document.querySelector('[name="noiDung"]').value.length;
+        document.getElementById('smsLength').textContent = length;
+    }
+    document.querySelector('[name="noiDung"]').addEventListener('input', updateSmsLength);
+
+    // Chọn tất cả
+    document.getElementById('checkAll').addEventListener('change', (e) => {
+        document.querySelectorAll('.benh-nhan-checkbox:not(:disabled)').forEach(cb => {
+            // Chỉ chọn những checkbox đang hiển thị
+            const item = cb.closest('.benh-nhan-item');
+            if (item && item.style.display !== 'none') {
+                cb.checked = e.target.checked;
+            }
+        });
+        updateSoLuongDaChon();
+    });
+
+    // Cập nhật số lượng
+    document.querySelectorAll('.benh-nhan-checkbox').forEach(cb => {
+        cb.addEventListener('change', updateSoLuongDaChon);
+    });
+
+    function updateSoLuongDaChon() {
+        const count = document.querySelectorAll('.benh-nhan-checkbox:checked').length;
+        document.getElementById('soLuongDaChon').textContent = count;
+        document.getElementById('dangChon').textContent = count;
+    }
+
+    // Import CSV
+    async function importFile() {
+        const fileInput = document.getElementById('fileImport');
+        const file = fileInput.files[0];
+        
+        if (!file) {
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('/Sms/ImportBenhNhan', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            
+            if (result.thanhCong) {
+                alert('✅ ' + result.thongBao);
+                location.reload();
+            } else {
+                alert('❌ ' + result.thongBao);
+            }
+        } catch (error) {
+            alert('❌ Lỗi: ' + error.message);
+        }
+    }
+
+    // Gửi SMS hàng loạt
+    document.getElementById('formGuiSmsHangLoat').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData(e.target);
+        const danhSachId = Array.from(document.querySelectorAll('.benh-nhan-checkbox:checked'))
+            .map(cb => parseInt(cb.value));
+        
+        if (danhSachId.length === 0) {
+            alert('❌ Vui lòng chọn ít nhất 1 bệnh nhân');
+            return;
+        }
+
+        if (!formData.get('noiDung')) {
+            alert('❌ Vui lòng nhập nội dung tin nhắn');
+            return;
+        }
+
+        if (!confirm(`Bạn chắc chắn muốn gửi tin nhắn cho ${danhSachId.length} bệnh nhân?`)) {
+            return;
+        }
+
+        const data = {
+            danhSachBenhNhanId: danhSachId,
+            noiDung: formData.get('noiDung'),
+            loaiTinNhan: document.getElementById('chonMau').selectedOptions[0]?.dataset.loai || 'TuyChon',
+            doiTac: formData.get('doiTac')
+        };
+
+        try {
+            const response = await fetch('/Sms/GuiSmsHangLoat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+            
+            if (result.thanhCong) {
+                alert('✅ ' + result.thongBao);
+                // Reset form
+                e.target.reset();
+                document.querySelectorAll('.benh-nhan-checkbox').forEach(cb => cb.checked = false);
+                document.getElementById('checkAll').checked = false;
+                document.getElementById('searchSoDienThoai').value = '';
+                document.querySelectorAll('.benh-nhan-item').forEach(item => item.style.display = 'block');
+                updateSoLuongDaChon();
+                updateSmsLength();
+            } else {
+                alert('❌ ' + result.thongBao);
+            }
+        } catch (error) {
+            alert('❌ Lỗi: ' + error.message);
+        }
+    });
+</script>
+}

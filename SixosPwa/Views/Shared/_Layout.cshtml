@@ -1,25 +1,42 @@
 <!doctype html>
-<html lang="vi">
+<html lang="vi" data-bs-theme="light">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>@ViewData["Title"] — HisSoft</title>
+    <title>@ViewData["Title"] — Cổng CSKH & Y Tế HisSoft</title>
 
     <partial name="_PwaHead" />
 
+    <!-- Bootstrap 5 & Bootstrap Icons -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
-    <header class="app-nav shadow-sm py-2">
-        <div class="container">
+    <header class="app-nav shadow-sm sticky-top">
+        <div class="container d-flex align-items-center justify-content-between py-2">
             <a class="app-nav__brand text-white text-decoration-none d-flex align-items-center gap-2 fw-bold" asp-controller="Home" asp-action="Index">
-                <img src="~/static/icon-192.png" alt="HisSoft" width="36" height="36" class="rounded-2" />
-                <span class="fs-5">HisSoft Medical</span>
+                <img src="~/static/icon-192.png" alt="HisSoft Healthcare" width="38" height="38" class="bg-white p-1 rounded-3" />
+                <div class="d-flex flex-column">
+                    <span class="fs-5 lh-1 text-white fw-extrabold" style="letter-spacing: -0.3px;">HisSoft Care</span>
+                    <span class="small text-white-50 fs-7" style="font-size: 0.72rem;">Trung tâm Chăm sóc Bệnh nhân</span>
+                </div>
             </a>
+            
             <div class="d-flex align-items-center gap-2">
-                <a class="btn btn-sm btn-outline-light rounded-pill px-3" asp-controller="DangNhap" asp-action="DangXuat">
-                    🚪 Đăng xuất
+                <!-- Nút Gọi CSKH 24/7 -->
+                <a href="tel:19009999" class="btn btn-sm btn-light text-teal rounded-pill px-3 d-none d-md-inline-flex align-items-center gap-1 shadow-sm fw-semibold">
+                    <i class="bi bi-telephone-fill text-teal"></i> Hotline: 1900-9999
+                </a>
+
+                <!-- Chuyển đổi Dark / Light Mode -->
+                <button type="button" class="btn btn-sm btn-outline-light rounded-circle p-2 d-flex align-items-center justify-content-center" id="themeToggleBtn" title="Chuyển chế độ Sáng / Tối" style="width: 36px; height: 36px;">
+                    <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
+                </button>
+
+                <!-- Đăng xuất -->
+                <a class="btn btn-sm btn-outline-light rounded-pill px-3 d-flex align-items-center gap-1" asp-controller="DangNhap" asp-action="DangXuat">
+                    <i class="bi bi-box-arrow-right"></i> <span class="d-none d-sm-inline">Thoát</span>
                 </a>
             </div>
         </div>
@@ -29,12 +46,51 @@
         @RenderBody()
     </main>
 
-    <footer class="container app-foot">
-        &copy; @DateTime.Now.Year Sixos &mdash; khuôn mẫu SixosPwa
+    <footer class="container app-foot text-center text-md-start">
+        <div class="row align-items-center g-3">
+            <div class="col-md-6">
+                <p class="mb-1 fw-semibold text-main">&copy; @DateTime.Now.Year Sixos &mdash; Cổng CSKH & Chăm sóc Sức khỏe Y Tế</p>
+                <p class="mb-0 text-muted small">Mọi thông tin y tế được mã hóa an toàn theo tiêu chuẩn HIPAA & Bộ Y tế.</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <div class="d-flex justify-content-center justify-content-md-end gap-3 small">
+                    <a href="#tro-giup" class="text-decoration-none text-muted" onclick="openCsChat(); return false;">💬 Trợ lý AI CSKH</a>
+                    <a href="#bao-mat" class="text-decoration-none text-muted" onclick="alert('Chính sách bảo mật dữ liệu y tế tuân thủ mã hóa SSL 256-bit.'); return false;">🛡️ Bảo mật Y tế</a>
+                    <a href="#huong-dan" class="text-decoration-none text-muted" onclick="alert('Hãy cài đặt ứng dụng HisSoft bằng cách bấm nút Cài đặt trên màn hình.'); return false;">📱 Hướng dẫn PWA</a>
+                </div>
+            </div>
+        </div>
     </footer>
 
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/pwa-install.js" asp-append-version="true"></script>
+    
+    <!-- Script Chuyển Theme Dark/Light Mode -->
+    <script>
+        const themeBtn = document.getElementById('themeToggleBtn');
+        const themeIcon = document.getElementById('themeIcon');
+        
+        // Check stored theme
+        const currentTheme = localStorage.getItem('hc_theme') || 'light';
+        document.documentElement.setAttribute('data-bs-theme', currentTheme);
+        updateThemeIcon(currentTheme);
+
+        themeBtn.addEventListener('click', () => {
+            let mode = document.documentElement.getAttribute('data-bs-theme');
+            let nextMode = mode === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-bs-theme', nextMode);
+            localStorage.setItem('hc_theme', nextMode);
+            updateThemeIcon(nextMode);
+        });
+
+        function updateThemeIcon(mode) {
+            if (mode === 'dark') {
+                themeIcon.className = 'bi bi-sun-fill text-warning';
+            } else {
+                themeIcon.className = 'bi bi-moon-stars-fill text-white';
+            }
+        }
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
