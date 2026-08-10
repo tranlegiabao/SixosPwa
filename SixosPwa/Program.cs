@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.EntityFrameworkCore;
+using SixosPwa.Data;
 using SixosPwa.Services;
 using SixosPwa.Hubs;
 
@@ -10,6 +12,10 @@ builder.Services.AddMemoryCache();
 
 // Dang ky SignalR
 builder.Services.AddSignalR();
+
+// Dang ky DbContext với SQL Server
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Dang ky dich vu SMS
 builder.Services.AddScoped<ISmsService, TwilioSmsService>();
