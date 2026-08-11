@@ -6,9 +6,19 @@ Write-Host "  Khởi động SixosPwa với Tunnel  " -ForegroundColor Cyan
 Write-Host "==================================" -ForegroundColor Cyan
 Write-Host ""
 
-# Kiểm tra cloudflared đã cài chưa
-$cloudflaredExists = Get-Command cloudflared -ErrorAction SilentlyContinue
-if (-not $cloudflaredExists) {
+# Kiểm tra cloudflared đã cài chưa (tìm bản cục bộ trước, sau đó tìm trong PATH)
+$localCloudflared = Join-Path $PSScriptRoot "cloudflared.exe"
+$cloudflaredPath = ""
+if (Test-Path $localCloudflared) {
+    $cloudflaredPath = $localCloudflared
+} else {
+    $cloudflaredExists = Get-Command cloudflared -ErrorAction SilentlyContinue
+    if ($cloudflaredExists) {
+        $cloudflaredPath = "cloudflared"
+    }
+}
+
+if ($cloudflaredPath -eq "") {
     Write-Host "❌ Chưa cài cloudflared!" -ForegroundColor Red
     Write-Host ""
     Write-Host "Cài đặt bằng 1 trong 2 cách:" -ForegroundColor Yellow
@@ -18,15 +28,16 @@ if (-not $cloudflaredExists) {
     exit 1
 }
 
-Write-Host "✓ Tìm thấy cloudflared" -ForegroundColor Green
+Write-Host "✓ Tìm thấy cloudflared tại: $cloudflaredPath" -ForegroundColor Green
 Write-Host ""
 
 # Chạy app trong background
 Write-Host "🚀 Đang khởi động ứng dụng..." -ForegroundColor Yellow
 $appJob = Start-Job -ScriptBlock {
-    Set-Location "d:\web\SixosPwaTemplate\SixosPwaTemplate"
+    param($path)
+    Set-Location $path
     dotnet run --project SixosPwa --launch-profile https
-}
+} -ArgumentList $PSScriptRoot
 
 Write-Host "⏳ Chờ app khởi động (10 giây)..." -ForegroundColor Yellow
 Start-Sleep -Seconds 10
@@ -64,7 +75,7 @@ Register-EngineEvent -SourceIdentifier PowerShell.Exiting -Action $cleanup | Out
 
 try {
     # Chạy cloudflared - sẽ in ra link
-    cloudflared tunnel --url https://localhost:7024
+    & $cloudflaredPath tunnel --url https://localhost:7024
 }
 finally {
     & $cleanup
