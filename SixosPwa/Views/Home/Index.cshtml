@@ -19,11 +19,22 @@
     <div class="card border-0 shadow-sm rounded-4 mb-4 bg-gradient bg-primary text-white p-3 p-md-4">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
             <div>
-                <span class="badge bg-white text-primary fw-semibold px-3 py-2 rounded-pill mb-2">
-                    🏥 Cổng thông tin Bệnh nhân & Khám Sức Khỏe
-                </span>
-                <h1 class="h3 fw-bold mb-1">Xin chào, <span class="text-warning">@ViewData["UserName"]</span>!</h1>
-                <p class="mb-0 text-white-50">Mã bệnh nhân: <strong>BN-2026-8892</strong> | Trạng thái BHYT: <span class="text-warning">Còn hạn</span></p>
+                @if (ViewData["PhongKhamId"] != null)
+                {
+                    <a asp-controller="Home" asp-action="ThongTinBenhNhan" class="badge bg-white text-primary fw-semibold px-3 py-2 rounded-pill mb-2 text-decoration-none">
+                        ← Quay lại danh sách phòng khám
+                    </a>
+                    <h1 class="h3 fw-bold mb-1">🏥 @ViewData["TenPhongKham"]</h1>
+                    <p class="mb-0 text-white-50">Hồ sơ bệnh nhân: <strong>@ViewData["UserName"]</strong></p>
+                }
+                else
+                {
+                    <span class="badge bg-white text-primary fw-semibold px-3 py-2 rounded-pill mb-2">
+                        🏥 Cổng thông tin Bệnh nhân & Khám Sức Khỏe
+                    </span>
+                    <h1 class="h3 fw-bold mb-1">Xin chào, <span class="text-warning">@ViewData["UserName"]</span>!</h1>
+                    <p class="mb-0 text-white-50">Mã bệnh nhân: <strong>BN-2026-8892</strong> | Trạng thái BHYT: <span class="text-warning">Còn hạn</span></p>
+                }
             </div>
             <div class="d-flex gap-2">
                 @if (ViewData["UserRole"] as string == "Admin" || ViewData["UserRole"] as string == "DoiTac")
@@ -46,41 +57,7 @@
         </div>
     </div>
 
-    <!-- KHỐI 1: CHỈ SỐ SỨC KHỎE CÁ NHÂN -->
-    <div class="row g-3 mb-4">
-        <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 text-center p-3 h-100 border-start border-4 border-danger">
-                <div class="text-danger mb-1 display-6">❤️</div>
-                <div class="text-muted small">Huyết áp</div>
-                <div class="fw-bold fs-5 text-dark">120/80 <small class="fs-6 text-muted">mmHg</small></div>
-                <span class="badge bg-danger-subtle text-danger rounded-pill mt-2">Bình thường</span>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 text-center p-3 h-100 border-start border-4 border-primary">
-                <div class="text-primary mb-1 display-6">🫀</div>
-                <div class="text-muted small">Nhịp tim</div>
-                <div class="fw-bold fs-5 text-dark">72 <small class="fs-6 text-muted">bpm</small></div>
-                <span class="badge bg-primary-subtle text-primary rounded-pill mt-2">Tốt</span>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 text-center p-3 h-100 border-start border-4 border-success">
-                <div class="text-success mb-1 display-6">⚖️</div>
-                <div class="text-muted small">Chỉ số BMI</div>
-                <div class="fw-bold fs-5 text-dark">21.5 <small class="fs-6 text-muted">(62kg)</small></div>
-                <span class="badge bg-success-subtle text-success rounded-pill mt-2">Cân đối</span>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm rounded-4 text-center p-3 h-100 border-start border-4 border-warning">
-                <div class="text-warning mb-1 display-6">🩸</div>
-                <div class="text-muted small">Nhóm máu</div>
-                <div class="fw-bold fs-5 text-dark">O Rh+</div>
-                <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill mt-2">Đã lưu trữ</span>
-            </div>
-        </div>
-    </div>
+
 
     <!-- KHỐI 2: LỊCH KHÁM SẮP TỚI & THÔNG BÁO -->
     <div class="row g-4 mb-4">

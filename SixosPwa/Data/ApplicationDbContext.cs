@@ -15,6 +15,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<TaiKhoan> TaiKhoans => Set<TaiKhoan>();
     public DbSet<ThongBao> ThongBaos => Set<ThongBao>();
     public DbSet<PushDangKy> PushDangKys => Set<PushDangKy>();
+    public DbSet<PhongKham> PhongKhams => Set<PhongKham>();
+    public DbSet<LichSuKham> LichSuKhams => Set<LichSuKham>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -47,6 +49,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<ThietBi>().Property(e => e.MaBN).HasMaxLength(20).IsRequired();
         modelBuilder.Entity<ThietBi>().Property(e => e.SDT).HasMaxLength(20);
         modelBuilder.Entity<ThietBi>().Property(e => e.IdThietBi).HasMaxLength(100);
+        modelBuilder.Entity<ThietBi>().Property(e => e.TenThietBi).HasMaxLength(255);
 
         // Configure TaiKhoan
         modelBuilder.Entity<TaiKhoan>().ToTable("TaiKhoan");
@@ -71,5 +74,32 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<PushDangKy>().Property(e => e.P256dh).HasMaxLength(500).IsRequired();
         modelBuilder.Entity<PushDangKy>().Property(e => e.Auth).HasMaxLength(200).IsRequired();
         modelBuilder.Entity<PushDangKy>().Property(e => e.ThoiGian).IsRequired();
+
+        // Configure PhongKham
+        modelBuilder.Entity<PhongKham>().ToTable("PhongKham");
+        modelBuilder.Entity<PhongKham>().HasKey(e => e.Id);
+        modelBuilder.Entity<PhongKham>().Property(e => e.MaPhongKham).HasMaxLength(20).IsRequired();
+        modelBuilder.Entity<PhongKham>().Property(e => e.TenPhongKham).HasMaxLength(200).IsRequired();
+        modelBuilder.Entity<PhongKham>().Property(e => e.DiaChi).HasMaxLength(500);
+        modelBuilder.Entity<PhongKham>().Property(e => e.SoDienThoai).HasMaxLength(20);
+        modelBuilder.Entity<PhongKham>().Property(e => e.MoTa).HasMaxLength(1000);
+        modelBuilder.Entity<PhongKham>().Property(e => e.LogoUrl).HasMaxLength(500);
+
+        // Configure LichSuKham
+        modelBuilder.Entity<LichSuKham>().ToTable("LichSuKham");
+        modelBuilder.Entity<LichSuKham>().HasKey(e => e.Id);
+        modelBuilder.Entity<LichSuKham>().Property(e => e.MaBN).HasMaxLength(20).IsRequired();
+        modelBuilder.Entity<LichSuKham>().Property(e => e.PhongKhamId).IsRequired();
+        modelBuilder.Entity<LichSuKham>().Property(e => e.NgayKhamDau).IsRequired();
+        modelBuilder.Entity<LichSuKham>().Property(e => e.NgayKhamGanNhat).IsRequired();
+        modelBuilder.Entity<LichSuKham>().Property(e => e.SoLanKham).IsRequired();
+        modelBuilder.Entity<LichSuKham>().Property(e => e.TrangThai).HasMaxLength(50);
+
+        // Configure relationship
+        modelBuilder.Entity<LichSuKham>()
+            .HasOne(ls => ls.PhongKham)
+            .WithMany()
+            .HasForeignKey(ls => ls.PhongKhamId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

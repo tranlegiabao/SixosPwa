@@ -7,4 +7,5 @@ public class ThietBi
     public string MaBN { get; set; } = "";
     public string? IdThietBi { get; set; }
     public bool TrangThai { get; set; } = true;
+    public string? TenThietBi { get; set; }
 }

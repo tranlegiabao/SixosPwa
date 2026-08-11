@@ -229,6 +229,7 @@
 
                     const data = await response.json();
                     if (data.success) {
+                        await luuThietBiVeDatabase(userPhone);
                         showAlert('🎉 Đăng nhập thành công! Đang chuyển hướng...', 'success');
                         window.location.href = data.redirectUrl;
                     } else {
@@ -252,6 +253,7 @@
 
                     const data = await response.json();
                     if (data.success) {
+                        await luuThietBiVeDatabase(currentSdt);
                         showAlert('Đăng nhập thành công! Đang chuyển hướng...', 'success');
                         window.location.href = data.redirectUrl;
                     } else {
@@ -271,6 +273,43 @@
             document.querySelector('.step-2').style.display = 'none';
             document.querySelector('.step-1').style.display = 'block';
             document.getElementById('soDienThoai').focus();
+        }
+                function generateDeviceId() {
+            const saved = localStorage.getItem("sixos_device_id");
+            if (saved) return saved;
+
+            const candidate = crypto && crypto.randomUUID
+                ? crypto.randomUUID()
+                : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+            localStorage.setItem("sixos_device_id", candidate);
+            return candidate;
+        }
+
+        function getDeviceName() {
+            const platform = navigator.userAgentData?.platform || navigator.platform || "Unknown";
+            // Rút ngắn để tránh vượt quá 255 ký tự
+            const browser = (navigator.userAgent || "Browser").substring(0, 200);
+            const deviceName = `${platform} - ${browser}`;
+            return deviceName.length > 255 ? deviceName.substring(0, 255) : deviceName;
+        }
+
+        async function luuThietBiVeDatabase(sdt) {
+            const payload = {
+                soDienThoai: sdt,
+                idThietBi: generateDeviceId(),
+                tenThietBi: getDeviceName()
+            };
+
+            try {
+                await fetch('/DangNhap/LuuThietBi', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } catch (error) {
+                console.warn('Lưu thiết bị thất bại:', error);
+            }
         }
     </script>
 </body>

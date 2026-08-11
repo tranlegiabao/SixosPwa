@@ -11,20 +11,27 @@ public class DangNhapController : Controller
 {
     private readonly IMemoryCache _cache;
     private readonly ITaiKhoanService _taiKhoanService;
+    private readonly IThietBiService _thietBiService;
 
-    public DangNhapController(IMemoryCache cache, ITaiKhoanService taiKhoanService)
+    public DangNhapController(IMemoryCache cache, ITaiKhoanService taiKhoanService, IThietBiService thietBiService)
     {
         _cache = cache;
         _taiKhoanService = taiKhoanService;
+        _thietBiService = thietBiService;
     }
 
     [HttpGet]
     public IActionResult Login()
     {
-        // Neu da dang nhap truoc do (Cookie truong ton hop le), vao thang trang chu
         if (User.Identity?.IsAuthenticated == true)
         {
-            return RedirectToAction(nameof(HomeController.Index), "Home");
+            var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            if (role == "Admin" || role == "DoiTac")
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            return RedirectToAction("ThongTinBenhNhan", "Home");
         }
 
         return View();
@@ -39,14 +46,13 @@ public class DangNhapController : Controller
         }
 
         var sdt = model.SoDienThoai.Trim();
-        // Ma OTP thu nghiem (hoac sinh ngau nhien 6 chu so)
         var otpCode = "123456";
 
-        // Luu vao cache trong 5 phut
         _cache.Set($"OTP_{sdt}", otpCode, TimeSpan.FromMinutes(5));
 
-        return Json(new { 
-            success = true, 
+        return Json(new
+        {
+            success = true,
             message = $"Mã OTP đã gửi thành công tới số {sdt}!",
             otpDemo = otpCode
         });
@@ -65,14 +71,12 @@ public class DangNhapController : Controller
 
         _cache.TryGetValue($"OTP_{sdt}", out string? cachedOtp);
 
-        // Chap nhan neu dung ma trong cache hoac dung ma mac dinh "123456" cho tien test
         if (otpInput == "123456" || (cachedOtp != null && cachedOtp == otpInput))
         {
-            // Tìm tài khoản từ database theo SĐT
             var taiKhoan = await _taiKhoanService.DangNhapAsync(sdt, "");
-            
+
             string role = "User";
-            
+
             if (taiKhoan != null)
             {
                 role = taiKhoan.Role;
@@ -90,8 +94,8 @@ public class DangNhapController : Controller
 
             var authProperties = new AuthenticationProperties
             {
-                IsPersistent = true, // Ghi nho dang nhap truong ton
-                ExpiresUtc = DateTimeOffset.UtcNow.AddDays(365) // Het han sau 1 nam
+                IsPersistent = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddDays(365)
             };
 
             await HttpContext.SignInAsync(
@@ -101,10 +105,34 @@ public class DangNhapController : Controller
 
             _cache.Remove($"OTP_{sdt}");
 
-            return Json(new { success = true, redirectUrl = Url.Action("Index", "Home") });
+            var redirectUrl = (role == "Admin" || role == "DoiTac")
+                ? Url.Action("Index", "Home")
+                : Url.Action("ThongTinBenhNhan", "Home");
+
+            return Json(new { success = true, redirectUrl });
         }
 
         return Json(new { success = false, message = "Mã OTP không chính xác hoặc đã hết hạn!" });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> LuuThietBi([FromBody] LuuThietBiRequest model)
+    {
+        if (string.IsNullOrWhiteSpace(model.SoDienThoai) || string.IsNullOrWhiteSpace(model.IdThietBi))
+        {
+            return Json(new { success = false, message = "Thiếu thông tin thiết bị." });
+        }
+
+        var ok = await _thietBiService.LuuHoacCapNhatAsync(
+            model.SoDienThoai.Trim(),
+            model.IdThietBi.Trim(),
+            string.IsNullOrWhiteSpace(model.TenThietBi) ? "Unknown Device" : model.TenThietBi.Trim());
+
+        return Json(new
+        {
+            success = ok,
+            message = ok ? "Lưu thiết bị thành công." : "Lưu thiết bị thất bại."
+        });
     }
 
     [HttpPost]
@@ -121,14 +149,15 @@ public class DangNhapController : Controller
         {
             new Claim(ClaimTypes.NameIdentifier, sdt),
             new Claim(ClaimTypes.Name, sdt),
-            new Claim(ClaimTypes.MobilePhone, sdt)
+            new Claim(ClaimTypes.MobilePhone, sdt),
+            new Claim(ClaimTypes.Role, "User")
         };
 
         var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
         var authProperties = new AuthenticationProperties
         {
-            IsPersistent = true, // Ghi nho dang nhap truong ton 365 ngay
+            IsPersistent = true,
             ExpiresUtc = DateTimeOffset.UtcNow.AddDays(365)
         };
 
@@ -137,7 +166,7 @@ public class DangNhapController : Controller
             new ClaimsPrincipal(claimsIdentity),
             authProperties);
 
-        return Json(new { success = true, redirectUrl = Url.Action("Index", "Home") });
+        return Json(new { success = true, redirectUrl = Url.Action("ThongTinBenhNhan", "Home") });
     }
 
     [HttpGet]
@@ -147,6 +176,9 @@ public class DangNhapController : Controller
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
         return RedirectToAction(nameof(Login));
     }
+
+
+
 }
 
 public class GuiOtpRequest
@@ -159,4 +191,13 @@ public class XacNhanOtpRequest
     public string SoDienThoai { get; set; } = string.Empty;
     public string Otp { get; set; } = string.Empty;
 }
+
+public class LuuThietBiRequest
+{
+    public string SoDienThoai { get; set; } = string.Empty;
+    public string IdThietBi { get; set; } = string.Empty;
+    public string TenThietBi { get; set; } = string.Empty;
+};
+
+
 
