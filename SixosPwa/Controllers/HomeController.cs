@@ -33,7 +33,73 @@ public class HomeController : Controller
     [Authorize(Roles = "Admin,DoiTac")]
     public IActionResult GuiTinNhan()
     {
-        return View();
+        var doiTacs = _db.DoiTacs.ToList();
+        return View(doiTacs);
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "Admin,DoiTac")]
+    public IActionResult LocDanhSachBN([FromBody] LocBNRequest model)
+    {
+        if (string.IsNullOrWhiteSpace(model.TenDT) || string.IsNullOrWhiteSpace(model.Password))
+            return Json(new { success = false, message = "Vui lòng nhập đủ thông tin đối tác và mật khẩu." });
+
+        try
+        {
+            var conn = _db.Database.GetDbConnection();
+            if (conn.State != System.Data.ConnectionState.Open)
+                conn.Open();
+
+            using var cmd = conn.CreateCommand();
+            cmd.CommandType = System.Data.CommandType.StoredProcedure;
+            cmd.CommandText = "LocDanhSachBN";
+
+            var pTenDT = cmd.CreateParameter();
+            pTenDT.ParameterName = "@TenDT";
+            pTenDT.Value = model.TenDT;
+            cmd.Parameters.Add(pTenDT);
+
+            var pPassword = cmd.CreateParameter();
+            pPassword.ParameterName = "@Password";
+            pPassword.Value = model.Password;
+            cmd.Parameters.Add(pPassword);
+
+            using var reader = cmd.ExecuteReader();
+
+            // Kiểm tra kết quả đầu tiên – có thể là lỗi xác thực
+            if (reader.FieldCount == 2 && reader.GetName(0) == "Success")
+            {
+                if (reader.Read())
+                {
+                    bool ok = reader.GetBoolean(0);
+                    string msg = reader.GetString(1);
+                    return Json(new { success = ok, message = msg });
+                }
+            }
+
+            // Kết quả bình thường – danh sách bệnh nhân
+            var list = new List<object>();
+            while (reader.Read())
+            {
+                list.Add(new
+                {
+                    id    = reader["ID"],
+                    maBN  = reader["MaBN"].ToString(),
+                    maDT  = reader["MaDT"].ToString(),
+                    sdt   = reader["SDT"].ToString(),
+                    tenBN = reader["TenBN"].ToString(),
+                    diaChi = reader["DiaChi"]?.ToString() ?? "",
+                    email  = reader["Email"]?.ToString() ?? ""
+                });
+            }
+
+            return Json(new { success = true, data = list });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi gọi stored procedure LocDanhSachBN");
+            return Json(new { success = false, message = "Lỗi hệ thống: " + ex.Message });
+        }
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
@@ -256,4 +322,10 @@ public class PushSubscriptionRequest
     public string? Endpoint { get; set; }
     public string? P256dh { get; set; }
     public string? Auth { get; set; }
+}
+
+public class LocBNRequest
+{
+    public string TenDT { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
 }
