@@ -21,10 +21,18 @@ public class DangNhapController : Controller
     [HttpGet]
     public IActionResult Login()
     {
-        // Neu da dang nhap truoc do (Cookie truong ton hop le), vao thang trang chu
+        // Neu da dang nhap truoc do (Cookie truong ton hop le)
         if (User.Identity?.IsAuthenticated == true)
         {
-            return RedirectToAction(nameof(HomeController.Index), "Home");
+            // Admin và Đối tác vào trang Index như cũ
+            var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+            if (role == "Admin" || role == "DoiTac")
+            {
+                return RedirectToAction("Index", "Home");
+            }
+            
+            // Bệnh nhân (User) vào trang ThongTinBenhNhan
+            return RedirectToAction("ThongTinBenhNhan", "Home");
         }
 
         return View();
@@ -101,7 +109,12 @@ public class DangNhapController : Controller
 
             _cache.Remove($"OTP_{sdt}");
 
-            return Json(new { success = true, redirectUrl = Url.Action("Index", "Home") });
+            // Admin và Đối tác vào Index, Bệnh nhân vào ThongTinBenhNhan
+            var redirectUrl = (role == "Admin" || role == "DoiTac") 
+                ? Url.Action("Index", "Home") 
+                : Url.Action("ThongTinBenhNhan", "Home");
+
+            return Json(new { success = true, redirectUrl });
         }
 
         return Json(new { success = false, message = "Mã OTP không chính xác hoặc đã hết hạn!" });
@@ -121,7 +134,8 @@ public class DangNhapController : Controller
         {
             new Claim(ClaimTypes.NameIdentifier, sdt),
             new Claim(ClaimTypes.Name, sdt),
-            new Claim(ClaimTypes.MobilePhone, sdt)
+            new Claim(ClaimTypes.MobilePhone, sdt),
+            new Claim(ClaimTypes.Role, "User")
         };
 
         var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -137,7 +151,7 @@ public class DangNhapController : Controller
             new ClaimsPrincipal(claimsIdentity),
             authProperties);
 
-        return Json(new { success = true, redirectUrl = Url.Action("Index", "Home") });
+        return Json(new { success = true, redirectUrl = Url.Action("ThongTinBenhNhan", "Home") });
     }
 
     [HttpGet]

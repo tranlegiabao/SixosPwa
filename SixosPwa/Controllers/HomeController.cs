@@ -22,11 +22,118 @@ public class HomeController : Controller
         _config = config;
     }
 
-    public IActionResult Index()
+    public IActionResult Index(long? phongKhamId)
     {
         ViewData["UserName"] = User.Identity?.Name ?? "Khách hàng";
         ViewData["UserRole"] = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "User";
+        ViewData["PhongKhamId"] = phongKhamId;
+        
+        // Lấy thông tin phòng khám nếu có
+        if (phongKhamId.HasValue)
+        {
+            var phongKham = _db.PhongKhams.FirstOrDefault(p => p.Id == phongKhamId.Value);
+            ViewData["TenPhongKham"] = phongKham?.TenPhongKham ?? "Phòng khám";
+        }
+        
         return View();
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ThongTinBenhNhan()
+    {
+        var sdt = User.Identity?.Name;
+        if (string.IsNullOrEmpty(sdt))
+        {
+            return RedirectToAction("Login", "DangNhap");
+        }
+
+        ViewData["UserName"] = sdt;
+        ViewData["UserRole"] = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "User";
+
+        // Lấy thông tin bệnh nhân
+        var benhNhan = await _db.BenhNhans
+            .FirstOrDefaultAsync(b => b.SDT == sdt);
+
+        // Nếu chưa có bệnh nhân, tạo mới tự động
+        if (benhNhan == null)
+        {
+            benhNhan = new BenhNhan
+            {
+                MaBN = $"BN-{DateTime.Now:yyyyMMdd}-{new Random().Next(1000, 9999)}",
+                MaDT = "DT001",
+                SDT = sdt,
+                TenBN = $"Bệnh nhân {sdt.Substring(sdt.Length - 4)}",
+                DiaChi = "Chưa cập nhật",
+                Email = ""
+            };
+            _db.BenhNhans.Add(benhNhan);
+            await _db.SaveChangesAsync();
+        }
+
+        ViewData["MaBN"] = benhNhan.MaBN;
+        ViewData["TenBN"] = benhNhan.TenBN;
+        ViewData["DiaChi"] = benhNhan.DiaChi ?? "";
+        ViewData["Email"] = benhNhan.Email ?? "";
+
+        // Lấy danh sách phòng khám đã khám
+        var lichSuKham = await _db.LichSuKhams
+            .Include(ls => ls.PhongKham)
+            .Where(ls => ls.MaBN == benhNhan.MaBN)
+            .OrderByDescending(ls => ls.NgayKhamGanNhat)
+            .ToListAsync();
+
+        // Nếu chưa có lịch sử khám, tạo dữ liệu mẫu
+        if (lichSuKham.Count == 0)
+        {
+            // Đảm bảo có ít nhất phòng khám PKDK Bảo Minh
+            var phongKhamBaoMinh = await _db.PhongKhams.FirstOrDefaultAsync(p => p.MaPhongKham == "PKDK-BM");
+            if (phongKhamBaoMinh != null)
+            {
+                var lichSuMoi = new List<LichSuKham>
+                {
+                    new LichSuKham
+                    {
+                        MaBN = benhNhan.MaBN,
+                        PhongKhamId = phongKhamBaoMinh.Id,
+                        NgayKhamDau = DateTime.Now.AddMonths(-6),
+                        NgayKhamGanNhat = DateTime.Now.AddDays(-5),
+                        SoLanKham = 8,
+                        TrangThai = "Đang theo dõi định kỳ"
+                    }
+                };
+
+                // Thêm phòng khám khác nếu có
+                var phongKhamKhac = await _db.PhongKhams
+                    .Where(p => p.MaPhongKham != "PKDK-BM")
+                    .Take(2)
+                    .ToListAsync();
+
+                foreach (var pk in phongKhamKhac)
+                {
+                    lichSuMoi.Add(new LichSuKham
+                    {
+                        MaBN = benhNhan.MaBN,
+                        PhongKhamId = pk.Id,
+                        NgayKhamDau = DateTime.Now.AddMonths(-4),
+                        NgayKhamGanNhat = DateTime.Now.AddMonths(-1),
+                        SoLanKham = new Random().Next(2, 6),
+                        TrangThai = "Ổn định"
+                    });
+                }
+
+                _db.LichSuKhams.AddRange(lichSuMoi);
+                await _db.SaveChangesAsync();
+
+                // Load lại dữ liệu
+                lichSuKham = await _db.LichSuKhams
+                    .Include(ls => ls.PhongKham)
+                    .Where(ls => ls.MaBN == benhNhan.MaBN)
+                    .OrderByDescending(ls => ls.NgayKhamGanNhat)
+                    .ToListAsync();
+            }
+        }
+
+        return View(lichSuKham);
     }
 
     [HttpGet]

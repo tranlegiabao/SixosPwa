@@ -59,6 +59,52 @@ using (var scope = app.Services.CreateScope())
                 ThoiGian    DATETIME2 NOT NULL DEFAULT GETDATE()
             )
         ");
+        db.Database.ExecuteSqlRaw(@"
+            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='PhongKham' AND xtype='U')
+            CREATE TABLE PhongKham (
+                Id              BIGINT IDENTITY(1,1) PRIMARY KEY,
+                MaPhongKham     NVARCHAR(20) NOT NULL,
+                TenPhongKham    NVARCHAR(200) NOT NULL,
+                DiaChi          NVARCHAR(500) NULL,
+                SoDienThoai     NVARCHAR(20) NULL,
+                MoTa            NVARCHAR(1000) NULL,
+                LogoUrl         NVARCHAR(500) NULL
+            )
+        ");
+        db.Database.ExecuteSqlRaw(@"
+            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='LichSuKham' AND xtype='U')
+            CREATE TABLE LichSuKham (
+                Id                  BIGINT IDENTITY(1,1) PRIMARY KEY,
+                MaBN                NVARCHAR(20) NOT NULL,
+                PhongKhamId         BIGINT NOT NULL,
+                NgayKhamDau         DATETIME2 NOT NULL DEFAULT GETDATE(),
+                NgayKhamGanNhat     DATETIME2 NOT NULL DEFAULT GETDATE(),
+                SoLanKham           INT NOT NULL DEFAULT 1,
+                TrangThai           NVARCHAR(50) NULL,
+                FOREIGN KEY (PhongKhamId) REFERENCES PhongKham(Id)
+            )
+        ");
+        
+        // Thêm dữ liệu mẫu phòng khám nếu chưa có
+        db.Database.ExecuteSqlRaw(@"
+            IF NOT EXISTS (SELECT * FROM PhongKham)
+            BEGIN
+                INSERT INTO PhongKham (MaPhongKham, TenPhongKham, DiaChi, SoDienThoai, MoTa, LogoUrl) VALUES
+                ('PKDK-BM', N'PKDK Bảo Minh', N'Địa chỉ: Nguyễn Văn Trỗi, Phường Phú Hòa, TP. Bến Cát, Tỉnh Bình Dương', '0911-449-115', N'Phòng khám đa khoa Bảo Minh - Giấy phép hoạt động số: 01083/BĐ-GPHĐ. Tiếp nhận tất cả trường hợp khám chữa bệnh BHYT trong và ngoài tỉnh', '/static/logo-baominh.png'),
+                ('PKDK-TĐ', N'PKDK Tâm Đức', N'456 Lê Văn Việt, Quận 9, TP.HCM', '028-3777-7888', N'Phòng khám đa khoa Tâm Đức - Chuyên khoa Tim mạch, Nội tổng quát, tầm soát và điều trị bệnh tim mạch', '/static/logo-tamduc.png'),
+                ('PKĐK-AĐ', N'PKĐK Ánh Dương', N'789 Hoàng Diệu, Quận 4, TP.HCM', '028-3666-6777', N'Phòng khám đa khoa Ánh Dương - Chuyên khoa Nhi, Sản phụ khoa, chăm sóc sức khỏe toàn diện', '/static/logo-anhdương.png'),
+                ('BV-ĐK', N'Bệnh Viện Đa Khoa Saigon', N'125 Lê Lợi, Quận 1, TP.HCM', '028-3829-2071', N'Bệnh viện đa khoa hạng I - Khám bệnh tổng quát, chuyên khoa sâu, cấp cứu 24/7', '/static/logo-bvdk.png'),
+                ('PK-TMH', N'PK Tai Mũi Họng Sài Gòn', N'234 Võ Văn Tần, Quận 3, TP.HCM', '028-3930-3456', N'Chuyên khoa Tai Mũi Họng - Điều trị viêm xoang, viêm amidan, polyp mũi bằng công nghệ hiện đại', '/static/logo-tmh.png'),
+                ('PK-MẮT', N'PK Mắt Quốc Tế', N'567 Nguyễn Thị Minh Khai, Quận 3, TP.HCM', '028-3822-5678', N'Phòng khám chuyên khoa Mắt - Khám, điều trị các bệnh về mắt, phẫu thuật mắt laser', '/static/logo-mat.png');
+                
+                -- Thêm lịch sử khám mẫu cho bệnh nhân BN-2026-8892
+                INSERT INTO LichSuKham (MaBN, PhongKhamId, NgayKhamDau, NgayKhamGanNhat, SoLanKham, TrangThai) VALUES
+                ('BN-2026-8892', 1, '2024-03-15', '2026-08-10', 8, N'Đang theo dõi định kỳ'),
+                ('BN-2026-8892', 2, '2025-06-10', '2026-07-20', 3, N'Ổn định'),
+                ('BN-2026-8892', 4, '2025-01-05', '2026-05-15', 5, N'Đang điều trị'),
+                ('BN-2026-8892', 5, '2024-11-20', '2025-12-10', 2, N'Đã khỏi');
+            END
+        ");
     }
     catch (Exception ex)
     {

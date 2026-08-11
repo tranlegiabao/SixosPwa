@@ -1,0 +1,392 @@
+@model List<SixosPwa.Models.LichSuKham>
+@{
+    ViewData["Title"] = "Thông Tin Bệnh Nhân";
+}
+
+<style>
+    .patient-info-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 1.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    .clinic-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border: 2px solid transparent;
+        border-radius: 1rem;
+        overflow: hidden;
+    }
+
+    .clinic-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+        border-color: #667eea;
+    }
+
+    .clinic-logo {
+        width: 80px;
+        height: 80px;
+        border-radius: 1rem;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .status-badge {
+        padding: 0.4rem 1rem;
+        border-radius: 2rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .info-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .info-icon {
+        width: 40px;
+        height: 40px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+</style>
+
+<div class="container-fluid px-2 px-md-4 py-3">
+    <!-- THÔNG TIN BỆNH NHÂN -->
+    <div class="patient-info-card">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <h2 class="h3 fw-bold mb-1">👤 Hồ Sơ Bệnh Nhân</h2>
+                <p class="mb-0 opacity-75">Thông tin cá nhân và lịch sử khám bệnh</p>
+            </div>
+            <a asp-controller="DangNhap" asp-action="DangXuat" class="btn btn-light rounded-pill px-3 py-2">
+                🚪 Đăng xuất
+            </a>
+        </div>
+
+        <div class="row g-3 mt-2">
+            <div class="col-md-6">
+                <div class="info-item">
+                    <div class="info-icon">👤</div>
+                    <div>
+                        <small class="opacity-75 d-block">Họ và tên</small>
+                        <strong>@ViewData["TenBN"]</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="info-item">
+                    <div class="info-icon">🆔</div>
+                    <div>
+                        <small class="opacity-75 d-block">Mã bệnh nhân</small>
+                        <strong>@ViewData["MaBN"]</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="info-item">
+                    <div class="info-icon">📱</div>
+                    <div>
+                        <small class="opacity-75 d-block">Số điện thoại</small>
+                        <strong>@ViewData["UserName"]</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="info-item">
+                    <div class="info-icon">✉️</div>
+                    <div>
+                        <small class="opacity-75 d-block">Email</small>
+                        <strong>@(string.IsNullOrEmpty(ViewData["Email"]?.ToString()) ? "Chưa cập nhật" : ViewData["Email"])</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DANH SÁCH PHÒNG KHÁM -->
+    <div class="mb-3">
+        <h4 class="fw-bold text-dark mb-3">🏥 Phòng Khám Đã Đến Khám</h4>
+    </div>
+
+    @if (Model == null || Model.Count == 0)
+    {
+        <!-- DỮ LIỆU MẪU ĐỂ TEST -->
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4">
+                <a href="@Url.Action("Index", "Home", new { phongKhamId = 1 })" class="text-decoration-none">
+                    <div class="card clinic-card border-0 shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex gap-3 mb-3">
+                                <div class="clinic-logo flex-shrink-0">
+                                    🏥
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h5 class="fw-bold text-dark mb-1">PKDK Bảo Minh</h5>
+                                    <p class="text-muted small mb-2">Phòng khám đa khoa Bảo Minh - Giấy phép: 01083/BĐ-GPHĐ</p>
+                                    <span class="status-badge bg-success-subtle text-success">Đang theo dõi định kỳ</span>
+                                </div>
+                            </div>
+
+                            <div class="border-top pt-3 mt-3">
+                                <div class="row g-2 text-secondary small">
+                                    <div class="col-6">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span>📍</span>
+                                            <div>
+                                                <small class="d-block opacity-75">Địa chỉ</small>
+                                                <strong class="d-block text-dark text-truncate" style="max-width: 150px;" title="Nguyễn Văn Trỗi, Bến Cát, Bình Dương">
+                                                    Bến Cát, Bình Dương
+                                                </strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span>📞</span>
+                                            <div>
+                                                <small class="d-block opacity-75">Hotline</small>
+                                                <strong class="d-block text-dark">0911-449-115</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row g-2 text-secondary small mt-3">
+                                    <div class="col-6">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span>📅</span>
+                                            <div>
+                                                <small class="d-block opacity-75">Khám gần nhất</small>
+                                                <strong class="d-block text-dark">10/08/2026</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span>🔢</span>
+                                            <div>
+                                                <small class="d-block opacity-75">Số lần khám</small>
+                                                <strong class="d-block text-dark">8 lần</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-3 pt-3 border-top text-center">
+                                <button class="btn btn-primary btn-sm rounded-pill px-4 fw-bold">
+                                    👁️ Xem Chi Tiết
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <a href="@Url.Action("Index", "Home", new { phongKhamId = 2 })" class="text-decoration-none">
+                    <div class="card clinic-card border-0 shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex gap-3 mb-3">
+                                <div class="clinic-logo flex-shrink-0">
+                                    ❤️
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h5 class="fw-bold text-dark mb-1">PKDK Tâm Đức</h5>
+                                    <p class="text-muted small mb-2">Chuyên khoa Tim mạch, Nội tổng quát</p>
+                                    <span class="status-badge bg-warning-subtle text-warning-emphasis">Ổn định</span>
+                                </div>
+                            </div>
+
+                            <div class="border-top pt-3 mt-3">
+                                <div class="row g-2 text-secondary small">
+                                    <div class="col-6">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span>📍</span>
+                                            <div>
+                                                <small class="d-block opacity-75">Địa chỉ</small>
+                                                <strong class="d-block text-dark text-truncate" style="max-width: 150px;">
+                                                    Quận 9, TP.HCM
+                                                </strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span>📞</span>
+                                            <div>
+                                                <small class="d-block opacity-75">Hotline</small>
+                                                <strong class="d-block text-dark">028-3777-7888</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row g-2 text-secondary small mt-3">
+                                    <div class="col-6">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span>📅</span>
+                                            <div>
+                                                <small class="d-block opacity-75">Khám gần nhất</small>
+                                                <strong class="d-block text-dark">20/07/2026</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span>🔢</span>
+                                            <div>
+                                                <small class="d-block opacity-75">Số lần khám</small>
+                                                <strong class="d-block text-dark">3 lần</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-3 pt-3 border-top text-center">
+                                <button class="btn btn-primary btn-sm rounded-pill px-4 fw-bold">
+                                    👁️ Xem Chi Tiết
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var lichSu in Model)
+            {
+                var phongKham = lichSu.PhongKham;
+                if (phongKham == null) continue;
+
+                var statusClass = "bg-success-subtle text-success";
+                var statusText = lichSu.TrangThai ?? "Hoạt động";
+                
+                if (statusText.Contains("Đang"))
+                {
+                    statusClass = "bg-warning-subtle text-warning-emphasis";
+                }
+                else if (statusText.Contains("khỏi"))
+                {
+                    statusClass = "bg-success-subtle text-success";
+                }
+
+                <div class="col-md-6 col-lg-4">
+                    <a href="@Url.Action("Index", "Home", new { phongKhamId = phongKham.Id })" class="text-decoration-none">
+                        <div class="card clinic-card border-0 shadow-sm h-100">
+                            <div class="card-body p-4">
+                                <div class="d-flex gap-3 mb-3">
+                                    <div class="clinic-logo flex-shrink-0">
+                                        🏥
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h5 class="fw-bold text-dark mb-1">@phongKham.TenPhongKham</h5>
+                                        <p class="text-muted small mb-2">@phongKham.MoTa</p>
+                                        <span class="status-badge @statusClass">@statusText</span>
+                                    </div>
+                                </div>
+
+                                <div class="border-top pt-3 mt-3">
+                                    <div class="row g-2 text-secondary small">
+                                        <div class="col-6">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span>📍</span>
+                                                <div>
+                                                    <small class="d-block opacity-75">Địa chỉ</small>
+                                                    <strong class="d-block text-dark text-truncate" style="max-width: 150px;" title="@phongKham.DiaChi">
+                                                        @(string.IsNullOrEmpty(phongKham.DiaChi) ? "N/A" : phongKham.DiaChi)
+                                                    </strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span>📞</span>
+                                                <div>
+                                                    <small class="d-block opacity-75">Hotline</small>
+                                                    <strong class="d-block text-dark">
+                                                        @(string.IsNullOrEmpty(phongKham.SoDienThoai) ? "N/A" : phongKham.SoDienThoai)
+                                                    </strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-2 text-secondary small mt-3">
+                                        <div class="col-6">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span>📅</span>
+                                                <div>
+                                                    <small class="d-block opacity-75">Khám gần nhất</small>
+                                                    <strong class="d-block text-dark">@lichSu.NgayKhamGanNhat.ToString("dd/MM/yyyy")</strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span>🔢</span>
+                                                <div>
+                                                    <small class="d-block opacity-75">Số lần khám</small>
+                                                    <strong class="d-block text-dark">@lichSu.SoLanKham lần</strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-3 pt-3 border-top text-center">
+                                    <button class="btn btn-primary btn-sm rounded-pill px-4 fw-bold">
+                                        👁️ Xem Chi Tiết
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- THÔNG TIN BỔ SUNG -->
+    <div class="card border-0 shadow-sm rounded-4 mt-4 p-4 bg-light">
+        <div class="d-flex align-items-center gap-3">
+            <span class="hello__dot"></span>
+            <div class="flex-grow-1">
+                <small class="text-muted">
+                    💡 <strong>Lưu ý:</strong> Chọn phòng khám để xem thông tin chi tiết về lịch sử khám bệnh, kết quả xét nghiệm, đơn thuốc và hồ sơ sức khỏe của bạn tại phòng khám đó.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Có thể thêm animation hoặc interactive effects
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Trang thông tin bệnh nhân đã tải');
+        });
+    </script>
+}
