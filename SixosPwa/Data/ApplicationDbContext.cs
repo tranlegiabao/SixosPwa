@@ -13,6 +13,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<BenhNhan> BenhNhans => Set<BenhNhan>();
     public DbSet<ThietBi> ThietBis => Set<ThietBi>();
     public DbSet<TaiKhoan> TaiKhoans => Set<TaiKhoan>();
+    public DbSet<ThongBao> ThongBaos => Set<ThongBao>();
+    public DbSet<PushDangKy> PushDangKys => Set<PushDangKy>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -51,5 +53,23 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<TaiKhoan>().HasKey(e => e.Id);
         modelBuilder.Entity<TaiKhoan>().Property(e => e.SDT).HasMaxLength(20).IsRequired();
         modelBuilder.Entity<TaiKhoan>().Property(e => e.Role).HasMaxLength(50).IsRequired();
+
+        // Configure ThongBao
+        modelBuilder.Entity<ThongBao>().ToTable("ThongBao");
+        modelBuilder.Entity<ThongBao>().HasKey(e => e.Id);
+        modelBuilder.Entity<ThongBao>().Property(e => e.NoiDung).HasMaxLength(1000).IsRequired();
+        modelBuilder.Entity<ThongBao>().Property(e => e.NguoiGui).HasMaxLength(50).IsRequired();
+        modelBuilder.Entity<ThongBao>().Property(e => e.NguoiNhan).HasMaxLength(50).IsRequired();
+        modelBuilder.Entity<ThongBao>().Property(e => e.ThoiGian).IsRequired();
+        modelBuilder.Entity<ThongBao>().Property(e => e.DaDoc).IsRequired();
+
+        // Configure PushDangKy
+        modelBuilder.Entity<PushDangKy>().ToTable("PushDangKy");
+        modelBuilder.Entity<PushDangKy>().HasKey(e => e.Id);
+        modelBuilder.Entity<PushDangKy>().Property(e => e.SDT).HasMaxLength(50).IsRequired();
+        modelBuilder.Entity<PushDangKy>().Property(e => e.Endpoint).HasMaxLength(1000).IsRequired();
+        modelBuilder.Entity<PushDangKy>().Property(e => e.P256dh).HasMaxLength(500).IsRequired();
+        modelBuilder.Entity<PushDangKy>().Property(e => e.Auth).HasMaxLength(200).IsRequired();
+        modelBuilder.Entity<PushDangKy>().Property(e => e.ThoiGian).IsRequired();
     }
 }

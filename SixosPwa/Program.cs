@@ -30,6 +30,43 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 var app = builder.Build();
 
+// Auto-tạo bảng ThongBao nếu chưa tồn tại (không dùng Migration cho bảng mới này)
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<SixosPwa.Data.ApplicationDbContext>();
+    try
+    {
+        // Chạy SQL tạo bảng nếu chưa có – an toàn, không ảnh hưởng DB cũ
+        db.Database.ExecuteSqlRaw(@"
+            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='ThongBao' AND xtype='U')
+            CREATE TABLE ThongBao (
+                Id          BIGINT IDENTITY(1,1) PRIMARY KEY,
+                NoiDung     NVARCHAR(1000) NOT NULL,
+                ThoiGian    DATETIME2 NOT NULL DEFAULT GETDATE(),
+                NguoiGui    NVARCHAR(50) NOT NULL,
+                NguoiNhan   NVARCHAR(50) NOT NULL,
+                DaDoc       BIT NOT NULL DEFAULT 0
+            )
+        ");
+        db.Database.ExecuteSqlRaw(@"
+            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='PushDangKy' AND xtype='U')
+            CREATE TABLE PushDangKy (
+                Id          BIGINT IDENTITY(1,1) PRIMARY KEY,
+                SDT         NVARCHAR(50) NOT NULL,
+                Endpoint    NVARCHAR(1000) NOT NULL,
+                P256dh      NVARCHAR(500) NOT NULL,
+                Auth        NVARCHAR(200) NOT NULL,
+                ThoiGian    DATETIME2 NOT NULL DEFAULT GETDATE()
+            )
+        ");
+    }
+    catch (Exception ex)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogWarning("Không thể tạo bảng ThongBao tự động: {Message}", ex.Message);
+    }
+}
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");

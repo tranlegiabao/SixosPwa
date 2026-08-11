@@ -268,10 +268,10 @@
     <script>
         // Danh sách bệnh nhân mẫu
         const mockPatients = [
-            { id: "BN-2026-8892", name: "Nguyễn Văn An", phone: "0905123456", appointment: "08:30 ngày 15/08/2026", status: "Chưa gửi" },
-            { id: "BN-2026-1123", name: "Trần Thị Bình", phone: "0914987654", appointment: "09:15 ngày 15/08/2026", status: "Chưa gửi" },
-            { id: "BN-2026-4482", name: "Lê Hoàng Cường", phone: "0982233445", appointment: "10:00 ngày 15/08/2026", status: "Chưa gửi" },
-            { id: "BN-2026-9905", name: "Phạm Minh Dung", phone: "0935556677", appointment: "14:30 ngày 16/08/2026", status: "Chưa gửi" }
+            { id: "BN-2026-8892", name: "Nguyễn Văn An", phone: "0833405847", appointment: "08:30 ngày 15/08/2026", status: "Chưa gửi" },
+            { id: "BN-2026-1123", name: "Trần Thị Bình", phone: "0822316128", appointment: "09:15 ngày 15/08/2026", status: "Chưa gửi" },
+            { id: "BN-2026-4482", name: "Lê Hoàng Cường", phone: "0388820047", appointment: "10:00 ngày 15/08/2026", status: "Chưa gửi" },
+            { id: "BN-2026-9905", name: "Phạm Minh Dung", phone: "0", appointment: "14:30 ngày 16/08/2026", status: "Chưa gửi" }
         ];
 
         // Mẫu tin nhắn định nghĩa sẵn
@@ -489,12 +489,14 @@
             updateLivePreview();
         }
 
-        // Bật animation và mô phỏng gửi tin nhắn hàng loạt
-        function triggerSendSms() {
+        // Bật animation và gửi tin nhắn hàng loạt – lưu thông báo vào DB
+        async function triggerSendSms() {
             const selectedCheckboxes = document.querySelectorAll(".patient-checkbox:checked");
             const content = document.getElementById("smsContent").value.trim();
-            const partner = document.getElementById("partnerSelect").value === "custom" ? document.getElementById("customPartnerInput").value.trim() : document.getElementById("partnerSelect").value;
-            
+            const partner = document.getElementById("partnerSelect").value === "custom"
+                ? document.getElementById("customPartnerInput").value.trim()
+                : document.getElementById("partnerSelect").value;
+
             // Validate dữ liệu
             if (selectedCheckboxes.length === 0) {
                 alert("Vui lòng chọn ít nhất 1 bệnh nhân để gửi tin!");
@@ -509,7 +511,16 @@
                 return;
             }
 
-            // Bắt đầu mô phỏng gửi tin nhắn
+            // Lấy danh sách index và số điện thoại các bệnh nhân được chọn
+            const targetIndexes = [];
+            const danhSachSDT = [];
+            selectedCheckboxes.forEach(cb => {
+                const idx = parseInt(cb.getAttribute("data-index"));
+                targetIndexes.push(idx);
+                danhSachSDT.push(mockPatients[idx].phone);
+            });
+
+            // Bắt đầu mô phỏng giao diện gửi tin nhắn
             const btn = document.getElementById("btnSendSms");
             const spinner = document.getElementById("sendSpinner");
             const icon = document.getElementById("sendIcon");
@@ -525,19 +536,14 @@
             icon.classList.add("d-none");
             btnText.innerText = "Đang kết nối API...";
 
-            // Lấy danh sách index các bệnh nhân được tick chọn
-            const targetIndexes = [];
-            selectedCheckboxes.forEach(cb => {
-                targetIndexes.push(parseInt(cb.getAttribute("data-index")));
-            });
-
             // Hiển thị khung tiến trình
             progressCard.classList.remove("d-none");
+            progressBar.classList.add("progress-bar-animated");
             progressBar.style.width = "0%";
             progressPercent.innerText = "0%";
             progressStatus.innerText = `Bắt đầu gửi tin nhắn thông qua ${partner}...`;
 
-            // Thay đổi trạng thái trên bảng về "Đang gửi..."
+            // Đổi trạng thái bảng → "Đang gửi..."
             targetIndexes.forEach(idx => {
                 mockPatients[idx].status = "Đang gửi...";
                 const badge = document.getElementById(`status-badge-${idx}`);
@@ -547,23 +553,43 @@
                 }
             });
 
-            // Tiến hành tăng phần trăm tiến trình giả lập
-            let currentPercent = 0;
+            // ── Gọi API thực tế lưu thông báo vào DB ──────────────────────
+            let apiSuccess = false;
+            try {
+                const resp = await fetch("/Home/GuiTinNhan", {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    body: JSON.stringify({
+                        message: content,
+                        danhSachNguoiNhan: danhSachSDT
+                    })
+                });
+                const result = await resp.json();
+                apiSuccess = result.success;
+            } catch (err) {
+                console.warn("Lỗi gọi API:", err);
+            }
+
+            // ── Animation tiến trình ───────────────────────────────────────
             const totalPatients = targetIndexes.length;
-            
+            let currentPercent = 0;
+
             const interval = setInterval(() => {
                 currentPercent += 5;
                 if (currentPercent > 100) currentPercent = 100;
-                
+
                 progressBar.style.width = `${currentPercent}%`;
                 progressPercent.innerText = `${currentPercent}%`;
-                
-                // Cập nhật trạng thái cụ thể
+
                 const currentPatientIdx = Math.min(Math.floor((currentPercent / 100) * totalPatients), totalPatients - 1);
                 const currentPat = mockPatients[targetIndexes[currentPatientIdx]];
                 progressStatus.innerText = `Đang gửi SMS cho bệnh nhân: ${currentPat.name} (${currentPat.phone})...`;
 
-                // Cập nhật hoàn thành cho những bệnh nhân trước đó
+                // Cập nhật trạng thái từng bệnh nhân
                 for (let i = 0; i <= currentPatientIdx; i++) {
                     const idx = targetIndexes[i];
                     if (mockPatients[idx].status !== "Đã gửi" && currentPercent > (i / totalPatients) * 100) {
@@ -578,20 +604,19 @@
 
                 if (currentPercent >= 100) {
                     clearInterval(interval);
-                    
+
                     // Khôi phục nút
                     btn.disabled = false;
                     spinner.classList.add("d-none");
                     icon.classList.remove("d-none");
                     btnText.innerText = "Gửi Tin Nhắn Hàng Loạt";
-                    
-                    // Cập nhật thông tin progress hoàn tất
-                    progressStatus.innerText = `Đã hoàn tất gửi tin nhắn thành công tới ${totalPatients} bệnh nhân!`;
+
+                    progressStatus.innerText = `✅ Đã hoàn tất gửi ${totalPatients} tin nhắn${apiSuccess ? " và lưu thông báo thành công!" : " (chế độ demo)!"}`;
                     progressBar.classList.remove("progress-bar-animated");
-                    
-                    // Show Toast thông báo
+
+                    // Show Toast
                     const toastEl = document.getElementById('smsToast');
-                    document.getElementById('smsToastMessage').innerHTML = `🎉 <strong>Gửi thành công!</strong> Đã gửi SMS cho ${totalPatients} bệnh nhân thông qua cổng <strong>${partner}</strong>.`;
+                    document.getElementById('smsToastMessage').innerHTML = `🎉 <strong>Gửi thành công!</strong> Đã gửi SMS cho ${totalPatients} bệnh nhân thông qua cổng <strong>${partner}</strong>. Bệnh nhân sẽ nhận được thông báo đẩy ngay!`;
                     const toast = new bootstrap.Toast(toastEl);
                     toast.show();
 
@@ -600,7 +625,8 @@
                         progressCard.classList.add("d-none");
                     }, 5000);
                 }
-            }, 150); // chạy trong khoảng ~3 giây
+            }, 150);
         }
     </script>
 }
+
