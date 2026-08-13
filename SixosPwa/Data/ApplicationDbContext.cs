@@ -73,6 +73,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<PushDangKy>().Property(e => e.Endpoint).HasMaxLength(1000).IsRequired();
         modelBuilder.Entity<PushDangKy>().Property(e => e.P256dh).HasMaxLength(500).IsRequired();
         modelBuilder.Entity<PushDangKy>().Property(e => e.Auth).HasMaxLength(200).IsRequired();
+        modelBuilder.Entity<PushDangKy>().Property(e => e.IdThietBi).HasMaxLength(100);
         modelBuilder.Entity<PushDangKy>().Property(e => e.ThoiGian).IsRequired();
 
         // Configure PhongKham

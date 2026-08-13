@@ -446,11 +446,12 @@
                 const auth   = btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('auth'))));
 
                 // Gửi subscription lên server
+                let deviceId = localStorage.getItem('deviceId');
                 const res = await fetch('/Home/DangKyPush', {
                     method: 'POST',
                     credentials: 'same-origin',
                     headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                    body: JSON.stringify({ endpoint: subscription.endpoint, p256dh, auth })
+                    body: JSON.stringify({ endpoint: subscription.endpoint, p256dh, auth, deviceId })
                 });
                 const result = await res.json();
 

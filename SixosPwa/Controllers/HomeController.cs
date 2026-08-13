@@ -260,6 +260,7 @@ public class HomeController : Controller
             existing.SDT = sdt;
             existing.P256dh = model.P256dh ?? "";
             existing.Auth = model.Auth ?? "";
+            existing.IdThietBi = model.DeviceId;
             existing.ThoiGian = DateTime.Now;
         }
         else
@@ -270,6 +271,7 @@ public class HomeController : Controller
                 Endpoint = model.Endpoint,
                 P256dh = model.P256dh ?? "",
                 Auth = model.Auth ?? "",
+                IdThietBi = model.DeviceId,
                 ThoiGian = DateTime.Now
             });
         }
@@ -318,8 +320,13 @@ public class HomeController : Controller
         var webPushClient = new WebPushClient();
         webPushClient.SetVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
 
+        var activeDeviceIds = await _db.ThietBis
+            .Where(t => danhSachNhan.Contains(t.SDT) && t.TrangThai == true)
+            .Select(t => t.IdThietBi)
+            .ToListAsync();
+
         var danhSachSubscription = await _db.PushDangKys
-            .Where(p => danhSachNhan.Contains(p.SDT))
+            .Where(p => danhSachNhan.Contains(p.SDT) && activeDeviceIds.Contains(p.IdThietBi))
             .ToListAsync();
 
         int pushOk = 0, pushFail = 0;
@@ -429,6 +436,7 @@ public class PushSubscriptionRequest
     public string? Endpoint { get; set; }
     public string? P256dh { get; set; }
     public string? Auth { get; set; }
+    public string? DeviceId { get; set; }
 }
 
 public class LocBNRequest
