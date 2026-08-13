@@ -46,9 +46,10 @@ public class ApplicationDbContext : DbContext
         // Configure DMThietBi
         modelBuilder.Entity<ThietBi>().ToTable("DMThietBi");
         modelBuilder.Entity<ThietBi>().HasKey(e => e.Id);
-        modelBuilder.Entity<ThietBi>().Property(e => e.MaBN).HasMaxLength(20).IsRequired();
+        modelBuilder.Entity<ThietBi>().Property(e => e.MaBN).HasMaxLength(255);
         modelBuilder.Entity<ThietBi>().Property(e => e.SDT).HasMaxLength(20);
         modelBuilder.Entity<ThietBi>().Property(e => e.IdThietBi).HasMaxLength(100);
+        modelBuilder.Entity<ThietBi>().Property(e => e.TenThietBi).HasMaxLength(255);
 
         // Configure TaiKhoan
         modelBuilder.Entity<TaiKhoan>().ToTable("TaiKhoan");

@@ -2,7 +2,10 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using SixosPwa.Data;
+using SixosPwa.Models;
 using SixosPwa.Services;
 
 namespace SixosPwa.Controllers;
@@ -11,11 +14,13 @@ public class DangNhapController : Controller
 {
     private readonly IMemoryCache _cache;
     private readonly ITaiKhoanService _taiKhoanService;
+    private readonly ApplicationDbContext _dbContext;
 
-    public DangNhapController(IMemoryCache cache, ITaiKhoanService taiKhoanService)
+    public DangNhapController(IMemoryCache cache, ITaiKhoanService taiKhoanService, ApplicationDbContext dbContext)
     {
         _cache = cache;
         _taiKhoanService = taiKhoanService;
+        _dbContext = dbContext;
     }
 
     [HttpGet]
@@ -109,6 +114,9 @@ public class DangNhapController : Controller
 
             _cache.Remove($"OTP_{sdt}");
 
+            // Lưu thông tin thiết bị đăng nhập vào database
+            await LuuThietBiDangNhapAsync(sdt, model.DeviceId, model.DeviceName);
+
             // Admin và Đối tác vào Index, Bệnh nhân vào ThongTinBenhNhan
             var redirectUrl = (role == "Admin" || role == "DoiTac") 
                 ? Url.Action("Index", "Home") 
@@ -151,7 +159,47 @@ public class DangNhapController : Controller
             new ClaimsPrincipal(claimsIdentity),
             authProperties);
 
+        // Lưu thông tin thiết bị đăng nhập vào database
+        await LuuThietBiDangNhapAsync(sdt, model.DeviceId, model.DeviceName);
+
         return Json(new { success = true, redirectUrl = Url.Action("ThongTinBenhNhan", "Home") });
+    }
+
+    private async Task LuuThietBiDangNhapAsync(string soDienThoai, string? deviceId, string? deviceName)
+    {
+        if (string.IsNullOrWhiteSpace(deviceId)) return;
+
+        try
+        {
+            var existingDevice = await _dbContext.ThietBis
+                .FirstOrDefaultAsync(tb => tb.SDT == soDienThoai && tb.IdThietBi == deviceId);
+
+            if (existingDevice != null)
+            {
+                existingDevice.TenThietBi = deviceName;
+                existingDevice.TrangThai = true;
+                existingDevice.MaBN = soDienThoai;
+                _dbContext.ThietBis.Update(existingDevice);
+            }
+            else
+            {
+                var newDevice = new ThietBi
+                {
+                    SDT = soDienThoai,
+                    MaBN = soDienThoai,
+                    IdThietBi = deviceId,
+                    TrangThai = true,
+                    TenThietBi = deviceName
+                };
+                await _dbContext.ThietBis.AddAsync(newDevice);
+            }
+
+            await _dbContext.SaveChangesAsync();
+        }
+        catch (Exception)
+        {
+            // Bỏ qua lỗi để không làm gián đoạn đăng nhập của người dùng
+        }
     }
 
     [HttpGet]
@@ -166,11 +214,15 @@ public class DangNhapController : Controller
 public class GuiOtpRequest
 {
     public string SoDienThoai { get; set; } = string.Empty;
+    public string? DeviceId { get; set; }
+    public string? DeviceName { get; set; }
 }
 
 public class XacNhanOtpRequest
 {
     public string SoDienThoai { get; set; } = string.Empty;
     public string Otp { get; set; } = string.Empty;
+    public string? DeviceId { get; set; }
+    public string? DeviceName { get; set; }
 }
 

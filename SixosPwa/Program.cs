@@ -85,6 +85,18 @@ using (var scope = app.Services.CreateScope())
             )
         ");
         
+        db.Database.ExecuteSqlRaw(@"
+            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='DMThietBi' AND xtype='U')
+            CREATE TABLE DMThietBi (
+                ID          BIGINT IDENTITY(1,1) PRIMARY KEY,
+                SDT         VARCHAR(20) NULL,
+                MaBN        NVARCHAR(255) NULL,
+                IDThietBi   NVARCHAR(100) NULL,
+                TrangThai   BIT NOT NULL DEFAULT 1,
+                TenThietBi  NVARCHAR(255) NULL
+            )
+        ");
+        
         // Thêm dữ liệu mẫu phòng khám nếu chưa có
         db.Database.ExecuteSqlRaw(@"
             IF NOT EXISTS (SELECT * FROM PhongKham)
