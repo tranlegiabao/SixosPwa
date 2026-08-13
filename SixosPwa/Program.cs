@@ -50,14 +50,24 @@ using (var scope = app.Services.CreateScope())
         ");
         db.Database.ExecuteSqlRaw(@"
             IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='PushDangKy' AND xtype='U')
-            CREATE TABLE PushDangKy (
-                Id          BIGINT IDENTITY(1,1) PRIMARY KEY,
-                SDT         NVARCHAR(50) NOT NULL,
-                Endpoint    NVARCHAR(1000) NOT NULL,
-                P256dh      NVARCHAR(500) NOT NULL,
-                Auth        NVARCHAR(200) NOT NULL,
-                ThoiGian    DATETIME2 NOT NULL DEFAULT GETDATE()
-            )
+            BEGIN
+                CREATE TABLE PushDangKy (
+                    Id          BIGINT IDENTITY(1,1) PRIMARY KEY,
+                    SDT         NVARCHAR(50) NOT NULL,
+                    Endpoint    NVARCHAR(1000) NOT NULL,
+                    P256dh      NVARCHAR(500) NOT NULL,
+                    Auth        NVARCHAR(200) NOT NULL,
+                    ThoiGian    DATETIME2 NOT NULL DEFAULT GETDATE(),
+                    IdThietBi   NVARCHAR(100) NULL
+                )
+            END
+            ELSE
+            BEGIN
+                IF COL_LENGTH('PushDangKy', 'IdThietBi') IS NULL
+                BEGIN
+                    ALTER TABLE PushDangKy ADD IdThietBi NVARCHAR(100) NULL
+                END
+            END
         ");
         db.Database.ExecuteSqlRaw(@"
             IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='PhongKham' AND xtype='U')

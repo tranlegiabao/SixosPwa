@@ -19,4 +19,6 @@ public class PushDangKy
 
     /// <summary>Thời điểm đăng ký</summary>
     public DateTime ThoiGian { get; set; } = DateTime.Now;
+
+    public string? IdThietBi { get; set; }
 }

@@ -203,16 +203,61 @@
             }
         }
 
+        function getCookie(name) {
+            try {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            } catch (e) {
+                console.warn("Lỗi đọc cookie:", e);
+            }
+            return null;
+        }
+
+        function setCookie(name, value, days) {
+            try {
+                const d = new Date();
+                d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+                const expires = "expires=" + d.toUTCString();
+                document.cookie = name + "=" + value + ";" + expires + ";path=/;SameSite=Strict";
+            } catch (e) {
+                console.warn("Lỗi ghi cookie:", e);
+            }
+        }
+
         function getDeviceId() {
-            let deviceId = localStorage.getItem('deviceId');
+            let deviceId = null;
+            
+            // 1. Thử lấy từ localStorage
+            try {
+                deviceId = localStorage.getItem('deviceId');
+            } catch (e) {
+                console.warn("Không thể truy cập localStorage:", e);
+            }
+
+            // 2. Nếu không có, thử lấy từ Cookie
+            if (!deviceId) {
+                deviceId = getCookie('deviceId');
+            }
+
+            // 3. Nếu vẫn không có, sinh mới
             if (!deviceId) {
                 if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
                     deviceId = crypto.randomUUID();
                 } else {
                     deviceId = 'dev_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
                 }
-                localStorage.setItem('deviceId', deviceId);
             }
+
+            // 4. Đồng bộ lưu lại cả 2 nơi để tăng độ bền vững
+            try {
+                localStorage.setItem('deviceId', deviceId);
+            } catch (e) {
+                console.warn("Không thể ghi vào localStorage:", e);
+            }
+            setCookie('deviceId', deviceId, 365);
+
+            console.log("Device ID hiện tại:", deviceId);
             return deviceId;
         }
 
