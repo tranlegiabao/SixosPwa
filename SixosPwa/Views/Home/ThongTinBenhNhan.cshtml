@@ -1,392 +1,358 @@
 @model List<SixosPwa.Models.LichSuKham>
 @{
-    ViewData["Title"] = "Thông Tin Bệnh Nhân";
+    ViewData["Title"] = "Y TẾ VIỆT - Đăng Ký Khám Bệnh";
+    Layout = "_Layout";
 }
-
 <style>
-    .patient-info-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    /* Hide layout parts */
+    .app-nav, .bottom-nav, .app-foot { display: none !important; }
+    body { background-color: #f0f4f8; margin: 0; padding-bottom: 0 !important; font-family: 'Inter', sans-serif; }
+    .container, main.container { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+
+    /* Layout Variables */
+    :root {
+        --ytv-primary: #3b82f6; /* Xanh dương nhạt */
+        --ytv-secondary: #0ea5e9; /* Xanh biển sáng */
+        --ytv-accent: #ffb703;
+        --ytv-text: #334155;
+        --ytv-bg: #f0f9ff;
+    }
+
+    /* HEADER */
+    .ytv-header {
+        background: linear-gradient(135deg, #3b82f6, #60a5fa);
         color: white;
-        border-radius: 1.5rem;
-        padding: 2rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        padding: 15px 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border-bottom: 3px solid var(--ytv-secondary);
     }
-
-    .clinic-card {
-        transition: all 0.3s ease;
+    .ytv-logo-area {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    .ytv-logo-circle {
+        width: 60px;
+        height: 60px;
+        border: 2px solid white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        font-weight: bold;
+        background: rgba(255,255,255,0.1);
+    }
+    .ytv-logo-text {
+        font-family: 'Times New Roman', Times, serif;
+        font-size: 28px;
+        font-weight: 900;
+        line-height: 1.05;
+        letter-spacing: 1px;
+        text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.4);
+    }
+    .ytv-header-title {
+        text-align: center;
+    }
+    .ytv-header-title h1 {
+        font-size: 26px;
+        font-weight: 700;
+        margin: 0 0 5px 0;
+        text-transform: uppercase;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    }
+    .ytv-header-title p {
+        font-size: 16px;
+        margin: 0;
+        color: #e0f2f1;
+        font-style: italic;
+    }
+    .ytv-header-menu {
+        font-size: 32px;
         cursor: pointer;
-        border: 2px solid transparent;
-        border-radius: 1rem;
-        overflow: hidden;
+        padding: 10px;
     }
 
-    .clinic-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
-        border-color: #667eea;
+    /* MAIN CONTAINER */
+    .ytv-main {
+        display: flex;
+        min-height: calc(100vh - 170px); /* 100px header + 70px footer */
+        background: #f8fafc;
     }
 
-    .clinic-logo {
-        width: 80px;
-        height: 80px;
-        border-radius: 1rem;
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    /* SIDEBAR */
+    .ytv-sidebar {
+        width: 300px;
+        background: white;
+        border-right: 1px solid #e2e8f0;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.03);
+        display: flex;
+        flex-direction: column;
+        padding: 20px 0;
+    }
+    .ytv-menu-item {
+        padding: 18px 25px;
         display: flex;
         align-items: center;
-        justify-content: center;
-        font-size: 2.5rem;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    }
-
-    .status-badge {
-        padding: 0.4rem 1rem;
-        border-radius: 2rem;
-        font-size: 0.85rem;
+        gap: 15px;
+        color: var(--ytv-primary);
+        font-size: 18px;
         font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+    .ytv-menu-item i {
+        font-size: 22px;
+        width: 30px;
+        text-align: center;
+        color: #64748b;
+        transition: all 0.3s ease;
+    }
+    .ytv-menu-item:hover, .ytv-menu-item.active {
+        background: #f1f5f9;
+        border-left-color: var(--ytv-secondary);
+        color: var(--ytv-primary);
+    }
+    .ytv-menu-item:hover i, .ytv-menu-item.active i {
+        color: var(--ytv-secondary);
+        transform: scale(1.1);
     }
 
-    .info-item {
+    /* SLIDER AREA */
+    .ytv-content {
+        flex: 1;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+    }
+    .ytv-slider {
+        width: 100%;
+        height: 100%;
+        min-height: 400px;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        position: relative;
+    }
+    .carousel-item {
+        height: 100%;
+        min-height: 500px;
+    }
+    .carousel-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .carousel-caption {
+        background: rgba(10, 75, 120, 0.7);
+        border-radius: 10px;
+        padding: 20px;
+        bottom: 40px;
+        backdrop-filter: blur(5px);
+    }
+
+    /* FOOTER */
+    .ytv-footer {
+        background: #e0f2fe; /* xanh nhạt */
+        color: #334155;
+        padding: 25px 30px 15px 30px;
+        display: flex;
+        flex-direction: column;
+        border-top: 4px solid var(--ytv-primary);
+    }
+    .ytv-footer-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+    .ytv-support-col {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .ytv-support-phones {
+        font-size: 16px;
+        font-weight: 500;
+    }
+    .ytv-support-phones span {
+        color: var(--ytv-primary);
+        font-weight: 700;
+        font-size: 18px;
+    }
+    .ytv-contact-row {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        padding: 0.75rem;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 0.75rem;
-        margin-bottom: 0.75rem;
+        gap: 12px;
+        font-size: 15px;
     }
-
-    .info-icon {
-        width: 40px;
-        height: 40px;
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 0.5rem;
+    .ytv-social-btn-light {
+        width: 36px;
+        height: 36px;
+        background: white;
+        border: 1px solid #bae6fd;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.25rem;
+        font-size: 18px;
+        color: var(--ytv-primary);
+        text-decoration: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .ytv-social-btn-light:hover {
+        background: var(--ytv-primary);
+        color: white;
+        transform: translateY(-2px);
+    }
+    .ytv-policies-col {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        font-weight: 500;
+        margin-top: 5px;
+    }
+    .ytv-policies-col a {
+        color: #0f172a;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    .ytv-policies-col a:hover {
+        color: var(--ytv-primary);
+    }
+    .ytv-policies-col .separator {
+        color: #94a3b8;
+    }
+    .ytv-footer-bottom {
+        text-align: center;
+        font-size: 14px;
+        color: #64748b;
+        border-top: 1px solid #bae6fd;
+        padding-top: 15px;
+    }
+
+    /* RESPONSIVE */
+    @@media (max-width: 992px) {
+        .ytv-header { flex-direction: column; gap: 15px; text-align: center; }
+        .ytv-main { flex-direction: column; }
+        .ytv-sidebar { width: 100%; border-right: none; border-bottom: 1px solid #e2e8f0; flex-direction: row; overflow-x: auto; padding: 10px 0; }
+        .ytv-menu-item { flex-direction: column; padding: 10px 20px; white-space: nowrap; border-left: none; border-bottom: 3px solid transparent; gap: 5px; font-size: 14px; }
+        .ytv-menu-item.active, .ytv-menu-item:hover { border-bottom-color: var(--ytv-secondary); }
+        .ytv-footer-top { flex-direction: column; gap: 20px; align-items: center; text-align: center; }
+        .ytv-contact-row { justify-content: center; }
+        .ytv-policies-col { justify-content: center; }
+        .ytv-slider { min-height: 300px; }
+        .carousel-item { min-height: 300px; }
     }
 </style>
 
-<div class="container-fluid px-2 px-md-4 py-3">
-    <!-- THÔNG TIN BỆNH NHÂN -->
-    <div class="patient-info-card">
-        <div class="d-flex justify-content-between align-items-start mb-3">
-            <div>
-                <h2 class="h3 fw-bold mb-1">👤 Hồ Sơ Bệnh Nhân</h2>
-                <p class="mb-0 opacity-75">Thông tin cá nhân và lịch sử khám bệnh</p>
-            </div>
-            <a asp-controller="DangNhap" asp-action="DangXuat" class="btn btn-light rounded-pill px-3 py-2">
-                🚪 Đăng xuất
-            </a>
-        </div>
-
-        <div class="row g-3 mt-2">
-            <div class="col-md-6">
-                <div class="info-item">
-                    <div class="info-icon">👤</div>
-                    <div>
-                        <small class="opacity-75 d-block">Họ và tên</small>
-                        <strong>@ViewData["TenBN"]</strong>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="info-item">
-                    <div class="info-icon">🆔</div>
-                    <div>
-                        <small class="opacity-75 d-block">Mã bệnh nhân</small>
-                        <strong>@ViewData["MaBN"]</strong>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="info-item">
-                    <div class="info-icon">📱</div>
-                    <div>
-                        <small class="opacity-75 d-block">Số điện thoại</small>
-                        <strong>@ViewData["UserName"]</strong>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="info-item">
-                    <div class="info-icon">✉️</div>
-                    <div>
-                        <small class="opacity-75 d-block">Email</small>
-                        <strong>@(string.IsNullOrEmpty(ViewData["Email"]?.ToString()) ? "Chưa cập nhật" : ViewData["Email"])</strong>
-                    </div>
-                </div>
-            </div>
-        </div>
+<div class="ytv-header">
+    <div class="ytv-logo-area">
+        <img src="/static/logo-yte.png" alt="Logo" style="height: 50px; width: 50px; object-fit: contain; background: white; border-radius: 50%; padding: 5px;" />
+        <div class="ytv-logo-text">Y TẾ<br>VIỆT</div>
     </div>
-
-    <!-- DANH SÁCH PHÒNG KHÁM -->
-    <div class="mb-3">
-        <h4 class="fw-bold text-dark mb-3">🏥 Phòng Khám Đã Đến Khám</h4>
+    <div class="ytv-header-title">
+        <h1>Dịch Vụ Đăng Ký Khám Bệnh Online</h1>
+        <p>Tiện lợi - Nhanh chóng - Chính xác</p>
     </div>
+    <div class="ytv-header-menu">
+        <i class="fas fa-bars"></i>
+    </div>
+</div>
 
-    @if (Model == null || Model.Count == 0)
-    {
-        <!-- DỮ LIỆU MẪU ĐỂ TEST -->
-        <div class="row g-4">
-            <div class="col-md-6 col-lg-4">
-                <a href="@Url.Action("Index", "Home", new { phongKhamId = 1 })" class="text-decoration-none">
-                    <div class="card clinic-card border-0 shadow-sm h-100">
-                        <div class="card-body p-4">
-                            <div class="d-flex gap-3 mb-3">
-                                <div class="clinic-logo flex-shrink-0">
-                                    🏥
-                                </div>
-                                <div class="flex-grow-1">
-                                    <h5 class="fw-bold text-dark mb-1">PKDK Bảo Minh</h5>
-                                    <p class="text-muted small mb-2">Phòng khám đa khoa Bảo Minh - Giấy phép: 01083/BĐ-GPHĐ</p>
-                                    <span class="status-badge bg-success-subtle text-success">Đang theo dõi định kỳ</span>
-                                </div>
-                            </div>
-
-                            <div class="border-top pt-3 mt-3">
-                                <div class="row g-2 text-secondary small">
-                                    <div class="col-6">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <span>📍</span>
-                                            <div>
-                                                <small class="d-block opacity-75">Địa chỉ</small>
-                                                <strong class="d-block text-dark text-truncate" style="max-width: 150px;" title="Nguyễn Văn Trỗi, Bến Cát, Bình Dương">
-                                                    Bến Cát, Bình Dương
-                                                </strong>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <span>📞</span>
-                                            <div>
-                                                <small class="d-block opacity-75">Hotline</small>
-                                                <strong class="d-block text-dark">0911-449-115</strong>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row g-2 text-secondary small mt-3">
-                                    <div class="col-6">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <span>📅</span>
-                                            <div>
-                                                <small class="d-block opacity-75">Khám gần nhất</small>
-                                                <strong class="d-block text-dark">10/08/2026</strong>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <span>🔢</span>
-                                            <div>
-                                                <small class="d-block opacity-75">Số lần khám</small>
-                                                <strong class="d-block text-dark">8 lần</strong>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="mt-3 pt-3 border-top text-center">
-                                <button class="btn btn-primary btn-sm rounded-pill px-4 fw-bold">
-                                    👁️ Xem Chi Tiết
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </a>
+<div class="ytv-main">
+    <div class="ytv-sidebar">
+        <a href="/Home/DanhSachCoSo?type=benhvien" class="ytv-menu-item">
+            <i class="fas fa-hospital ytv-icon"></i>
+            Bệnh viện
+        </a>
+        <a href="/Home/DanhSachCoSo?type=pkdk" class="ytv-menu-item">
+            <i class="fas fa-clinic-medical ytv-icon"></i>
+            Phòng khám đa khoa
+        </a>
+        <a href="/Home/DanhSachCoSo?type=nhakhoa" class="ytv-menu-item">
+            <i class="fas fa-tooth ytv-icon"></i>
+            Nha khoa
+        </a>
+        <a href="/Home/DanhSachCoSo?type=phongmach" class="ytv-menu-item">
+            <i class="fas fa-stethoscope ytv-icon"></i>
+            Phòng mạch
+        </a>
+        <a href="/Home/DanhSachCoSo?type=nhathuoc" class="ytv-menu-item">
+            <i class="fas fa-pills ytv-icon"></i>
+            Nhà thuốc
+        </a>
+    </div>
+    
+    <div class="ytv-content">
+        <!-- Bootstrap Carousel for Slider -->
+        <div id="mainSlider" class="carousel slide ytv-slider" data-bs-ride="carousel">
+            <div class="carousel-indicators">
+                <button type="button" data-bs-target="#mainSlider" data-bs-slide-to="0" class="active" aria-current="true"></button>
+                <button type="button" data-bs-target="#mainSlider" data-bs-slide-to="1"></button>
+                <button type="button" data-bs-target="#mainSlider" data-bs-slide-to="2"></button>
             </div>
-
-            <div class="col-md-6 col-lg-4">
-                <a href="@Url.Action("Index", "Home", new { phongKhamId = 2 })" class="text-decoration-none">
-                    <div class="card clinic-card border-0 shadow-sm h-100">
-                        <div class="card-body p-4">
-                            <div class="d-flex gap-3 mb-3">
-                                <div class="clinic-logo flex-shrink-0">
-                                    ❤️
-                                </div>
-                                <div class="flex-grow-1">
-                                    <h5 class="fw-bold text-dark mb-1">PKDK Tâm Đức</h5>
-                                    <p class="text-muted small mb-2">Chuyên khoa Tim mạch, Nội tổng quát</p>
-                                    <span class="status-badge bg-warning-subtle text-warning-emphasis">Ổn định</span>
-                                </div>
-                            </div>
-
-                            <div class="border-top pt-3 mt-3">
-                                <div class="row g-2 text-secondary small">
-                                    <div class="col-6">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <span>📍</span>
-                                            <div>
-                                                <small class="d-block opacity-75">Địa chỉ</small>
-                                                <strong class="d-block text-dark text-truncate" style="max-width: 150px;">
-                                                    Quận 9, TP.HCM
-                                                </strong>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <span>📞</span>
-                                            <div>
-                                                <small class="d-block opacity-75">Hotline</small>
-                                                <strong class="d-block text-dark">028-3777-7888</strong>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row g-2 text-secondary small mt-3">
-                                    <div class="col-6">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <span>📅</span>
-                                            <div>
-                                                <small class="d-block opacity-75">Khám gần nhất</small>
-                                                <strong class="d-block text-dark">20/07/2026</strong>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <span>🔢</span>
-                                            <div>
-                                                <small class="d-block opacity-75">Số lần khám</small>
-                                                <strong class="d-block text-dark">3 lần</strong>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="mt-3 pt-3 border-top text-center">
-                                <button class="btn btn-primary btn-sm rounded-pill px-4 fw-bold">
-                                    👁️ Xem Chi Tiết
-                                </button>
-                            </div>
-                        </div>
+            <div class="carousel-inner h-100">
+                <div class="carousel-item active h-100">
+                    <img src="https://img.freepik.com/free-photo/beautiful-young-female-doctor-looking-camera-office_1301-7807.jpg?w=1380" class="d-block w-100 h-100 object-fit-cover" alt="Slide 1">
+                    <div class="carousel-caption d-none d-md-block">
+                        <h3 class="fw-bold text-white">Khám Bệnh Trực Tuyến</h3>
+                        <p class="fs-5">Kết nối với hàng trăm bác sĩ chuyên khoa hàng đầu mọi lúc mọi nơi.</p>
+                        <a asp-controller="Home" asp-action="Index" asp-route-phongKhamId="1" class="btn btn-info btn-lg text-white mt-2 px-4 rounded-pill fw-bold">Đi Tới Phòng Khám</a>
                     </div>
-                </a>
-            </div>
-        </div>
-    }
-    else
-    {
-        <div class="row g-4">
-            @foreach (var lichSu in Model)
-            {
-                var phongKham = lichSu.PhongKham;
-                if (phongKham == null) continue;
-
-                var statusClass = "bg-success-subtle text-success";
-                var statusText = lichSu.TrangThai ?? "Hoạt động";
-                
-                if (statusText.Contains("Đang"))
-                {
-                    statusClass = "bg-warning-subtle text-warning-emphasis";
-                }
-                else if (statusText.Contains("khỏi"))
-                {
-                    statusClass = "bg-success-subtle text-success";
-                }
-
-                <div class="col-md-6 col-lg-4">
-                    <a href="@Url.Action("Index", "Home", new { phongKhamId = phongKham.Id })" class="text-decoration-none">
-                        <div class="card clinic-card border-0 shadow-sm h-100">
-                            <div class="card-body p-4">
-                                <div class="d-flex gap-3 mb-3">
-                                    <div class="clinic-logo flex-shrink-0">
-                                        🏥
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <h5 class="fw-bold text-dark mb-1">@phongKham.TenPhongKham</h5>
-                                        <p class="text-muted small mb-2">@phongKham.MoTa</p>
-                                        <span class="status-badge @statusClass">@statusText</span>
-                                    </div>
-                                </div>
-
-                                <div class="border-top pt-3 mt-3">
-                                    <div class="row g-2 text-secondary small">
-                                        <div class="col-6">
-                                            <div class="d-flex align-items-center gap-2">
-                                                <span>📍</span>
-                                                <div>
-                                                    <small class="d-block opacity-75">Địa chỉ</small>
-                                                    <strong class="d-block text-dark text-truncate" style="max-width: 150px;" title="@phongKham.DiaChi">
-                                                        @(string.IsNullOrEmpty(phongKham.DiaChi) ? "N/A" : phongKham.DiaChi)
-                                                    </strong>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-6">
-                                            <div class="d-flex align-items-center gap-2">
-                                                <span>📞</span>
-                                                <div>
-                                                    <small class="d-block opacity-75">Hotline</small>
-                                                    <strong class="d-block text-dark">
-                                                        @(string.IsNullOrEmpty(phongKham.SoDienThoai) ? "N/A" : phongKham.SoDienThoai)
-                                                    </strong>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row g-2 text-secondary small mt-3">
-                                        <div class="col-6">
-                                            <div class="d-flex align-items-center gap-2">
-                                                <span>📅</span>
-                                                <div>
-                                                    <small class="d-block opacity-75">Khám gần nhất</small>
-                                                    <strong class="d-block text-dark">@lichSu.NgayKhamGanNhat.ToString("dd/MM/yyyy")</strong>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-6">
-                                            <div class="d-flex align-items-center gap-2">
-                                                <span>🔢</span>
-                                                <div>
-                                                    <small class="d-block opacity-75">Số lần khám</small>
-                                                    <strong class="d-block text-dark">@lichSu.SoLanKham lần</strong>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="mt-3 pt-3 border-top text-center">
-                                    <button class="btn btn-primary btn-sm rounded-pill px-4 fw-bold">
-                                        👁️ Xem Chi Tiết
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </a>
                 </div>
-            }
-        </div>
-    }
-
-    <!-- THÔNG TIN BỔ SUNG -->
-    <div class="card border-0 shadow-sm rounded-4 mt-4 p-4 bg-light">
-        <div class="d-flex align-items-center gap-3">
-            <span class="hello__dot"></span>
-            <div class="flex-grow-1">
-                <small class="text-muted">
-                    💡 <strong>Lưu ý:</strong> Chọn phòng khám để xem thông tin chi tiết về lịch sử khám bệnh, kết quả xét nghiệm, đơn thuốc và hồ sơ sức khỏe của bạn tại phòng khám đó.
-                </small>
+                <div class="carousel-item h-100">
+                    <img src="https://img.freepik.com/free-photo/doctor-working-with-laptop-clinic_23-2149196328.jpg?w=1380" class="d-block w-100 h-100 object-fit-cover" alt="Slide 2">
+                    <div class="carousel-caption d-none d-md-block">
+                        <h3 class="fw-bold text-white">Quản Lý Hồ Sơ Dễ Dàng</h3>
+                        <p class="fs-5">Lưu trữ toàn bộ bệnh án, toa thuốc, và kết quả xét nghiệm an toàn.</p>
+                    </div>
+                </div>
+                <div class="carousel-item h-100">
+                    <img src="https://img.freepik.com/free-photo/modern-hospital-building_1127-2856.jpg?w=1380" class="d-block w-100 h-100 object-fit-cover" alt="Slide 3">
+                    <div class="carousel-caption d-none d-md-block">
+                        <h3 class="fw-bold text-white">Hệ Thống Phủ Sóng Toàn Quốc</h3>
+                        <p class="fs-5">Hàng ngàn bệnh viện, phòng khám, nhà thuốc đang chờ đón bạn.</p>
+                    </div>
+                </div>
             </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#mainSlider" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true" style="width: 3rem; height: 3rem; background-color: rgba(0,0,0,0.5); border-radius: 50%;"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#mainSlider" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true" style="width: 3rem; height: 3rem; background-color: rgba(0,0,0,0.5); border-radius: 50%;"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
         </div>
     </div>
 </div>
 
-@section Scripts {
-    <script>
-        // Có thể thêm animation hoặc interactive effects
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Trang thông tin bệnh nhân đã tải');
-        });
-    </script>
-}
+<div class="ytv-footer">
+    <div class="ytv-footer-top">
+        <div class="ytv-support-col">
+            <div class="ytv-support-phones" style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+                <div><i class="fas fa-headset me-2"></i> Hỗ trợ: <span>0901 82 88 96</span> - <span>0364 956 007</span></div>
+                <div><i class="fas fa-envelope me-2"></i> Email: <a href="mailto:Sixossoft@gmail.com" style="color: var(--ytv-primary); font-weight: 600; text-decoration: none;">Sixossoft@gmail.com</a></div>
+            </div>
+        </div>
+        
+        <div class="ytv-policies-col">
+            <a href="#">Chính sách bảo mật</a> <span class="separator">|</span>
+            <a href="#">Điều khoản sử dụng</a> <span class="separator">|</span>
+            <a href="#">Giải quyết khiếu nại</a> <span class="separator">|</span>
+            <a href="#">Chính sách bảo hành</a>
+        </div>
+    </div>
+    <div class="ytv-footer-bottom">
+        Đơn vị phối hợp thực hiện: <strong>Công Ty Phần mềm Vũ Phong - SixOSSoft.com</strong>
+    </div>
+</div>

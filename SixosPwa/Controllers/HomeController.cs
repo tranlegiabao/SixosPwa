@@ -38,6 +38,40 @@ public class HomeController : Controller
         return View();
     }
 
+    public IActionResult TimBacSi(long phongKhamId)
+    {
+        ViewData["PhongKhamId"] = phongKhamId;
+        var phongKham = _db.PhongKhams.FirstOrDefault(p => p.Id == phongKhamId);
+        ViewData["TenPhongKham"] = phongKham?.TenPhongKham ?? "Phòng khám";
+        return View();
+    }
+
+    public IActionResult HoSoBenhAn(long phongKhamId)
+    {
+        ViewData["PhongKhamId"] = phongKhamId;
+        var phongKham = _db.PhongKhams.FirstOrDefault(p => p.Id == phongKhamId);
+        ViewData["TenPhongKham"] = phongKham?.TenPhongKham ?? "Phòng khám";
+        return View();
+    }
+
+    [HttpGet]
+    public IActionResult DanhSachCoSo(string type)
+    {
+        // Danh mục tương ứng
+        string title = "Cơ sở y tế";
+        switch (type)
+        {
+            case "benhvien": title = "Bệnh viện"; break;
+            case "pkdk": title = "Phòng khám đa khoa"; break;
+            case "nhakhoa": title = "Nha khoa"; break;
+            case "phongmach": title = "Phòng mạch"; break;
+            case "nhathuoc": title = "Nhà thuốc"; break;
+        }
+        ViewData["Title"] = title;
+        ViewData["Type"] = type;
+        return View();
+    }
+
     [HttpGet]
     public async Task<IActionResult> ThongTinBenhNhan()
     {
@@ -320,13 +354,8 @@ public class HomeController : Controller
         var webPushClient = new WebPushClient();
         webPushClient.SetVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
 
-        var activeDeviceIds = await _db.ThietBis
-            .Where(t => danhSachNhan.Contains(t.SDT) && t.TrangThai == true)
-            .Select(t => t.IdThietBi)
-            .ToListAsync();
-
         var danhSachSubscription = await _db.PushDangKys
-            .Where(p => danhSachNhan.Contains(p.SDT) && activeDeviceIds.Contains(p.IdThietBi))
+            .Where(p => danhSachNhan.Contains(p.SDT))
             .ToListAsync();
 
         int pushOk = 0, pushFail = 0;
@@ -421,6 +450,110 @@ public class HomeController : Controller
         await _db.SaveChangesAsync();
         return Json(new { success = true });
     }
+
+    // -------------------------------------------------------------------------
+    // Gửi tin nhắn trả lời (Patient -> Admin/DoiTac, hoặc ngược lại)
+    // -------------------------------------------------------------------------
+    [HttpPost]
+    public async Task<IActionResult> TraLoiTinNhan([FromBody] ReplyRequest model)
+    {
+        var nguoiGui = User.Identity?.Name;
+        if (string.IsNullOrEmpty(nguoiGui))
+            return Json(new { success = false, message = "Vui lòng đăng nhập lại." });
+
+        if (string.IsNullOrWhiteSpace(model.Message) || string.IsNullOrWhiteSpace(model.NguoiNhan))
+            return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
+
+        var now = DateTime.Now;
+
+        // Lưu vào DB
+        var msg = new ThongBao
+        {
+            NoiDung = model.Message.Trim(),
+            ThoiGian = now,
+            NguoiGui = nguoiGui,
+            NguoiNhan = model.NguoiNhan,
+            DaDoc = false
+        };
+        await _db.ThongBaos.AddAsync(msg);
+        await _db.SaveChangesAsync();
+
+        // Gửi Push (Tái sử dụng logic gửi)
+        var vapidPublicKey = _config["Vapid:PublicKey"] ?? "";
+        var vapidPrivateKey = _config["Vapid:PrivateKey"] ?? "";
+        var vapidSubject = _config["Vapid:Subject"] ?? "mailto:admin@hissoft.vn";
+
+        var webPushClient = new WebPushClient();
+        if (!string.IsNullOrEmpty(vapidPublicKey) && !string.IsNullOrEmpty(vapidPrivateKey))
+        {
+            webPushClient.SetVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+        }
+
+        var danhSachSubscription = await _db.PushDangKys
+            .Where(p => p.SDT == model.NguoiNhan)
+            .ToListAsync();
+
+        foreach (var sub in danhSachSubscription)
+        {
+            try
+            {
+                var subscription = new PushSubscription(sub.Endpoint, sub.P256dh, sub.Auth);
+                var payload = System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    title = "💬 Phản hồi từ " + nguoiGui,
+                    body = model.Message.Trim(),
+                    icon = "/static/icon-192.png",
+                    badge = "/static/icon-192.png",
+                    sender = nguoiGui,
+                    url = "/"
+                });
+                await webPushClient.SendNotificationAsync(subscription, payload);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("Lỗi gửi push cho {SDT}: {Message}", sub.SDT, ex.Message);
+            }
+        }
+
+        return Json(new { 
+            success = true, 
+            message = "Đã gửi phản hồi thành công.",
+            data = new {
+                id = msg.Id,
+                noiDung = msg.NoiDung,
+                nguoiGui = msg.NguoiGui,
+                nguoiNhan = msg.NguoiNhan,
+                thoiGian = msg.ThoiGian.ToString("HH:mm dd/MM/yyyy")
+            }
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // Lấy toàn bộ lịch sử tin nhắn giữa người dùng hiện tại và một đối tác/bệnh nhân
+    // -------------------------------------------------------------------------
+    [HttpGet]
+    public async Task<IActionResult> LayLichSuTinNhan([FromQuery] string doiTac)
+    {
+        var me = User.Identity?.Name;
+        if (string.IsNullOrEmpty(me) || string.IsNullOrEmpty(doiTac))
+            return Json(new { success = false });
+
+        var messages = await _db.ThongBaos
+            .Where(t => (t.NguoiGui == me && t.NguoiNhan == doiTac) || 
+                        (t.NguoiGui == doiTac && t.NguoiNhan == me))
+            .OrderBy(t => t.ThoiGian)
+            .Select(t => new {
+                t.Id,
+                t.NoiDung,
+                t.NguoiGui,
+                t.NguoiNhan,
+                t.DaDoc,
+                ThoiGian = t.ThoiGian.ToString("HH:mm dd/MM/yyyy")
+            })
+            .ToListAsync();
+
+        return Json(new { success = true, messages });
+    }
 }
 
 // ── Request models ─────────────────────────────────────────────────────────
@@ -443,4 +576,10 @@ public class LocBNRequest
 {
     public string TenDT { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
+}
+
+public class ReplyRequest
+{
+    public string NguoiNhan { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
 }

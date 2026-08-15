@@ -2,6 +2,134 @@
     ViewData["Title"] = "Cổng Khám Sức Khỏe Định Kỳ";
 }
 
+@if (ViewData["PhongKhamId"] != null)
+{
+    <style>
+        .app-nav, .bottom-nav, .app-foot { display: none !important; }
+        body { padding-bottom: 0 !important; background-color: #f4f6f8; margin: 0; }
+        .container { max-width: 100% !important; padding: 0 !important; }
+        main.container { margin: 0 !important; }
+        
+        /* Binh Dan Style CSS */
+        .bd-header { background: #fff; border-bottom: 1px solid #eee; }
+        .bd-top-menu { display: flex; align-items: center; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+        .bd-top-menu::-webkit-scrollbar { display: none; }
+        .bd-top-menu a { color: #333; text-decoration: none; padding: 15px; display: inline-block; font-weight: 500; font-size: 14px; }
+        .bd-top-menu a:hover { color: #009688; }
+        
+        .bd-quick-links { background: #f8f9fa; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: center; align-items: center; }
+        .bd-quick-link { display: flex; align-items: center; gap: 8px; padding: 15px 30px; border-right: 1px solid #e0e0e0; text-decoration: none; color: #555; }
+        .bd-quick-link:last-child { border-right: none; }
+        .bd-quick-link i { font-size: 1.2rem; color: #009688; }
+        .bd-hero { position: relative; width: 100%; height: calc(100vh - 130px); min-height: 500px; background: url('https://img.freepik.com/free-photo/modern-hospital-building_1127-2856.jpg?w=1380') no-repeat center center/cover; }
+        
+        .bd-fab { position: fixed; right: 0; top: 50%; transform: translateY(-50%); background: #009688; display: flex; flex-direction: column; z-index: 9999; }
+        .bd-fab a { color: white; padding: 15px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.2); }
+        .bd-fab a:last-child { border-bottom: none; }
+        .bd-fab a:hover { background: #00796b; color: white; }
+        
+        .bd-chat { position: fixed; bottom: 20px; right: 20px; display: flex; align-items: flex-end; gap: 15px; z-index: 9999; }
+        .bd-chat-box { background: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 10px; font-size: 14px; position: relative; margin-bottom: 10px;}
+        .bd-chat-box::after { content: ''; position: absolute; right: -8px; bottom: 15px; border-width: 8px 0 8px 8px; border-style: solid; border-color: transparent transparent transparent white; }
+        .bd-chat-icon { width: 60px; height: 60px; background: #ff6b00; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-size: 30px; box-shadow: 0 4px 12px rgba(255,107,0,0.4); cursor: pointer; }
+        
+        /* Mobile adjustments */
+        @@media (max-width: 991.98px) {
+            .bd-quick-links { overflow-x: auto; justify-content: flex-start; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+            .bd-quick-links::-webkit-scrollbar { display: none; }
+            .bd-quick-links .bd-quick-link { flex-direction: row; gap: 8px; padding: 12px 20px; font-size: 0.9rem; flex: 0 0 auto; border-bottom: none; }
+            .bd-quick-links .bd-quick-link i { margin-bottom: 0; font-size: 1.2rem !important; margin-right: 5px !important; }
+        }
+    </style>
+    
+    <!-- HEADER BÌNH DÂN -->
+    <div class="bd-header px-4 py-2 d-flex justify-content-between align-items-center flex-wrap" style="gap: 10px;">
+        <div class="d-flex align-items-center gap-3">
+            <a asp-controller="Home" asp-action="ThongTinBenhNhan" class="text-decoration-none h4 mb-0 text-secondary" title="Quay lại danh sách">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <img src="/static/icon-192.png" alt="Logo" style="height: 50px;">
+            <div>
+                <small class="text-danger fw-bold d-block" style="font-size: 11px;">SỞ Y TẾ THÀNH PHỐ HỒ CHÍ MINH</small>
+                <h5 class="mb-0 fw-bold" style="color: #009688; text-transform: uppercase; font-size: 1rem;">@ViewData["TenPhongKham"]</h5>
+            </div>
+        </div>
+        <div class="bd-top-menu mt-2 mt-xl-0" style="width: 100%; max-width: 100%;">
+            <a href="#"><i class="fas fa-home text-success"></i></a>
+            <a href="#">Giới thiệu</a>
+            <a href="#">Điều Trị</a>
+            <a href="#">Dịch vụ</a>
+            <a href="#">Hướng dẫn</a>
+            <a href="#">Truyền thông</a>
+            <a href="#">Đào tạo</a>
+            <a href="#">Văn bản</a>
+            <a href="#">Tuyển dụng</a>
+            <a href="#">Liên hệ</a>
+            <a href="#"><i class="fas fa-search"></i></a>
+        </div>
+    </div>
+    
+    <!-- QUICKS LINKS -->
+    <div class="bd-quick-links d-flex flex-wrap" style="background-color: #fff; border-bottom: 2px solid #f0f0f0;">
+        <a asp-controller="Home" asp-action="TimBacSi" asp-route-phongKhamId="@ViewData["PhongKhamId"]" class="bd-quick-link flex-fill justify-content-center py-3">
+            <i class="fas fa-user-md me-2" style="color: #00bfa5; font-size: 2rem;"></i> 
+            <span class="fw-semibold text-secondary">Tìm bác sĩ</span>
+        </a>
+        <a asp-controller="Home" asp-action="HoSoBenhAn" asp-route-phongKhamId="@ViewData["PhongKhamId"]" class="bd-quick-link flex-fill justify-content-center py-3">
+            <i class="fas fa-file-medical me-2" style="color: #1877f2; font-size: 2rem;"></i> 
+            <span class="fw-semibold text-secondary">Hồ sơ bệnh án</span>
+        </a>
+        <a href="#" class="bd-quick-link flex-fill justify-content-center py-3">
+            <i class="far fa-calendar-check me-2" style="color: #8bc34a; font-size: 2rem;"></i> 
+            <span class="fw-semibold text-secondary">Lịch khám bệnh</span>
+        </a>
+        <a href="#" class="bd-quick-link flex-fill justify-content-center py-3">
+            <i class="far fa-clock me-2" style="color: #d84315; font-size: 2rem;"></i> 
+            <span class="fw-semibold text-secondary">Giờ khám bệnh</span>
+        </a>
+        <a href="#" class="bd-quick-link flex-fill justify-content-center py-3">
+            <i class="far fa-calendar-alt me-2" style="color: #424242; font-size: 2rem;"></i> 
+            <span class="fw-semibold text-secondary">Đặt hẹn khám</span>
+        </a>
+        <a href="#" class="bd-quick-link flex-fill justify-content-center py-3">
+            <i class="fas fa-clipboard-list me-2" style="color: #9e9e9e; font-size: 2rem;"></i> 
+            <span class="fw-semibold text-secondary">Bảng giá</span>
+        </a>
+        <a href="#" class="bd-quick-link flex-fill justify-content-center py-3 text-secondary fw-semibold">
+            CSKH 0799 325 371
+        </a>
+    </div>
+    
+    <!-- HERO BANNER -->
+    <div class="bd-hero">
+        <h1 class="position-absolute text-white fw-bold" style="bottom: 80px; left: 10%; text-shadow: 2px 2px 6px rgba(0,0,0,0.8); font-size: 3.5rem; color: #00e5ff !important; text-transform: uppercase;">
+            @ViewData["TenPhongKham"]
+        </h1>
+    </div>
+    
+    <!-- FLOATING ACTION BAR -->
+    <div class="bd-fab d-none d-md-flex">
+        <a href="#" title="Tìm bác sĩ"><i class="fas fa-user-md"></i></a>
+        <a href="#" title="Lịch khám"><i class="far fa-calendar-alt"></i></a>
+        <a href="#" title="Giờ khám"><i class="far fa-clock"></i></a>
+        <a href="#" title="Bảng giá"><i class="fas fa-clipboard-list"></i></a>
+        <a href="#" title="Lên trên" onclick="window.scrollTo(0,0)"><i class="fas fa-chevron-up"></i></a>
+    </div>
+    
+    <!-- CHAT WIDGET -->
+    <div class="bd-chat">
+        <div class="bd-chat-box">
+            Chào bạn. Mình có thể hỗ trợ thông tin gì?
+            <i class="fas fa-times text-muted ms-3 fs-5" style="cursor: pointer;" onclick="this.parentElement.style.display='none'"></i>
+        </div>
+        <div class="bd-chat-icon">
+            <i class="fas fa-cube"></i>
+        </div>
+    </div>
+}
+else
+{
+
 <!-- TOAST THÔNG BÁO -->
 <div class="position-fixed top-0 end-0 p-3" style="z-index: 1080">
     <div id="bookingToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
@@ -19,22 +147,11 @@
     <div class="card border-0 shadow-sm rounded-4 mb-4 bg-gradient bg-primary text-white p-3 p-md-4">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
             <div>
-                @if (ViewData["PhongKhamId"] != null)
-                {
-                    <a asp-controller="Home" asp-action="ThongTinBenhNhan" class="badge bg-white text-primary fw-semibold px-3 py-2 rounded-pill mb-2 text-decoration-none">
-                        ← Quay lại danh sách phòng khám
-                    </a>
-                    <h1 class="h3 fw-bold mb-1">🏥 @ViewData["TenPhongKham"]</h1>
-                    <p class="mb-0 text-white-50">Hồ sơ bệnh nhân: <strong>@ViewData["UserName"]</strong></p>
-                }
-                else
-                {
                     <span class="badge bg-white text-primary fw-semibold px-3 py-2 rounded-pill mb-2">
                         🏥 Cổng thông tin Bệnh nhân & Khám Sức Khỏe
                     </span>
                     <h1 class="h3 fw-bold mb-1">Xin chào, <span class="text-warning">@ViewData["UserName"]</span>!</h1>
                     <p class="mb-0 text-white-50">Mã bệnh nhân: <strong>BN-2026-8892</strong> | Trạng thái BHYT: <span class="text-warning">Còn hạn</span></p>
-                }
             </div>
             <div class="d-flex gap-2">
                 @if (ViewData["UserRole"] as string == "Admin" || ViewData["UserRole"] as string == "DoiTac")
@@ -46,10 +163,12 @@
                     ✉️ Quản lý Gửi Tin
                 </a>
                 }
-
-                <button type="button" class="btn btn-warning fw-bold text-dark rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalDangKyKham">
-                    ➕ Đăng ký Khám Mới
-                </button>
+                else
+                {
+                    <button type="button" class="btn btn-warning fw-bold text-dark rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalDangKyKham">
+                        ➕ Đăng ký Khám Mới
+                    </button>
+                }
                 <a asp-controller="DangNhap" asp-action="DangXuat" class="btn btn-outline-light rounded-pill px-3">
                     🚪 Đăng xuất
                 </a>
@@ -279,6 +398,8 @@
     </div>
 </div>
 
+}
+
 <!-- MODAL ĐĂNG KÝ KHÁM MỚI -->
 <div class="modal fade" id="modalDangKyKham" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -338,7 +459,10 @@
                 const response = await fetch('/Home/GuiTinNhan', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: "test api gửi tin nhắn" })
+                    body: JSON.stringify({ 
+                        message: "test api gửi tin nhắn",
+                        danhSachNguoiNhan: ["@ViewData["UserName"]"]
+                    })
                 });
 
                 const data = await response.json();

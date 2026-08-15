@@ -9,6 +9,7 @@
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
     <style>
         /* ===== CHUÔNG THÔNG BÁO ===== */
@@ -211,6 +212,161 @@
             color: #64748b;
             border-top: 1px solid #e2e8f0;
         }
+
+        /* ===== CHAT MODAL ===== */
+        .chat-modal-content {
+            border-radius: 1rem;
+            border: none;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .chat-modal-header {
+            background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+            color: white;
+            border-bottom: none;
+        }
+        .chat-modal-body {
+            background: #f1f5f9;
+            height: 400px;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .chat-bubble {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 1.2rem;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            position: relative;
+            word-wrap: break-word;
+        }
+        .chat-bubble.me {
+            align-self: flex-end;
+            background: #3b82f6;
+            color: white;
+            border-bottom-right-radius: 0.3rem;
+        }
+        .chat-bubble.them {
+            align-self: flex-start;
+            background: white;
+            color: #1e293b;
+            border-bottom-left-radius: 0.3rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .chat-time {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            margin-top: 4px;
+            display: block;
+        }
+        .chat-modal-footer {
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            padding: 0.75rem 1rem;
+        }
+
+        /* ===== FACEBOOK OFF CANVAS MENU ===== */
+        .avatar-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            object-fit: cover;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .avatar-btn:hover {
+            border-color: #fff;
+            transform: scale(1.05);
+        }
+        .fb-offcanvas {
+            width: 340px !important;
+            background-color: #f0f2f5; 
+        }
+        .fb-menu-profile {
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 10px 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .fb-menu-profile:hover {
+            background-color: #f7f8fa;
+        }
+        .fb-menu-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            color: #050505;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 15px;
+            border-radius: 8px;
+            transition: background 0.2s;
+            margin: 0 15px 5px 15px;
+        }
+        .fb-menu-item:hover {
+            background-color: #e4e6e9;
+            color: #050505;
+        }
+        .fb-menu-icon {
+            width: 36px;
+            height: 36px;
+            background-color: #e4e6e9;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 1.1rem;
+            color: #050505;
+        }
+        .fb-menu-item:hover .fb-menu-icon {
+            background-color: #d8dadf;
+        }
+        
+        /* ===== BOTTOM NAVIGATION BAR ===== */
+        .bottom-nav {
+            display: none;
+            height: 60px;
+            background-color: #ffffff;
+            border-top: 1px solid #ddd;
+            z-index: 1030;
+        }
+        .bottom-nav-item {
+            color: #65676b;
+            flex-grow: 1;
+            padding: 8px 0;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 8px;
+            margin: 0 4px;
+            transition: background 0.2s;
+        }
+        .bottom-nav-item.active {
+            color: #1877f2;
+        }
+        .bottom-nav-item:active {
+            background-color: #f0f2f5;
+        }
+        
+        @@media (max-width: 767.98px) {
+            .bottom-nav {
+                display: flex !important;
+            }
+            body {
+                padding-bottom: 60px !important;
+            }
+            .app-foot {
+                padding-bottom: 70px !important; /* Đẩy footer lên trên thanh nav */
+            }
+        }
     </style>
 </head>
 <body>
@@ -249,9 +405,10 @@
                     </div>
                 }
 
-                <a class="btn btn-sm btn-outline-light rounded-pill px-3" asp-controller="DangNhap" asp-action="DangXuat">
-                    🚪 Đăng xuất
-                </a>
+                <!-- Nút Avatar gọi Offcanvas -->
+                <img src="https://ui-avatars.com/api/?name=@(ViewData["TenBN"] ?? ViewData["UserName"] ?? "BN")&background=1691E2&color=fff" 
+                     alt="Avatar" class="avatar-btn ms-2" 
+                     data-bs-toggle="offcanvas" data-bs-target="#fbMenuOffcanvas" />
             </div>
         </div>
     </header>
@@ -259,6 +416,110 @@
     <main class="container py-4">
         @RenderBody()
     </main>
+
+    <!-- BOTTOM NAVIGATION BAR (Mobile Only) -->
+    <nav class="bottom-nav fixed-bottom d-flex justify-content-around align-items-center shadow-sm">
+        <a href="/Home/Index" class="bottom-nav-item active text-decoration-none">
+            <i class="fas fa-home fs-4"></i>
+            <span class="d-block mt-1" style="font-size: 11px; font-weight: 600;">Trang chủ</span>
+        </a>
+        
+        <a href="javascript:void(0)" class="bottom-nav-item text-decoration-none" onclick="showHoSoBenhNhan()">
+            <i class="fas fa-user-md fs-4"></i>
+            <span class="d-block mt-1" style="font-size: 11px; font-weight: 600;">Hồ sơ bệnh nhân</span>
+        </a>
+
+        <a href="javascript:void(0)" class="bottom-nav-item text-decoration-none">
+            <i class="fas fa-question-circle fs-4"></i>
+            <span class="d-block mt-1" style="font-size: 11px; font-weight: 600;">Trợ giúp & Hỗ trợ</span>
+        </a>
+
+        <!-- Nút Menu để mở Offcanvas -->
+        <a href="javascript:void(0)" class="bottom-nav-item text-decoration-none" data-bs-toggle="offcanvas" data-bs-target="#fbMenuOffcanvas">
+            <i class="fas fa-bars fs-4"></i>
+            <span class="d-block mt-1" style="font-size: 11px; font-weight: 600;">Menu</span>
+        </a>
+    </nav>
+
+    <!-- FACEBOOK MENU OFFCANVAS -->
+    <div class="offcanvas offcanvas-end fb-offcanvas" tabindex="-1" id="fbMenuOffcanvas" aria-labelledby="fbMenuOffcanvasLabel">
+        <div class="offcanvas-header pb-0">
+            <h5 class="offcanvas-title fw-bold" id="fbMenuOffcanvasLabel">Menu</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body p-0 pt-2">
+            
+            <!-- Hồ sơ thu gọn -->
+            <a href="/Home/ThongTinBenhNhan" class="text-decoration-none text-dark">
+                <div class="fb-menu-profile d-flex align-items-center">
+                    <img src="https://ui-avatars.com/api/?name=@(ViewData["TenBN"] ?? ViewData["UserName"] ?? "BN")&background=1691E2&color=fff" 
+                         alt="Avatar" class="rounded-circle me-3" style="width:40px; height:40px; border:1px solid #ddd;" />
+                    <div class="flex-grow-1">
+                        <h6 class="mb-0 fw-bold">@(ViewData["TenBN"] ?? "Hồ sơ bệnh nhân")</h6>
+                        <small class="text-muted">Xem trang cá nhân của bạn</small>
+                    </div>
+                    <i class="fas fa-chevron-down text-muted bg-light rounded-circle p-2"></i>
+                </div>
+            </a>
+            
+            <hr class="mx-3 opacity-25">
+
+            <!-- Danh sách menu -->
+            <a href="/Home/Index" class="fb-menu-item">
+                <div class="fb-menu-icon"><i class="fas fa-home"></i></div>
+                Trang chủ
+            </a>
+            
+            <a href="javascript:void(0)" class="fb-menu-item" onclick="showHoSoBenhNhan()">
+                <div class="fb-menu-icon"><i class="fas fa-user-md"></i></div>
+                Hồ sơ bệnh nhân
+            </a>
+
+            <a href="/Home/ThongTinBenhNhan" class="fb-menu-item">
+                <div class="fb-menu-icon"><i class="fas fa-notes-medical"></i></div>
+                Lịch sử khám bệnh
+            </a>
+            
+            <a href="javascript:void(0)" class="fb-menu-item">
+                <div class="fb-menu-icon"><i class="fas fa-question-circle"></i></div>
+                Trợ giúp & Hỗ trợ
+            </a>
+
+            <a href="/DangNhap/DangXuat" class="fb-menu-item text-danger">
+                <div class="fb-menu-icon" style="background:#fee2e2; color:#dc2626;"><i class="fas fa-sign-out-alt"></i></div>
+                Đăng xuất
+            </a>
+            
+        </div>
+    </div>
+
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <!-- CHAT MODAL -->
+        <div class="modal fade" id="chatModal" tabindex="-1" aria-labelledby="chatModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content chat-modal-content">
+                    <div class="modal-header chat-modal-header py-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fs-4">💬</span>
+                            <h5 class="modal-title fw-bold m-0" id="chatModalLabel">Trò chuyện</h5>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body chat-modal-body" id="chatModalBody">
+                        <div class="text-center text-muted small my-auto">Đang tải tin nhắn...</div>
+                    </div>
+                    <div class="modal-footer chat-modal-footer d-flex gap-2">
+                        <input type="hidden" id="chatTargetUser" value="" />
+                        <input type="text" id="chatInputMessage" class="form-control rounded-pill border-secondary-subtle px-3" placeholder="Nhập tin nhắn..." autocomplete="off" onkeypress="handleChatKeyPress(event)">
+                        <button type="button" class="btn btn-primary rounded-circle shadow-sm" style="width: 40px; height: 40px; padding: 0;" onclick="guiTinNhanTuChat()" id="btnSendChat">
+                            ➤
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 
     <footer class="container app-foot">
         &copy; @DateTime.Now.Year Sixos &mdash; khuôn mẫu SixosPwa
@@ -313,7 +574,10 @@
                         <div class="notif-content">
                             <div class="notif-sender">Từ: <strong>${escHtml(item.nguoiGui)}</strong></div>
                             <div class="notif-text">${escHtml(item.noiDung)}</div>
-                            <div class="notif-time">🕐 ${escHtml(item.thoiGian)}</div>
+                            <div class="notif-time d-flex justify-content-between align-items-center">
+                                <span>🕐 ${escHtml(item.thoiGian)}</span>
+                                <button class="btn btn-sm btn-link p-0 text-primary text-decoration-none" onclick="moFormTraLoi('${escHtml(item.nguoiGui)}')">Trả lời</button>
+                            </div>
                         </div>
                     </div>
                 `).join('');
@@ -392,6 +656,103 @@
                     capNhatBadge(0);
                     renderThongBao(_danhSachThongBao);
                 } catch (_) {}
+            }
+
+            // Trả lời thông báo -> Mở Chat Modal
+            async function moFormTraLoi(nguoiNhan) {
+                // Đóng dropdown thông báo
+                document.getElementById('notifDropdown').classList.remove('open');
+                
+                // Mở modal chat
+                const chatModal = new bootstrap.Modal(document.getElementById('chatModal'));
+                document.getElementById('chatModalLabel').innerText = nguoiNhan;
+                document.getElementById('chatTargetUser').value = nguoiNhan;
+                document.getElementById('chatInputMessage').value = '';
+                
+                const chatBody = document.getElementById('chatModalBody');
+                chatBody.innerHTML = '<div class="text-center text-muted small my-auto">Đang tải tin nhắn...</div>';
+                
+                chatModal.show();
+
+                // Lấy lịch sử chat
+                try {
+                    const res = await fetch(`/Home/LayLichSuTinNhan?doiTac=${encodeURIComponent(nguoiNhan)}`);
+                    const data = await res.json();
+                    
+                    if (data.success && data.messages.length > 0) {
+                        chatBody.innerHTML = data.messages.map(m => {
+                            const isMe = m.nguoiGui !== nguoiNhan;
+                            return `
+                                <div class="chat-bubble ${isMe ? 'me' : 'them'}">
+                                    <div>${escHtml(m.noiDung)}</div>
+                                    <span class="chat-time text-${isMe ? 'white-50' : 'muted'}">${escHtml(m.thoiGian)}</span>
+                                </div>
+                            `;
+                        }).join('');
+                    } else {
+                        chatBody.innerHTML = '<div class="text-center text-muted small my-auto">Chưa có tin nhắn nào. Hãy gửi lời chào!</div>';
+                    }
+                    // Scroll to bottom
+                    chatBody.scrollTop = chatBody.scrollHeight;
+                } catch(e) {
+                    chatBody.innerHTML = '<div class="text-center text-danger small my-auto">Lỗi khi tải tin nhắn.</div>';
+                }
+                
+                setTimeout(() => document.getElementById('chatInputMessage').focus(), 500);
+            }
+
+            function handleChatKeyPress(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    guiTinNhanTuChat();
+                }
+            }
+
+            async function guiTinNhanTuChat() {
+                const input = document.getElementById('chatInputMessage');
+                const nguoiNhan = document.getElementById('chatTargetUser').value;
+                const message = input.value.trim();
+                const btnSend = document.getElementById('btnSendChat');
+                
+                if (!message) return;
+                
+                input.disabled = true;
+                btnSend.disabled = true;
+
+                try {
+                    const res = await fetch('/Home/TraLoiTinNhan', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ nguoiNhan, message })
+                    });
+                    const data = await res.json();
+                    
+                    if (data.success && data.data) {
+                        const chatBody = document.getElementById('chatModalBody');
+                        // Nếu đang có thông báo rỗng thì xoá đi
+                        if (chatBody.innerHTML.includes('Chưa có tin nhắn nào')) {
+                            chatBody.innerHTML = '';
+                        }
+                        
+                        const m = data.data;
+                        chatBody.innerHTML += `
+                            <div class="chat-bubble me">
+                                <div>${escHtml(m.noiDung)}</div>
+                                <span class="chat-time text-white-50">${escHtml(m.thoiGian)}</span>
+                            </div>
+                        `;
+                        chatBody.scrollTop = chatBody.scrollHeight;
+                        input.value = '';
+                    } else {
+                        alert("Lỗi: " + (data.message || "Không thể gửi tin nhắn"));
+                    }
+                } catch (err) {
+                    alert("Lỗi mạng, không thể gửi tin nhắn.");
+                } finally {
+                    input.disabled = false;
+                    btnSend.disabled = false;
+                    input.focus();
+                }
             }
 
             // Polling mỗi 15 giây
@@ -532,5 +893,36 @@
     }
 
     @await RenderSectionAsync("Scripts", required: false)
+
+    <script>
+        function showHoSoBenhNhan() {
+            // Đóng offcanvas menu nếu đang mở
+            const offcanvasEl = document.getElementById('fbMenuOffcanvas');
+            if (offcanvasEl) {
+                const instance = bootstrap.Offcanvas.getInstance(offcanvasEl);
+                if (instance) {
+                    instance.hide();
+                }
+            }
+
+            // Tìm và mở Modal Hồ sơ bệnh nhân
+            const modalEl = document.getElementById('modalHoSoBenhNhan');
+            if (modalEl) {
+                const modal = new bootstrap.Modal(modalEl);
+                modal.show();
+            } else {
+                // Nếu modal không có sẵn (VD đang ở trang khác), thì chuyển trang
+                window.location.href = '/Home/ThongTinBenhNhan?showHoSo=true';
+            }
+        }
+        
+        // Nếu có param ?showHoSo=true thì tự động bật modal (khi từ trang khác bay về)
+        document.addEventListener("DOMContentLoaded", function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if(urlParams.get('showHoSo') === 'true') {
+                setTimeout(() => showHoSoBenhNhan(), 500);
+            }
+        });
+    </script>
 </body>
 </html>
