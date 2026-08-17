@@ -54,7 +54,7 @@ public class HomeController : Controller
         return View();
     }
 
-    [HttpGet]
+    [HttpGet("/Home/DanhSachCoSo-{type}")]
     [AllowAnonymous]
     public IActionResult DanhSachCoSo(string type)
     {
