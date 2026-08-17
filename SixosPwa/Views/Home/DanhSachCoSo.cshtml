@@ -6,7 +6,18 @@
     /* Ẩn Layout mặc định */
     .app-nav { display: none !important; }
     .bottom-nav { display: none !important; }
-    body { background-color: var(--ytv-bg); padding-bottom: 0 !important; }
+    body { background-color: var(--ytv-bg); padding-bottom: 0 !important; margin: 0 !important; }
+
+    /* Buoc Layout cha phai full width */
+    body > *,
+    .container, .container-fluid, .container-sm, .container-md, .container-lg, .container-xl, .container-xxl {
+        max-width: 100% !important;
+        width: 100% !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
 
     /* Layout Variables */
     :root {
@@ -82,68 +93,107 @@
     /* MAIN CONTAINER */
     .ytv-main {
         display: flex;
-        max-width: 1400px;
-        margin: 0 auto;
-        min-height: calc(100vh - 200px);
+        width: 100%;
+        min-height: calc(100vh - 140px);
         background: white;
-        box-shadow: 0 0 20px rgba(0,0,0,0.05);
     }
 
-    /* FILTER SIDEBAR */
+    /* MENU SIDEBAR */
     .ytv-sidebar {
-        width: 280px;
+        width: 220px;
+        flex-shrink: 0;
         background: #f8fafc;
         border-right: 1px solid #e2e8f0;
-        padding: 20px;
         display: flex;
         flex-direction: column;
+        padding: 10px 0;
     }
-    .ytv-filter-title {
-        font-size: 18px;
-        font-weight: 700;
-        color: var(--ytv-primary);
-        margin-bottom: 15px;
+    .ytv-menu-item {
         display: flex;
         align-items: center;
-        gap: 10px;
+        padding: 15px 20px;
+        gap: 15px;
+        color: var(--ytv-primary);
+        font-size: 16px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
     }
-    .ytv-filter-select {
+    .ytv-menu-item i {
+        font-size: 22px;
+        width: 30px;
+        text-align: center;
+        color: #64748b;
+        transition: all 0.3s ease;
+    }
+    .ytv-menu-item:hover, .ytv-menu-item.active {
+        background: #f1f5f9;
+        border-left-color: var(--ytv-secondary);
+        color: var(--ytv-primary);
+    }
+    .ytv-menu-item:hover i, .ytv-menu-item.active i {
+        color: var(--ytv-secondary);
+        transform: scale(1.1);
+    }
+
+    /* KHU VUC SECTION */
+    .ytv-khu-vuc {
+        margin-top: 10px;
+        padding: 15px 15px 10px 15px;
+        border-top: 1px solid #e2e8f0;
+    }
+    .ytv-khu-vuc-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .ytv-province-select {
         width: 100%;
-        padding: 10px 15px;
-        border: 2px solid #cbd5e1;
+        padding: 8px 12px;
+        border: 1.5px solid #cbd5e1;
         border-radius: 8px;
-        font-size: 15px;
+        font-size: 14px;
         color: var(--ytv-text);
-        margin-bottom: 20px;
+        margin-bottom: 10px;
         outline: none;
         transition: border-color 0.3s;
-        appearance: none;
-        background: white url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 10L12 15L17 10" stroke="%23334155" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>') no-repeat right 10px center/20px;
+        background: white;
+        cursor: pointer;
     }
-    .ytv-filter-select:focus {
+    .ytv-province-select:focus {
         border-color: var(--ytv-primary);
     }
-    .ytv-filter-list {
+    .ytv-district-list {
         list-style: none;
         padding: 0;
         margin: 0;
+        max-height: 200px;
+        overflow-y: auto;
     }
-    .ytv-filter-list li {
-        padding: 12px 15px;
-        border-bottom: 1px solid #e2e8f0;
-        font-size: 15px;
+    .ytv-district-list li {
+        padding: 8px 12px;
+        font-size: 13px;
         font-weight: 500;
         color: #475569;
         cursor: pointer;
+        border-radius: 6px;
         transition: all 0.2s;
         display: flex;
         justify-content: space-between;
         align-items: center;
     }
-    .ytv-filter-list li:hover, .ytv-filter-list li.active {
+    .ytv-district-list li:hover, .ytv-district-list li.active {
         color: var(--ytv-primary);
-        background: #f1f5f9;
-        padding-left: 20px;
+        background: #eff6ff;
+    }
+
     /* RIGHT CONTENT */
     .ytv-content {
         flex: 1;
@@ -349,17 +399,18 @@
 
 <div class="ytv-main">
     <div class="ytv-sidebar">
-        <div class="ytv-filter-title">
-            <i class="fas fa-map-marker-alt"></i> Khu vực
+        <!-- KHU VUC -->
+        <div class="ytv-khu-vuc">
+            <div class="ytv-khu-vuc-title">
+                <i class="fas fa-map-marker-alt"></i> Khu vực
+            </div>
+            <select class="ytv-province-select" id="provinceSelect">
+                <option value="">-- Chọn Tỉnh / TP --</option>
+            </select>
+            <ul class="ytv-district-list" id="districtList">
+                <li class="active" data-code="">Tất cả quận huyện <i class="fas fa-check"></i></li>
+            </ul>
         </div>
-        <select class="ytv-filter-select" id="provinceSelect">
-            <option value="">-- Chọn Tỉnh / Thành phố --</option>
-            <!-- JS will populate 63 provinces here -->
-        </select>
-        
-        <ul class="ytv-filter-list" id="districtList">
-            <li class="active" data-code="">Tất cả quận huyện <i class="fas fa-check text-primary"></i></li>
-        </ul>
     </div>
     <div class="ytv-content">
         <div class="ytv-content-title">
@@ -403,42 +454,66 @@
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         let provinceData = [];
+        let allClinics = [];
         const provinceSelect = document.getElementById("provinceSelect");
         const districtList = document.getElementById("districtList");
         const clinicGrid = document.getElementById("clinicGrid");
         const resultCount = document.getElementById("resultCount");
         const searchInput = document.getElementById("searchInput");
+        const catName = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewData["Title"]?.ToString() ?? ""));
+
+        const images = [
+            "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=500&q=80",
+            "https://images.unsplash.com/photo-1581594693702-fbdc51b2763b?w=500&q=80",
+            "https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=500&q=80",
+            "https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=500&q=80"
+        ];
+
+        // Danh sach co so mau
+        const sampleNames = [
+            "Bệnh viện Bạch Mai", "Bệnh viện Chợ Rẫy", "Bệnh viện Việt Đức",
+            "Bệnh viện 115", "Bệnh viện Đại học Y Hà Nội", "Bệnh viện Nhi Trung Ương",
+            "Bệnh viện Phụ Sản Trung Ương", "Bệnh viện K", "Bệnh viện Hữu Nghị",
+            "Bệnh viện Quân Y 108", "Bệnh viện Quân Y 175", "Bệnh viện Từ Dũ",
+            "Bệnh viện An Bình", "Bệnh viện Nhi Đồng 1", "Bệnh viện Nhi Đồng 2",
+            "Bệnh viện Ung Bướu TP.HCM", "Bệnh viện Nhân Dân Gia Định", "Bệnh viện FV",
+            "Bệnh viện Vinmec Times City", "Bệnh viện Vinmec Central Park",
+            "Phòng khám Đa khoa Hà Đông", "Phòng khám Medlatec", "Phòng khám Thu Cúc",
+            "Nha khoa Thẩm Mỹ Sài Gòn", "Nhà thuốc Long Châu", "Nhà thuốc Pharmacity"
+        ];
 
         // Initial Empty State
         showEmptyState();
 
-        // Search logic
+        // Search logic - gõ tên là tìm ngay
         searchInput.addEventListener("input", function() {
             const keyword = this.value.toLowerCase().trim();
-            const cards = clinicGrid.querySelectorAll('.clinic-card');
-            let visibleCount = 0;
-            
-            // If empty state is currently showing, don't try to search
-            if (cards.length === 0) return;
 
-            cards.forEach(card => {
-                const title = card.querySelector('.ytv-card-title').textContent.toLowerCase();
-                if (title.includes(keyword)) {
-                    card.style.display = "flex";
-                    visibleCount++;
+            if (keyword.length === 0) {
+                if (allClinics.length === 0) {
+                    showEmptyState();
                 } else {
-                    card.style.display = "none";
+                    renderClinics(allClinics);
                 }
-            });
-            resultCount.textContent = visibleCount;
+                return;
+            }
+
+            // Nếu chưa có dữ liệu tỉnh, tìm trong danh sách mẫu
+            let searchPool = allClinics.length > 0 ? allClinics : sampleNames.map((name, i) => ({
+                name,
+                address: "Đang cập nhật",
+                img: images[i % images.length]
+            }));
+
+            const filtered = searchPool.filter(c => c.name.toLowerCase().includes(keyword));
+            renderClinics(filtered);
         });
 
-        // Fetch 63 provinces and their districts from open API
+        // Fetch 63 provinces
         fetch("https://provinces.open-api.vn/api/?depth=2")
             .then(res => res.json())
             .then(data => {
                 provinceData = data;
-                // Populate province dropdown
                 data.forEach(p => {
                     const opt = document.createElement("option");
                     opt.value = p.code;
@@ -452,10 +527,10 @@
             const selectedCode = this.value;
             if (!selectedCode) {
                 districtList.innerHTML = `<li class="active" data-code="">Tất cả quận huyện <i class="fas fa-check text-primary"></i></li>`;
+                allClinics = [];
                 showEmptyState();
                 return;
             }
-
             const selectedProvince = provinceData.find(p => p.code == selectedCode);
             renderDistricts(selectedProvince);
             generateMockClinics(selectedProvince.name, "Tất cả quận huyện");
@@ -463,47 +538,66 @@
 
         function showEmptyState() {
             resultCount.textContent = "0";
-            clinicGrid.style.display = "block"; // override grid to show full width message
+            clinicGrid.style.display = "block";
             clinicGrid.innerHTML = `
                 <div style="text-align: center; padding: 50px 20px; color: #64748b; background: #f8fafc; border-radius: 12px; border: 2px dashed #cbd5e1;">
                     <i class="fas fa-search-location" style="font-size: 48px; color: #94a3b8; margin-bottom: 15px;"></i>
-                    <h3 style="font-size: 18px; font-weight: 600; color: #475569;">Vui lòng chọn khu vực</h3>
-                    <p style="margin: 0;">Hãy chọn Tỉnh / Thành phố bên trái để xem danh sách @ViewData["Title"]</p>
+                    <h3 style="font-size: 18px; font-weight: 600; color: #475569;">Vui lòng chọn khu vực hoặc tìm kiếm</h3>
+                    <p style="margin: 0;">Hãy chọn Tỉnh / Thành phố bên trái, hoặc gõ tên cơ sở vào ô tìm kiếm</p>
                 </div>
             `;
         }
 
+        function renderClinics(list) {
+            if (list.length === 0) {
+                clinicGrid.style.display = "block";
+                clinicGrid.innerHTML = `
+                    <div style="text-align: center; padding: 50px 20px; color: #64748b; background: #f8fafc; border-radius: 12px; border: 2px dashed #cbd5e1;">
+                        <i class="fas fa-search" style="font-size: 48px; color: #94a3b8; margin-bottom: 15px;"></i>
+                        <h3 style="font-size: 18px; font-weight: 600; color: #475569;">Không tìm thấy kết quả</h3>
+                        <p style="margin: 0;">Thử tìm với từ khóa khác nhé</p>
+                    </div>`;
+                resultCount.textContent = "0";
+                return;
+            }
+            clinicGrid.style.display = "grid";
+            resultCount.textContent = list.length;
+            clinicGrid.innerHTML = list.map((c, i) => `
+                <div class="ytv-card clinic-card">
+                    <img src="${c.img}" alt="${c.name}" class="ytv-card-img" />
+                    <div class="ytv-card-body">
+                        <div class="ytv-card-title">${c.name}</div>
+                        <div class="ytv-card-address">
+                            <i class="fas fa-map-pin"></i>
+                            <span class="address-text">${c.address}</span>
+                        </div>
+                        <a href="/Home/ChiTietCoSo?ten=${encodeURIComponent(c.name)}&diaChi=${encodeURIComponent(c.address)}&type=@(ViewData["Type"]?.ToString() ?? "benhvien")&img=${encodeURIComponent(c.img)}" class="ytv-card-btn">Xem chi tiết</a>
+                    </div>
+                </div>`).join("");
+        }
+
         function renderDistricts(province) {
             districtList.innerHTML = `<li class="active" data-code="">Tất cả quận huyện <i class="fas fa-check text-primary"></i></li>`;
-            
             if (province && province.districts) {
                 province.districts.forEach(d => {
                     const li = document.createElement("li");
                     li.dataset.code = d.code;
                     li.textContent = d.name;
-                    
                     li.addEventListener("click", function() {
-                        // Remove active class from all
                         districtList.querySelectorAll("li").forEach(item => {
                             item.classList.remove("active");
                             const icon = item.querySelector("i");
                             if (icon) icon.remove();
                         });
-                        
-                        // Add active to clicked
                         this.classList.add("active");
                         this.innerHTML += ' <i class="fas fa-check text-primary"></i>';
-                        
                         generateMockClinics(province.name, d.name);
                     });
-                    
                     districtList.appendChild(li);
                 });
             }
-            
-            // Re-bind click event for the "Tất cả" option
             districtList.firstElementChild.addEventListener("click", function() {
-                 districtList.querySelectorAll("li").forEach(item => {
+                districtList.querySelectorAll("li").forEach(item => {
                     item.classList.remove("active");
                     const icon = item.querySelector("i");
                     if (icon) icon.remove();
@@ -514,40 +608,18 @@
             });
         }
 
-        // Simulate fetching clinics for a specific location
         function generateMockClinics(provinceName, districtName) {
-            clinicGrid.style.display = "grid"; // restore grid layout
-            // Random number of clinics between 2 and 6
             const count = Math.floor(Math.random() * 5) + 2;
-            resultCount.textContent = count;
-            
-            let html = "";
-            const catName = "@ViewData["Title"]";
-            const images = [
-                "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=500&q=80",
-                "https://images.unsplash.com/photo-1581594693702-fbdc51b2763b?w=500&q=80",
-                "https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=500&q=80",
-                "https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=500&q=80"
-            ];
-            
+            allClinics = [];
             for (let i = 1; i <= count; i++) {
-                const randomImg = images[i % images.length];
                 const dName = districtName === "Tất cả quận huyện" ? "Quận " + (Math.floor(Math.random() * 10) + 1) : districtName;
-                
-                html += `
-                <div class="ytv-card clinic-card">
-                    <img src="${randomImg}" alt="Cơ sở ${i}" class="ytv-card-img" />
-                    <div class="ytv-card-body">
-                        <div class="ytv-card-title">${catName} Mẫu Số ${i}</div>
-                        <div class="ytv-card-address">
-                            <i class="fas fa-map-pin"></i> 
-                            <span class="address-text">123 Đường Số ${i}, ${dName}, ${provinceName}</span>
-                        </div>
-                        <a href="/Home/Index" class="ytv-card-btn">Đăng ký khám</a>
-                    </div>
-                </div>`;
+                allClinics.push({
+                    name: `${catName} Mẫu Số ${i}`,
+                    address: `123 Đường Số ${i}, ${dName}, ${provinceName}`,
+                    img: images[i % images.length]
+                });
             }
-            clinicGrid.innerHTML = html;
+            renderClinics(allClinics);
         }
     });
 </script>

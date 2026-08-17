@@ -180,10 +180,10 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Vao thang la ra man dang nhap - cung chinh la start_url trong manifest.
+// Vao thang la ra trang chu
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=DangNhap}/{action=Login}/{id?}");
+    pattern: "{controller=Home}/{action=ThongTinBenhNhan}/{id?}");
 
 app.Run();
 
