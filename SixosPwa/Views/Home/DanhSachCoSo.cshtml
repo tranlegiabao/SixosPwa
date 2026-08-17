@@ -1,3 +1,4 @@
+@model IEnumerable<SixosPwa.Models.DMCSKCB>
 @{
     ViewData["Title"] = ViewData["Title"];
 }
@@ -551,13 +552,11 @@
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         let provinceData = [];
-        let allClinics = [];
         const provinceSelect = document.getElementById("provinceSelect");
         const districtList = document.getElementById("districtList");
         const clinicGrid = document.getElementById("clinicGrid");
         const resultCount = document.getElementById("resultCount");
         const searchInput = document.getElementById("searchInput");
-        const catName = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewData["Title"]?.ToString() ?? ""));
 
         const images = [
             "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=500&q=80",
@@ -566,53 +565,77 @@
             "https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=500&q=80"
         ];
 
-        // Danh sach co so mau
-        const sampleNames = [
-            "Bệnh viện Bạch Mai", "Bệnh viện Chợ Rẫy", "Bệnh viện Việt Đức",
-            "Bệnh viện 115", "Bệnh viện Đại học Y Hà Nội", "Bệnh viện Nhi Trung Ương",
-            "Bệnh viện Phụ Sản Trung Ương", "Bệnh viện K", "Bệnh viện Hữu Nghị",
-            "Bệnh viện Quân Y 108", "Bệnh viện Quân Y 175", "Bệnh viện Từ Dũ",
-            "Bệnh viện An Bình", "Bệnh viện Nhi Đồng 1", "Bệnh viện Nhi Đồng 2",
-            "Bệnh viện Ung Bướu TP.HCM", "Bệnh viện Nhân Dân Gia Định", "Bệnh viện FV",
-            "Bệnh viện Vinmec Times City", "Bệnh viện Vinmec Central Park",
-            "Phòng khám Đa khoa Hà Đông", "Phòng khám Medlatec", "Phòng khám Thu Cúc",
-            "Nha khoa Thẩm Mỹ Sài Gòn", "Nhà thuốc Long Châu", "Nhà thuốc Pharmacity"
-        ];
+        // Lấy dữ liệu cơ sở thực tế từ database (Model)
+        const dbClinics = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model)) || [];
+        
+        // Chuẩn hóa dữ liệu sang định dạng client
+        const clinics = dbClinics.map((c, i) => ({
+            name: c.TenCoSo || c.tenCoSo || "Chưa cập nhật",
+            address: c.DiaChi || c.diaChi || "Đang cập nhật",
+            img: c.Img || c.img || images[i % images.length],
+            tinh: c.Tinh !== undefined ? c.Tinh : c.tinh
+        }));
 
-        // Initial Empty State
+        // Trạng thái ban đầu
         showEmptyState();
 
-        // Search logic - gõ tên là tìm ngay
-        searchInput.addEventListener("input", function() {
-            const keyword = this.value.toLowerCase().trim();
+        // Lọc và hiển thị danh sách
+        function applyFilter() {
+            const selectedProvinceCode = provinceSelect.value;
+            const activeLi = districtList.querySelector("li.active");
+            let selectedDistrictName = "";
+            
+            if (activeLi) {
+                selectedDistrictName = activeLi.textContent.replace("Tất cả quận huyện", "").replace(/✔|check/g, "").trim();
+            }
+            if (selectedDistrictName.includes("Tất cả quận huyện") || (activeLi && activeLi.dataset.code === "")) {
+                selectedDistrictName = "";
+            }
+            const keyword = searchInput.value.toLowerCase().trim();
 
-            if (keyword.length === 0) {
-                if (allClinics.length === 0) {
-                    showEmptyState();
-                } else {
-                    renderClinics(allClinics);
-                }
+            // Nếu không chọn tỉnh và không nhập từ khóa -> hiển thị trạng thái trống
+            if (!selectedProvinceCode && !keyword) {
+                showEmptyState();
                 return;
             }
 
-            // Nếu chưa có dữ liệu tỉnh, tìm trong danh sách mẫu
-            let searchPool = allClinics.length > 0 ? allClinics : sampleNames.map((name, i) => ({
-                name,
-                address: "Đang cập nhật",
-                img: images[i % images.length]
-            }));
+            let filtered = clinics;
 
-            const filtered = searchPool.filter(c => c.name.toLowerCase().includes(keyword));
+            // 1. Lọc theo tỉnh thành
+            if (selectedProvinceCode) {
+                filtered = filtered.filter(c => c.tinh == selectedProvinceCode);
+            }
+
+            // 2. Lọc theo quận huyện (kiểm tra địa chỉ chứa tên quận huyện)
+            if (selectedDistrictName) {
+                const normalizedDistrict = removeAccents(selectedDistrictName.toLowerCase());
+                filtered = filtered.filter(c => {
+                    const normalizedAddress = removeAccents(c.address.toLowerCase());
+                    return normalizedAddress.includes(normalizedDistrict);
+                });
+            }
+
+            // 3. Tìm kiếm theo tên cơ sở
+            if (keyword) {
+                const normalizedKeyword = removeAccents(keyword);
+                filtered = filtered.filter(c => {
+                    const normalizedName = removeAccents(c.name.toLowerCase());
+                    return normalizedName.includes(normalizedKeyword);
+                });
+            }
+
             renderClinics(filtered);
-        });
+        }
 
-        // Elements for custom searchable dropdown
+        // Sự kiện tìm kiếm tên cơ sở
+        searchInput.addEventListener("input", applyFilter);
+
+        // Elements cho custom dropdown chọn tỉnh/thành
         const customProvinceContainer = document.getElementById("customProvinceContainer");
         const customProvinceTrigger = document.getElementById("customProvinceTrigger");
         const customProvinceSearch = document.getElementById("customProvinceSearch");
         const customProvinceOptions = document.getElementById("customProvinceOptions");
 
-        // Toggle dropdown open state
         customProvinceTrigger.addEventListener("click", function(e) {
             e.stopPropagation();
             customProvinceContainer.classList.toggle("open");
@@ -621,14 +644,13 @@
             }
         });
 
-        // Close dropdown when clicking outside
         document.addEventListener("click", function(e) {
             if (!customProvinceContainer.contains(e.target)) {
                 customProvinceContainer.classList.remove("open");
             }
         });
 
-        // Helper to remove accents (Vietnamese diacritics)
+        // Loại bỏ dấu tiếng Việt để tìm kiếm không dấu
         function removeAccents(str) {
             return str.normalize("NFD")
                       .replace(/[\u0300-\u036f]/g, "")
@@ -636,15 +658,12 @@
                       .replace(/Đ/g, "D");
         }
 
-        // Helper to match input keyword against province name
         function matchesKeyword(provinceName, kw) {
             const normalizedName = removeAccents(provinceName.toLowerCase());
             const normalizedKw = removeAccents(kw.toLowerCase());
             
-            // Direct substring match
             if (normalizedName.includes(normalizedKw)) return true;
             
-            // Abbreviation map
             const abbrevMap = {
                 "hn": "ha noi",
                 "hcm": "ho chi minh",
@@ -666,24 +685,20 @@
                 "tth": "thua thien hue",
                 "gl": "gia lai",
                 "dl": "dak lak",
-                "ld": "lam dong",
-                "dl": "da lat"
+                "ld": "lam dong"
             };
             
             if (abbrevMap[normalizedKw] && normalizedName.includes(abbrevMap[normalizedKw])) {
                 return true;
             }
             
-            // Initials match (e.g. "tphcm" -> matches "Thành phố Hồ Chí Minh" initials: tphcm)
             const initials = normalizedName.split(/\s+/).map(word => word[0]).join("");
             if (initials.includes(normalizedKw)) return true;
             
             return false;
         }
 
-        // Render custom dropdown options
         function renderCustomProvinceOptions(dataList) {
-            // Keep the first default option
             customProvinceOptions.innerHTML = `<li data-value="" class="${!provinceSelect.value ? 'selected' : ''}">-- Chọn Tỉnh / TP --</li>`;
             
             dataList.forEach(p => {
@@ -695,24 +710,17 @@
                 }
                 
                 li.addEventListener("click", function() {
-                    // Update trigger text
                     customProvinceTrigger.querySelector("span").textContent = p.name;
-                    
-                    // Mark selected in list
                     customProvinceOptions.querySelectorAll("li").forEach(item => item.classList.remove("selected"));
                     this.classList.add("selected");
                     
-                    // Set value in hidden select and dispatch change
                     provinceSelect.value = p.code;
                     provinceSelect.dispatchEvent(new Event("change"));
-                    
-                    // Close dropdown
                     customProvinceContainer.classList.remove("open");
                 });
                 customProvinceOptions.appendChild(li);
             });
 
-            // Bind click event for the first "-- Chọn Tỉnh / TP --" option
             customProvinceOptions.firstElementChild.addEventListener("click", function() {
                 customProvinceTrigger.querySelector("span").textContent = "-- Chọn Tỉnh / TP --";
                 customProvinceOptions.querySelectorAll("li").forEach(item => item.classList.remove("selected"));
@@ -724,7 +732,6 @@
             });
         }
 
-        // Input search event in custom select dropdown
         customProvinceSearch.addEventListener("input", function() {
             const kw = this.value.trim();
             if (!kw) {
@@ -735,7 +742,7 @@
             renderCustomProvinceOptions(filtered);
         });
 
-        // Fetch 63 provinces
+        // Lấy danh sách 63 tỉnh thành
         fetch("https://provinces.open-api.vn/api/?depth=2")
             .then(res => res.json())
             .then(data => {
@@ -746,21 +753,21 @@
                     opt.textContent = p.name;
                     provinceSelect.appendChild(opt);
                 });
-                renderCustomProvinceOptions(data); // Populate custom dropdown options
+                renderCustomProvinceOptions(data);
             })
             .catch(err => console.error("Lỗi lấy dữ liệu tỉnh thành: ", err));
 
+        // Sự kiện thay đổi tỉnh thành
         provinceSelect.addEventListener("change", function () {
             const selectedCode = this.value;
             if (!selectedCode) {
                 districtList.innerHTML = `<li class="active" data-code="">Tất cả quận huyện <i class="fas fa-check text-primary"></i></li>`;
-                allClinics = [];
-                showEmptyState();
+                applyFilter();
                 return;
             }
             const selectedProvince = provinceData.find(p => p.code == selectedCode);
             renderDistricts(selectedProvince);
-            generateMockClinics(selectedProvince.name, "Tất cả quận huyện");
+            applyFilter();
         });
 
         function showEmptyState() {
@@ -818,7 +825,7 @@
                         });
                         this.classList.add("active");
                         this.innerHTML += ' <i class="fas fa-check text-primary"></i>';
-                        generateMockClinics(province.name, d.name);
+                        applyFilter();
                     });
                     districtList.appendChild(li);
                 });
@@ -831,22 +838,8 @@
                 });
                 this.classList.add("active");
                 this.innerHTML += ' <i class="fas fa-check text-primary"></i>';
-                generateMockClinics(province.name, "Tất cả quận huyện");
+                applyFilter();
             });
-        }
-
-        function generateMockClinics(provinceName, districtName) {
-            const count = Math.floor(Math.random() * 5) + 2;
-            allClinics = [];
-            for (let i = 1; i <= count; i++) {
-                const dName = districtName === "Tất cả quận huyện" ? "Quận " + (Math.floor(Math.random() * 10) + 1) : districtName;
-                allClinics.push({
-                    name: `${catName} Mẫu Số ${i}`,
-                    address: `123 Đường Số ${i}, ${dName}, ${provinceName}`,
-                    img: images[i % images.length]
-                });
-            }
-            renderClinics(allClinics);
         }
     });
 </script>

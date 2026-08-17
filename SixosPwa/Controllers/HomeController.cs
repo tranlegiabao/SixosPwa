@@ -56,7 +56,7 @@ public class HomeController : Controller
 
     [HttpGet("/Home/DanhSachCoSo-{type}")]
     [AllowAnonymous]
-    public IActionResult DanhSachCoSo(string type)
+    public async Task<IActionResult> DanhSachCoSo(string type)
     {
         // Danh mục tương ứng
         string title = "Cơ sở y tế";
@@ -70,7 +70,13 @@ public class HomeController : Controller
         }
         ViewData["Title"] = title;
         ViewData["Type"] = type;
-        return View();
+
+        var dsCoso = await _db.DMCSKCBs
+            .Where(x => x.LoaiCS == type)
+            .OrderByDescending(x => x.QuangCao)
+            .ToListAsync();
+
+        return View(dsCoso);
     }
 
     [HttpGet]

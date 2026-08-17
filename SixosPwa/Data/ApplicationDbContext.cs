@@ -17,6 +17,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<PushDangKy> PushDangKys => Set<PushDangKy>();
     public DbSet<PhongKham> PhongKhams => Set<PhongKham>();
     public DbSet<LichSuKham> LichSuKhams => Set<LichSuKham>();
+    public DbSet<DMCSKCB> DMCSKCBs => Set<DMCSKCB>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -102,5 +103,16 @@ public class ApplicationDbContext : DbContext
             .WithMany()
             .HasForeignKey(ls => ls.PhongKhamId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Configure DMCSKCB
+        modelBuilder.Entity<DMCSKCB>().ToTable("DMCSKCB");
+        modelBuilder.Entity<DMCSKCB>().HasKey(e => e.Id);
+        modelBuilder.Entity<DMCSKCB>().Property(e => e.MaCoSo).HasMaxLength(10);
+        modelBuilder.Entity<DMCSKCB>().Property(e => e.TenCoSo).HasMaxLength(100);
+        modelBuilder.Entity<DMCSKCB>().Property(e => e.DiaChi).HasMaxLength(255);
+        modelBuilder.Entity<DMCSKCB>().Property(e => e.LoaiCS).HasMaxLength(20);
+        modelBuilder.Entity<DMCSKCB>().Property(e => e.TGLamViec).HasMaxLength(50);
+        modelBuilder.Entity<DMCSKCB>().Property(e => e.Img).HasMaxLength(500);
+        modelBuilder.Entity<DMCSKCB>().Property(e => e.QuangCao).HasColumnType("decimal(15,0)");
     }
 }
