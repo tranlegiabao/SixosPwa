@@ -55,6 +55,7 @@ public class HomeController : Controller
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public IActionResult DanhSachCoSo(string type)
     {
         // Danh mục tương ứng
@@ -73,12 +74,24 @@ public class HomeController : Controller
     }
 
     [HttpGet]
+    [AllowAnonymous]
+    public IActionResult ChiTietCoSo(string ten, string diaChi, string type, string img)
+    {
+        ViewData["TenCoSo"] = ten ?? "Cơ sở y tế";
+        ViewData["DiaChi"] = diaChi ?? "Đang cập nhật";
+        ViewData["Type"] = type ?? "benhvien";
+        ViewData["Img"] = img ?? "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80";
+        return View();
+    }
+
+    [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> ThongTinBenhNhan()
     {
         var sdt = User.Identity?.Name;
         if (string.IsNullOrEmpty(sdt))
         {
-            return RedirectToAction("Login", "DangNhap");
+            return View(new List<LichSuKham>());
         }
 
         ViewData["UserName"] = sdt;
