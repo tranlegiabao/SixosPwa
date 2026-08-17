@@ -6,7 +6,7 @@
 <style>
     /* Hide layout parts */
     .app-nav, .bottom-nav, .app-foot { display: none !important; }
-    body { background-color: #f0f4f8; margin: 0; padding-bottom: 0 !important; font-family: 'Inter', sans-serif; }
+    body { background-color: #f0f4f8; margin: 0; padding-bottom: 120px !important; font-family: 'Inter', sans-serif; }
     .container, main.container { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
 
     /* Layout Variables */
@@ -48,7 +48,7 @@
     }
     .ytv-logo-text {
         font-family: 'Times New Roman', Times, serif;
-        font-size: 28px;
+        font-size: 34px;
         font-weight: 900;
         line-height: 1.05;
         letter-spacing: 1px;
@@ -65,7 +65,7 @@
         text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
     }
     .ytv-header-title p {
-        font-size: 16px;
+        font-size: 20px;
         margin: 0;
         color: #e0f2f1;
         font-style: italic;
@@ -74,6 +74,49 @@
         font-size: 32px;
         cursor: pointer;
         padding: 10px;
+        position: relative;
+    }
+    .ytv-dropdown {
+        display: none;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        min-width: 240px;
+        z-index: 9999;
+        overflow: hidden;
+        animation: fadeDown 0.2s ease;
+    }
+    .ytv-dropdown.open { display: block; }
+    @@keyframes fadeDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .ytv-dropdown a {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 15px 20px;
+        color: #334155;
+        font-size: 16px;
+        font-weight: 600;
+        text-decoration: none;
+        border-bottom: 1px solid #f1f5f9;
+        transition: all 0.2s;
+    }
+    .ytv-dropdown a:last-child { border-bottom: none; }
+    .ytv-dropdown a:hover {
+        background: #eff6ff;
+        color: var(--ytv-primary);
+        padding-left: 28px;
+    }
+    .ytv-dropdown a i {
+        font-size: 20px;
+        width: 26px;
+        text-align: center;
+        color: var(--ytv-secondary);
     }
 
     /* MAIN CONTAINER */
@@ -152,10 +195,15 @@
     .ytv-footer {
         background: #e0f2fe; /* xanh nhạt */
         color: #334155;
-        padding: 25px 30px 15px 30px;
+        padding: 20px 30px 10px 30px;
         display: flex;
         flex-direction: column;
         border-top: 4px solid var(--ytv-primary);
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
     }
     .ytv-footer-top {
         display: flex;
@@ -249,15 +297,32 @@
 
 <div class="ytv-header">
     <div class="ytv-logo-area">
-        <img src="/static/logo-yte.png" alt="Logo" style="height: 50px; width: 50px; object-fit: contain; background: white; border-radius: 50%; padding: 5px;" />
+        <img src="/static/logo-yte.png" alt="Logo" style="height: 65px; width: 65px; object-fit: cover; background: white; border-radius: 50%; padding: 0;" />
         <div class="ytv-logo-text">Y TẾ<br>VIỆT</div>
     </div>
     <div class="ytv-header-title">
         <h1>Dịch Vụ Đăng Ký Khám Bệnh Online</h1>
         <p>Tiện lợi - Nhanh chóng - Chính xác</p>
     </div>
-    <div class="ytv-header-menu">
+    <div class="ytv-header-menu" id="menuBtn" onclick="toggleMenu()">
         <i class="fas fa-bars"></i>
+        <div class="ytv-dropdown" id="dropdownMenu">
+            <a href="/Home/DanhSachCoSo?type=benhvien">
+                <i class="fas fa-hospital"></i> Bệnh viện
+            </a>
+            <a href="/Home/DanhSachCoSo?type=pkdk">
+                <i class="fas fa-clinic-medical"></i> Phòng khám đa khoa
+            </a>
+            <a href="/Home/DanhSachCoSo?type=nhakhoa">
+                <i class="fas fa-tooth"></i> Nha khoa
+            </a>
+            <a href="/Home/DanhSachCoSo?type=phongmach">
+                <i class="fas fa-stethoscope"></i> Phòng mạch
+            </a>
+            <a href="/Home/DanhSachCoSo?type=nhathuoc">
+                <i class="fas fa-pills"></i> Nhà thuốc
+            </a>
+        </div>
     </div>
 </div>
 
@@ -331,7 +396,7 @@
     <div class="ytv-footer-top">
         <div class="ytv-support-col">
             <div class="ytv-support-phones" style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
-                <div><i class="fas fa-headset me-2"></i> Hỗ trợ: <span>0901 82 88 96</span> - <span>0364 956 007</span></div>
+                <div><i class="fas fa-headset me-2"></i> Hỗ trợ: <span>0901 87 88 96</span> - <span>0364 956 007</span></div>
                 <div><i class="fas fa-envelope me-2"></i> Email: <a href="mailto:Sixossoft@gmail.com" style="color: var(--ytv-primary); font-weight: 600; text-decoration: none;">Sixossoft@gmail.com</a></div>
             </div>
         </div>
@@ -347,3 +412,34 @@
         Đơn vị phối hợp thực hiện: <strong>Công Ty Phần mềm Vũ Phong - SixOSSoft.com</strong>
     </div>
 </div>
+
+<script>
+    function toggleMenu() {
+        var menu = document.getElementById("dropdownMenu");
+        menu.classList.toggle("open");
+    }
+
+    // Auto-close menu when mouse leaves menu area
+    document.addEventListener("DOMContentLoaded", function() {
+        var menuBtn = document.getElementById("menuBtn");
+        if (menuBtn) {
+            menuBtn.addEventListener("mouseleave", function() {
+                var menu = document.getElementById("dropdownMenu");
+                if (menu) menu.classList.remove("open");
+            });
+        }
+    });
+
+    // Close the dropdown menu if the user clicks outside of it
+    window.onclick = function(event) {
+        if (!event.target.closest('#menuBtn')) {
+            var dropdowns = document.getElementsByClassName("ytv-dropdown");
+            for (var i = 0; i < dropdowns.length; i++) {
+                var openDropdown = dropdowns[i];
+                if (openDropdown.classList.contains('open')) {
+                    openDropdown.classList.remove('open');
+                }
+            }
+        }
+    }
+</script>

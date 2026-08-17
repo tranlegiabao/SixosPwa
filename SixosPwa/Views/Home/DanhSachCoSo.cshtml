@@ -6,7 +6,7 @@
     /* Ẩn Layout mặc định */
     .app-nav { display: none !important; }
     .bottom-nav { display: none !important; }
-    body { background-color: var(--ytv-bg); padding-bottom: 0 !important; margin: 0 !important; }
+    body { background-color: var(--ytv-bg); padding-bottom: 120px !important; margin: 0 !important; }
 
     /* Buoc Layout cha phai full width */
     body > *,
@@ -51,7 +51,7 @@
     }
     .ytv-logo-text {
         font-family: 'Times New Roman', Times, serif;
-        font-size: 28px;
+        font-size: 34px;
         font-weight: 900;
         line-height: 1.05;
         letter-spacing: 1px;
@@ -69,7 +69,7 @@
     }
     .ytv-header-title p {
         margin: 5px 0 0 0;
-        font-size: 14px;
+        font-size: 19px;
         opacity: 0.9;
     }
     .ytv-menu-btn {
@@ -155,21 +155,95 @@
         gap: 6px;
     }
     .ytv-province-select {
+        display: none !important;
+    }
+    
+    /* CUSTOM SEARCHABLE SELECT */
+    .ytv-custom-select-container {
+        position: relative;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    .ytv-custom-select-trigger {
         width: 100%;
         padding: 8px 12px;
         border: 1.5px solid #cbd5e1;
         border-radius: 8px;
         font-size: 14px;
         color: var(--ytv-text);
-        margin-bottom: 10px;
         outline: none;
-        transition: border-color 0.3s;
         background: white;
         cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: border-color 0.3s;
     }
-    .ytv-province-select:focus {
+    .ytv-custom-select-trigger:hover, .ytv-custom-select-container.open .ytv-custom-select-trigger {
         border-color: var(--ytv-primary);
     }
+    .ytv-custom-select-dropdown {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 8px;
+        margin-top: 4px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        z-index: 1000;
+        overflow: hidden;
+    }
+    .ytv-custom-select-container.open .ytv-custom-select-dropdown {
+        display: block;
+    }
+    .ytv-custom-select-search {
+        position: relative;
+        padding: 8px;
+        border-bottom: 1px solid #f1f5f9;
+        background: #f8fafc;
+    }
+    .ytv-custom-select-search input {
+        width: 100%;
+        padding: 6px 30px 6px 10px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 13px;
+        outline: none;
+    }
+    .ytv-custom-select-search input:focus {
+        border-color: var(--ytv-primary);
+    }
+    .ytv-custom-select-search i {
+        position: absolute;
+        right: 18px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 12px;
+    }
+    .ytv-custom-select-options {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        max-height: 220px;
+        overflow-y: auto;
+    }
+    .ytv-custom-select-options li {
+        padding: 8px 12px;
+        font-size: 13px;
+        color: #475569;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .ytv-custom-select-options li:hover, .ytv-custom-select-options li.selected {
+        background: #eff6ff;
+        color: var(--ytv-primary);
+        font-weight: 600;
+    }
+
     .ytv-district-list {
         list-style: none;
         padding: 0;
@@ -311,10 +385,15 @@
     .ytv-footer {
         background: #e0f2fe; 
         color: #334155;
-        padding: 25px 30px 15px 30px;
+        padding: 20px 30px 10px 30px;
         display: flex;
         flex-direction: column;
         border-top: 4px solid var(--ytv-primary);
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
     }
     .ytv-footer-top {
         display: flex;
@@ -385,7 +464,7 @@
 
 <div class="ytv-header">
     <a href="/Home/ThongTinBenhNhan" class="ytv-logo-area">
-        <img src="/static/logo-yte.png" alt="Logo" style="height: 50px; width: 50px; object-fit: contain; background: white; border-radius: 50%; padding: 5px;" />
+        <img src="/static/logo-yte.png" alt="Logo" style="height: 65px; width: 65px; object-fit: cover; background: white; border-radius: 50%; padding: 0;" />
         <div class="ytv-logo-text">Y TẾ<br>VIỆT</div>
     </a>
     <div class="ytv-header-title d-none d-md-block">
@@ -404,9 +483,27 @@
             <div class="ytv-khu-vuc-title">
                 <i class="fas fa-map-marker-alt"></i> Khu vực
             </div>
-            <select class="ytv-province-select" id="provinceSelect">
+            <!-- Hidden original select to maintain JS compatibility -->
+            <select class="ytv-province-select" id="provinceSelect" style="display:none;">
                 <option value="">-- Chọn Tỉnh / TP --</option>
             </select>
+            
+            <!-- Custom Searchable Dropdown -->
+            <div class="ytv-custom-select-container" id="customProvinceContainer">
+                <div class="ytv-custom-select-trigger" id="customProvinceTrigger">
+                    <span>-- Chọn Tỉnh / TP --</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="ytv-custom-select-dropdown">
+                    <div class="ytv-custom-select-search">
+                        <input type="text" id="customProvinceSearch" placeholder="Tìm nhanh (hn, hcm, bd, vt...)" autocomplete="off" />
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <ul class="ytv-custom-select-options" id="customProvinceOptions">
+                        <li data-value="" class="selected">-- Chọn Tỉnh / TP --</li>
+                    </ul>
+                </div>
+            </div>
             <ul class="ytv-district-list" id="districtList">
                 <li class="active" data-code="">Tất cả quận huyện <i class="fas fa-check"></i></li>
             </ul>
@@ -416,7 +513,7 @@
         <div class="ytv-content-title">
             <div class="ytv-content-title-left">
                 <span>Danh sách @ViewData["Title"]</span>
-                <span class="badge bg-primary rounded-pill" style="font-size: 14px;"><span id="resultCount">0</span> cơ sở</span>
+                <span class="badge bg-primary rounded-pill" style="font-size: 14px; display: none !important;"><span id="resultCount">0</span> cơ sở</span>
             </div>
             <div class="ytv-search-box">
                 <i class="fas fa-search"></i>
@@ -434,8 +531,8 @@
     <div class="ytv-footer-top">
         <div class="ytv-support-col">
             <div class="ytv-support-phones" style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
-                <div><i class="fas fa-headset me-2"></i> Hỗ trợ: <span>0901 82 88 96</span> - <span>0364 956 007</span></div>
-                <div><i class="fas fa-envelope me-2"></i> Email: <a href="mailto:Sixossoft@gmail.com" style="color: var(--ytv-primary); font-weight: 600; text-decoration: none;">Sixossoft@gmail.com</a></div>
+                <div><i class="fas fa-headset me-2"></i> Hỗ trợ: <span>0901 87 88 96</span> - <span>0364 956 007</span></div>
+                <div><i class="fas fa-envelope me-2"></i> Email: <a href="mailto:Sixossoft@gmail.com" style="color: var(--ytv-primary); font-weight: 600; text-decoration: none;">sixossoft@gmail.com</a></div>
             </div>
         </div>
         
@@ -509,6 +606,135 @@
             renderClinics(filtered);
         });
 
+        // Elements for custom searchable dropdown
+        const customProvinceContainer = document.getElementById("customProvinceContainer");
+        const customProvinceTrigger = document.getElementById("customProvinceTrigger");
+        const customProvinceSearch = document.getElementById("customProvinceSearch");
+        const customProvinceOptions = document.getElementById("customProvinceOptions");
+
+        // Toggle dropdown open state
+        customProvinceTrigger.addEventListener("click", function(e) {
+            e.stopPropagation();
+            customProvinceContainer.classList.toggle("open");
+            if (customProvinceContainer.classList.contains("open")) {
+                customProvinceSearch.focus();
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener("click", function(e) {
+            if (!customProvinceContainer.contains(e.target)) {
+                customProvinceContainer.classList.remove("open");
+            }
+        });
+
+        // Helper to remove accents (Vietnamese diacritics)
+        function removeAccents(str) {
+            return str.normalize("NFD")
+                      .replace(/[\u0300-\u036f]/g, "")
+                      .replace(/đ/g, "d")
+                      .replace(/Đ/g, "D");
+        }
+
+        // Helper to match input keyword against province name
+        function matchesKeyword(provinceName, kw) {
+            const normalizedName = removeAccents(provinceName.toLowerCase());
+            const normalizedKw = removeAccents(kw.toLowerCase());
+            
+            // Direct substring match
+            if (normalizedName.includes(normalizedKw)) return true;
+            
+            // Abbreviation map
+            const abbrevMap = {
+                "hn": "ha noi",
+                "hcm": "ho chi minh",
+                "sg": "ho chi minh",
+                "tphcm": "ho chi minh",
+                "dn": "da nang",
+                "hp": "hai phong",
+                "ct": "can tho",
+                "bd": "binh duong",
+                "dna": "dong nai",
+                "la": "long an",
+                "tg": "tien giang",
+                "vt": "vung tau",
+                "brvt": "vung tau",
+                "nt": "nha trang",
+                "qn": "quang ninh",
+                "qb": "quang binh",
+                "qt": "quang tri",
+                "tth": "thua thien hue",
+                "gl": "gia lai",
+                "dl": "dak lak",
+                "ld": "lam dong",
+                "dl": "da lat"
+            };
+            
+            if (abbrevMap[normalizedKw] && normalizedName.includes(abbrevMap[normalizedKw])) {
+                return true;
+            }
+            
+            // Initials match (e.g. "tphcm" -> matches "Thành phố Hồ Chí Minh" initials: tphcm)
+            const initials = normalizedName.split(/\s+/).map(word => word[0]).join("");
+            if (initials.includes(normalizedKw)) return true;
+            
+            return false;
+        }
+
+        // Render custom dropdown options
+        function renderCustomProvinceOptions(dataList) {
+            // Keep the first default option
+            customProvinceOptions.innerHTML = `<li data-value="" class="${!provinceSelect.value ? 'selected' : ''}">-- Chọn Tỉnh / TP --</li>`;
+            
+            dataList.forEach(p => {
+                const li = document.createElement("li");
+                li.dataset.value = p.code;
+                li.textContent = p.name;
+                if (provinceSelect.value == p.code) {
+                    li.classList.add("selected");
+                }
+                
+                li.addEventListener("click", function() {
+                    // Update trigger text
+                    customProvinceTrigger.querySelector("span").textContent = p.name;
+                    
+                    // Mark selected in list
+                    customProvinceOptions.querySelectorAll("li").forEach(item => item.classList.remove("selected"));
+                    this.classList.add("selected");
+                    
+                    // Set value in hidden select and dispatch change
+                    provinceSelect.value = p.code;
+                    provinceSelect.dispatchEvent(new Event("change"));
+                    
+                    // Close dropdown
+                    customProvinceContainer.classList.remove("open");
+                });
+                customProvinceOptions.appendChild(li);
+            });
+
+            // Bind click event for the first "-- Chọn Tỉnh / TP --" option
+            customProvinceOptions.firstElementChild.addEventListener("click", function() {
+                customProvinceTrigger.querySelector("span").textContent = "-- Chọn Tỉnh / TP --";
+                customProvinceOptions.querySelectorAll("li").forEach(item => item.classList.remove("selected"));
+                this.classList.add("selected");
+                
+                provinceSelect.value = "";
+                provinceSelect.dispatchEvent(new Event("change"));
+                customProvinceContainer.classList.remove("open");
+            });
+        }
+
+        // Input search event in custom select dropdown
+        customProvinceSearch.addEventListener("input", function() {
+            const kw = this.value.trim();
+            if (!kw) {
+                renderCustomProvinceOptions(provinceData);
+                return;
+            }
+            const filtered = provinceData.filter(p => matchesKeyword(p.name, kw));
+            renderCustomProvinceOptions(filtered);
+        });
+
         // Fetch 63 provinces
         fetch("https://provinces.open-api.vn/api/?depth=2")
             .then(res => res.json())
@@ -520,6 +746,7 @@
                     opt.textContent = p.name;
                     provinceSelect.appendChild(opt);
                 });
+                renderCustomProvinceOptions(data); // Populate custom dropdown options
             })
             .catch(err => console.error("Lỗi lấy dữ liệu tỉnh thành: ", err));
 

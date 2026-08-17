@@ -8,7 +8,7 @@
 <style>
     .app-nav { display: none !important; }
     .bottom-nav { display: none !important; }
-    body { background: #f0f9ff; padding-bottom: 0 !important; margin: 0 !important; }
+    body { background: #f0f9ff; padding-bottom: 120px !important; margin: 0 !important; }
     .container, .container-fluid, .container-sm, .container-md, .container-lg, .container-xl {
         max-width: 100% !important; width: 100% !important;
         padding-left: 0 !important; padding-right: 0 !important;
@@ -23,10 +23,10 @@
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
     .ytv-logo-area { display: flex; align-items: center; gap: 15px; text-decoration: none; color: white; }
-    .ytv-logo-text { font-family: 'Times New Roman', serif; font-size: 28px; font-weight: 900; line-height: 1.05; }
+    .ytv-logo-text { font-family: 'Times New Roman', serif; font-size: 34px; font-weight: 900; line-height: 1.05; }
     .ytv-header-title { text-align: center; flex-grow: 1; }
     .ytv-header-title h1 { margin: 0; font-size: 22px; font-weight: 700; }
-    .ytv-header-title p { margin: 5px 0 0; font-size: 14px; opacity: 0.9; }
+    .ytv-header-title p { margin: 5px 0 0; font-size: 19px; opacity: 0.9; }
     .ytv-menu-btn {
         background: rgba(255,255,255,0.2); color: white; font-size: 22px;
         width: 45px; height: 45px; border-radius: 50%;
@@ -34,6 +34,55 @@
         text-decoration: none; transition: background 0.3s;
     }
     .ytv-menu-btn:hover { background: rgba(255,255,255,0.35); color: white; }
+
+    .ytv-header-menu {
+        font-size: 32px;
+        cursor: pointer;
+        padding: 10px;
+        position: relative;
+    }
+    .ytv-dropdown {
+        display: none;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        min-width: 240px;
+        z-index: 9999;
+        overflow: hidden;
+        animation: fadeDown 0.2s ease;
+    }
+    .ytv-dropdown.open { display: block; }
+    @@keyframes fadeDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .ytv-dropdown a {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 15px 20px;
+        color: #334155;
+        font-size: 16px;
+        font-weight: 600;
+        text-decoration: none;
+        border-bottom: 1px solid #f1f5f9;
+        transition: all 0.2s;
+    }
+    .ytv-dropdown a:last-child { border-bottom: none; }
+    .ytv-dropdown a:hover {
+        background: #eff6ff;
+        color: var(--ytv-primary);
+        padding-left: 28px;
+    }
+    .ytv-dropdown a i {
+        font-size: 20px;
+        width: 26px;
+        text-align: center;
+        color: var(--ytv-secondary);
+    }
 
     .ytv-main { display: flex; width: 100%; min-height: calc(100vh - 140px); }
 
@@ -102,7 +151,19 @@
     .tab-panel h2 { font-size: 20px; font-weight: 700; color: var(--ytv-primary); margin-bottom: 15px; padding-bottom: 12px; border-bottom: 2px solid #e0f2fe; }
     .tab-panel p { color: #64748b; line-height: 1.8; font-size: 15px; }
 
-    .ytv-footer { background: #e0f2fe; color: #334155; padding: 25px 30px 15px; display: flex; flex-direction: column; border-top: 4px solid var(--ytv-primary); }
+    .ytv-footer {
+        background: #e0f2fe; 
+        color: #334155;
+        padding: 20px 30px 10px;
+        display: flex;
+        flex-direction: column;
+        border-top: 4px solid var(--ytv-primary);
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
+    }
     .ytv-footer-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 20px; }
     .ytv-policies-col { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-weight: 500; }
     .ytv-policies-col a { color: #0f172a; text-decoration: none; }
@@ -122,16 +183,33 @@
 
 <div class="ytv-header">
     <a href="/Home/ThongTinBenhNhan" class="ytv-logo-area">
-        <img src="/static/logo-yte.png" alt="Logo" style="height:50px;width:50px;object-fit:contain;background:white;border-radius:50%;padding:5px;" />
+        <img src="/static/logo-yte.png" alt="Logo" style="height: 65px; width: 65px; object-fit: cover; background: white; border-radius: 50%; padding: 0;" />
         <div class="ytv-logo-text">Y TẾ<br>VIỆT</div>
     </a>
     <div class="ytv-header-title">
         <h1>@tenCoSo</h1>
         <p>Thông tin chi tiết cơ sở y tế</p>
     </div>
-    <a href="/Home/DanhSachCoSo?type=@type" class="ytv-menu-btn" title="Quay lại">
-        <i class="fas fa-arrow-left"></i>
-    </a>
+    <div class="ytv-header-menu" id="menuBtn" onclick="toggleMenu()">
+        <i class="fas fa-bars"></i>
+        <div class="ytv-dropdown" id="dropdownMenu">
+            <a href="/Home/DanhSachCoSo?type=benhvien">
+                <i class="fas fa-hospital"></i> Bệnh viện
+            </a>
+            <a href="/Home/DanhSachCoSo?type=pkdk">
+                <i class="fas fa-clinic-medical"></i> Phòng khám đa khoa
+            </a>
+            <a href="/Home/DanhSachCoSo?type=nhakhoa">
+                <i class="fas fa-tooth"></i> Nha khoa
+            </a>
+            <a href="/Home/DanhSachCoSo?type=phongmach">
+                <i class="fas fa-stethoscope"></i> Phòng mạch
+            </a>
+            <a href="/Home/DanhSachCoSo?type=nhathuoc">
+                <i class="fas fa-pills"></i> Nhà thuốc
+            </a>
+        </div>
+    </div>
 </div>
 
 <div class="ytv-main">
@@ -146,8 +224,8 @@
         <a class="ytv-menu-item" onclick="showTab('doi-ngu', this)">
             <i class="fas fa-user-md"></i> Đội ngũ bác sĩ
         </a>
-        <a class="ytv-menu-item" onclick="showTab('tin-tuc', this)">
-            <i class="fas fa-newspaper"></i> Tin tức
+        <a class="ytv-menu-item" onclick="showTab('trang-thiet-bi', this)">
+            <i class="fas fa-tools"></i> Các trang thiết bị
         </a>
     </div>
 
@@ -191,9 +269,10 @@
                 <h2><i class="fas fa-user-md me-2"></i>Đội ngũ bác sĩ</h2>
                 <p>Đội ngũ bác sĩ tại @tenCoSo gồm hơn 50 bác sĩ chuyên khoa với trình độ từ Thạc sĩ đến Tiến sĩ, được đào tạo tại các trường Đại học Y uy tín trong và ngoài nước.</p>
             </div>
-            <div id="tin-tuc" class="tab-panel">
-                <h2><i class="fas fa-newspaper me-2"></i>Tin tức</h2>
-                <p>📰 Cập nhật những tin tức mới nhất về sức khỏe, hoạt động của cơ sở và các chương trình khám bệnh miễn phí đang được triển khai.</p>
+            <div id="trang-thiet-bi" class="tab-panel">
+                <h2><i class="fas fa-tools me-2"></i>Các trang thiết bị</h2>
+                <p>Chúng tôi sở hữu các hệ thống thiết bị y tế tiên tiến hàng đầu để phục vụ chẩn đoán và điều trị hiệu quả:</p>
+                <p>💻 Hệ thống chụp cộng hưởng từ MRI hiện đại<br>💻 Máy chụp cắt lớp vi tính CT Scanner đa dãy<br>💻 Hệ thống siêu âm màu 4D thế hệ mới<br>💻 Máy xét nghiệm sinh hóa tự động hoàn toàn<br>💻 Thiết bị phẫu thuật nội soi độ phân giải cao</p>
             </div>
         </div>
     </div>
@@ -216,5 +295,34 @@
         document.querySelectorAll('.ytv-menu-item').forEach(m => m.classList.remove('active'));
         document.getElementById(tabId).classList.add('active');
         el.classList.add('active');
+    }
+
+    function toggleMenu() {
+        var menu = document.getElementById("dropdownMenu");
+        menu.classList.toggle("open");
+    }
+
+    // Auto-close menu when mouse leaves menu area
+    document.addEventListener("DOMContentLoaded", function() {
+        var menuBtn = document.getElementById("menuBtn");
+        if (menuBtn) {
+            menuBtn.addEventListener("mouseleave", function() {
+                var menu = document.getElementById("dropdownMenu");
+                if (menu) menu.classList.remove("open");
+            });
+        }
+    });
+
+    window.onclick = function(event) {
+        // Handle tab switching or menu toggling
+        if (!event.target.closest('#menuBtn')) {
+            var dropdowns = document.getElementsByClassName("ytv-dropdown");
+            for (var i = 0; i < dropdowns.length; i++) {
+                var openDropdown = dropdowns[i];
+                if (openDropdown.classList.contains('open')) {
+                    openDropdown.classList.remove('open');
+                }
+            }
+        }
     }
 </script>
