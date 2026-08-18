@@ -460,7 +460,110 @@
         .ytv-search-box { width: 100%; }
         .ytv-content-title { flex-direction: column; align-items: flex-start; }
     }
+
+    /* ===== CAROUSEL QUẢNG CÁO ===== */
+    .ytv-promo-section {
+        margin-bottom: 22px;
+    }
+    .ytv-promo-wrap {
+        position: relative;
+    }
+    .ytv-promo-track {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        scroll-behavior: smooth;
+        gap: 12px;
+        padding: 4px 2px 14px 2px;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    .ytv-promo-track::-webkit-scrollbar { display: none; }
+
+    .ytv-promo-card {
+        flex: 0 0 80%;
+        scroll-snap-align: start;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 4px 18px rgba(0,0,0,0.12);
+        cursor: pointer;
+        position: relative;
+        aspect-ratio: 16/9;
+        background: #e2e8f0;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .ytv-promo-card:hover {
+        transform: scale(1.012);
+        box-shadow: 0 8px 26px rgba(0,0,0,0.18);
+    }
+    @@media (min-width: 576px) { .ytv-promo-card { flex: 0 0 300px; } }
+    @@media (min-width: 992px) { .ytv-promo-card { flex: 0 0 340px; } }
+
+    .ytv-promo-card img {
+        width: 100%; height: 100%;
+        object-fit: cover; display: block;
+        transition: transform 0.4s ease;
+    }
+    .ytv-promo-card:hover img { transform: scale(1.06); }
+
+    .ytv-promo-overlay {
+        position: absolute;
+        bottom: 0; left: 0; right: 0;
+        background: linear-gradient(to top, rgba(0,0,0,0.74) 0%, rgba(0,0,0,0.1) 65%, transparent 100%);
+        padding: 12px 14px 12px;
+        display: flex; flex-direction: column; gap: 2px;
+    }
+    .ytv-promo-badge {
+        display: inline-block;
+        background: rgba(255,255,255,0.22);
+        color: #fff; font-size: 0.63rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.8px;
+        padding: 2px 8px; border-radius: 20px;
+        backdrop-filter: blur(4px); width: fit-content; margin-bottom: 2px;
+    }
+    .ytv-promo-title {
+        font-size: 0.93rem; font-weight: 800; color: #fff; margin: 0;
+        line-height: 1.22; text-shadow: 0 1px 4px rgba(0,0,0,0.45);
+    }
+    .ytv-promo-sub {
+        font-size: 0.72rem; color: rgba(255,255,255,0.82); margin: 0; line-height: 1.3;
+    }
+
+    /* Nút mũi tên */
+    .ytv-promo-arrow {
+        position: absolute; top: 50%; transform: translateY(-55%);
+        z-index: 10; width: 36px; height: 36px; border-radius: 50%;
+        background: rgba(255,255,255,0.93); border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; color: #334155; font-size: 0.95rem;
+        transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+    }
+    .ytv-promo-arrow:hover {
+        background: #fff; box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+        transform: translateY(-55%) scale(1.1);
+    }
+    .ytv-promo-arrow-left  { left: -12px; }
+    .ytv-promo-arrow-right { right: -12px; }
+    @@media (max-width: 575px) {
+        .ytv-promo-arrow-left  { left: 2px; }
+        .ytv-promo-arrow-right { right: 2px; }
+    }
+
+    /* Dots */
+    .ytv-promo-dots {
+        display: flex; justify-content: center; gap: 6px; margin-top: 8px;
+    }
+    .ytv-promo-dots span {
+        width: 7px; height: 7px; border-radius: 50%;
+        background: #cbd5e1; display: inline-block; cursor: pointer;
+        transition: background 0.3s, width 0.3s;
+    }
+    .ytv-promo-dots span.active {
+        background: var(--ytv-primary); width: 22px; border-radius: 4px;
+    }
 </style>
+
 
 <div class="ytv-header">
     <a href="/Home/ThongTinBenhNhan" class="ytv-logo-area">
@@ -476,7 +579,121 @@
     </a>
 </div>
 
+<!-- ===== CAROUSEL QUẢNG CÁO - ngay dưới header ===== -->
+<div style="background:#fff; padding: 16px 20px 4px; border-bottom: 1px solid #e2e8f0;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+        <span style="font-size:0.95rem; font-weight:700; color:#1e293b;">🏥 Cơ Sở Y Tế Nổi Bật Gần Bạn</span>
+        <a href="#" style="font-size:0.8rem; color:#3b82f6; text-decoration:none; font-weight:600;">Xem tất cả →</a>
+    </div>
+    <div style="position:relative;">
+        <button id="ytvArrowLeft" onclick="ytvPromoScroll(-1)" style="position:absolute;top:50%;left:-10px;transform:translateY(-55%);z-index:10;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.95);border:none;box-shadow:0 2px 10px rgba(0,0,0,0.18);cursor:pointer;color:#334155;font-size:0.9rem;display:flex;align-items:center;justify-content:center;opacity:0.35;" aria-label="Trước">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <div id="ytvPromoTrack" style="display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;gap:12px;padding:4px 2px 14px;scrollbar-width:none;-ms-overflow-style:none;">
+            <style>#ytvPromoTrack::-webkit-scrollbar{display:none}</style>
+
+            <div onclick="ytvOpenPromo('Bệnh Viện Đa Khoa HisSoft','Nội · Ngoại · Sản · Nhi · Cấp cứu 24/7. Trang thiết bị hiện đại nhất TP.HCM.')" style="flex:0 0 78%;max-width:320px;scroll-snap-align:start;border-radius:14px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,0.12);cursor:pointer;position:relative;aspect-ratio:16/9;background:#e2e8f0;transition:transform .25s;">
+                <img src="https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=480&q=75" style="width:100%;height:100%;object-fit:cover;display:block;" loading="lazy" alt="">
+                <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.72) 0%,transparent 100%);padding:10px 12px;">
+                    <span style="background:rgba(255,255,255,0.22);color:#fff;font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.7px;padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:2px;">🔥 Phổ Biến</span>
+                    <p style="color:#fff;font-size:0.9rem;font-weight:800;margin:0;text-shadow:0 1px 4px rgba(0,0,0,0.4);">Bệnh Viện Đa Khoa HisSoft</p>
+                    <p style="color:rgba(255,255,255,0.82);font-size:0.7rem;margin:0;">Nội · Ngoại · Sản · Nhi · Cấp cứu 24/7</p>
+                </div>
+            </div>
+
+            <div onclick="ytvOpenPromo('Phòng Khám Gia Đình MedHome','Khám tổng quát, tư vấn sức khỏe gia đình, theo dõi bệnh mãn tính.')" style="flex:0 0 78%;max-width:320px;scroll-snap-align:start;border-radius:14px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,0.12);cursor:pointer;position:relative;aspect-ratio:16/9;background:#e2e8f0;">
+                <img src="https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=480&q=75" style="width:100%;height:100%;object-fit:cover;display:block;" loading="lazy" alt="">
+                <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.72) 0%,transparent 100%);padding:10px 12px;">
+                    <span style="background:rgba(255,255,255,0.22);color:#fff;font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.7px;padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:2px;">⭐ Uy Tín</span>
+                    <p style="color:#fff;font-size:0.9rem;font-weight:800;margin:0;text-shadow:0 1px 4px rgba(0,0,0,0.4);">Phòng Khám Gia Đình MedHome</p>
+                    <p style="color:rgba(255,255,255,0.82);font-size:0.7rem;margin:0;">Khám tổng quát · Tư vấn · Mãn tính</p>
+                </div>
+            </div>
+
+            <div onclick="ytvOpenPromo('Nha Khoa Kim','Chuỗi nha khoa uy tín số 1 TP.HCM. Niềng răng, Implant, tẩy trắng răng.')" style="flex:0 0 78%;max-width:320px;scroll-snap-align:start;border-radius:14px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,0.12);cursor:pointer;position:relative;aspect-ratio:16/9;background:#e2e8f0;">
+                <img src="https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?w=480&q=75" style="width:100%;height:100%;object-fit:cover;display:block;" loading="lazy" alt="">
+                <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.72) 0%,transparent 100%);padding:10px 12px;">
+                    <span style="background:rgba(255,255,255,0.22);color:#fff;font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.7px;padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:2px;">💎 VIP</span>
+                    <p style="color:#fff;font-size:0.9rem;font-weight:800;margin:0;text-shadow:0 1px 4px rgba(0,0,0,0.4);">Nha Khoa Kim</p>
+                    <p style="color:rgba(255,255,255,0.82);font-size:0.7rem;margin:0;">Niềng răng · Implant · Tẩy trắng · Răng sứ</p>
+                </div>
+            </div>
+
+            <div onclick="ytvOpenPromo('Trung Tâm Mắt Sáng','Khám & điều trị cận thị, loạn thị. Phẫu thuật Lasik giá tốt nhất TP.HCM.')" style="flex:0 0 78%;max-width:320px;scroll-snap-align:start;border-radius:14px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,0.12);cursor:pointer;position:relative;aspect-ratio:16/9;background:#e2e8f0;">
+                <img src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=480&q=75" style="width:100%;height:100%;object-fit:cover;display:block;" loading="lazy" alt="">
+                <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.72) 0%,transparent 100%);padding:10px 12px;">
+                    <span style="background:rgba(255,255,255,0.22);color:#fff;font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.7px;padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:2px;">🌟 Chuyên Sâu</span>
+                    <p style="color:#fff;font-size:0.9rem;font-weight:800;margin:0;text-shadow:0 1px 4px rgba(0,0,0,0.4);">Trung Tâm Mắt Sáng</p>
+                    <p style="color:rgba(255,255,255,0.82);font-size:0.7rem;margin:0;">Cận · Loạn thị · Lasik · Kính áp tròng</p>
+                </div>
+            </div>
+
+            <div onclick="ytvOpenPromo('Viện Da Liễu SkinCare','Điều trị mụn, nám, sẹo. Trẻ hóa da bằng công nghệ Laser tiên tiến.')" style="flex:0 0 78%;max-width:320px;scroll-snap-align:start;border-radius:14px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,0.12);cursor:pointer;position:relative;aspect-ratio:16/9;background:#e2e8f0;">
+                <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=480&q=75" style="width:100%;height:100%;object-fit:cover;display:block;" loading="lazy" alt="">
+                <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.72) 0%,transparent 100%);padding:10px 12px;">
+                    <span style="background:rgba(255,255,255,0.22);color:#fff;font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.7px;padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:2px;">✨ Làm Đẹp</span>
+                    <p style="color:#fff;font-size:0.9rem;font-weight:800;margin:0;text-shadow:0 1px 4px rgba(0,0,0,0.4);">Viện Da Liễu SkinCare</p>
+                    <p style="color:rgba(255,255,255,0.82);font-size:0.7rem;margin:0;">Mụn · Nám · Sẹo · Laser · Trẻ hóa da</p>
+                </div>
+            </div>
+
+            <div onclick="ytvOpenPromo('Phòng Khám Sản Phụ Khoa MomCare','Siêu âm thai, khám tiền sản, chăm sóc mẹ bầu và sau sinh toàn diện.')" style="flex:0 0 78%;max-width:320px;scroll-snap-align:start;border-radius:14px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,0.12);cursor:pointer;position:relative;aspect-ratio:16/9;background:#e2e8f0;">
+                <img src="https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=480&q=75" style="width:100%;height:100%;object-fit:cover;display:block;" loading="lazy" alt="">
+                <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.72) 0%,transparent 100%);padding:10px 12px;">
+                    <span style="background:rgba(255,255,255,0.22);color:#fff;font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.7px;padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:2px;">👶 Mẹ &amp; Bé</span>
+                    <p style="color:#fff;font-size:0.9rem;font-weight:800;margin:0;text-shadow:0 1px 4px rgba(0,0,0,0.4);">Phòng Khám Sản Phụ Khoa MomCare</p>
+                    <p style="color:rgba(255,255,255,0.82);font-size:0.7rem;margin:0;">Siêu âm thai · Tiền sản · Sau sinh</p>
+                </div>
+            </div>
+
+            <div onclick="ytvOpenPromo('Trung Tâm Tim Mạch HeartCare','Tầm soát bệnh tim mạch, đặt stent, điều trị rối loạn nhịp tim chuyên sâu.')" style="flex:0 0 78%;max-width:320px;scroll-snap-align:start;border-radius:14px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,0.12);cursor:pointer;position:relative;aspect-ratio:16/9;background:#e2e8f0;">
+                <img src="https://images.unsplash.com/photo-1628348068343-c6a848d2b6dd?w=480&q=75" style="width:100%;height:100%;object-fit:cover;display:block;" loading="lazy" alt="">
+                <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.72) 0%,transparent 100%);padding:10px 12px;">
+                    <span style="background:rgba(255,255,255,0.22);color:#fff;font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.7px;padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:2px;">❤️ Chuyên Gia</span>
+                    <p style="color:#fff;font-size:0.9rem;font-weight:800;margin:0;text-shadow:0 1px 4px rgba(0,0,0,0.4);">Trung Tâm Tim Mạch HeartCare</p>
+                    <p style="color:rgba(255,255,255,0.82);font-size:0.7rem;margin:0;">Tầm soát tim · Đặt stent · Nhịp tim</p>
+                </div>
+            </div>
+
+            <div onclick="ytvOpenPromo('Phòng Khám Tai Mũi Họng ENT','Điều trị viêm xoang, viêm họng, ù tai, khàn giọng.')" style="flex:0 0 78%;max-width:320px;scroll-snap-align:start;border-radius:14px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,0.12);cursor:pointer;position:relative;aspect-ratio:16/9;background:#e2e8f0;">
+                <img src="https://images.unsplash.com/photo-1551601651-2a8555f1a136?w=480&q=75" style="width:100%;height:100%;object-fit:cover;display:block;" loading="lazy" alt="">
+                <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.72) 0%,transparent 100%);padding:10px 12px;">
+                    <span style="background:rgba(255,255,255,0.22);color:#fff;font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.7px;padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:2px;">👂 Chuyên Khoa</span>
+                    <p style="color:#fff;font-size:0.9rem;font-weight:800;margin:0;text-shadow:0 1px 4px rgba(0,0,0,0.4);">Phòng Khám Tai Mũi Họng ENT</p>
+                    <p style="color:rgba(255,255,255,0.82);font-size:0.7rem;margin:0;">Viêm xoang · Khàn giọng · Amidan</p>
+                </div>
+            </div>
+
+            <div onclick="ytvOpenPromo('Trung Tâm Phục Hồi RehabPlus','Vật lý trị liệu, phục hồi sau tai biến, sau phẫu thuật, đau cột sống.')" style="flex:0 0 78%;max-width:320px;scroll-snap-align:start;border-radius:14px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,0.12);cursor:pointer;position:relative;aspect-ratio:16/9;background:#e2e8f0;">
+                <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=480&q=75" style="width:100%;height:100%;object-fit:cover;display:block;" loading="lazy" alt="">
+                <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.72) 0%,transparent 100%);padding:10px 12px;">
+                    <span style="background:rgba(255,255,255,0.22);color:#fff;font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.7px;padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:2px;">💪 Phục Hồi</span>
+                    <p style="color:#fff;font-size:0.9rem;font-weight:800;margin:0;text-shadow:0 1px 4px rgba(0,0,0,0.4);">Trung Tâm Phục Hồi RehabPlus</p>
+                    <p style="color:rgba(255,255,255,0.82);font-size:0.7rem;margin:0;">Vật lý trị liệu · Đau lưng · Sau phẫu thuật</p>
+                </div>
+            </div>
+
+            <div onclick="ytvOpenPromo('Trung Tâm Tiêm Chủng VaccineCare','Tiêm vắc-xin cho trẻ em, người lớn. Đầy đủ vắc-xin nhập khẩu chính hãng.')" style="flex:0 0 78%;max-width:320px;scroll-snap-align:start;border-radius:14px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,0.12);cursor:pointer;position:relative;aspect-ratio:16/9;background:#e2e8f0;">
+                <img src="https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=480&q=75" style="width:100%;height:100%;object-fit:cover;display:block;" loading="lazy" alt="">
+                <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(0,0,0,0.72) 0%,transparent 100%);padding:10px 12px;">
+                    <span style="background:rgba(255,255,255,0.22);color:#fff;font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.7px;padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:2px;">💉 Vắc-xin</span>
+                    <p style="color:#fff;font-size:0.9rem;font-weight:800;margin:0;text-shadow:0 1px 4px rgba(0,0,0,0.4);">Trung Tâm Tiêm Chủng VaccineCare</p>
+                    <p style="color:rgba(255,255,255,0.82);font-size:0.7rem;margin:0;">Trẻ em · Người lớn · Vắc-xin nhập khẩu</p>
+                </div>
+            </div>
+
+        </div><!-- end track -->
+        <button id="ytvArrowRight" onclick="ytvPromoScroll(1)" style="position:absolute;top:50%;right:-10px;transform:translateY(-55%);z-index:10;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.95);border:none;box-shadow:0 2px 10px rgba(0,0,0,0.18);cursor:pointer;color:#334155;font-size:0.9rem;display:flex;align-items:center;justify-content:center;" aria-label="Tiếp theo">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+    <!-- Dots -->
+    <div id="ytvPromoDots" style="display:flex;justify-content:center;gap:6px;margin-top:8px;padding-bottom:4px;"></div>
+</div>
+<!-- ===== END CAROUSEL ===== -->
+
 <div class="ytv-main">
+
     <div class="ytv-sidebar">
         <!-- KHU VUC -->
         <div class="ytv-khu-vuc">
@@ -521,11 +738,125 @@
             </div>
         </div>
         
+        <!-- ===== CAROUSEL QUẢNG CÁO ===== -->
+        <div class="ytv-promo-section">
+            <div class="ytv-promo-wrap">
+                <!-- Nút trái -->
+                <button class="ytv-promo-arrow ytv-promo-arrow-left" id="ytvArrowLeft" onclick="ytvPromoScroll(-1)" aria-label="Trước">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+
+                <div class="ytv-promo-track" id="ytvPromoTrack">
+
+                    <div class="ytv-promo-card" onclick="ytvOpenPromo('Bệnh Viện Đa Khoa HisSoft','Nội · Ngoại · Sản · Nhi · Cấp cứu 24/7. Trang thiết bị hiện đại nhất TP.HCM.')">
+                        <img src="https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=560&q=80" alt="Bệnh viện đa khoa" loading="lazy">
+                        <div class="ytv-promo-overlay">
+                            <span class="ytv-promo-badge">🔥 Phổ Biến</span>
+                            <p class="ytv-promo-title">Bệnh Viện Đa Khoa HisSoft</p>
+                            <p class="ytv-promo-sub">Nội · Ngoại · Sản · Nhi · Cấp cứu 24/7</p>
+                        </div>
+                    </div>
+
+                    <div class="ytv-promo-card" onclick="ytvOpenPromo('Phòng Khám Gia Đình MedHome','Khám tổng quát, tư vấn sức khỏe gia đình, theo dõi bệnh mãn tính.')">
+                        <img src="https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=560&q=80" alt="Phòng khám gia đình" loading="lazy">
+                        <div class="ytv-promo-overlay">
+                            <span class="ytv-promo-badge">⭐ Uy Tín</span>
+                            <p class="ytv-promo-title">Phòng Khám Gia Đình MedHome</p>
+                            <p class="ytv-promo-sub">Khám tổng quát · Tư vấn · Mãn tính</p>
+                        </div>
+                    </div>
+
+                    <div class="ytv-promo-card" onclick="ytvOpenPromo('Nha Khoa Kim','Chuỗi nha khoa uy tín số 1 TP.HCM. Niềng răng, Implant, tẩy trắng răng.')">
+                        <img src="https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?w=560&q=80" alt="Nha khoa" loading="lazy">
+                        <div class="ytv-promo-overlay">
+                            <span class="ytv-promo-badge">💎 VIP</span>
+                            <p class="ytv-promo-title">Nha Khoa Kim</p>
+                            <p class="ytv-promo-sub">Niềng răng · Implant · Tẩy trắng · Răng sứ</p>
+                        </div>
+                    </div>
+
+                    <div class="ytv-promo-card" onclick="ytvOpenPromo('Trung Tâm Mắt Sáng','Khám & điều trị cận thị, loạn thị. Phẫu thuật Lasik giá tốt nhất TP.HCM.')">
+                        <img src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=560&q=80" alt="Khám mắt" loading="lazy">
+                        <div class="ytv-promo-overlay">
+                            <span class="ytv-promo-badge">🌟 Chuyên Sâu</span>
+                            <p class="ytv-promo-title">Trung Tâm Mắt Sáng</p>
+                            <p class="ytv-promo-sub">Cận · Loạn thị · Lasik · Kính áp tròng</p>
+                        </div>
+                    </div>
+
+                    <div class="ytv-promo-card" onclick="ytvOpenPromo('Viện Da Liễu SkinCare','Điều trị mụn, nám, sẹo. Trẻ hóa da bằng công nghệ Laser tiên tiến nhất.')">
+                        <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=560&q=80" alt="Da liễu" loading="lazy">
+                        <div class="ytv-promo-overlay">
+                            <span class="ytv-promo-badge">✨ Làm Đẹp</span>
+                            <p class="ytv-promo-title">Viện Da Liễu SkinCare</p>
+                            <p class="ytv-promo-sub">Mụn · Nám · Sẹo · Laser · Trẻ hóa da</p>
+                        </div>
+                    </div>
+
+                    <div class="ytv-promo-card" onclick="ytvOpenPromo('Phòng Khám Sản Phụ Khoa MomCare','Siêu âm thai, khám tiền sản, chăm sóc mẹ bầu và sau sinh toàn diện.')">
+                        <img src="https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=560&q=80" alt="Sản phụ khoa" loading="lazy">
+                        <div class="ytv-promo-overlay">
+                            <span class="ytv-promo-badge">👶 Mẹ &amp; Bé</span>
+                            <p class="ytv-promo-title">Phòng Khám Sản Phụ Khoa MomCare</p>
+                            <p class="ytv-promo-sub">Siêu âm thai · Tiền sản · Sau sinh</p>
+                        </div>
+                    </div>
+
+                    <div class="ytv-promo-card" onclick="ytvOpenPromo('Trung Tâm Tim Mạch HeartCare','Tầm soát bệnh tim mạch, đặt stent, điều trị rối loạn nhịp tim chuyên sâu.')">
+                        <img src="https://images.unsplash.com/photo-1628348068343-c6a848d2b6dd?w=560&q=80" alt="Tim mạch" loading="lazy">
+                        <div class="ytv-promo-overlay">
+                            <span class="ytv-promo-badge">❤️ Chuyên Gia</span>
+                            <p class="ytv-promo-title">Trung Tâm Tim Mạch HeartCare</p>
+                            <p class="ytv-promo-sub">Tầm soát tim · Đặt stent · Nhịp tim</p>
+                        </div>
+                    </div>
+
+                    <div class="ytv-promo-card" onclick="ytvOpenPromo('Phòng Khám Tai Mũi Họng ENT','Điều trị viêm xoang, viêm họng, ù tai, khàn giọng. BS. chuyên khoa kinh nghiệm.')">
+                        <img src="https://images.unsplash.com/photo-1551601651-2a8555f1a136?w=560&q=80" alt="Tai mũi họng" loading="lazy">
+                        <div class="ytv-promo-overlay">
+                            <span class="ytv-promo-badge">👂 Chuyên Khoa</span>
+                            <p class="ytv-promo-title">Phòng Khám Tai Mũi Họng ENT</p>
+                            <p class="ytv-promo-sub">Viêm xoang · Khàn giọng · Amidan</p>
+                        </div>
+                    </div>
+
+                    <div class="ytv-promo-card" onclick="ytvOpenPromo('Trung Tâm Phục Hồi RehabPlus','Vật lý trị liệu, phục hồi sau tai biến, sau phẫu thuật, đau cột sống.')">
+                        <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=560&q=80" alt="Phục hồi chức năng" loading="lazy">
+                        <div class="ytv-promo-overlay">
+                            <span class="ytv-promo-badge">💪 Phục Hồi</span>
+                            <p class="ytv-promo-title">Trung Tâm Phục Hồi RehabPlus</p>
+                            <p class="ytv-promo-sub">Vật lý trị liệu · Đau lưng · Sau phẫu thuật</p>
+                        </div>
+                    </div>
+
+                    <div class="ytv-promo-card" onclick="ytvOpenPromo('Trung Tâm Tiêm Chủng VaccineCare','Tiêm vắc-xin cho trẻ em, người lớn. Đầy đủ các loại vắc-xin nhập khẩu chính hãng.')">
+                        <img src="https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=560&q=80" alt="Tiêm chủng" loading="lazy">
+                        <div class="ytv-promo-overlay">
+                            <span class="ytv-promo-badge">💉 Vắc-xin</span>
+                            <p class="ytv-promo-title">Trung Tâm Tiêm Chủng VaccineCare</p>
+                            <p class="ytv-promo-sub">Trẻ em · Người lớn · Vắc-xin nhập khẩu</p>
+                        </div>
+                    </div>
+
+                </div><!-- end ytv-promo-track -->
+
+                <!-- Nút phải -->
+                <button class="ytv-promo-arrow ytv-promo-arrow-right" id="ytvArrowRight" onclick="ytvPromoScroll(1)" aria-label="Tiếp theo">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div><!-- end ytv-promo-wrap -->
+
+            <!-- Dots -->
+            <div class="ytv-promo-dots" id="ytvPromoDots"></div>
+        </div><!-- end ytv-promo-section -->
+        <!-- ===== END CAROUSEL ===== -->
+
         <div class="ytv-grid" id="clinicGrid">
             <!-- Rendered by JS -->
         </div>
     </div>
 </div>
+
 
 <div class="ytv-footer">
     <div class="ytv-footer-top">
@@ -849,4 +1180,55 @@
             renderClinics(allClinics);
         }
     });
+</script>
+
+<script>
+    // ===== CAROUSEL QUẢNG CÁO YTV =====
+    (function () {
+        const track = document.getElementById('ytvPromoTrack');
+        const dotsEl = document.getElementById('ytvPromoDots');
+        const arrowLeft = document.getElementById('ytvArrowLeft');
+        const arrowRight = document.getElementById('ytvArrowRight');
+        if (!track || !dotsEl) return;
+
+        const cards = track.querySelectorAll('.ytv-promo-card');
+        const total = cards.length;
+
+        // Tạo dots
+        for (let i = 0; i < total; i++) {
+            const d = document.createElement('span');
+            if (i === 0) d.classList.add('active');
+            d.addEventListener('click', () => {
+                const w = cards[0].offsetWidth + 12;
+                track.scrollTo({ left: i * w, behavior: 'smooth' });
+            });
+            dotsEl.appendChild(d);
+        }
+        const dots = dotsEl.querySelectorAll('span');
+
+        // Scroll handler
+        track.addEventListener('scroll', () => {
+            const sl = track.scrollLeft;
+            const w = cards[0].offsetWidth + 12;
+            const idx = Math.round(sl / w);
+            dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+            if (arrowLeft) arrowLeft.style.opacity = sl <= 8 ? '0.35' : '1';
+            if (arrowRight) arrowRight.style.opacity = sl >= track.scrollWidth - track.clientWidth - 8 ? '0.35' : '1';
+        }, { passive: true });
+
+        // Mờ mũi tên trái ban đầu
+        if (arrowLeft) arrowLeft.style.opacity = '0.35';
+    })();
+
+    function ytvPromoScroll(dir) {
+        const track = document.getElementById('ytvPromoTrack');
+        if (!track) return;
+        const cards = track.querySelectorAll('.ytv-promo-card');
+        if (!cards.length) return;
+        track.scrollBy({ left: dir * (cards[0].offsetWidth + 12), behavior: 'smooth' });
+    }
+
+    function ytvOpenPromo(title, desc) {
+        alert('🏥 ' + title + '\n\n' + desc + '\n\nĐặt lịch khám: 0901 87 88 96');
+    }
 </script>

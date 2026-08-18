@@ -350,47 +350,139 @@
         </a>
     </div>
     
-    <div class="ytv-content">
-        <!-- Bootstrap Carousel for Slider -->
-        <div id="mainSlider" class="carousel slide ytv-slider" data-bs-ride="carousel">
-            <div class="carousel-indicators">
-                <button type="button" data-bs-target="#mainSlider" data-bs-slide-to="0" class="active" aria-current="true"></button>
-                <button type="button" data-bs-target="#mainSlider" data-bs-slide-to="1"></button>
-                <button type="button" data-bs-target="#mainSlider" data-bs-slide-to="2"></button>
-            </div>
-            <div class="carousel-inner">
-                <div class="carousel-item active">
-                    <img src="https://img.freepik.com/free-photo/beautiful-young-female-doctor-looking-camera-office_1301-7807.jpg?w=1380"
-                         class="d-block object-fit-cover"
-                         style="width:80%; height:80%; margin:10% auto;"
-                         alt="Slide 1">
-                </div>
-
-                <div class="carousel-item">
-                    <img src="https://img.freepik.com/free-photo/doctor-working-with-laptop-clinic_23-2149196328.jpg?w=1380"
-                         class="d-block object-fit-cover"
-                         style="width:80%; height:80%; margin:10% auto;"
-                         alt="Slide 2">
-                </div>
-
-                <div class="carousel-item">
-                    <img src="https://img.freepik.com/free-photo/modern-hospital-building_1127-2856.jpg?w=1380"
-                         class="d-block object-fit-cover"
-                         style="width:80%; height:80%; margin:10% auto;"
-                         alt="Slide 3">
-                </div>
-            </div>
-            <button class="carousel-control-prev" type="button" data-bs-target="#mainSlider" data-bs-slide="prev">
-                <span class="carousel-control-prev-icon" aria-hidden="true" style="width: 3rem; height: 3rem; background-color: rgba(0,0,0,0.5); border-radius: 50%;"></span>
-                <span class="visually-hidden">Previous</span>
-            </button>
-            <button class="carousel-control-next" type="button" data-bs-target="#mainSlider" data-bs-slide="next">
-                <span class="carousel-control-next-icon" aria-hidden="true" style="width: 3rem; height: 3rem; background-color: rgba(0,0,0,0.5); border-radius: 50%;"></span>
-                <span class="visually-hidden">Next</span>
-            </button>
+    <div class="ytv-content" style="overflow:hidden; padding:20px 24px;">
+        <!-- Tiêu đề -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <span style="font-size:1rem;font-weight:700;color:#1e293b;">🏥 Cơ Sở Y Tế Nổi Bật</span>
+            <a href="#" style="font-size:0.82rem;color:#3b82f6;text-decoration:none;font-weight:600;">Xem tất cả →</a>
         </div>
+
+        <!-- Carousel tự động cuộn -->
+        <div style="position:relative;border-radius:18px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+
+            <!-- Slides -->
+            <div id="adSlides" style="position:relative;width:100%;aspect-ratio:16/9;">
+
+                <div class="ad-slide" style="position:absolute;inset:0;opacity:1;transition:opacity 0.7s ease;">
+                    <img src="https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=700&q=80"
+                         style="width:100%;height:100%;object-fit:cover;display:block;" alt="">
+                    <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(21,101,192,0.7) 0%,rgba(0,0,0,0.2) 100%);"></div>
+                    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;width:85%;">
+                        <span style="background:rgba(255,255,255,0.2);color:#fff;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:3px 12px;border-radius:20px;backdrop-filter:blur(6px);display:inline-block;margin-bottom:10px;">🔥 Phổ Biến</span>
+                        <p style="color:#fff;font-size:1.3rem;font-weight:900;margin:0 0 6px;text-shadow:0 2px 8px rgba(0,0,0,0.5);line-height:1.2;">Bệnh Viện Đa Khoa HisSoft</p>
+                        <p style="color:rgba(255,255,255,0.88);font-size:0.82rem;margin:0 0 18px;">Nội · Ngoại · Sản · Nhi · Cấp cứu 24/7</p>
+                        <button onclick="ttnOpen('Bệnh Viện Đa Khoa HisSoft','Nội · Ngoại · Sản · Nhi · Cấp cứu 24/7.')"
+                            style="background:#fff;color:#1565C0;border:none;padding:9px 26px;border-radius:30px;font-weight:800;font-size:0.85rem;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.25);transition:transform .2s;">
+                            📋 Đặt ngay
+                        </button>
+                    </div>
+                </div>
+
+                <div class="ad-slide" style="position:absolute;inset:0;opacity:0;transition:opacity 0.7s ease;">
+                    <img src="https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?w=700&q=80"
+                         style="width:100%;height:100%;object-fit:cover;display:block;" alt="">
+                    <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(173,20,87,0.72) 0%,rgba(0,0,0,0.2) 100%);"></div>
+                    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;width:85%;">
+                        <span style="background:rgba(255,255,255,0.2);color:#fff;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:3px 12px;border-radius:20px;backdrop-filter:blur(6px);display:inline-block;margin-bottom:10px;">💎 VIP</span>
+                        <p style="color:#fff;font-size:1.3rem;font-weight:900;margin:0 0 6px;text-shadow:0 2px 8px rgba(0,0,0,0.5);line-height:1.2;">Nha Khoa Kim</p>
+                        <p style="color:rgba(255,255,255,0.88);font-size:0.82rem;margin:0 0 18px;">Niềng răng · Implant · Tẩy trắng · Răng sứ</p>
+                        <button onclick="ttnOpen('Nha Khoa Kim','Chuỗi nha khoa uy tín số 1 TP.HCM.')"
+                            style="background:#fff;color:#AD1457;border:none;padding:9px 26px;border-radius:30px;font-weight:800;font-size:0.85rem;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.25);">
+                            📋 Đặt ngay
+                        </button>
+                    </div>
+                </div>
+
+                <div class="ad-slide" style="position:absolute;inset:0;opacity:0;transition:opacity 0.7s ease;">
+                    <img src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=700&q=80"
+                         style="width:100%;height:100%;object-fit:cover;display:block;" alt="">
+                    <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(69,39,160,0.72) 0%,rgba(0,0,0,0.2) 100%);"></div>
+                    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;width:85%;">
+                        <span style="background:rgba(255,255,255,0.2);color:#fff;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:3px 12px;border-radius:20px;backdrop-filter:blur(6px);display:inline-block;margin-bottom:10px;">🌟 Chuyên Sâu</span>
+                        <p style="color:#fff;font-size:1.3rem;font-weight:900;margin:0 0 6px;text-shadow:0 2px 8px rgba(0,0,0,0.5);line-height:1.2;">Trung Tâm Mắt Sáng</p>
+                        <p style="color:rgba(255,255,255,0.88);font-size:0.82rem;margin:0 0 18px;">Cận · Loạn thị · Phẫu thuật Lasik · Kính áp tròng</p>
+                        <button onclick="ttnOpen('Trung Tâm Mắt Sáng','Khám & điều trị mắt, Lasik giá tốt nhất TP.HCM.')"
+                            style="background:#fff;color:#4527A0;border:none;padding:9px 26px;border-radius:30px;font-weight:800;font-size:0.85rem;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.25);">
+                            📋 Đặt ngay
+                        </button>
+                    </div>
+                </div>
+
+                <div class="ad-slide" style="position:absolute;inset:0;opacity:0;transition:opacity 0.7s ease;">
+                    <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=700&q=80"
+                         style="width:100%;height:100%;object-fit:cover;display:block;" alt="">
+                    <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(191,54,12,0.72) 0%,rgba(0,0,0,0.2) 100%);"></div>
+                    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;width:85%;">
+                        <span style="background:rgba(255,255,255,0.2);color:#fff;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:3px 12px;border-radius:20px;backdrop-filter:blur(6px);display:inline-block;margin-bottom:10px;">✨ Làm Đẹp</span>
+                        <p style="color:#fff;font-size:1.3rem;font-weight:900;margin:0 0 6px;text-shadow:0 2px 8px rgba(0,0,0,0.5);line-height:1.2;">Viện Da Liễu SkinCare</p>
+                        <p style="color:rgba(255,255,255,0.88);font-size:0.82rem;margin:0 0 18px;">Mụn · Nám · Sẹo · Laser · Trẻ hóa da</p>
+                        <button onclick="ttnOpen('Viện Da Liễu SkinCare','Điều trị mụn, nám, sẹo bằng Laser tiên tiến nhất.')"
+                            style="background:#fff;color:#BF360C;border:none;padding:9px 26px;border-radius:30px;font-weight:800;font-size:0.85rem;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.25);">
+                            📋 Đặt ngay
+                        </button>
+                    </div>
+                </div>
+
+                <div class="ad-slide" style="position:absolute;inset:0;opacity:0;transition:opacity 0.7s ease;">
+                    <img src="https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=700&q=80"
+                         style="width:100%;height:100%;object-fit:cover;display:block;" alt="">
+                    <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(46,125,50,0.72) 0%,rgba(0,0,0,0.2) 100%);"></div>
+                    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;width:85%;">
+                        <span style="background:rgba(255,255,255,0.2);color:#fff;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:3px 12px;border-radius:20px;backdrop-filter:blur(6px);display:inline-block;margin-bottom:10px;">👶 Mẹ &amp; Bé</span>
+                        <p style="color:#fff;font-size:1.3rem;font-weight:900;margin:0 0 6px;text-shadow:0 2px 8px rgba(0,0,0,0.5);line-height:1.2;">Phòng Khám Sản Phụ Khoa MomCare</p>
+                        <p style="color:rgba(255,255,255,0.88);font-size:0.82rem;margin:0 0 18px;">Siêu âm thai · Tiền sản · Chăm sóc sau sinh</p>
+                        <button onclick="ttnOpen('Phòng Khám Sản Phụ Khoa MomCare','Siêu âm thai, khám tiền sản, chăm sóc mẹ bầu và sau sinh.')"
+                            style="background:#fff;color:#2E7D32;border:none;padding:9px 26px;border-radius:30px;font-weight:800;font-size:0.85rem;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.25);">
+                            📋 Đặt ngay
+                        </button>
+                    </div>
+                </div>
+
+                <div class="ad-slide" style="position:absolute;inset:0;opacity:0;transition:opacity 0.7s ease;">
+                    <img src="https://images.unsplash.com/photo-1628348068343-c6a848d2b6dd?w=700&q=80"
+                         style="width:100%;height:100%;object-fit:cover;display:block;" alt="">
+                    <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(183,28,28,0.72) 0%,rgba(0,0,0,0.2) 100%);"></div>
+                    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;width:85%;">
+                        <span style="background:rgba(255,255,255,0.2);color:#fff;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:3px 12px;border-radius:20px;backdrop-filter:blur(6px);display:inline-block;margin-bottom:10px;">❤️ Chuyên Gia</span>
+                        <p style="color:#fff;font-size:1.3rem;font-weight:900;margin:0 0 6px;text-shadow:0 2px 8px rgba(0,0,0,0.5);line-height:1.2;">Trung Tâm Tim Mạch HeartCare</p>
+                        <p style="color:rgba(255,255,255,0.88);font-size:0.82rem;margin:0 0 18px;">Tầm soát tim · Đặt stent · Rối loạn nhịp</p>
+                        <button onclick="ttnOpen('Trung Tâm Tim Mạch HeartCare','Tầm soát bệnh tim mạch, đặt stent chuyên sâu.')"
+                            style="background:#fff;color:#B71C1C;border:none;padding:9px 26px;border-radius:30px;font-weight:800;font-size:0.85rem;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.25);">
+                            📋 Đặt ngay
+                        </button>
+                    </div>
+                </div>
+
+                <div class="ad-slide" style="position:absolute;inset:0;opacity:0;transition:opacity 0.7s ease;">
+                    <img src="https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=700&q=80"
+                         style="width:100%;height:100%;object-fit:cover;display:block;" alt="">
+                    <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,96,100,0.72) 0%,rgba(0,0,0,0.2) 100%);"></div>
+                    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;width:85%;">
+                        <span style="background:rgba(255,255,255,0.2);color:#fff;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:3px 12px;border-radius:20px;backdrop-filter:blur(6px);display:inline-block;margin-bottom:10px;">💉 Vắc-xin</span>
+                        <p style="color:#fff;font-size:1.3rem;font-weight:900;margin:0 0 6px;text-shadow:0 2px 8px rgba(0,0,0,0.5);line-height:1.2;">Trung Tâm Tiêm Chủng VaccineCare</p>
+                        <p style="color:rgba(255,255,255,0.88);font-size:0.82rem;margin:0 0 18px;">Trẻ em · Người lớn · Vắc-xin nhập khẩu chính hãng</p>
+                        <button onclick="ttnOpen('Trung Tâm Tiêm Chủng VaccineCare','Đầy đủ vắc-xin nhập khẩu cho trẻ em & người lớn.')"
+                            style="background:#fff;color:#006064;border:none;padding:9px 26px;border-radius:30px;font-weight:800;font-size:0.85rem;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.25);">
+                            📋 Đặt ngay
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Nút trái/phải -->
+                <button onclick="adPrev()" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);z-index:10;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.85);border:none;cursor:pointer;font-size:1rem;color:#334155;box-shadow:0 2px 8px rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button onclick="adNext()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);z-index:10;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.85);border:none;cursor:pointer;font-size:1rem;color:#334155;box-shadow:0 2px 8px rgba(0,0,0,0.2);display:flex;align-items:center;justify-content:center;">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div><!-- end adSlides -->
+
+            <!-- Dots + progress bar -->
+            <div id="adDots" style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:7px;z-index:10;"></div>
+        </div><!-- end carousel wrapper -->
     </div>
 </div>
+
 
 <div class="ytv-footer">
     <div class="ytv-footer-top">
@@ -419,8 +511,52 @@
         menu.classList.toggle("open");
     }
 
-    // Auto-close menu when mouse leaves menu area
+    // ===== AUTO-PLAY AD CAROUSEL =====
     document.addEventListener("DOMContentLoaded", function() {
+        var slides = document.querySelectorAll('.ad-slide');
+        var dotsEl = document.getElementById('adDots');
+        var current = 0;
+        var timer = null;
+        var total = slides.length;
+
+        // Tạo dots
+        for (var i = 0; i < total; i++) {
+            var d = document.createElement('span');
+            d.style.cssText = 'width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.45);display:inline-block;cursor:pointer;transition:all .3s;';
+            if (i === 0) { d.style.background = '#fff'; d.style.width = '24px'; d.style.borderRadius = '4px'; }
+            (function(idx) {
+                d.addEventListener('click', function() { goTo(idx); resetTimer(); });
+            })(i);
+            dotsEl.appendChild(d);
+        }
+        var dots = dotsEl.querySelectorAll('span');
+
+        function goTo(idx) {
+            slides[current].style.opacity = '0';
+            dots[current].style.background = 'rgba(255,255,255,0.45)';
+            dots[current].style.width = '8px';
+            dots[current].style.borderRadius = '50%';
+            current = (idx + total) % total;
+            slides[current].style.opacity = '1';
+            dots[current].style.background = '#fff';
+            dots[current].style.width = '24px';
+            dots[current].style.borderRadius = '4px';
+        }
+
+        function startTimer() {
+            timer = setInterval(function() { goTo(current + 1); }, 3500);
+        }
+        function resetTimer() {
+            clearInterval(timer);
+            startTimer();
+        }
+        startTimer();
+
+        // Gán nút mũi tên
+        window.adNext = function() { goTo(current + 1); resetTimer(); };
+        window.adPrev = function() { goTo(current - 1); resetTimer(); };
+
+        // Close dropdown khi click ngoài
         var menuBtn = document.getElementById("menuBtn");
         if (menuBtn) {
             menuBtn.addEventListener("mouseleave", function() {
@@ -430,16 +566,16 @@
         }
     });
 
-    // Close the dropdown menu if the user clicks outside of it
     window.onclick = function(event) {
         if (!event.target.closest('#menuBtn')) {
             var dropdowns = document.getElementsByClassName("ytv-dropdown");
             for (var i = 0; i < dropdowns.length; i++) {
-                var openDropdown = dropdowns[i];
-                if (openDropdown.classList.contains('open')) {
-                    openDropdown.classList.remove('open');
-                }
+                if (dropdowns[i].classList.contains('open')) dropdowns[i].classList.remove('open');
             }
         }
+    }
+
+    function ttnOpen(title, desc) {
+        alert('🏥 ' + title + '\n\n' + desc + '\n\nHotline đặt lịch: 0901 87 88 96');
     }
 </script>

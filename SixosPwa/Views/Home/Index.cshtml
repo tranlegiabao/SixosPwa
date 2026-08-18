@@ -130,6 +130,179 @@
 else
 {
 
+<style>
+    /* ============================
+       IMAGE CAROUSEL QUẢNG CÁO
+    ============================= */
+    .promo-section {
+        margin-bottom: 1.75rem;
+    }
+    .promo-section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.85rem;
+    }
+    .promo-section-header h5 {
+        font-size: 1rem;
+        font-weight: 700;
+        margin: 0;
+        color: #1e293b;
+    }
+    .promo-section-header a {
+        font-size: 0.82rem;
+        color: #3854A4;
+        text-decoration: none;
+        font-weight: 600;
+    }
+    .promo-section-header a:hover { text-decoration: underline; }
+
+    /* Wrapper bọc track + mũi tên */
+    .promo-carousel-wrap {
+        position: relative;
+    }
+
+    /* Nút mũi tên trái/phải */
+    .promo-arrow {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-60%);
+        z-index: 10;
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.92);
+        border: none;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+        color: #334155;
+        font-size: 1rem;
+    }
+    .promo-arrow:hover {
+        background: #fff;
+        box-shadow: 0 4px 18px rgba(0,0,0,0.22);
+        transform: translateY(-60%) scale(1.08);
+    }
+    .promo-arrow-left  { left: -14px; }
+    .promo-arrow-right { right: -14px; }
+    @@media (max-width: 575px) {
+        .promo-arrow-left  { left: 0px; }
+        .promo-arrow-right { right: 0px; }
+    }
+
+    /* Track cuộn */
+    .promo-scroll-track {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        scroll-behavior: smooth;
+        gap: 14px;
+        padding: 4px 4px 16px 4px;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    .promo-scroll-track::-webkit-scrollbar { display: none; }
+
+    /* Card ảnh */
+    .promo-card {
+        flex: 0 0 82%;
+        scroll-snap-align: start;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.13);
+        transition: transform 0.28s cubic-bezier(.22,.68,0,1.2), box-shadow 0.28s ease;
+        cursor: pointer;
+        position: relative;
+        background: #e2e8f0;
+        aspect-ratio: 16/9;
+    }
+    .promo-card:hover {
+        transform: scale(1.012);
+        box-shadow: 0 8px 28px rgba(0,0,0,0.2);
+    }
+    @@media (min-width: 576px) { .promo-card { flex: 0 0 320px; } }
+    @@media (min-width: 992px) { .promo-card { flex: 0 0 360px; } }
+
+    /* Ảnh bên trong card */
+    .promo-card img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.4s ease;
+    }
+    .promo-card:hover img {
+        transform: scale(1.05);
+    }
+
+    /* Gradient overlay phía dưới ảnh */
+    .promo-card-overlay {
+        position: absolute;
+        bottom: 0; left: 0; right: 0;
+        background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.15) 65%, transparent 100%);
+        padding: 14px 16px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .promo-badge {
+        display: inline-block;
+        background: rgba(255,255,255,0.22);
+        color: #fff;
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        padding: 2px 9px;
+        border-radius: 20px;
+        backdrop-filter: blur(4px);
+        width: fit-content;
+        margin-bottom: 3px;
+    }
+
+    .promo-title {
+        font-size: 0.98rem;
+        font-weight: 800;
+        color: #fff;
+        margin: 0;
+        line-height: 1.25;
+        text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    }
+
+    .promo-sub {
+        font-size: 0.74rem;
+        color: rgba(255,255,255,0.82);
+        margin: 0;
+        line-height: 1.35;
+    }
+
+    /* Dots indicator */
+    .promo-dots {
+        display: flex;
+        justify-content: center;
+        gap: 6px;
+        margin-top: 10px;
+    }
+    .promo-dots span {
+        width: 7px; height: 7px;
+        border-radius: 50%;
+        background: #cbd5e1;
+        transition: background 0.3s, width 0.3s;
+        display: inline-block;
+        cursor: pointer;
+    }
+    .promo-dots span.active {
+        background: #3854A4;
+        width: 22px;
+        border-radius: 4px;
+    }
+</style>
+
 <!-- TOAST THÔNG BÁO -->
 <div class="position-fixed top-0 end-0 p-3" style="z-index: 1080">
     <div id="bookingToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
@@ -172,6 +345,158 @@ else
                 <a asp-controller="DangNhap" asp-action="DangXuat" class="btn btn-outline-light rounded-pill px-3">
                     🚪 Đăng xuất
                 </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================
+         CAROUSEL QUẢNG CÁO CƠ SỞ Y TẾ - CÓ ẢNH THẬT
+    ================================================= -->
+    <div class="promo-section">
+        <div class="promo-section-header">
+            <h5>🏥 Cơ Sở Y Tế Nổi Bật Gần Bạn</h5>
+            <a href="#">Xem tất cả →</a>
+        </div>
+
+        <!-- Wrapper có mũi tên -->
+        <div class="promo-carousel-wrap">
+            <!-- Nút mũi tên trái -->
+            <button class="promo-arrow promo-arrow-left" id="promoArrowLeft" onclick="promoScroll(-1)" aria-label="Trước">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+
+            <!-- Track cuộn -->
+            <div class="promo-scroll-track" id="promoTrack">
+
+                <!-- 1. Bệnh viện đa khoa -->
+                <div class="promo-card" onclick="openPromo('Bệnh Viện Đa Khoa HisSoft', 'Chuyên khám & điều trị Nội · Ngoại · Sản · Nhi. Cấp cứu 24/7. Trang thiết bị hiện đại nhất TP.HCM.')">
+                    <img src="https://images.unsplash.com/photo-1586773860418-d37222d8fce3?w=640&q=80" alt="Bệnh viện đa khoa" loading="lazy">
+                    <div class="promo-card-overlay">
+                        <span class="promo-badge">🔥 Phổ Biến</span>
+                        <p class="promo-title">Bệnh Viện Đa Khoa HisSoft</p>
+                        <p class="promo-sub">Nội · Ngoại · Sản · Nhi · Cấp cứu 24/7</p>
+                    </div>
+                </div>
+
+                <!-- 2. Phòng khám gia đình -->
+                <div class="promo-card" onclick="openPromo('Phòng Khám Gia Đình MedHome', 'Khám tổng quát, tư vấn sức khỏe gia đình, theo dõi bệnh mãn tính.')">
+                    <img src="https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=640&q=80" alt="Phòng khám gia đình" loading="lazy">
+                    <div class="promo-card-overlay">
+                        <span class="promo-badge">⭐ Uy Tín</span>
+                        <p class="promo-title">Phòng Khám Gia Đình MedHome</p>
+                        <p class="promo-sub">Khám tổng quát · Tư vấn · Mãn tính</p>
+                    </div>
+                </div>
+
+                <!-- 3. Nha khoa Kim -->
+                <div class="promo-card" onclick="openPromo('Nha Khoa Kim', 'Chuỗi nha khoa uy tín số 1 TP.HCM. Niềng răng, Implant, tẩy trắng răng.')">
+                    <img src="https://images.unsplash.com/photo-1588776814546-1ffcf47267a5?w=640&q=80" alt="Nha khoa" loading="lazy">
+                    <div class="promo-card-overlay">
+                        <span class="promo-badge">💎 VIP</span>
+                        <p class="promo-title">Nha Khoa Kim</p>
+                        <p class="promo-sub">Niềng răng · Implant · Tẩy trắng · Răng sứ</p>
+                    </div>
+                </div>
+
+                <!-- 4. Mắt -->
+                <div class="promo-card" onclick="openPromo('Trung Tâm Mắt Sáng', 'Khám & điều trị cận thị, loạn thị. Phẫu thuật Lasik giá tốt nhất TP.HCM.')">
+                    <img src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=640&q=80" alt="Khám mắt" loading="lazy">
+                    <div class="promo-card-overlay">
+                        <span class="promo-badge">🌟 Chuyên Sâu</span>
+                        <p class="promo-title">Trung Tâm Mắt Sáng</p>
+                        <p class="promo-sub">Cận · Loạn thị · Lasik · Kính áp tròng</p>
+                    </div>
+                </div>
+
+                <!-- 5. Da liễu -->
+                <div class="promo-card" onclick="openPromo('Viện Da Liễu SkinCare', 'Điều trị mụn, nám, sẹo. Trẻ hóa da bằng công nghệ Laser tiên tiến nhất.')">
+                    <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=640&q=80" alt="Da liễu" loading="lazy">
+                    <div class="promo-card-overlay">
+                        <span class="promo-badge">✨ Làm Đẹp</span>
+                        <p class="promo-title">Viện Da Liễu SkinCare</p>
+                        <p class="promo-sub">Mụn · Nám · Sẹo · Laser · Trẻ hóa da</p>
+                    </div>
+                </div>
+
+                <!-- 6. Sản phụ khoa -->
+                <div class="promo-card" onclick="openPromo('Phòng Khám Sản Phụ Khoa MomCare', 'Siêu âm thai, khám tiền sản, chăm sóc mẹ bầu và sau sinh toàn diện.')">
+                    <img src="https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=640&q=80" alt="Sản phụ khoa" loading="lazy">
+                    <div class="promo-card-overlay">
+                        <span class="promo-badge">👶 Mẹ &amp; Bé</span>
+                        <p class="promo-title">Phòng Khám Sản Phụ Khoa MomCare</p>
+                        <p class="promo-sub">Siêu âm thai · Tiền sản · Sau sinh</p>
+                    </div>
+                </div>
+
+                <!-- 7. Tim mạch -->
+                <div class="promo-card" onclick="openPromo('Trung Tâm Tim Mạch HeartCare', 'Tầm soát bệnh tim mạch, đặt stent, điều trị rối loạn nhịp tim chuyên sâu.')">
+                    <img src="https://images.unsplash.com/photo-1628348068343-c6a848d2b6dd?w=640&q=80" alt="Tim mạch" loading="lazy">
+                    <div class="promo-card-overlay">
+                        <span class="promo-badge">❤️ Chuyên Gia</span>
+                        <p class="promo-title">Trung Tâm Tim Mạch HeartCare</p>
+                        <p class="promo-sub">Tầm soát tim · Đặt stent · Nhịp tim</p>
+                    </div>
+                </div>
+
+                <!-- 8. Tai mũi họng -->
+                <div class="promo-card" onclick="openPromo('Phòng Khám Tai Mũi Họng ENT', 'Điều trị viêm xoang, viêm họng, ù tai, khàn giọng.')">
+                    <img src="https://images.unsplash.com/photo-1551601651-2a8555f1a136?w=640&q=80" alt="Tai mũi họng" loading="lazy">
+                    <div class="promo-card-overlay">
+                        <span class="promo-badge">👂 Chuyên Khoa</span>
+                        <p class="promo-title">Phòng Khám Tai Mũi Họng ENT</p>
+                        <p class="promo-sub">Viêm xoang · Khàn giọng · Amidan</p>
+                    </div>
+                </div>
+
+                <!-- 9. Phục hồi chức năng -->
+                <div class="promo-card" onclick="openPromo('Trung Tâm Phục Hồi Chức Năng RehabPlus', 'Vật lý trị liệu, phục hồi sau tai biến, sau phẫu thuật, đau cột sống.')">
+                    <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=640&q=80" alt="Phục hồi chức năng" loading="lazy">
+                    <div class="promo-card-overlay">
+                        <span class="promo-badge">💪 Phục Hồi</span>
+                        <p class="promo-title">Trung Tâm Phục Hồi RehabPlus</p>
+                        <p class="promo-sub">Vật lý trị liệu · Đau lưng · Sau phẫu thuật</p>
+                    </div>
+                </div>
+
+                <!-- 10. Tiêm chủng -->
+                <div class="promo-card" onclick="openPromo('Trung Tâm Tiêm Chủng VaccineCare', 'Tiêm vắc-xin cho trẻ em, người lớn. Đầy đủ các loại vắc-xin nhập khẩu chính hãng.')">
+                    <img src="https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=640&q=80" alt="Tiêm chủng" loading="lazy">
+                    <div class="promo-card-overlay">
+                        <span class="promo-badge">💉 Vắc-xin</span>
+                        <p class="promo-title">Trung Tâm Tiêm Chủng VaccineCare</p>
+                        <p class="promo-sub">Trẻ em · Người lớn · Vắc-xin nhập khẩu</p>
+                    </div>
+                </div>
+
+            </div><!-- end promo-scroll-track -->
+
+            <!-- Nút mũi tên phải -->
+            <button class="promo-arrow promo-arrow-right" id="promoArrowRight" onclick="promoScroll(1)" aria-label="Tiếp theo">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div><!-- end promo-carousel-wrap -->
+
+        <!-- Dots indicator -->
+        <div class="promo-dots" id="promoDots"></div>
+    </div><!-- end promo-section -->
+
+    <!-- Modal Chi tiết Cơ sở Y tế -->
+    <div class="modal fade" id="promoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header text-white rounded-top-4" style="background: linear-gradient(135deg, #1565C0, #42A5F5);">
+                    <h5 class="modal-title fw-bold" id="promoModalTitle">Chi tiết cơ sở y tế</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p id="promoModalBody" class="text-muted mb-4"></p>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary rounded-pill fw-bold flex-grow-1" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#modalDangKyKham">
+                            📋 Đặt lịch khám ngay
+                        </button>
+                        <button class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Đóng</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -515,6 +840,68 @@ else
 
         function viewReport(maPhieu) {
             alert(`📄 Đang mở Hồ sơ Kết quả Khám sức khỏe mã phiếu [${maPhieu}]...\nChỉ số sức khỏe bình thường, không phát hiện bất thường.`);
+        }
+
+        // ============================================
+        // PROMO CARDS — Mở modal chi tiết cơ sở y tế
+        // ============================================
+        function openPromo(title, description) {
+            document.getElementById('promoModalTitle').textContent = title;
+            document.getElementById('promoModalBody').textContent = description;
+            var modal = new bootstrap.Modal(document.getElementById('promoModal'));
+            modal.show();
+        }
+
+        // ============================================
+        // PROMO DOTS — Chấm cuộn theo track
+        // ============================================
+        (function initPromoDots() {
+            const track = document.getElementById('promoTrack');
+            const dotsContainer = document.getElementById('promoDots');
+            if (!track || !dotsContainer) return;
+
+            const cards = track.querySelectorAll('.promo-card');
+            const total = cards.length;
+
+            // Tạo dots
+            for (let i = 0; i < total; i++) {
+                const dot = document.createElement('span');
+                if (i === 0) dot.classList.add('active');
+                dotsContainer.appendChild(dot);
+            }
+
+            const dots = dotsContainer.querySelectorAll('span');
+
+            // Cập nhật dot active khi cuộn
+            track.addEventListener('scroll', () => {
+                const scrollLeft = track.scrollLeft;
+                const cardWidth = cards[0].offsetWidth + 14; // 14 = gap
+                const activeIndex = Math.round(scrollLeft / cardWidth);
+                dots.forEach((d, idx) => {
+                    d.classList.toggle('active', idx === activeIndex);
+                });
+                // Ẩn/hiện mũi tên khi ở đầu/cuối
+                const arrowLeft = document.getElementById('promoArrowLeft');
+                const arrowRight = document.getElementById('promoArrowRight');
+                if (arrowLeft) arrowLeft.style.opacity = scrollLeft <= 10 ? '0.35' : '1';
+                if (arrowRight) arrowRight.style.opacity = scrollLeft >= track.scrollWidth - track.clientWidth - 10 ? '0.35' : '1';
+            }, { passive: true });
+
+            // Ẩn mũi tên trái ban đầu
+            const initArrowLeft = document.getElementById('promoArrowLeft');
+            if (initArrowLeft) initArrowLeft.style.opacity = '0.35';
+        })();
+
+        // ============================================
+        // PROMO SCROLL — Nút mũi tên trái/phải
+        // ============================================
+        function promoScroll(dir) {
+            const track = document.getElementById('promoTrack');
+            if (!track) return;
+            const cards = track.querySelectorAll('.promo-card');
+            if (!cards.length) return;
+            const cardWidth = cards[0].offsetWidth + 14; // 14px gap
+            track.scrollBy({ left: dir * cardWidth, behavior: 'smooth' });
         }
     </script>
 }
