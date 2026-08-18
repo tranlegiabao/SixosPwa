@@ -577,7 +577,7 @@
         }));
 
         // Trạng thái ban đầu
-        showEmptyState();
+        applyFilter();
 
         // Lọc và hiển thị danh sách
         function applyFilter() {
@@ -592,12 +592,6 @@
                 selectedDistrictName = "";
             }
             const keyword = searchInput.value.toLowerCase().trim();
-
-            // Nếu không chọn tỉnh và không nhập từ khóa -> hiển thị trạng thái trống
-            if (!selectedProvinceCode && !keyword) {
-                showEmptyState();
-                return;
-            }
 
             let filtered = clinics;
 
