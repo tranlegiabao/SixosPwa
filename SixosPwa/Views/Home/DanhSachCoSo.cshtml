@@ -573,7 +573,8 @@
             name: c.TenCoSo || c.tenCoSo || "Chưa cập nhật",
             address: c.DiaChi || c.diaChi || "Đang cập nhật",
             img: c.Img || c.img || images[i % images.length],
-            tinh: c.Tinh !== undefined ? c.Tinh : c.tinh
+            tinh: c.Tinh !== undefined ? c.Tinh : c.tinh,
+            quangCao: c.QuangCao !== undefined ? c.QuangCao : (c.quangCao || 0)
         }));
 
         // Trạng thái ban đầu
@@ -594,6 +595,13 @@
             const keyword = searchInput.value.toLowerCase().trim();
 
             let filtered = clinics;
+
+            const isSearching = selectedProvinceCode || selectedDistrictName || keyword;
+
+            if (!isSearching) {
+                // Nếu không tìm kiếm, ẩn các cơ sở có quảng cáo = 0
+                filtered = filtered.filter(c => c.quangCao > 0);
+            }
 
             // 1. Lọc theo tỉnh thành
             if (selectedProvinceCode) {
@@ -617,6 +625,9 @@
                     return normalizedName.includes(normalizedKeyword);
                 });
             }
+
+            // Sắp xếp theo thứ tự giảm dần của cột quảng cáo
+            filtered.sort((a, b) => b.quangCao - a.quangCao);
 
             renderClinics(filtered);
         }
