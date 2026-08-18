@@ -141,6 +141,48 @@ public class HomeController : Controller
     [AllowAnonymous]
     public async Task<IActionResult> ThongTinBenhNhan()
     {
+        var topCSKCBList = new List<TopCSKCBQC>();
+        try
+        {
+            var conn = _db.Database.GetDbConnection();
+            bool wasClosed = conn.State == System.Data.ConnectionState.Closed;
+            if (wasClosed)
+            {
+                await conn.OpenAsync();
+            }
+
+            try
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                cmd.CommandText = "Top_CSKCB_QC";
+
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    topCSKCBList.Add(new TopCSKCBQC
+                    {
+                        TenCoSo = reader["TenCoSo"]?.ToString() ?? "",
+                        NoiDung = reader["NoiDung"]?.ToString() ?? "",
+                        Img = reader["Img"]?.ToString() ?? ""
+                    });
+                }
+            }
+            finally
+            {
+                if (wasClosed && conn.State == System.Data.ConnectionState.Open)
+                {
+                    await conn.CloseAsync();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi gọi stored procedure Top_CSKCB_QC");
+        }
+
+        ViewData["TopCSKCB"] = topCSKCBList;
+
         var sdt = User.Identity?.Name;
         if (string.IsNullOrEmpty(sdt))
         {
