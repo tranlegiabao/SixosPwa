@@ -214,6 +214,61 @@
     .ytv-footer-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
     .ytv-footer-bottom { text-align: center; font-size: 13px; color: #64748b; border-top: 1px solid #bae6fd; padding-top: 10px; margin-top: 5px; }
 
+    /* Login Modal Styles */
+    .ytv-modal-overlay {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+        display: none; align-items: center; justify-content: center;
+        z-index: 2000; opacity: 0; transition: opacity 0.3s ease;
+    }
+    .ytv-modal-overlay.show { display: flex; opacity: 1; }
+    .ytv-modal-content {
+        background: white; border-radius: 20px; width: 100%; max-width: 420px; margin: 0 20px;
+        padding: 40px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        transform: translateY(20px); transition: transform 0.3s ease; position: relative;
+    }
+    .ytv-modal-overlay.show .ytv-modal-content { transform: translateY(0); }
+    .ytv-modal-close {
+        position: absolute; top: 16px; right: 20px; background: none; border: none;
+        font-size: 28px; color: #94a3b8; cursor: pointer; transition: color 0.2s; line-height: 1;
+    }
+    .ytv-modal-close:hover { color: #0f172a; }
+    
+    .login-step { display: none; }
+    .login-step.active { display: block; animation: fadeIn 0.4s; }
+    @@keyframes fadeIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+
+    .login-title { font-size: 24px; font-weight: 800; color: #0f172a; margin: 0 0 10px 0; text-align: center; }
+    .login-desc { font-size: 14px; color: #64748b; margin-bottom: 30px; text-align: center; line-height: 1.6; }
+    
+    .input-group { margin-bottom: 24px; position: relative; }
+    .input-group i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 18px; }
+    .ytv-input {
+        width: 100%; padding: 14px 16px 14px 44px; border: 2px solid #e2e8f0;
+        border-radius: 12px; font-size: 16px; color: #0f172a; outline: none; transition: all 0.2s;
+        box-sizing: border-box; font-family: inherit; font-weight: 500;
+    }
+    .ytv-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+    
+    .btn-submit {
+        width: 100%; background: #1d4ed8; color: white; border: none; border-radius: 12px;
+        padding: 16px; font-size: 16px; font-weight: 700; cursor: pointer; transition: background 0.2s;
+        box-shadow: 0 4px 12px rgba(29, 78, 216, 0.2);
+    }
+    .btn-submit:hover { background: #1e40af; transform: translateY(-1px); }
+    
+    .otp-inputs { display: flex; gap: 12px; justify-content: center; margin-bottom: 30px; }
+    .otp-input {
+        width: 50px; height: 60px; border: 2px solid #e2e8f0; border-radius: 12px;
+        font-size: 24px; font-weight: 700; text-align: center; color: #0f172a;
+        outline: none; transition: all 0.2s; background: #f8fafc;
+    }
+    .otp-input:focus { border-color: #3b82f6; background: white; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+    
+    .resend-text { text-align: center; margin-top: 24px; font-size: 14px; color: #64748b; }
+    .resend-link { color: #3b82f6; font-weight: 600; text-decoration: none; cursor: pointer; transition: color 0.2s; }
+    .resend-link:hover { color: #1d4ed8; text-decoration: underline; }
+
     @@media (max-width: 992px) {
         .ytv-main { flex-direction: column; padding-left: 0; }
         .ytv-sidebar { position: relative; top: 0; left: 0; height: auto; z-index: 1; width: 100%; flex-direction: row; overflow-x: auto; padding: 10px 0; border-right: none; border-bottom: 1px solid #e2e8f0; }
@@ -320,7 +375,7 @@
                     <a href="/DangNhap/Login" class="btn-primary">
                         <i class="far fa-calendar-plus"></i> Đăng ký khám
                     </a>
-                    <a href="/DangNhap/Login" class="btn-outline">
+                    <a href="javascript:void(0)" onclick="openLoginModal()" class="btn-outline">
                         <i class="fas fa-sign-in-alt"></i> Đăng nhập
                     </a>
                 </div>
@@ -377,6 +432,44 @@
     </div>
 </div>
 
+<!-- Login Modal -->
+<div class="ytv-modal-overlay" id="loginModal">
+    <div class="ytv-modal-content">
+        <button class="ytv-modal-close" onclick="closeLoginModal()">&times;</button>
+        
+        <!-- Step 1: Phone Input -->
+        <div class="login-step active" id="stepPhone">
+            <h2 class="login-title">Đăng nhập</h2>
+            <p class="login-desc">Vui lòng nhập số điện thoại của bạn để đăng nhập hoặc tạo tài khoản mới.</p>
+            
+            <div class="input-group">
+                <i class="fas fa-phone-alt"></i>
+                <input type="tel" id="phoneNumber" class="ytv-input" placeholder="Nhập số điện thoại..." autocomplete="off">
+            </div>
+            
+            <button class="btn-submit" onclick="sendOTP()">Gửi mã OTP</button>
+        </div>
+        
+        <!-- Step 2: OTP Input -->
+        <div class="login-step" id="stepOTP">
+            <h2 class="login-title">Xác thực OTP</h2>
+            <p class="login-desc">Mã xác thực gồm 4 số đã được gửi đến số <br><strong id="displayPhone" style="color:#0f172a; font-size: 16px;"></strong></p>
+            
+            <div class="otp-inputs" id="otpContainer">
+                <input type="text" class="otp-input" maxlength="1" onkeyup="moveToNext(this, event)">
+                <input type="text" class="otp-input" maxlength="1" onkeyup="moveToNext(this, event)">
+                <input type="text" class="otp-input" maxlength="1" onkeyup="moveToNext(this, event)">
+                <input type="text" class="otp-input" maxlength="1" onkeyup="moveToNext(this, event)">
+            </div>
+            
+            <button class="btn-submit" onclick="verifyOTP()">Xác nhận</button>
+            <div class="resend-text">
+                Chưa nhận được mã? <a class="resend-link" onclick="sendOTP()">Gửi lại</a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="ytv-footer">
     <div class="ytv-footer-top">
         <div style="font-size:15px;font-weight:600;color:#1e293b;display:flex;align-items:center;gap:8px;">
@@ -418,6 +511,66 @@
                     dropdowns[i].classList.remove('open');
                 }
             }
+        }
+        var modal = document.getElementById('loginModal');
+        if (event.target == modal) {
+            closeLoginModal();
+        }
+    }
+
+    // Login Modal Functions
+    function openLoginModal() {
+        document.getElementById('loginModal').classList.add('show');
+        document.getElementById('stepPhone').classList.add('active');
+        document.getElementById('stepOTP').classList.remove('active');
+        document.getElementById('phoneNumber').value = '';
+        document.querySelectorAll('.otp-input').forEach(inp => inp.value = '');
+        setTimeout(() => document.getElementById('phoneNumber').focus(), 100);
+    }
+
+    function closeLoginModal() {
+        document.getElementById('loginModal').classList.remove('show');
+    }
+
+    function sendOTP() {
+        var phone = document.getElementById('phoneNumber').value;
+        if(phone.length < 9) {
+            alert("Vui lòng nhập số điện thoại hợp lệ (từ 9 số trở lên)!");
+            return;
+        }
+        document.getElementById('displayPhone').innerText = phone;
+        document.getElementById('stepPhone').classList.remove('active');
+        document.getElementById('stepOTP').classList.add('active');
+        
+        setTimeout(() => {
+            document.querySelectorAll('.otp-input').forEach(inp => inp.value = '');
+            document.querySelector('.otp-input').focus();
+        }, 100);
+    }
+
+    function moveToNext(elem, event) {
+        if (event.key === 'Backspace') {
+            if (elem.previousElementSibling) {
+                elem.previousElementSibling.focus();
+            }
+        } else {
+            if (!/^\d*$/.test(elem.value)) {
+                elem.value = "";
+                return;
+            }
+            if (elem.value.length === 1 && elem.nextElementSibling) {
+                elem.nextElementSibling.focus();
+            }
+        }
+    }
+
+    function verifyOTP() {
+        var otp = Array.from(document.querySelectorAll('.otp-input')).map(inp => inp.value).join('');
+        if(otp.length === 4) {
+            alert("Đăng nhập thành công! (Mã OTP của bạn là: " + otp + ")");
+            closeLoginModal();
+        } else {
+            alert("Vui lòng nhập đầy đủ 4 số mã OTP!");
         }
     }
 </script>
