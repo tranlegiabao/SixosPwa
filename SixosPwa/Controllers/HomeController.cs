@@ -79,15 +79,62 @@ public class HomeController : Controller
         return View(dsCoso);
     }
 
-    [HttpGet]
+    [HttpGet("/Home/ChiTietCoSo/{ten?}")]
     [AllowAnonymous]
-    public IActionResult ChiTietCoSo(string ten, string diaChi, string type, string img)
+    public async Task<IActionResult> ChiTietCoSo(string? ten, string? diaChi, string? type, string? img)
     {
+        if (!string.IsNullOrEmpty(ten))
+        {
+            var cleanTen = RemoveAccentsAndSpaces(ten);
+            var allCS = await _db.DMCSKCBs.ToListAsync();
+            var matchedCS = allCS.FirstOrDefault(x => 
+                RemoveAccentsAndSpaces(x.TenCoSo ?? "").Equals(cleanTen, StringComparison.OrdinalIgnoreCase) ||
+                (x.TenCoSo ?? "").Equals(ten, StringComparison.OrdinalIgnoreCase));
+
+            if (matchedCS != null)
+            {
+                ViewData["TenCoSo"] = matchedCS.TenCoSo;
+                ViewData["DiaChi"] = matchedCS.DiaChi ?? "Đang cập nhật";
+                ViewData["Type"] = matchedCS.LoaiCS ?? "benhvien";
+                ViewData["Img"] = matchedCS.Img ?? "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80";
+                return View();
+            }
+        }
+
         ViewData["TenCoSo"] = ten ?? "Cơ sở y tế";
         ViewData["DiaChi"] = diaChi ?? "Đang cập nhật";
         ViewData["Type"] = type ?? "benhvien";
         ViewData["Img"] = img ?? "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80";
         return View();
+    }
+
+    private static string RemoveAccentsAndSpaces(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return string.Empty;
+        
+        string normalized = text.Normalize(System.Text.NormalizationForm.FormD);
+        var sb = new System.Text.StringBuilder();
+        foreach (char c in normalized)
+        {
+            var unicodeCategory = System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c);
+            if (unicodeCategory != System.Globalization.UnicodeCategory.NonSpacingMark)
+            {
+                sb.Append(c);
+            }
+        }
+        string cleanText = sb.ToString().Normalize(System.Text.NormalizationForm.FormC);
+        
+        cleanText = cleanText.Replace("đ", "d").Replace("Đ", "D");
+        
+        var finalSb = new System.Text.StringBuilder();
+        foreach (char c in cleanText)
+        {
+            if (char.IsLetterOrDigit(c))
+            {
+                finalSb.Append(c);
+            }
+        }
+        return finalSb.ToString();
     }
 
     [HttpGet]

@@ -652,6 +652,12 @@
                       .replace(/Đ/g, "D");
         }
 
+        // Tạo slug từ tên cơ sở (bỏ dấu và ký tự đặc biệt)
+        function toSlug(str) {
+            if (!str) return "";
+            return removeAccents(str).replace(/[^a-zA-Z0-9]/g, "");
+        }
+
         function matchesKeyword(provinceName, kw) {
             const normalizedName = removeAccents(provinceName.toLowerCase());
             const normalizedKw = removeAccents(kw.toLowerCase());
@@ -799,7 +805,7 @@
                             <i class="fas fa-map-pin"></i>
                             <span class="address-text">${c.address}</span>
                         </div>
-                        <a href="/Home/ChiTietCoSo?ten=${encodeURIComponent(c.name)}&diaChi=${encodeURIComponent(c.address)}&type=@(ViewData["Type"]?.ToString() ?? "benhvien")&img=${encodeURIComponent(c.img)}" class="ytv-card-btn">Xem chi tiết</a>
+                        <a href="/Home/ChiTietCoSo/${toSlug(c.name)}" class="ytv-card-btn">Xem chi tiết</a>
                     </div>
                 </div>`).join("");
         }
