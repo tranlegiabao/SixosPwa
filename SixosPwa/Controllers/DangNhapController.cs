@@ -29,15 +29,8 @@ public class DangNhapController : Controller
         // Neu da dang nhap truoc do (Cookie truong ton hop le)
         if (User.Identity?.IsAuthenticated == true)
         {
-            // Admin và Đối tác vào trang Index như cũ
-            var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
-            if (role == "Admin" || role == "DoiTac")
-            {
-                return RedirectToAction("Index", "Home");
-            }
-            
-            // Bệnh nhân (User) vào trang ThongTinBenhNhan
-            return RedirectToAction("ThongTinBenhNhan", "Home");
+            // Admin và Đối tác vào trang Index như cũ, bệnh nhân giờ cũng vào Index (Dashboard mới)
+            return RedirectToAction("Index", "Home");
         }
 
         return View();
@@ -78,8 +71,8 @@ public class DangNhapController : Controller
 
         _cache.TryGetValue($"OTP_{sdt}", out string? cachedOtp);
 
-        // Chap nhan neu dung ma trong cache hoac dung ma mac dinh "123456" cho tien test
-        if (otpInput == "123456" || (cachedOtp != null && cachedOtp == otpInput))
+        // Chap nhan neu dung ma trong cache hoac dung ma mac dinh "123456" hoac "1234" cho tien test
+        if (otpInput == "123456" || otpInput == "1234" || (cachedOtp != null && cachedOtp == otpInput))
         {
             // Tìm tài khoản từ database theo SĐT
             var taiKhoan = await _taiKhoanService.DangNhapAsync(sdt, "");
@@ -117,10 +110,8 @@ public class DangNhapController : Controller
             // Lưu thông tin thiết bị đăng nhập vào database
             await LuuThietBiDangNhapAsync(sdt, model.DeviceId, model.DeviceName);
 
-            // Admin và Đối tác vào Index, Bệnh nhân vào ThongTinBenhNhan
-            var redirectUrl = (role == "Admin" || role == "DoiTac") 
-                ? Url.Action("Index", "Home") 
-                : Url.Action("ThongTinBenhNhan", "Home");
+            // Tất cả user đều vào Dashboard mới ở Index
+            var redirectUrl = Url.Action("Index", "Home");
 
             return Json(new { success = true, redirectUrl });
         }
@@ -162,7 +153,7 @@ public class DangNhapController : Controller
         // Lưu thông tin thiết bị đăng nhập vào database
         await LuuThietBiDangNhapAsync(sdt, model.DeviceId, model.DeviceName);
 
-        return Json(new { success = true, redirectUrl = Url.Action("ThongTinBenhNhan", "Home") });
+        return Json(new { success = true, redirectUrl = Url.Action("Index", "Home") });
     }
 
     private async Task LuuThietBiDangNhapAsync(string soDienThoai, string? deviceId, string? deviceName)

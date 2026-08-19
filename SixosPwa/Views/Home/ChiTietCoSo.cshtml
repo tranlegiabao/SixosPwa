@@ -532,12 +532,28 @@
         document.getElementById('loginModal').classList.remove('show');
     }
 
-    function sendOTP() {
+    async function sendOTP() {
         var phone = document.getElementById('phoneNumber').value;
         if(phone.length < 9) {
             alert("Vui lòng nhập số điện thoại hợp lệ (từ 9 số trở lên)!");
             return;
         }
+
+        try {
+            const response = await fetch('/DangNhap/GuiOtp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ soDienThoai: phone })
+            });
+            const data = await response.json();
+            if (!data.success) {
+                alert(data.message);
+                return;
+            }
+        } catch (err) {
+            console.error(err);
+        }
+
         document.getElementById('displayPhone').innerText = phone;
         document.getElementById('stepPhone').classList.remove('active');
         document.getElementById('stepOTP').classList.add('active');
@@ -564,11 +580,27 @@
         }
     }
 
-    function verifyOTP() {
+    async function verifyOTP() {
         var otp = Array.from(document.querySelectorAll('.otp-input')).map(inp => inp.value).join('');
         if(otp.length === 4) {
-            alert("Đăng nhập thành công! (Mã OTP của bạn là: " + otp + ")");
-            closeLoginModal();
+            var phone = document.getElementById('phoneNumber').value;
+            try {
+                const response = await fetch('/DangNhap/XacNhanOtp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ soDienThoai: phone, otp: otp })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    closeLoginModal();
+                    window.location.href = data.redirectUrl;
+                } else {
+                    alert(data.message);
+                }
+            } catch (err) {
+                alert('Lỗi xác thực OTP!');
+            }
         } else {
             alert("Vui lòng nhập đầy đủ 4 số mã OTP!");
         }

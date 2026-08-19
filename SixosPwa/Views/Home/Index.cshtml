@@ -130,272 +130,810 @@
 else
 {
 
-<!-- TOAST THÔNG BÁO -->
-<div class="position-fixed top-0 end-0 p-3" style="z-index: 1080">
-    <div id="bookingToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="d-flex">
-            <div class="toast-body" id="toastMessage">
-                🎉 Đăng ký lịch khám sức khỏe thành công!
-            </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-    </div>
-</div>
+<style>
+    /* Hide default layout elements */
+    .app-nav, .bottom-nav, .app-foot { display: none !important; }
+    body { padding-bottom: 0 !important; background-color: #f4f6f9; margin: 0; }
+    .container { max-width: 100% !important; padding: 0 !important; }
+    main.container { margin: 0 !important; padding: 0 !important; max-width: 100% !important; }
 
-<div class="health-portal">
-    <!-- BANNER XIN CHÀO & TÀI KHOẢN -->
-    <div class="card border-0 shadow-sm rounded-4 mb-4 bg-gradient bg-primary text-white p-3 p-md-4">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
-            <div>
-                    <span class="badge bg-white text-primary fw-semibold px-3 py-2 rounded-pill mb-2">
-                        🏥 Cổng thông tin Bệnh nhân & Khám Sức Khỏe
-                    </span>
-                    <h1 class="h3 fw-bold mb-1">Xin chào, <span class="text-warning">@ViewData["UserName"]</span>!</h1>
-                    <p class="mb-0 text-white-50">Mã bệnh nhân: <strong>BN-2026-8892</strong> | Trạng thái BHYT: <span class="text-warning">Còn hạn</span></p>
-            </div>
-            <div class="d-flex gap-2">
-                @if (ViewData["UserRole"] as string == "Admin" || ViewData["UserRole"] as string == "DoiTac")
-                {
-                <button type="button" class="btn btn-info fw-bold text-white rounded-pill px-4 shadow-sm" onclick="sendSmsDemo()">
-                    💬 Gửi tin nhắn test
-                </button>
-                <a asp-controller="Home" asp-action="GuiTinNhan" class="btn btn-success fw-bold text-white rounded-pill px-4 shadow-sm">
-                    ✉️ Quản lý Gửi Tin
-                </a>
-                }
-                else
-                {
-                    <button type="button" class="btn btn-warning fw-bold text-dark rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalDangKyKham">
-                        ➕ Đăng ký Khám Mới
-                    </button>
-                }
-                <a asp-controller="DangNhap" asp-action="DangXuat" class="btn btn-outline-light rounded-pill px-3">
-                    🚪 Đăng xuất
-                </a>
-            </div>
-        </div>
-    </div>
-
-
-
-    @if (ViewData["UserRole"] as string == "Admin" || ViewData["UserRole"] as string == "DoiTac")
-    {
-        <!-- KHỐI LỊCH SỬ GỬI TIN NHẮN DÀNH CHO ADMIN / ĐỐI TÁC -->
-        <div class="card border-0 shadow-sm rounded-4 mb-4">
-            <div class="card-header bg-white border-0 pt-4 px-4">
-                <h5 class="fw-bold text-dark mb-0">💬 Lịch Sử Gửi Tin Nhắn</h5>
-            </div>
-            <div class="card-body px-4">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Thời Gian</th>
-                                <th>Người Gửi</th>
-                                <th>Số Điện Thoại Nhận</th>
-                                <th>Nội Dung</th>
-                                <th>Trạng Thái</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>13/08/2026 09:30</td>
-                                <td>@ViewData["UserName"]</td>
-                                <td>0901234567</td>
-                                <td>Cảm ơn bạn đã đăng ký dịch vụ.</td>
-                                <td><span class="badge bg-success-subtle text-success">Thành công</span></td>
-                            </tr>
-                            <tr>
-                                <td>12/08/2026 14:15</td>
-                                <td>@ViewData["UserName"]</td>
-                                <td>0987654321</td>
-                                <td>Nhắc nhở: Lịch khám vào ngày mai.</td>
-                                <td><span class="badge bg-success-subtle text-success">Thành công</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+    /* Dashboard Layout */
+    .dashboard-wrapper {
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+        background-color: #f8fafc;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
-    else
-    {
-    <!-- KHỐI 2: LỊCH KHÁM SẮP TỚI & THÔNG BÁO -->
-    <div class="row g-4 mb-4">
-        <div class="col-md-7">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-header bg-white border-0 pt-3 px-4 d-flex justify-content-between align-items-center">
-                    <h5 class="fw-bold mb-0 text-primary">📅 Lịch Khám Sức Khỏe Sắp Tới</h5>
-                    <span class="badge bg-success">Đã xác nhận</span>
+
+    /* Sidebar */
+    .sidebar {
+        width: 260px;
+        background: #fff;
+        border-right: 1px solid #e2e8f0;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+    }
+    .sidebar-header {
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .sidebar-header img {
+        width: 40px;
+        height: 40px;
+    }
+    .sidebar-title {
+        font-weight: 700;
+        color: #1e3a8a;
+        font-size: 1.2rem;
+        margin: 0;
+        line-height: 1.2;
+    }
+    
+    .sidebar-menu {
+        flex: 1;
+        overflow-y: auto;
+        padding: 15px 0;
+    }
+    .menu-section {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: #94a3b8;
+        font-weight: 700;
+        padding: 0 20px;
+        margin-bottom: 10px;
+        margin-top: 20px;
+    }
+    .menu-section:first-child {
+        margin-top: 0;
+    }
+    .menu-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 20px;
+        color: #475569;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.95rem;
+        transition: all 0.2s;
+        border-left: 3px solid transparent;
+    }
+    .menu-item:hover {
+        background: #f1f5f9;
+        color: #1d4ed8;
+    }
+    .menu-item.active {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border-left-color: #1d4ed8;
+    }
+    .menu-item i {
+        font-size: 1.1rem;
+        width: 24px;
+        text-align: center;
+    }
+
+    .support-box {
+        margin: 20px;
+        padding: 15px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        text-align: center;
+    }
+    .support-box .phone {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #1d4ed8;
+        margin-top: 5px;
+    }
+
+    /* Main Content */
+    .main-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    /* Topbar */
+    .topbar {
+        height: 70px;
+        background: #fff;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 30px;
+        flex-shrink: 0;
+    }
+    .topbar-left {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+    .clinic-name {
+        font-weight: 600;
+        color: #334155;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .topbar-right {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    .icon-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #f1f5f9;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #475569;
+        cursor: pointer;
+        position: relative;
+    }
+    .icon-btn:hover {
+        background: #e2e8f0;
+    }
+    .icon-badge {
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        background: #ef4444;
+        color: white;
+        font-size: 0.65rem;
+        font-weight: bold;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .user-profile {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #f1f5f9;
+        padding: 6px 16px 6px 6px;
+        border-radius: 30px;
+        cursor: pointer;
+    }
+    .user-profile img {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+    }
+    .user-info {
+        display: flex;
+        flex-direction: column;
+    }
+    .user-name {
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: #1e293b;
+    }
+    .user-role {
+        font-size: 0.7rem;
+        color: #64748b;
+    }
+
+    /* Dashboard Content */
+    .dashboard-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 30px;
+    }
+    
+    .welcome-header {
+        margin-bottom: 25px;
+    }
+    .welcome-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 5px;
+    }
+    .welcome-subtitle {
+        color: #64748b;
+        font-size: 0.95rem;
+    }
+
+    /* Stat Cards */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    .stat-card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        border: 1px solid #f1f5f9;
+    }
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+    .stat-info {
+        flex: 1;
+    }
+    .stat-label {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin-bottom: 4px;
+        font-weight: 500;
+    }
+    .stat-value {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 2px;
+    }
+    .stat-desc {
+        font-size: 0.75rem;
+        color: #94a3b8;
+    }
+
+    /* Lists Grid */
+    .lists-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    .list-card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        border: 1px solid #f1f5f9;
+        display: flex;
+        flex-direction: column;
+    }
+    .list-header {
+        padding: 15px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #f8fafc;
+    }
+    .list-title {
+        font-weight: 700;
+        color: #1e293b;
+        font-size: 1rem;
+        margin: 0;
+    }
+    .list-action {
+        color: #3b82f6;
+        font-size: 0.8rem;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .list-body {
+        padding: 15px 20px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    .list-item {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+    }
+    .list-item-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #3b82f6;
+        flex-shrink: 0;
+    }
+    .list-item-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    .list-item-content {
+        flex: 1;
+    }
+    .item-title {
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: #1e293b;
+        margin-bottom: 2px;
+    }
+    .item-subtitle {
+        font-size: 0.75rem;
+        color: #64748b;
+    }
+    .item-status {
+        font-size: 0.7rem;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-weight: 600;
+        margin-top: 4px;
+        display: inline-block;
+    }
+    .status-normal { background: #dcfce7; color: #166534; }
+    .status-active { background: #dbeafe; color: #1e40af; }
+    .status-done { background: #f1f5f9; color: #475569; }
+    .status-upcoming { background: #e0e7ff; color: #3730a3; }
+
+    .btn-view-all {
+        display: block;
+        text-align: center;
+        padding: 12px;
+        color: #3b82f6;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.85rem;
+        border-top: 1px solid #f8fafc;
+        border-bottom-left-radius: 16px;
+        border-bottom-right-radius: 16px;
+    }
+    .btn-view-all:hover {
+        background: #f8fafc;
+        color: #2563eb;
+    }
+    .btn-primary-action {
+        display: block;
+        text-align: center;
+        background: #2563eb;
+        color: white;
+        padding: 10px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.9rem;
+        margin-top: 10px;
+        transition: background 0.2s;
+    }
+    .btn-primary-action:hover {
+        background: #1d4ed8;
+        color: white;
+    }
+
+    /* Notification Box */
+    .notification-box {
+        background: #fff;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        border: 1px solid #f1f5f9;
+    }
+    .notification-list {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin-top: 15px;
+    }
+    .notif-item {
+        display: flex;
+        gap: 15px;
+        align-items: flex-start;
+        padding: 15px;
+        background: #f8fafc;
+        border-radius: 12px;
+    }
+    .notif-item-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+
+    /* Responsive */
+    @@media (max-width: 1200px) {
+        .stats-grid, .lists-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .notification-list {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    @@media (max-width: 768px) {
+        .sidebar {
+            display: none;
+        }
+        .stats-grid, .lists-grid {
+            grid-template-columns: 1fr;
+        }
+        .notification-list {
+            grid-template-columns: 1fr;
+        }
+        .topbar {
+            padding: 0 15px;
+        }
+        .dashboard-content {
+            padding: 15px;
+        }
+    }
+</style>
+
+<div class="dashboard-wrapper">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <img src="/static/icon-192.png" alt="Logo" class="rounded-circle shadow-sm" style="background:#fff;">
+            <div>
+                <h1 class="sidebar-title">Y TẾ VIỆT</h1>
+            </div>
+        </div>
+
+        <div class="sidebar-menu">
+            <div class="menu-section">TRANG BỆNH NHÂN</div>
+            <a href="#" class="menu-item active">
+                <i class="fas fa-home"></i> Tổng quan
+            </a>
+            <a href="#" class="menu-item">
+                <i class="fas fa-clipboard-check"></i> Kết quả khám
+            </a>
+            <a href="#" class="menu-item">
+                <i class="fas fa-user-md"></i> Bác sĩ đã khám
+            </a>
+            <a href="#" class="menu-item">
+                <i class="fas fa-prescription-bottle-alt"></i> Toa thuốc
+            </a>
+            <a href="#" class="menu-item">
+                <i class="far fa-calendar-alt"></i> Lịch hẹn tái khám
+            </a>
+            <a href="#" class="menu-item">
+                <i class="far fa-comment-dots"></i> Tin nhắn
+            </a>
+
+            <div class="menu-section">TIỆN ÍCH</div>
+            <a href="/Home/ThongTinBenhNhan" class="menu-item">
+                <i class="fas fa-file-medical"></i> Hồ sơ sức khỏe
+            </a>
+            <a href="#" class="menu-item">
+                <i class="fas fa-cog"></i> Cài đặt tài khoản
+            </a>
+            
+            @if (ViewData["UserRole"] as string == "Admin" || ViewData["UserRole"] as string == "DoiTac")
+            {
+                <div class="menu-section">QUẢN TRỊ</div>
+                <a href="/Home/GuiTinNhan" class="menu-item">
+                    <i class="fas fa-paper-plane"></i> Gửi tin nhắn
+                </a>
+            }
+        </div>
+
+        <div class="support-box">
+            <div class="text-muted small">Hỗ trợ 24/7</div>
+            <div class="phone"><i class="fas fa-headset me-2"></i>1900 8198</div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        <!-- TOPBAR -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <div class="clinic-name">
+                    <i class="fas fa-map-marker-alt text-primary"></i>
+                    Bệnh Viện ĐHYD
+                    <span class="text-muted fw-normal fs-6 ms-2 d-none d-md-inline">215 Hồng Bàng, Phường Chợ Lớn, TP. Hồ Chí Minh</span>
                 </div>
-                <div class="card-body px-4">
-                    <div class="p-3 bg-light rounded-3 mb-3 border">
-                        <div class="row align-items-center">
-                            <div class="col-md-8">
-                                <h6 class="fw-bold text-dark mb-1">Gói Khám Sức Khỏe Tổng Quát Định Kỳ</h6>
-                                <p class="small text-muted mb-2">Bác sĩ: <strong>BS. CKI Trần Văn Nam</strong> &bull; Khoa Khám bệnh</p>
-                                <div class="d-flex align-items-center gap-3 text-secondary small">
-                                    <span>🕒 <strong>08:30 AM</strong></span>
-                                    <span>📆 <strong>15/08/2026</strong></span>
-                                    <span>📍 <strong>Phòng 302 - Lầu 3</strong></span>
+            </div>
+            
+            <div class="topbar-right">
+                <button class="icon-btn">
+                    <i class="far fa-bell"></i>
+                    <span class="icon-badge">3</span>
+                </button>
+                <button class="icon-btn">
+                    <i class="far fa-comment-dots"></i>
+                    <span class="icon-badge">2</span>
+                </button>
+                <button class="icon-btn d-none d-sm-flex" data-bs-toggle="offcanvas" data-bs-target="#fbMenuOffcanvas">
+                    <i class="fas fa-bars"></i>
+                </button>
+
+                <div class="user-profile dropdown" data-bs-toggle="dropdown" style="cursor: pointer;">
+                    <img src="https://ui-avatars.com/api/?name=@(ViewData["UserName"] ?? "BN")&background=0D8ABC&color=fff" alt="User">
+                    <div class="user-info d-none d-md-flex">
+                        <span class="user-name">Chào, @ViewData["UserName"]</span>
+                        <span class="user-role">Bệnh nhân</span>
+                    </div>
+                    <i class="fas fa-chevron-down ms-1 text-muted fs-7 d-none d-md-block"></i>
+                    
+                    <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm mt-2 rounded-3">
+                        <li><a class="dropdown-item py-2" href="/Home/ThongTinBenhNhan"><i class="fas fa-user me-2 text-muted"></i> Hồ sơ của tôi</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item py-2 text-danger" href="/DangNhap/DangXuat"><i class="fas fa-sign-out-alt me-2"></i> Đăng xuất</a></li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <!-- DASHBOARD BODY -->
+        <div class="dashboard-content">
+            <div class="welcome-header">
+                <h2 class="welcome-title">Xin chào, @ViewData["UserName"]!</h2>
+                <div class="welcome-subtitle">Dưới đây là thông tin sức khỏe và lịch khám của bạn.</div>
+            </div>
+
+            <!-- STAT CARDS -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #e0f2fe; color: #0284c7;">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-label">Lần khám gần nhất</div>
+                        <div class="stat-value text-primary">12/05/2024</div>
+                        <div class="stat-desc">Tại Phòng khám Nội tổng quát</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #dcfce7; color: #16a34a;">
+                        <i class="far fa-calendar-check"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-label">Lịch hẹn sắp tới</div>
+                        <div class="stat-value text-success">20/05/2024</div>
+                        <div class="stat-desc">Khám lại với BS. Trần Minh Đức</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #f3e8ff; color: #9333ea;">
+                        <i class="fas fa-file-prescription"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-label">Đơn thuốc đang dùng</div>
+                        <div class="stat-value" style="color: #9333ea;">2</div>
+                        <div class="stat-desc">Đơn thuốc</div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #ffedd5; color: #ea580c;">
+                        <i class="far fa-bell"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-label">Thông báo mới</div>
+                        <div class="stat-value text-warning">3</div>
+                        <div class="stat-desc">Tin nhắn / Thông báo</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LISTS GRID -->
+            <div class="lists-grid">
+                <!-- Column 1: Kết quả khám -->
+                <div class="list-card">
+                    <div class="list-header">
+                        <h3 class="list-title">Kết quả khám gần đây</h3>
+                        <a href="#" class="list-action">Xem tất cả</a>
+                    </div>
+                    <div class="list-body">
+                        <div class="list-item">
+                            <div class="list-item-icon">
+                                <i class="far fa-file-alt"></i>
+                            </div>
+                            <div class="list-item-content">
+                                <div class="text-muted" style="font-size: 0.7rem;">12/05/2024</div>
+                                <div class="item-title">Xét nghiệm máu tổng quát</div>
+                                <div class="item-subtitle">Phòng khám Nội tổng quát</div>
+                                <span class="item-status status-normal">Bình thường</span>
+                            </div>
+                        </div>
+                        <div class="list-item">
+                            <div class="list-item-icon">
+                                <i class="far fa-file-alt"></i>
+                            </div>
+                            <div class="list-item-content">
+                                <div class="text-muted" style="font-size: 0.7rem;">12/05/2024</div>
+                                <div class="item-title">Siêu âm ổ bụng tổng quát</div>
+                                <div class="item-subtitle">Phòng Chẩn đoán hình ảnh</div>
+                                <span class="item-status status-normal">Bình thường</span>
+                            </div>
+                        </div>
+                        <div class="list-item">
+                            <div class="list-item-icon">
+                                <i class="far fa-file-alt"></i>
+                            </div>
+                            <div class="list-item-content">
+                                <div class="text-muted" style="font-size: 0.7rem;">15/03/2024</div>
+                                <div class="item-title">X-quang ngực thẳng</div>
+                                <div class="item-subtitle">Phòng Chẩn đoán hình ảnh</div>
+                                <span class="item-status status-normal">Bình thường</span>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="#" class="btn-view-all">Xem tất cả kết quả <i class="fas fa-arrow-right ms-1 fs-7"></i></a>
+                </div>
+
+                <!-- Column 2: Bác sĩ đã khám -->
+                <div class="list-card">
+                    <div class="list-header">
+                        <h3 class="list-title">Bác sĩ đã khám</h3>
+                        <a href="#" class="list-action">Xem tất cả</a>
+                    </div>
+                    <div class="list-body">
+                        <div class="list-item">
+                            <img src="https://ui-avatars.com/api/?name=Trần+Minh+Đức&background=random&color=fff" class="list-item-avatar" alt="BS">
+                            <div class="list-item-content">
+                                <div class="item-title">BS. Trần Minh Đức</div>
+                                <div class="item-subtitle">Chuyên khoa Nội tổng quát</div>
+                                <div class="text-muted mt-1" style="font-size: 0.7rem;">Khám ngày: 12/05/2024</div>
+                            </div>
+                        </div>
+                        <div class="list-item">
+                            <img src="https://ui-avatars.com/api/?name=Lê+Hoàng+Anh&background=random&color=fff" class="list-item-avatar" alt="BS">
+                            <div class="list-item-content">
+                                <div class="item-title">BS. Lê Hoàng Anh</div>
+                                <div class="item-subtitle">Chuyên khoa Tim mạch</div>
+                                <div class="text-muted mt-1" style="font-size: 0.7rem;">Khám ngày: 15/03/2024</div>
+                            </div>
+                        </div>
+                        <div class="list-item">
+                            <img src="https://ui-avatars.com/api/?name=Nguyễn+Thị+Mai&background=random&color=fff" class="list-item-avatar" alt="BS">
+                            <div class="list-item-content">
+                                <div class="item-title">BS. Nguyễn Thị Mai</div>
+                                <div class="item-subtitle">Chuyên khoa Da liễu</div>
+                                <div class="text-muted mt-1" style="font-size: 0.7rem;">Khám ngày: 20/01/2024</div>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="#" class="btn-view-all">Xem tất cả bác sĩ <i class="fas fa-arrow-right ms-1 fs-7"></i></a>
+                </div>
+
+                <!-- Column 3: Toa thuốc -->
+                <div class="list-card">
+                    <div class="list-header">
+                        <h3 class="list-title">Toa thuốc gần đây</h3>
+                        <a href="#" class="list-action">Xem tất cả</a>
+                    </div>
+                    <div class="list-body">
+                        <div class="list-item">
+                            <div class="list-item-icon" style="background: #e0f2fe; color: #0ea5e9;">
+                                <i class="fas fa-pills"></i>
+                            </div>
+                            <div class="list-item-content">
+                                <div class="text-muted" style="font-size: 0.7rem;">12/05/2024</div>
+                                <div class="item-title">Thuốc điều trị viêm họng</div>
+                                <div class="item-subtitle">BS. Trần Minh Đức</div>
+                                <div class="text-end mt-2">
+                                    <span class="item-status status-normal">Đang dùng</span>
                                 </div>
                             </div>
-                            <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                                <button class="btn btn-sm btn-outline-primary rounded-pill w-100 mb-1" onclick="showAppointmentDetail()">Xem Phiếu Hẹn</button>
-                                <button class="btn btn-sm btn-link text-danger text-decoration-none w-100" onclick="cancelAppointment()">Hủy Lịch</button>
+                        </div>
+                        <div class="list-item">
+                            <div class="list-item-icon" style="background: #fce7f3; color: #e11d48;">
+                                <i class="fas fa-capsules"></i>
+                            </div>
+                            <div class="list-item-content">
+                                <div class="text-muted" style="font-size: 0.7rem;">15/03/2024</div>
+                                <div class="item-title">Thuốc huyết áp</div>
+                                <div class="item-subtitle">BS. Lê Hoàng Anh</div>
+                                <div class="text-end mt-2">
+                                    <span class="item-status status-done">Đã hoàn thành</span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="alert alert-info py-2 px-3 mb-0 small rounded-3">
-                        💡 <strong>Lưu ý trước khi khám:</strong> Vui lòng nhịn ăn sáng ít nhất 8 tiếng để thực hiện xét nghiệm máu chính xác nhất.
-                    </div>
+                    <a href="#" class="btn-view-all mt-auto">Xem tất cả toa thuốc <i class="fas fa-arrow-right ms-1 fs-7"></i></a>
                 </div>
-            </div>
-        </div>
 
-        <div class="col-md-5">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-header bg-white border-0 pt-3 px-4">
-                    <h5 class="fw-bold mb-0 text-primary">🔔 Nhắc Nhở Y Tế & Dịch Vụ</h5>
-                </div>
-                <div class="card-body px-4">
-                    <div class="list-group list-group-flush">
-                        <div class="list-group-item px-0 border-0 mb-2">
-                            <div class="d-flex w-100 justify-content-between align-items-center">
-                                <h6 class="mb-1 fw-bold text-dark">💊 Đơn thuốc: Kháng sinh & Vitamin C</h6>
-                                <small class="text-muted">18:00 Tối nay</small>
+                <!-- Column 4: Lịch hẹn -->
+                <div class="list-card">
+                    <div class="list-header">
+                        <h3 class="list-title">Lịch hẹn tái khám</h3>
+                        <a href="#" class="list-action">Xem tất cả</a>
+                    </div>
+                    <div class="list-body" style="padding-bottom: 5px;">
+                        <div class="list-item">
+                            <div class="list-item-icon" style="background: #e0e7ff; color: #4f46e5;">
+                                <i class="far fa-calendar-check"></i>
                             </div>
-                            <p class="mb-1 small text-muted">Uống 1 viên sau khi ăn tối 30 phút.</p>
-                        </div>
-                        <div class="list-group-item px-0 border-0 mb-2">
-                            <div class="d-flex w-100 justify-content-between align-items-center">
-                                <h6 class="mb-1 fw-bold text-dark">🧪 Kết quả Xét nghiệm Máu & Nước tiểu</h6>
-                                <small class="text-success">Đã có KQ</small>
+                            <div class="list-item-content">
+                                <div class="item-title" style="font-size: 0.95rem;">20/05/2024 - 08:00</div>
+                                <div class="item-title mt-1">Khám lại</div>
+                                <div class="item-subtitle mt-1">BS. Trần Minh Đức</div>
+                                <div class="item-subtitle">Phòng khám Nội tổng quát</div>
+                                <div class="text-end">
+                                    <span class="item-status status-active">Sắp tới</span>
+                                </div>
                             </div>
-                            <p class="mb-1 small text-muted">Lần khám ngày 05/05/2026. Chỉ số Đường huyết ổn định.</p>
+                        </div>
+                        <div class="list-item mt-2">
+                            <div class="list-item-icon" style="background: #f1f5f9; color: #475569;">
+                                <i class="far fa-calendar-alt"></i>
+                            </div>
+                            <div class="list-item-content">
+                                <div class="item-title" style="font-size: 0.95rem;">15/06/2024 - 08:30</div>
+                                <div class="item-title mt-1">Khám định kỳ</div>
+                                <div class="item-subtitle mt-1">BS. Trần Minh Đức</div>
+                                <div class="item-subtitle">Phòng khám Nội tổng quát</div>
+                                <div class="text-end">
+                                    <span class="item-status status-done">Đã đặt</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-3 pb-3">
+                        <a href="#" class="btn-primary-action" data-bs-toggle="modal" data-bs-target="#modalDangKyKham"><i class="far fa-calendar-plus me-2"></i> Đặt lịch khám</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NOTIFICATIONS -->
+            <div class="notification-box">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="list-title">Thông báo & Tin nhắn mới</h3>
+                    <a href="#" class="list-action">Xem tất cả</a>
+                </div>
+                <div class="notification-list">
+                    <div class="notif-item">
+                        <div class="notif-item-icon" style="background: #e0f2fe; color: #0284c7;">
+                            <i class="far fa-comment-dots"></i>
+                        </div>
+                        <div>
+                            <div class="item-title">Phòng khám Nội tổng quát</div>
+                            <div class="item-subtitle lh-sm mt-1">Kết quả xét nghiệm của bạn đã có. Vui lòng đăng nhập để xem chi tiết.</div>
+                            <div class="text-muted mt-2" style="font-size: 0.7rem;">2 giờ trước</div>
+                        </div>
+                    </div>
+                    
+                    <div class="notif-item">
+                        <div class="notif-item-icon" style="background: #fef08a; color: #ca8a04;">
+                            <i class="far fa-bell"></i>
+                        </div>
+                        <div>
+                            <div class="item-title">Bệnh Viện ĐHYD</div>
+                            <div class="item-subtitle lh-sm mt-1">Nhắc nhở: Bạn có lịch hẹn tái khám vào ngày 20/05/2024 lúc 08:00.</div>
+                            <div class="text-muted mt-2" style="font-size: 0.7rem;">1 ngày trước</div>
+                        </div>
+                    </div>
+
+                    <div class="notif-item">
+                        <div class="notif-item-icon" style="background: #e0e7ff; color: #4f46e5;">
+                            <i class="far fa-comment-dots"></i>
+                        </div>
+                        <div>
+                            <div class="item-title">Hệ thống</div>
+                            <div class="item-subtitle lh-sm mt-1">Cảm ơn bạn đã sử dụng dịch vụ của Bệnh viện ĐHYD.</div>
+                            <div class="text-muted mt-2" style="font-size: 0.7rem;">3 ngày trước</div>
                         </div>
                     </div>
                 </div>
             </div>
+            
         </div>
-    </div>
-
-    <!-- KHỐI 3: CÁC GÓI KHÁM SỨC KHỎE NỔI BẬT -->
-    <div class="mb-4">
-        <h4 class="fw-bold text-dark mb-3">🩺 Danh Mục Gói Khám Sức Khỏe Định Kỳ</h4>
-        <div class="row g-3">
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm rounded-4 h-100 hover-lift">
-                    <div class="card-body p-4 d-flex flex-column">
-                        <span class="badge bg-primary-subtle text-primary rounded-pill w-fit mb-2">Gói Phổ Thông</span>
-                        <h5 class="fw-bold text-dark">Khám Sức Khỏe Cơ Bản</h5>
-                        <h4 class="text-primary fw-bold mb-3">1.500.000 <small class="fs-6 text-muted">VNĐ</small></h4>
-                        <ul class="list-unstyled small text-muted mb-4 flex-grow-1">
-                            <li class="mb-2">✅ Khám Nội tổng quát & Đo sinh hiệu</li>
-                            <li class="mb-2">✅ Xét nghiệm Công thức máu 24 chỉ số</li>
-                            <li class="mb-2">✅ Siêu âm tổng quát vùng bụng</li>
-                            <li class="mb-2">✅ Chụp X-Quang phổi thẳng</li>
-                        </ul>
-                        <button type="button" class="btn btn-outline-primary rounded-pill w-100 fw-bold" onclick="selectPackage('Gói Khám Sức Khỏe Cơ Bản')">
-                            Đăng ký gói này
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="card border-primary border-2 shadow-sm rounded-4 h-100 position-relative hover-lift">
-                    <span class="position-absolute top-0 end-0 bg-warning text-dark px-3 py-1 rounded-bl fw-bold small">NỔI BẬT BAN CHẠY</span>
-                    <div class="card-body p-4 d-flex flex-column">
-                        <span class="badge bg-success-subtle text-success rounded-pill w-fit mb-2">Gói Nâng Cao</span>
-                        <h5 class="fw-bold text-dark">Khám Sức Khỏe Toàn Diện</h5>
-                        <h4 class="text-success fw-bold mb-3">3.200.000 <small class="fs-6 text-muted">VNĐ</small></h4>
-                        <ul class="list-unstyled small text-muted mb-4 flex-grow-1">
-                            <li class="mb-2">✅ Tất cả danh mục của Gói Cơ bản</li>
-                            <li class="mb-2">✅ Tầm soát nguy cơ Tim mạch & Mỡ máu</li>
-                            <li class="mb-2">✅ Kiểm tra Chức năng Gan & Thận</li>
-                            <li class="mb-2">✅ Tầm soát Ung thư tuyến giáp / Vú / Tiền liệt tuyến</li>
-                        </ul>
-                        <button type="button" class="btn btn-primary rounded-pill w-100 fw-bold shadow-sm" onclick="selectPackage('Gói Khám Sức Khỏe Toàn Diện')">
-                            Đăng ký gói này
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm rounded-4 h-100 hover-lift">
-                    <div class="card-body p-4 d-flex flex-column">
-                        <span class="badge bg-purple-subtle text-purple rounded-pill w-fit mb-2" style="background:#f3e8ff; color:#7e22ce;">Gói Vip</span>
-                        <h5 class="fw-bold text-dark">Tầm Soát Chuyên Sâu VIP</h5>
-                        <h4 class="text-purple fw-bold mb-3" style="color:#7e22ce;">5.800.000 <small class="fs-6 text-muted">VNĐ</small></h4>
-                        <ul class="list-unstyled small text-muted mb-4 flex-grow-1">
-                            <li class="mb-2">✅ Đầy đủ các xét nghiệm chuyên sâu</li>
-                            <li class="mb-2">✅ Chụp Cộng hưởng từ MRI / CT-Scanner</li>
-                            <li class="mb-2">✅ Nội soi dạ dày & đại tràng không đau</li>
-                            <li class="mb-2">✅ Khám & Tư vấn 1-1 với Giáo sư / Tiến sĩ</li>
-                        </ul>
-                        <button type="button" class="btn btn-outline-dark rounded-pill w-100 fw-bold" onclick="selectPackage('Gói Tầm Soát VIP')">
-                            Đăng ký gói này
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- KHỐI 4: LỊCH SỬ KẾT QUẢ KHÁM BỆNH -->
-    <div class="card border-0 shadow-sm rounded-4 mb-4">
-        <div class="card-header bg-white border-0 pt-4 px-4">
-            <h5 class="fw-bold text-dark mb-0">📜 Lịch Sử Kết Quả Khám Bệnh</h5>
-        </div>
-        <div class="card-body px-4">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Mã Phiếu</th>
-                            <th>Ngày Khám</th>
-                            <th>Loại Khám</th>
-                            <th>Bác Sĩ Khám</th>
-                            <th>Kết Luận Chẩn Đoán</th>
-                            <th>Hồ Sơ</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong class="text-primary">KSK-8812</strong></td>
-                            <td>05/05/2026</td>
-                            <td>Khám Tổng Quát 定期</td>
-                            <td>BS. CKI Nguyễn Văn A</td>
-                            <td><span class="badge bg-success-subtle text-success">Sức khỏe tốt, phổi trong</span></td>
-                            <td><button class="btn btn-sm btn-light border" onclick="viewReport('KSK-8812')">📄 Xem Chi Tiết</button></td>
-                        </tr>
-                        <tr>
-                            <td><strong class="text-primary">KSK-7741</strong></td>
-                            <td>12/01/2026</td>
-                            <td>Tầm Soát Tim Mạnh</td>
-                            <td>BS. CKI Lê Thị B</td>
-                            <td><span class="badge bg-warning-subtle text-warning-emphasis">Triglyceride nhẹ, tập thể dục</span></td>
-                            <td><button class="btn btn-sm btn-light border" onclick="viewReport('KSK-7741')">📄 Xem Chi Tiết</button></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    }
-
-    <!-- KHỐI 5: TRẠNG THÁI PWA -->
-    <div class="card border-0 shadow-sm rounded-4 p-3 bg-light">
-        <div class="d-flex align-items-center justify-content-between">
-            <div class="d-flex align-items-center gap-2">
-                <span class="hello__dot"></span>
-                <small class="text-muted" id="modeStandalone">Ứng dụng PWA Khám Sức Khỏe đang hoạt động hoàn hảo trên thiết bị của bạn.</small>
-            </div>
-            <small class="text-muted">HisSoft Medical PWA &copy; 2026</small>
-        </div>
-    </div>
+    </main>
 </div>
 
 }
