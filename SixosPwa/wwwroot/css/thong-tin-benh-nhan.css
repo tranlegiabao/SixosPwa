@@ -1,0 +1,591 @@
+    /* Hide layout parts */
+    .app-nav, .bottom-nav, .app-foot { display: none !important; }
+    body { background-color: #f0f4f8; margin: 0; padding-bottom: 120px !important; font-family: 'Inter', sans-serif; }
+    .container, main.container { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+
+    /* Layout Variables */
+    :root {
+        --ytv-primary: #3b82f6; /* Xanh dương nhạt */
+        --ytv-secondary: #0ea5e9; /* Xanh biển sáng */
+        --ytv-accent: #ffb703;
+        --ytv-text: #334155;
+        --ytv-bg: #f0f9ff;
+    }
+
+    /* HEADER */
+    .ytv-header {
+        background: linear-gradient(135deg, #3b82f6, #60a5fa);
+        color: white;
+        padding: 15px 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border-bottom: 3px solid var(--ytv-secondary);
+    }
+    .ytv-logo-area {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    .ytv-logo-image {
+        height: 65px;
+        width: 65px;
+        object-fit: cover;
+        background: white;
+        border-radius: 50%;
+        padding: 0;
+    }
+    .bieu-tuong-benh-vien { color: #ef4444 !important; }
+    .bieu-tuong-phong-kham { color: #10b981 !important; }
+    .bieu-tuong-nha-khoa { color: #06b6d4 !important; }
+    .bieu-tuong-phong-mach { color: #8b5cf6 !important; }
+    .bieu-tuong-nha-thuoc { color: #f59e0b !important; }
+    .ytv-logo-circle {
+        width: 60px;
+        height: 60px;
+        border: 2px solid white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        font-weight: bold;
+        background: rgba(255,255,255,0.1);
+    }
+    .ytv-logo-text {
+        font-family: 'Times New Roman', Times, serif;
+        font-size: 34px;
+        font-weight: 900;
+        line-height: 1.05;
+        letter-spacing: 1px;
+        text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.4);
+    }
+    .ytv-header-title {
+        text-align: center;
+    }
+    .ytv-header-title h1 {
+        font-size: 26px;
+        font-weight: 700;
+        margin: 0 0 5px 0;
+        text-transform: uppercase;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    }
+    .ytv-header-title p {
+        font-size: 20px;
+        margin: 0;
+        color: #e0f2f1;
+        font-style: italic;
+    }
+    .ytv-header-menu {
+        font-size: 32px;
+        cursor: pointer;
+        padding: 10px;
+        position: relative;
+    }
+    .ytv-dropdown {
+        display: none;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        min-width: 240px;
+        z-index: 9999;
+        overflow: hidden;
+        animation: fadeDown 0.2s ease;
+    }
+    .ytv-dropdown.open { display: block; }
+    @keyframes fadeDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .ytv-dropdown a {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 15px 20px;
+        color: #334155;
+        font-size: 16px;
+        font-weight: 600;
+        text-decoration: none;
+        border-bottom: 1px solid #f1f5f9;
+        transition: all 0.2s;
+    }
+    .ytv-dropdown a:last-child { border-bottom: none; }
+    .ytv-dropdown a:hover {
+        background: #eff6ff;
+        color: var(--ytv-primary);
+        padding-left: 28px;
+    }
+    .ytv-dropdown a i {
+        font-size: 20px;
+        width: 26px;
+        text-align: center;
+        color: var(--ytv-secondary);
+    }
+
+    /* MAIN CONTAINER */
+    .ytv-main {
+        display: flex;
+        flex-wrap: wrap;
+        min-height: 0;
+        background: #f8fafc;
+    }
+
+    /* SIDEBAR */
+    .ytv-sidebar {
+        width: 300px;
+        background: white;
+        border-right: 1px solid #e2e8f0;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.03);
+        display: flex;
+        flex-direction: column;
+        padding: 20px 0;
+    }
+    .ytv-menu-item {
+        padding: 18px 25px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        color: var(--ytv-primary);
+        font-size: 18px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+    .ytv-menu-item i {
+        font-size: 22px;
+        width: 30px;
+        text-align: center;
+        color: #64748b;
+        transition: all 0.3s ease;
+    }
+    .ytv-menu-item:hover, .ytv-menu-item.active {
+        background: #f1f5f9;
+        border-left-color: var(--ytv-secondary);
+        color: var(--ytv-primary);
+    }
+    .ytv-menu-item:hover i, .ytv-menu-item.active i {
+        color: var(--ytv-secondary);
+        transform: scale(1.1);
+    }
+
+    /* SLIDER AREA */
+    .ytv-content {
+        flex: 1;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+    }
+    .ytv-slider {
+        width: 100%;
+        height: auto;
+        min-height: 380px;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        position: relative;
+    }
+    .carousel-item {
+        height: auto;
+        min-height: 380px;
+    }
+    .carousel-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .ytv-carousel-control-icon {
+        width: 3rem;
+        height: 3rem;
+        background-color: rgba(0, 0, 0, 0.5);
+        border-radius: 50%;
+    }
+
+    /* Parallelogram card styling */
+    .para-card-wrapper {
+        padding: 20px 40px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        min-height: 380px;
+    }
+    .para-card {
+        width: 85%;
+        height: 100%;
+        min-height: 340px;
+        background-size: cover;
+        background-position: center;
+        border-radius: 16px;
+        position: relative;
+        transform: skewX(-12deg);
+        overflow: hidden;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .para-card::before {
+        content: "";
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.7));
+        z-index: 1;
+    }
+    .para-card-content {
+        transform: skewX(12deg); /* counter-skew to keep content upright */
+        color: white;
+        padding: 40px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        z-index: 2;
+    }
+    .para-card-title {
+        font-size: 26px;
+        font-weight: 800;
+        margin-bottom: 15px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.9);
+    }
+    .para-card-text {
+        font-size: 16px;
+        line-height: 1.6;
+        margin-bottom: 25px;
+        max-width: 85%;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);
+        display: -webkit-box;
+        -webkit-line-clamp: 4;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .para-card-btn {
+        background-color: var(--ytv-accent, #ffb703);
+        border: none;
+        color: #0f172a;
+        font-weight: 700;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-size: 16px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: 0 4px 10px rgba(255, 183, 3, 0.3);
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+    .para-card-btn:hover {
+        background-color: #e5a500;
+        color: #000;
+        transform: scale(1.05) translateY(-2px);
+        box-shadow: 0 6px 15px rgba(255, 183, 3, 0.5);
+    }
+
+    /* COMPANY INFORMATION */
+    .ytv-company-info {
+        display: grid;
+        flex: 0 0 100%;
+        grid-template-columns: minmax(180px, 1fr) minmax(190px, 1.25fr) minmax(160px, 1.1fr) minmax(260px, 1.8fr);
+        gap: 16px;
+        align-items: stretch;
+        margin: 0;
+        padding: 18px 24px 20px;
+        box-sizing: border-box;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        border-radius: 0;
+        border-top: 1px solid #e2e8f0;
+        border-bottom: 1px solid #dbeafe;
+        overflow: hidden;
+        color: #0f172a;
+        line-height: 1.45;
+    }
+    .ytv-company-info ul {
+        list-style: none;
+        padding-left: 0;
+    }
+    .ytv-company-name {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 112px;
+        padding: 18px;
+        box-sizing: border-box;
+        text-align: left;
+        font-size: 17px;
+        line-height: 1.35;
+        font-weight: 700;
+        color: #12345b;
+        background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+        border: 1px solid #dbeafe;
+        border-left: 4px solid var(--ytv-primary);
+        border-radius: 14px;
+        box-shadow: 0 8px 20px rgba(30, 64, 175, 0.08);
+    }
+    .ytv-company-list {
+        display: flex;
+        align-items: center;
+        min-height: 112px;
+        padding: 16px 18px;
+        box-sizing: border-box;
+        background: rgba(255, 255, 255, 0.86);
+        border: 1px solid #e2e8f0;
+        border-top: 3px solid #60a5fa;
+        border-radius: 14px;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+    }
+    .ytv-company-list:nth-child(3) {
+        border-top-color: #22c55e;
+    }
+    .ytv-company-list ul {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+    }
+    .ytv-company-list li {
+        padding: 7px 0;
+        color: #334155;
+        font-size: 15px;
+    }
+    .ytv-company-list li + li {
+        border-top: 1px solid #eef2f7;
+    }
+    .ytv-company-rolling {
+        height: 112px;
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        align-items: center;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%);
+        border: 1px solid #dbeafe;
+        border-top: 3px solid #93c5fd;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+    }
+    .ytv-company-rolling::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(to bottom, rgba(255, 255, 255, 0.72), transparent 20%, transparent 80%, rgba(255, 255, 255, 0.72));
+    }
+    .ytv-company-service {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 6px;
+        padding: 0 14px;
+        opacity: 0;
+        transform: translateY(22px) scale(0.92);
+        transform-origin: center left;
+        transition: opacity 0.45s ease, transform 0.45s ease;
+        pointer-events: none;
+        color: #0f172a;
+        text-decoration: none;
+    }
+    .ytv-company-service.is-active {
+        opacity: 1;
+        transform: translateY(0) scale(1.1);
+        font-size: 18px;
+        font-weight: 700;
+        pointer-events: auto;
+    }
+    .ytv-company-service.is-active:hover {
+        color: var(--ytv-primary);
+    }
+    .ytv-company-service:focus-visible {
+        outline: 2px solid var(--ytv-primary);
+        outline-offset: -2px;
+    }
+    .ytv-company-service ul {
+        flex: 1;
+        margin: 0;
+        padding-left: 0;
+    }
+    .ytv-company-service-icon {
+        width: 22px;
+        height: 22px;
+        flex: 0 0 22px;
+        padding: 3px;
+        box-sizing: border-box;
+        border-radius: 7px;
+        background: #eff6ff;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .ytv-company-service { transition: none; }
+    }
+    
+    /* Responsive skew overrides */
+    @media (max-width: 768px) {
+        .para-card-wrapper {
+            padding: 10px 15px;
+            min-height: 320px;
+        }
+        .para-card {
+            width: 100%;
+            min-height: 280px;
+            transform: skewX(-6deg); /* Less skew on mobile */
+        }
+        .para-card-content {
+            transform: skewX(6deg);
+            padding: 20px;
+        }
+        .para-card-title {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+        .para-card-text {
+            font-size: 14px;
+            max-width: 100%;
+            -webkit-line-clamp: 3;
+            margin-bottom: 15px;
+        }
+        .para-card-btn {
+            padding: 8px 20px;
+            font-size: 14px;
+        }
+    }
+
+    /* FOOTER */
+    .ytv-footer {
+        background: #e0f2fe; /* xanh nhạt */
+        color: #334155;
+        padding: 20px 30px 10px 30px;
+        display: flex;
+        flex-direction: column;
+        border-top: 4px solid var(--ytv-primary);
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
+    }
+    .ytv-footer-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+    .ytv-support-col {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .ytv-support-phones {
+        font-size: 16px;
+        font-weight: 500;
+    }
+    .ytv-support-contacts {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+    .ytv-email-link {
+        color: var(--ytv-primary);
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .ytv-policy-body {
+        font-size: 15px;
+        line-height: 1.6;
+        color: #334155;
+    }
+    .ytv-support-phones span {
+        color: var(--ytv-primary);
+        font-weight: 700;
+        font-size: 18px;
+    }
+    .ytv-contact-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 15px;
+    }
+    .ytv-social-btn-light {
+        width: 36px;
+        height: 36px;
+        background: white;
+        border: 1px solid #bae6fd;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        color: var(--ytv-primary);
+        text-decoration: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .ytv-social-btn-light:hover {
+        background: var(--ytv-primary);
+        color: white;
+        transform: translateY(-2px);
+    }
+    .ytv-policies-col {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        font-weight: 500;
+        margin-top: 5px;
+    }
+    .ytv-policies-col a {
+        color: #0f172a;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    .ytv-policies-col a:hover {
+        color: var(--ytv-primary);
+    }
+    .ytv-policies-col .separator {
+        color: #94a3b8;
+    }
+    .ytv-footer-bottom {
+        text-align: center;
+        font-size: 14px;
+        color: #64748b;
+        border-top: 1px solid #bae6fd;
+        padding-top: 15px;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 992px) {
+        .ytv-header { flex-direction: column; gap: 15px; text-align: center; }
+        .ytv-main { flex-direction: column; }
+        .ytv-sidebar { width: 100%; border-right: none; border-bottom: 1px solid #e2e8f0; flex-direction: row; overflow-x: auto; padding: 10px 0; }
+        .ytv-menu-item { flex-direction: column; padding: 10px 20px; white-space: nowrap; border-left: none; border-bottom: 3px solid transparent; gap: 5px; font-size: 14px; }
+        .ytv-menu-item.active, .ytv-menu-item:hover { border-bottom-color: var(--ytv-secondary); }
+        .ytv-footer-top { flex-direction: column; gap: 20px; align-items: center; text-align: center; }
+        .ytv-contact-row { justify-content: center; }
+        .ytv-policies-col { justify-content: center; }
+        .ytv-slider { min-height: 160px; }
+        .carousel-item { min-height: 160px; }
+        .ytv-company-info {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            flex-basis: 100%;
+            margin: 0;
+            padding: 14px 18px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .ytv-company-info {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        .ytv-company-name { min-height: 70px; }
+    }
