@@ -544,9 +544,9 @@
             <a href="#" onclick="showPolicy('baohanh')">Chính sách bảo hành</a>
         </div>
     </div>
-    <div class="ytv-footer-bottom">
+    @* <div class="ytv-footer-bottom">
         Đơn vị phối hợp thực hiện: <strong>Công Ty Phần mềm Vũ Phong - SixOSSoft.com</strong>
-    </div>
+    </div> *@
 </div>
 
 <script>
@@ -816,7 +816,7 @@
                             <i class="fas fa-map-pin"></i>
                             <span class="address-text">${c.address}</span>
                         </div>
-                        <a href="/Home/ChiTietCoSo/${toSlug(c.name)}" class="ytv-card-btn">Xem chi tiết</a>
+                        <a href="/Home/DangKyOnline/${toSlug(c.name)}" class="ytv-card-btn">Xem chi tiết</a>
                     </div>
                 </div>`).join("");
         }

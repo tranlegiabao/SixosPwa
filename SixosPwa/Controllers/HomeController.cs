@@ -90,7 +90,7 @@ public class HomeController : Controller
         return View(dsCoso);
     }
 
-    [HttpGet("/Home/ChiTietCoSo/{ten?}")]
+    [HttpGet("/Home/DangKyOnline/{ten?}")]
     [AllowAnonymous]
     public async Task<IActionResult> ChiTietCoSo(string? ten, string? diaChi, string? type, string? img)
     {

@@ -3,418 +3,11 @@
     ViewData["Title"] = "Y TẾ VIỆT - Đăng Ký Khám Bệnh";
     Layout = "_Layout";
 }
-<style>
-    /* Hide layout parts */
-    .app-nav, .bottom-nav, .app-foot { display: none !important; }
-    body { background-color: #f0f4f8; margin: 0; padding-bottom: 120px !important; font-family: 'Inter', sans-serif; }
-    .container, main.container { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
-
-    /* Layout Variables */
-    :root {
-        --ytv-primary: #3b82f6; /* Xanh dương nhạt */
-        --ytv-secondary: #0ea5e9; /* Xanh biển sáng */
-        --ytv-accent: #ffb703;
-        --ytv-text: #334155;
-        --ytv-bg: #f0f9ff;
-    }
-
-    /* HEADER */
-    .ytv-header {
-        background: linear-gradient(135deg, #3b82f6, #60a5fa);
-        color: white;
-        padding: 15px 30px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        border-bottom: 3px solid var(--ytv-secondary);
-    }
-    .ytv-logo-area {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }
-    .ytv-logo-circle {
-        width: 60px;
-        height: 60px;
-        border: 2px solid white;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-        font-weight: bold;
-        background: rgba(255,255,255,0.1);
-    }
-    .ytv-logo-text {
-        font-family: 'Times New Roman', Times, serif;
-        font-size: 34px;
-        font-weight: 900;
-        line-height: 1.05;
-        letter-spacing: 1px;
-        text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.4);
-    }
-    .ytv-header-title {
-        text-align: center;
-    }
-    .ytv-header-title h1 {
-        font-size: 26px;
-        font-weight: 700;
-        margin: 0 0 5px 0;
-        text-transform: uppercase;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-    }
-    .ytv-header-title p {
-        font-size: 20px;
-        margin: 0;
-        color: #e0f2f1;
-        font-style: italic;
-    }
-    .ytv-header-menu {
-        font-size: 32px;
-        cursor: pointer;
-        padding: 10px;
-        position: relative;
-    }
-    .ytv-dropdown {
-        display: none;
-        position: absolute;
-        top: 100%;
-        right: 0;
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-        min-width: 240px;
-        z-index: 9999;
-        overflow: hidden;
-        animation: fadeDown 0.2s ease;
-    }
-    .ytv-dropdown.open { display: block; }
-    @@keyframes fadeDown {
-        from { opacity: 0; transform: translateY(-10px); }
-        to   { opacity: 1; transform: translateY(0); }
-    }
-    .ytv-dropdown a {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 15px 20px;
-        color: #334155;
-        font-size: 16px;
-        font-weight: 600;
-        text-decoration: none;
-        border-bottom: 1px solid #f1f5f9;
-        transition: all 0.2s;
-    }
-    .ytv-dropdown a:last-child { border-bottom: none; }
-    .ytv-dropdown a:hover {
-        background: #eff6ff;
-        color: var(--ytv-primary);
-        padding-left: 28px;
-    }
-    .ytv-dropdown a i {
-        font-size: 20px;
-        width: 26px;
-        text-align: center;
-        color: var(--ytv-secondary);
-    }
-
-    /* MAIN CONTAINER */
-    .ytv-main {
-        display: flex;
-        min-height: calc(100vh - 170px); /* 100px header + 70px footer */
-        background: #f8fafc;
-    }
-
-    /* SIDEBAR */
-    .ytv-sidebar {
-        width: 300px;
-        background: white;
-        border-right: 1px solid #e2e8f0;
-        box-shadow: 2px 0 10px rgba(0,0,0,0.03);
-        display: flex;
-        flex-direction: column;
-        padding: 20px 0;
-    }
-    .ytv-menu-item {
-        padding: 18px 25px;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        color: var(--ytv-primary);
-        font-size: 18px;
-        font-weight: 600;
-        text-decoration: none;
-        transition: all 0.3s ease;
-        border-left: 4px solid transparent;
-    }
-    .ytv-menu-item i {
-        font-size: 22px;
-        width: 30px;
-        text-align: center;
-        color: #64748b;
-        transition: all 0.3s ease;
-    }
-    .ytv-menu-item:hover, .ytv-menu-item.active {
-        background: #f1f5f9;
-        border-left-color: var(--ytv-secondary);
-        color: var(--ytv-primary);
-    }
-    .ytv-menu-item:hover i, .ytv-menu-item.active i {
-        color: var(--ytv-secondary);
-        transform: scale(1.1);
-    }
-
-    /* SLIDER AREA */
-    .ytv-content {
-        flex: 1;
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-    }
-    .ytv-slider {
-        width: 100%;
-        height: auto;
-        min-height: 380px;
-        border-radius: 15px;
-        overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        position: relative;
-    }
-    .carousel-item {
-        height: auto;
-        min-height: 380px;
-    }
-    .carousel-item img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    /* Parallelogram card styling */
-    .para-card-wrapper {
-        padding: 20px 40px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100%;
-        min-height: 380px;
-    }
-    .para-card {
-        width: 85%;
-        height: 100%;
-        min-height: 340px;
-        background-size: cover;
-        background-position: center;
-        border-radius: 16px;
-        position: relative;
-        transform: skewX(-12deg);
-        overflow: hidden;
-        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
-        border: 2px solid rgba(255, 255, 255, 0.2);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    .para-card::before {
-        content: "";
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.7));
-        z-index: 1;
-    }
-    .para-card-content {
-        transform: skewX(12deg); /* counter-skew to keep content upright */
-        color: white;
-        padding: 40px;
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        width: 100%;
-        height: 100%;
-        z-index: 2;
-    }
-    .para-card-title {
-        font-size: 26px;
-        font-weight: 800;
-        margin-bottom: 15px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.9);
-    }
-    .para-card-text {
-        font-size: 16px;
-        line-height: 1.6;
-        margin-bottom: 25px;
-        max-width: 85%;
-        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);
-        display: -webkit-box;
-        -webkit-line-clamp: 4;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-    .para-card-btn {
-        background-color: var(--ytv-accent, #ffb703);
-        border: none;
-        color: #0f172a;
-        font-weight: 700;
-        padding: 12px 30px;
-        border-radius: 8px;
-        font-size: 16px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        box-shadow: 0 4px 10px rgba(255, 183, 3, 0.3);
-        transition: all 0.3s ease;
-        text-decoration: none;
-        display: inline-block;
-    }
-    .para-card-btn:hover {
-        background-color: #e5a500;
-        color: #000;
-        transform: scale(1.05) translateY(-2px);
-        box-shadow: 0 6px 15px rgba(255, 183, 3, 0.5);
-    }
-    
-    /* Responsive skew overrides */
-    @@media (max-width: 768px) {
-        .para-card-wrapper {
-            padding: 10px 15px;
-            min-height: 320px;
-        }
-        .para-card {
-            width: 100%;
-            min-height: 280px;
-            transform: skewX(-6deg); /* Less skew on mobile */
-        }
-        .para-card-content {
-            transform: skewX(6deg);
-            padding: 20px;
-        }
-        .para-card-title {
-            font-size: 20px;
-            margin-bottom: 10px;
-        }
-        .para-card-text {
-            font-size: 14px;
-            max-width: 100%;
-            -webkit-line-clamp: 3;
-            margin-bottom: 15px;
-        }
-        .para-card-btn {
-            padding: 8px 20px;
-            font-size: 14px;
-        }
-    }
-
-    /* FOOTER */
-    .ytv-footer {
-        background: #e0f2fe; /* xanh nhạt */
-        color: #334155;
-        padding: 20px 30px 10px 30px;
-        display: flex;
-        flex-direction: column;
-        border-top: 4px solid var(--ytv-primary);
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        z-index: 1000;
-    }
-    .ytv-footer-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 20px;
-        flex-wrap: wrap;
-        gap: 20px;
-    }
-    .ytv-support-col {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-    .ytv-support-phones {
-        font-size: 16px;
-        font-weight: 500;
-    }
-    .ytv-support-phones span {
-        color: var(--ytv-primary);
-        font-weight: 700;
-        font-size: 18px;
-    }
-    .ytv-contact-row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-size: 15px;
-    }
-    .ytv-social-btn-light {
-        width: 36px;
-        height: 36px;
-        background: white;
-        border: 1px solid #bae6fd;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
-        color: var(--ytv-primary);
-        text-decoration: none;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-    .ytv-social-btn-light:hover {
-        background: var(--ytv-primary);
-        color: white;
-        transform: translateY(-2px);
-    }
-    .ytv-policies-col {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-        font-weight: 500;
-        margin-top: 5px;
-    }
-    .ytv-policies-col a {
-        color: #0f172a;
-        text-decoration: none;
-        transition: color 0.2s;
-    }
-    .ytv-policies-col a:hover {
-        color: var(--ytv-primary);
-    }
-    .ytv-policies-col .separator {
-        color: #94a3b8;
-    }
-    .ytv-footer-bottom {
-        text-align: center;
-        font-size: 14px;
-        color: #64748b;
-        border-top: 1px solid #bae6fd;
-        padding-top: 15px;
-    }
-
-    /* RESPONSIVE */
-    @@media (max-width: 992px) {
-        .ytv-header { flex-direction: column; gap: 15px; text-align: center; }
-        .ytv-main { flex-direction: column; }
-        .ytv-sidebar { width: 100%; border-right: none; border-bottom: 1px solid #e2e8f0; flex-direction: row; overflow-x: auto; padding: 10px 0; }
-        .ytv-menu-item { flex-direction: column; padding: 10px 20px; white-space: nowrap; border-left: none; border-bottom: 3px solid transparent; gap: 5px; font-size: 14px; }
-        .ytv-menu-item.active, .ytv-menu-item:hover { border-bottom-color: var(--ytv-secondary); }
-        .ytv-footer-top { flex-direction: column; gap: 20px; align-items: center; text-align: center; }
-        .ytv-contact-row { justify-content: center; }
-        .ytv-policies-col { justify-content: center; }
-        .ytv-slider { min-height: 160px; }
-        .carousel-item { min-height: 160px; }
-    }
-</style>
+<link rel="stylesheet" href="~/css/thong-tin-benh-nhan.css" asp-append-version="true" />
 
 <div class="ytv-header">
     <div class="ytv-logo-area">
-        <img src="/static/logo-yte.png" alt="Logo" style="height: 65px; width: 65px; object-fit: cover; background: white; border-radius: 50%; padding: 0;" />
+        <img src="/static/logo-yte.png" alt="Logo" class="ytv-logo-image" />
         <div class="ytv-logo-text">Y TẾ<br>VIỆT</div>
     </div>
     <div class="ytv-header-title">
@@ -425,19 +18,19 @@
         <i class="fas fa-bars"></i>
         <div class="ytv-dropdown" id="dropdownMenu">
             <a href="/Home/DanhSachCoSo?type=benhvien">
-                <i class="fas fa-hospital" style="color: #ef4444;"></i> Bệnh viện
+                <i class="fas fa-hospital bieu-tuong-benh-vien"></i> Bệnh viện
             </a>
             <a href="/Home/DanhSachCoSo?type=pkdk">
-                <i class="fas fa-clinic-medical" style="color: #10b981;"></i> Phòng khám đa khoa
+                <i class="fas fa-clinic-medical bieu-tuong-phong-kham"></i> Phòng khám đa khoa
             </a>
             <a href="/Home/DanhSachCoSo?type=nhakhoa">
-                <i class="fas fa-tooth" style="color: #06b6d4;"></i> Nha khoa
+                <i class="fas fa-tooth bieu-tuong-nha-khoa"></i> Nha khoa
             </a>
             <a href="/Home/DanhSachCoSo?type=phongmach">
-                <i class="fas fa-stethoscope" style="color: #8b5cf6;"></i> Phòng mạch
+                <i class="fas fa-stethoscope bieu-tuong-phong-mach"></i> Phòng mạch
             </a>
             <a href="/Home/DanhSachCoSo?type=nhathuoc">
-                <i class="fas fa-pills" style="color: #f59e0b;"></i> Nhà thuốc
+                <i class="fas fa-pills bieu-tuong-nha-thuoc"></i> Nhà thuốc
             </a>
         </div>
     </div>
@@ -446,23 +39,23 @@
 <div class="ytv-main">
     <div class="ytv-sidebar">
         <a href="/Home/DanhSachCoSo-benhvien" class="ytv-menu-item">
-            <i class="fas fa-hospital ytv-icon" style="color: #ef4444;"></i>
+            <i class="fas fa-hospital ytv-icon bieu-tuong-benh-vien"></i>
             Bệnh viện
         </a>
         <a href="/Home/DanhSachCoSo-pkdk" class="ytv-menu-item">
-            <i class="fas fa-clinic-medical ytv-icon" style="color: #10b981;"></i>
+            <i class="fas fa-clinic-medical ytv-icon bieu-tuong-phong-kham"></i>
             Phòng khám đa khoa
         </a>
         <a href="/Home/DanhSachCoSo-nhakhoa" class="ytv-menu-item">
-            <i class="fas fa-tooth ytv-icon" style="color: #06b6d4;"></i>
+            <i class="fas fa-tooth ytv-icon bieu-tuong-nha-khoa"></i>
             Nha khoa
         </a>
         <a href="/Home/DanhSachCoSo-phongmach" class="ytv-menu-item">
-            <i class="fas fa-stethoscope ytv-icon" style="color: #8b5cf6;"></i>
+            <i class="fas fa-stethoscope ytv-icon bieu-tuong-phong-mach"></i>
             Phòng mạch
         </a>
         <a href="/Home/DanhSachCoSo-nhathuoc" class="ytv-menu-item">
-            <i class="fas fa-pills ytv-icon" style="color: #f59e0b;"></i>
+            <i class="fas fa-pills ytv-icon bieu-tuong-nha-thuoc"></i>
             Nhà thuốc
         </a>
     </div>
@@ -472,6 +65,34 @@
         <div id="mainSlider" class="carousel slide ytv-slider" data-bs-ride="carousel" data-bs-interval="3000">
             @{
                 var topCSKCB = ViewData["TopCSKCB"] as List<SixosPwa.Models.TopCSKCBQC> ?? new List<SixosPwa.Models.TopCSKCBQC>();
+
+                string ToSlug(string text)
+                {
+                    if (string.IsNullOrEmpty(text)) return string.Empty;
+                    
+                    string normalized = text.Normalize(System.Text.NormalizationForm.FormD);
+                    var sb = new System.Text.StringBuilder();
+                    foreach (char c in normalized)
+                    {
+                        var unicodeCategory = System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c);
+                        if (unicodeCategory != System.Globalization.UnicodeCategory.NonSpacingMark)
+                        {
+                            sb.Append(c);
+                        }
+                    }
+                    string cleanText = sb.ToString().Normalize(System.Text.NormalizationForm.FormC);
+                    cleanText = cleanText.Replace("đ", "d").Replace("Đ", "D");
+                    
+                    var finalSb = new System.Text.StringBuilder();
+                    foreach (char c in cleanText)
+                    {
+                        if (char.IsLetterOrDigit(c))
+                        {
+                            finalSb.Append(c);
+                        }
+                    }
+                    return finalSb.ToString();
+                }
             }
             @if (topCSKCB.Any())
             {
@@ -491,7 +112,7 @@
                                     <div class="para-card-content">
                                         <h3 class="para-card-title">@item.TenCoSo</h3>
                                         <p class="para-card-text">@item.NoiDung</p>
-                                        <a href="/Home/ChiTietCoSo?ten=@System.Net.WebUtility.UrlEncode(item.TenCoSo)" class="para-card-btn">Đăng ký khám</a>
+                                        <a href="/Home/DangKyOnline/@ToSlug(item.TenCoSo)" class="para-card-btn">Đăng ký khám</a>
                                     </div>
                                 </div>
                             </div>
@@ -499,11 +120,11 @@
                     }
                 </div>
                 <button class="carousel-control-prev" type="button" data-bs-target="#mainSlider" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true" style="width: 3rem; height: 3rem; background-color: rgba(0,0,0,0.5); border-radius: 50%;"></span>
+                    <span class="carousel-control-prev-icon ytv-carousel-control-icon" aria-hidden="true"></span>
                     <span class="visually-hidden">Previous</span>
                 </button>
                 <button class="carousel-control-next" type="button" data-bs-target="#mainSlider" data-bs-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true" style="width: 3rem; height: 3rem; background-color: rgba(0,0,0,0.5); border-radius: 50%;"></span>
+                    <span class="carousel-control-next-icon ytv-carousel-control-icon" aria-hidden="true"></span>
                     <span class="visually-hidden">Next</span>
                 </button>
             }
@@ -550,24 +171,64 @@
                     </div>
                 </div>
                 <button class="carousel-control-prev" type="button" data-bs-target="#mainSlider" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true" style="width: 3rem; height: 3rem; background-color: rgba(0,0,0,0.5); border-radius: 50%;"></span>
+                            <span class="carousel-control-prev-icon ytv-carousel-control-icon" aria-hidden="true"></span>
                     <span class="visually-hidden">Previous</span>
                 </button>
                 <button class="carousel-control-next" type="button" data-bs-target="#mainSlider" data-bs-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true" style="width: 3rem; height: 3rem; background-color: rgba(0,0,0,0.5); border-radius: 50%;"></span>
+                            <span class="carousel-control-next-icon ytv-carousel-control-icon" aria-hidden="true"></span>
                     <span class="visually-hidden">Next</span>
                 </button>
             }
         </div>
+    </div>
+
+    <div class="ytv-company-info" aria-label="Thông tin Công Ty Công Nghệ và Giải Pháp Phần Mềm SixOs">
+    <div class="ytv-company-name">
+        Công Ty Công Nghệ và<br />
+        Giải Pháp Phần Mềm SixOs
+    </div>
+
+    <div class="ytv-company-list">
+        <ul>
+            <li>Phần mềm lập trình theo yêu cầu</li>
+            <li>Cho thuê theo yêu cầu</li>
+        </ul>
+    </div>
+
+    <div class="ytv-company-list">
+        <ul>
+            <li>Server dự phòng</li>
+            <li>Sao lưu dữ liệu</li>
+        </ul>
+    </div>
+
+    <div class="ytv-company-rolling" aria-label="Các giải pháp phần mềm">
+        <a class="ytv-company-service is-active" href="https://sixossoft.com/phan-mem-quan-ly-tong-the-benh-vien" target="_blank" rel="noopener noreferrer" aria-hidden="false" tabindex="0">
+            <img class="ytv-company-service-icon" src="/static/bieu-tuong/benh-vien.svg" alt="" aria-hidden="true" />
+            <ul><li>Phần mềm quản lý bệnh viện</li></ul>
+        </a>
+        <a class="ytv-company-service" href="https://sixossoft.com/phan-mem-quan-ly-phong-kham-da-khoa" target="_blank" rel="noopener noreferrer" aria-hidden="true" tabindex="-1">
+            <img class="ytv-company-service-icon" src="/static/bieu-tuong/phong-kham.svg" alt="" aria-hidden="true" />
+            <ul><li>Phần mềm quản lý phòng khám đa khoa</li></ul>
+        </a>
+        <a class="ytv-company-service" href="https://sixossoft.com/phan-mem-quan-ly-nha-khoa" target="_blank" rel="noopener noreferrer" aria-hidden="true" tabindex="-1">
+            <img class="ytv-company-service-icon" src="/static/bieu-tuong/nha-khoa.svg" alt="" aria-hidden="true" />
+            <ul><li>Phần mềm quản lý nha khoa</li></ul>
+        </a>
+        <a class="ytv-company-service" href="https://sixossoft.com/phan-mem-quan-ly-ban-hang" target="_blank" rel="noopener noreferrer" aria-hidden="true" tabindex="-1">
+            <img class="ytv-company-service-icon" src="/static/bieu-tuong/nha-thuoc.svg" alt="" aria-hidden="true" />
+            <ul><li>Phần mềm quản lý thuốc</li></ul>
+        </a>
+    </div>
     </div>
 </div>
 
 <div class="ytv-footer">
     <div class="ytv-footer-top">
         <div class="ytv-support-col">
-            <div class="ytv-support-phones" style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+            <div class="ytv-support-phones ytv-support-contacts">
                 <div><i class="fas fa-headset me-2"></i> Hỗ trợ: <span>0901 87 88 96</span> - <span>0364 956 007</span></div>
-                <div><i class="fas fa-envelope me-2"></i> Email: <a href="mailto:Sixossoft@gmail.com" style="color: var(--ytv-primary); font-weight: 600; text-decoration: none;">sixossoft@gmail.com</a></div>
+                <div><i class="fas fa-envelope me-2"></i> Email: <a href="mailto:Sixossoft@gmail.com" class="ytv-email-link">sixossoft@gmail.com</a></div>
             </div>
         </div>
         
@@ -578,79 +239,9 @@
             <a href="#" onclick="showPolicy('baohanh')">Chính sách bảo hành</a>
         </div>
     </div>
-    <div class="ytv-footer-bottom">
-        Đơn vị phối hợp thực hiện: <strong>Công Ty Phần mềm Vũ Phong - SixOSSoft.com</strong>
-    </div>
 </div>
 
-<script>
-    function toggleMenu() {
-        var menu = document.getElementById("dropdownMenu");
-        menu.classList.toggle("open");
-    }
-
-    // Auto-close menu when mouse leaves menu area
-    document.addEventListener("DOMContentLoaded", function() {
-        var mainSlider = document.getElementById('mainSlider');
-        if (mainSlider && typeof bootstrap !== 'undefined') {
-            new bootstrap.Carousel(mainSlider, {
-                interval: 3000,
-                ride: 'carousel'
-            });
-        }
-
-        var menuBtn = document.getElementById("menuBtn");
-        if (menuBtn) {
-            menuBtn.addEventListener("mouseleave", function() {
-                var menu = document.getElementById("dropdownMenu");
-                if (menu) menu.classList.remove("open");
-            });
-        }
-    });
-
-    // Close the dropdown menu if the user clicks outside of it
-    window.onclick = function(event) {
-        if (!event.target.closest('#menuBtn')) {
-            var dropdowns = document.getElementsByClassName("ytv-dropdown");
-            for (var i = 0; i < dropdowns.length; i++) {
-                var openDropdown = dropdowns[i];
-                if (openDropdown.classList.contains('open')) {
-                    openDropdown.classList.remove('open');
-                }
-            }
-        }
-    }
-
-    const policyContent = {
-        'baomat': {
-            title: 'Chính sách bảo mật',
-            content: '<p><strong>1. Mục đích và phạm vi thu thập</strong><br>Việc thu thập dữ liệu chủ yếu trên nền tảng bao gồm: email, điện thoại, tên đăng nhập, mật khẩu đăng nhập, địa chỉ khách hàng. Đây là các thông tin mà Y Tế Việt cần người dùng cung cấp bắt buộc khi đăng ký sử dụng dịch vụ và để liên hệ xác nhận khi khách hàng đăng ký sử dụng dịch vụ nhằm đảm bảo quyền lợi cho cho người tiêu dùng.</p><p><strong>2. Phạm vi sử dụng thông tin</strong><br>Nền tảng sử dụng thông tin thành viên cung cấp để: Cung cấp các dịch vụ đến thành viên; Gửi các thông báo về các hoạt động trao đổi thông tin; Ngừa các hoạt động phá hủy tài khoản người dùng của thành viên hoặc các hoạt động giả mạo thành viên; Liên lạc và giải quyết với thành viên trong những trường hợp đặc biệt.</p><p><strong>3. Thời gian lưu trữ thông tin</strong><br>Dữ liệu cá nhân của thành viên sẽ được lưu trữ cho đến khi có yêu cầu hủy bỏ hoặc tự thành viên đăng nhập và thực hiện hủy bỏ. Còn lại trong mọi trường hợp thông tin cá nhân thành viên sẽ được bảo mật trên máy chủ của Y Tế Việt.</p>'
-        },
-        'dieukhoan': {
-            title: 'Điều khoản sử dụng',
-            content: '<p><strong>1. Trách nhiệm của người sử dụng</strong><br>Bạn phải cung cấp thông tin chính xác, đầy đủ và cập nhật khi đăng ký tài khoản. Việc bảo mật mật khẩu và tài khoản là trách nhiệm của bạn. Bạn không được phép sử dụng tài khoản của mình cho bất kỳ hoạt động bất hợp pháp nào.</p><p><strong>2. Quyền lợi và trách nhiệm của Y Tế Việt</strong><br>Y Tế Việt cam kết cung cấp dịch vụ khám chữa bệnh trực tuyến ổn định, an toàn và bảo mật thông tin khách hàng. Chúng tôi có quyền tạm ngừng hoặc chấm dứt cung cấp dịch vụ nếu phát hiện người dùng vi phạm các điều khoản này.</p><p><strong>3. Bản quyền và sở hữu trí tuệ</strong><br>Mọi nội dung, hình ảnh, thông tin trên website đều thuộc bản quyền của Y Tế Việt và được bảo hộ bởi luật sở hữu trí tuệ.</p>'
-        },
-        'khieunai': {
-            title: 'Giải quyết khiếu nại',
-            content: '<p><strong>1. Quy trình tiếp nhận khiếu nại</strong><br>Người dùng có thể gửi khiếu nại liên quan đến dịch vụ qua hotline hoặc email hỗ trợ của chúng tôi. Chúng tôi sẽ tiếp nhận và phản hồi trong thời gian sớm nhất, tối đa không quá 48 giờ làm việc.</p><p><strong>2. Quy trình xử lý</strong><br>Sau khi tiếp nhận khiếu nại, bộ phận chăm sóc khách hàng sẽ tiến hành xác minh thông tin và liên hệ với khách hàng để đưa ra hướng giải quyết phù hợp, nhằm đảm bảo quyền lợi chính đáng của khách hàng.</p>'
-        },
-        'baohanh': {
-            title: 'Chính sách bảo hành',
-            content: '<p><strong>1. Điều kiện bảo hành</strong><br>Chúng tôi cung cấp chính sách hỗ trợ và xử lý các vấn đề phát sinh đối với các dịch vụ khám bệnh và tư vấn trực tuyến (nếu có lỗi từ phía hệ thống hoặc bác sĩ tư vấn không đúng chuyên môn). Các trường hợp liên quan tới mua thuốc hoặc vật tư y tế sẽ được xử lý theo quy định của nhà sản xuất hoặc nhà thuốc cung cấp.</p><p><strong>2. Từ chối hỗ trợ</strong><br>Từ chối hỗ trợ bồi hoàn đối với các trường hợp người bệnh không tuân thủ chỉ định của bác sĩ, tự ý thay đổi liều lượng thuốc hoặc cung cấp thông tin bệnh án sai lệch từ đầu.</p>'
-        }
-    };
-
-    function showPolicy(type) {
-        event.preventDefault();
-        const data = policyContent[type];
-        if (data) {
-            document.getElementById('policyModalLabel').innerHTML = data.title;
-            document.getElementById('policyModalBody').innerHTML = data.content;
-            var policyModal = new bootstrap.Modal(document.getElementById('policyModal'));
-            policyModal.show();
-        }
-    }
-</script>
+<script src="~/js/thong-tin-benh-nhan.js" asp-append-version="true"></script>
 
 <!-- Policy Modal -->
 <div class="modal fade" id="policyModal" tabindex="-1" aria-labelledby="policyModalLabel" aria-hidden="true">
@@ -660,7 +251,7 @@
         <h5 class="modal-title" id="policyModalLabel">Chính sách</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body" id="policyModalBody" style="font-size: 15px; line-height: 1.6; color: #334155;">
+      <div class="modal-body ytv-policy-body" id="policyModalBody">
         <!-- Content injected via JS -->
       </div>
       <div class="modal-footer">
