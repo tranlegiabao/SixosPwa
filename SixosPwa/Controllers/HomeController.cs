@@ -22,16 +22,27 @@ public class HomeController : Controller
         _config = config;
     }
 
-    public IActionResult Index(long? phongKhamId)
+    public async Task<IActionResult> Index(long? phongKhamId)
     {
-        ViewData["UserName"] = User.Identity?.Name ?? "Khách hàng";
+        var userName = User.Identity?.Name ?? "Khách hàng";
+        ViewData["UserName"] = userName;
         ViewData["UserRole"] = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "User";
         ViewData["PhongKhamId"] = phongKhamId;
+        
+        // Lấy danh sách thông báo
+        var thongBaos = await _db.ThongBaos
+            .Where(t => t.NguoiNhan == userName)
+            .OrderByDescending(t => t.ThoiGian)
+            .Take(10)
+            .ToListAsync();
+            
+        ViewData["UnreadCount"] = thongBaos.Count(t => !t.DaDoc);
+        ViewData["ThongBaos"] = thongBaos;
         
         // Lấy thông tin phòng khám nếu có
         if (phongKhamId.HasValue)
         {
-            var phongKham = _db.PhongKhams.FirstOrDefault(p => p.Id == phongKhamId.Value);
+            var phongKham = await _db.PhongKhams.FirstOrDefaultAsync(p => p.Id == phongKhamId.Value);
             ViewData["TenPhongKham"] = phongKham?.TenPhongKham ?? "Phòng khám";
         }
         
@@ -634,6 +645,34 @@ public class HomeController : Controller
                 thoiGian = msg.ThoiGian.ToString("HH:mm dd/MM/yyyy")
             }
         });
+    }
+
+    // -------------------------------------------------------------------------
+    // Lấy lịch sử trò chuyện (Admin <-> Bệnh nhân)
+    // -------------------------------------------------------------------------
+    [HttpGet]
+    [Authorize(Roles = "Admin,DoiTac")]
+    public async Task<IActionResult> GetChatHistory(string sdtBenhNhan)
+    {
+        var adminId = User.Identity?.Name;
+        if (string.IsNullOrEmpty(adminId) || string.IsNullOrEmpty(sdtBenhNhan))
+            return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
+
+        var messages = await _db.ThongBaos
+            .Where(t => (t.NguoiGui == adminId && t.NguoiNhan == sdtBenhNhan) || 
+                        (t.NguoiGui == sdtBenhNhan && t.NguoiNhan == adminId))
+            .OrderBy(t => t.ThoiGian)
+            .Select(t => new
+            {
+                id = t.Id,
+                noiDung = t.NoiDung,
+                thoiGian = t.ThoiGian.ToString("HH:mm dd/MM/yyyy"),
+                isSender = t.NguoiGui == adminId,
+                daDoc = t.DaDoc
+            })
+            .ToListAsync();
+
+        return Json(new { success = true, data = messages });
     }
 
     // -------------------------------------------------------------------------

@@ -630,9 +630,6 @@ else
             <a href="#" class="menu-item">
                 <i class="far fa-calendar-alt"></i> Lịch hẹn tái khám
             </a>
-            <a href="#" class="menu-item">
-                <i class="far fa-comment-dots"></i> Tin nhắn
-            </a>
 
             <div class="menu-section">TIỆN ÍCH</div>
             <a href="/Home/ThongTinBenhNhan" class="menu-item">
@@ -667,14 +664,64 @@ else
             </div>
             
             <div class="topbar-right">
-                <button class="icon-btn">
-                    <i class="far fa-bell"></i>
-                    <span class="icon-badge">3</span>
-                </button>
-                <button class="icon-btn">
-                    <i class="far fa-comment-dots"></i>
-                    <span class="icon-badge">2</span>
-                </button>
+                <div class="dropdown">
+                    <button class="icon-btn" data-bs-toggle="dropdown" aria-expanded="false" style="border: none; background: transparent;" id="bellDropdown" onclick="markNotificationsAsRead()">
+                        <i class="far fa-bell"></i>
+                        @if (ViewData["UnreadCount"] != null && (int)ViewData["UnreadCount"] > 0)
+                        {
+                            <span class="icon-badge" id="bellBadge">@ViewData["UnreadCount"]</span>
+                        }
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm mt-2 p-0 border-0" aria-labelledby="bellDropdown" style="width: 340px; border-radius: 12px; overflow: hidden; animation: fadeIn 0.2s ease;">
+                        <li class="bg-light p-3 border-bottom d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 fw-bold"><i class="fas fa-bell text-primary me-2"></i>Thông báo của bạn</h6>
+                            @if (ViewData["UnreadCount"] != null && (int)ViewData["UnreadCount"] > 0)
+                            {
+                                <span class="badge bg-danger rounded-pill">@(ViewData["UnreadCount"]) mới</span>
+                            }
+                        </li>
+                        <div style="max-height: 350px; overflow-y: auto;">
+                            @if (ViewData["ThongBaos"] is List<SixosPwa.Models.ThongBao> thongBaos && thongBaos.Any())
+                            {
+                                foreach (var tb in thongBaos)
+                                {
+                                    <li class="border-bottom">
+                                        <a class="dropdown-item py-3 px-3 @(tb.DaDoc ? "" : "bg-primary bg-opacity-10")" href="#" style="white-space: normal;">
+                                            <div class="d-flex align-items-start gap-3">
+                                                <div class="mt-1" style="color: #0ea5e9;">
+                                                    <i class="fas @(tb.DaDoc ? "fa-envelope-open" : "fa-envelope")"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="mb-1 text-wrap @(tb.DaDoc ? "text-secondary" : "fw-bold text-dark")" style="font-size: 0.9rem; line-height: 1.4;">@tb.NoiDung</p>
+                                                    <div class="d-flex justify-content-between align-items-center mt-2">
+                                                        <small class="text-muted" style="font-size: 0.75rem;">@tb.ThoiGian.ToString("dd/MM/yyyy HH:mm")</small>
+                                                        <button class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 0.75rem;" onclick="openReplyModal('@tb.NguoiGui', '@Html.Raw(tb.NoiDung.Replace("'", "\\'").Replace("\n", " "))'); event.stopPropagation(); event.preventDefault();">
+                                                            <i class="fas fa-reply me-1"></i> Trả lời
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    </li>
+                                }
+                            }
+                            else
+                            {
+                                <li class="p-4 text-center text-muted">
+                                    <i class="far fa-bell-slash fs-1 mb-3 text-light"></i>
+                                    <p class="mb-0 fw-medium">Chưa có thông báo nào</p>
+                                    <small class="text-muted">Khi có tin tức mới, nó sẽ xuất hiện ở đây.</small>
+                                </li>
+                            }
+                        </div>
+                        <li class="text-center border-top">
+                            <a href="#" class="dropdown-item py-3 text-primary fw-bold text-decoration-none" style="font-size: 0.9rem;">
+                                Xem tất cả thông báo <i class="fas fa-arrow-right ms-1"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
                 <button class="icon-btn d-none d-sm-flex" data-bs-toggle="offcanvas" data-bs-target="#fbMenuOffcanvas">
                     <i class="fas fa-bars"></i>
                 </button>
@@ -698,6 +745,35 @@ else
 
         <!-- DASHBOARD BODY -->
         <div class="dashboard-content">
+            <!-- Modal Trả Lời Tin Nhắn -->
+            <div class="modal fade" id="replyModal" tabindex="-1" aria-labelledby="replyModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 shadow" style="border-radius: 16px;">
+                        <div class="modal-header border-0 bg-primary text-white" style="border-radius: 16px 16px 0 0; background: linear-gradient(135deg, #3854A4 0%, #2e4589 100%);">
+                            <h5 class="modal-title fw-bold" id="replyModalLabel"><i class="fas fa-reply me-2"></i> Trả lời tin nhắn</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div class="mb-3 p-3 bg-light rounded-3 border">
+                                <small class="text-muted fw-bold d-block mb-1"><i class="fas fa-quote-left me-1"></i>Tin nhắn gốc:</small>
+                                <p id="originalMessageText" class="mb-0 text-dark" style="font-size: 0.9rem; font-style: italic;"></p>
+                            </div>
+                            <div class="mb-3">
+                                <label for="replyMessageText" class="form-label fw-semibold text-secondary">Nội dung trả lời</label>
+                                <textarea class="form-control shadow-sm" id="replyMessageText" rows="4" placeholder="Nhập nội dung bạn muốn phản hồi..."></textarea>
+                            </div>
+                            <input type="hidden" id="replyRecipient" value="">
+                        </div>
+                        <div class="modal-footer border-0 pt-0 pb-4 px-4">
+                            <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                            <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold" style="background: linear-gradient(135deg, #3854A4 0%, #2e4589 100%); border: none;" onclick="sendReply()">
+                                <i class="fas fa-paper-plane me-1"></i> Gửi phản hồi
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="welcome-header">
                 <h2 class="welcome-title">Xin chào, @ViewData["UserName"]!</h2>
                 <div class="welcome-subtitle">Dưới đây là thông tin sức khỏe và lịch khám của bạn.</div>
@@ -1087,5 +1163,53 @@ else
             alert(`📄 Đang mở Hồ sơ Kết quả Khám sức khỏe mã phiếu [${maPhieu}]...\nChỉ số sức khỏe bình thường, không phát hiện bất thường.`);
         }
     </script>
-}
 
+<script>
+    function markNotificationsAsRead() {
+        const badge = document.getElementById('bellBadge');
+        if (badge) {
+            badge.style.display = 'none'; // Ẩn badge UI
+            // Gọi API đánh dấu đã đọc
+            fetch('/Home/DanhDauDaDoc', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            }).catch(e => console.error(e));
+        }
+    }
+
+    function openReplyModal(recipient, originalText) {
+        document.getElementById('originalMessageText').innerText = originalText;
+        document.getElementById('replyRecipient').value = recipient;
+        document.getElementById('replyMessageText').value = '';
+        var modal = new bootstrap.Modal(document.getElementById('replyModal'));
+        modal.show();
+    }
+
+    async function sendReply() {
+        const recipient = document.getElementById('replyRecipient').value;
+        const message = document.getElementById('replyMessageText').value;
+        if (!message.trim()) {
+            alert('Vui lòng nhập nội dung trả lời!');
+            return;
+        }
+
+        try {
+            const resp = await fetch('/Home/TraLoiTinNhan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nguoiNhan: recipient, message: message })
+            });
+            const data = await resp.json();
+            if (data.success) {
+                alert('Đã gửi phản hồi thành công!');
+                var modal = bootstrap.Modal.getInstance(document.getElementById('replyModal'));
+                modal.hide();
+            } else {
+                alert(data.message || 'Có lỗi xảy ra, vui lòng thử lại.');
+            }
+        } catch (e) {
+            alert('Có lỗi xảy ra khi kết nối đến máy chủ.');
+        }
+    }
+</script>
+}

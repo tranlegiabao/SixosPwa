@@ -76,6 +76,49 @@ background-color: #f1f5f9;
 .patient-row.selected-row { 
 background-color: #eff6ff; 
 } 
+/* Chat Bubble Styles */
+.chat-bubble {
+    padding: 10px 15px;
+    border-radius: 18px;
+    max-width: 75%;
+    margin-bottom: 4px;
+    font-size: 0.95rem;
+    word-break: break-word;
+    display: inline-block;
+}
+.chat-bubble.sent {
+    background: linear-gradient(135deg, #3854A4 0%, #2e4589 100%);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+.chat-bubble.received {
+    background: #e2e8f0;
+    color: #1e293b;
+    border-bottom-left-radius: 4px;
+}
+.chat-row {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 12px;
+}
+.chat-row.sent {
+    align-items: flex-end;
+}
+.chat-row.received {
+    align-items: flex-start;
+}
+.chat-time {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+.nav-tabs .nav-link {
+    color: #64748b;
+}
+.nav-tabs .nav-link.active {
+    color: #3854A4 !important;
+    border-bottom: 3px solid #3854A4 !important;
+}
 </style> 
 <!-- TOAST THÔNG BÁO --> 
 <div class="position-fixed top-0 end-0 p-3" style="z-index: 1080"> 
@@ -216,51 +259,92 @@ else
 <!-- CỘT PHẢI: SOẠN TIN NHẮN & XEM TRƯỚC --> 
 <div class="col-lg-6"> 
 <div class="card border-0 shadow-sm rounded-4 h-100"> 
-<div class="card-header bg-white border-0 pt-3 px-3 px-md-4 pb-0"> 
-<h5 class="fw-bold mb-0 text-primary">📝 Mẫu Tin Nhắn & Nội Dung</h5> 
+<div class="card-header bg-white border-bottom pt-3 px-3 px-md-4 pb-0"> 
+    <ul class="nav nav-tabs border-0" id="smsTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold text-primary border-0 bg-transparent" id="bulk-tab" data-bs-toggle="tab" data-bs-target="#bulk" type="button" role="tab" aria-controls="bulk" aria-selected="true">📝 Soạn Tin Hàng Loạt</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold text-secondary border-0 bg-transparent" id="chat-tab" data-bs-toggle="tab" data-bs-target="#chat" type="button" role="tab" aria-controls="chat" aria-selected="false">💬 Trò Chuyện SMS</button>
+        </li>
+    </ul>
 </div> 
-<div class="card-body px-3 px-md-4"> 
-<!-- Chọn Mẫu nhanh --> 
-<div class="mb-3"> 
-<label for="templateSelect" class="form-label fw-semibold text-secondary small">MẪU TIN NHẮN NHANH</label> 
-<select class="form-select" id="templateSelect" onchange="loadTemplate()"> 
-<option value="custom">-- Tự soạn tin nhắn tự do --</option> 
-<option value="remind" selected>Nhắc lịch khám sức khỏe định kỳ</option> 
-<option value="result">Thông báo có kết quả xét nghiệm</option> 
-<option value="survey">Khảo sát ý kiến chất lượng dịch vụ</option> 
-</select> 
-</div> 
-<!-- Soạn thảo nội dung --> 
-<div class="mb-2"> 
-<div class="d-flex justify-content-between align-items-center mb-1"> 
-<label for="smsContent" class="form-label fw-semibold text-secondary small mb-0">NỘI DUNG TIN NHẮN</label> 
-<span class="text-muted small" id="charCountText">0 / 160 ký tự (0 tin)</span> 
-</div> 
-<textarea class="form-control" id="smsContent" rows="5" oninput="updateLivePreview()" placeholder="Nhập nội dung tin nhắn gửi tới bệnh nhân..."></textarea> 
-</div> 
-<!-- Nút chèn từ khóa nhanh --> 
-<div class="mb-3 d-flex flex-wrap gap-2 align-items-center"> 
-<span class="text-secondary small fw-semibold me-1">Chèn nhanh:</span> 
-<button type="button" class="btn tag-btn" onclick="insertTag('[Họ tên]')">👤 [Họ tên]</button> 
-<button type="button" class="btn tag-btn" onclick="insertTag('[Mã bệnh nhân]')">🆔 [Mã bệnh nhân]</button> 
-<button type="button" class="btn tag-btn" onclick="insertTag('[Thời gian]')">📅 [Thời gian]</button> 
-</div> 
-<!-- LIVE PREVIEW (XEM TRƯỚC SMS THỰC TẾ) --> 
-<div class="mb-2">
-<label class="form-label fw-semibold text-secondary small">XEM TRƯỚC TIN NHẮN GỬI THỰC TẾ</label> 
-<div class="preview-phone"> 
-<div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3 text-secondary small"> 
-<span id="previewSender">Từ: <strong>HisSoft SMS</strong></span> 
-<span id="previewTargetPhone">Tới: Chưa chọn bệnh nhân</span> 
-</div> 
-<div class="d-flex flex-column align-items-start"> 
-<div class="preview-bubble" id="previewBubbleText"> 
-Vui lòng chọn bệnh nhân và soạn tin nhắn để xem nội dung thực tế được cá nhân hóa tại đây. 
-</div> 
-<span class="preview-bubble-meta" id="previewBubbleTime">Vừa xong</span> 
-</div> 
-</div> 
-</div> 
+<div class="card-body px-0 pt-0 pb-0"> 
+<div class="tab-content h-100" id="smsTabContent">
+    <!-- TAB 1: SOẠN TIN HÀNG LOẠT -->
+    <div class="tab-pane fade show active p-3 p-md-4" id="bulk" role="tabpanel" aria-labelledby="bulk-tab">
+        <!-- Chọn Mẫu nhanh --> 
+        <div class="mb-3"> 
+        <label for="templateSelect" class="form-label fw-semibold text-secondary small">MẪU TIN NHẮN NHANH</label> 
+        <select class="form-select" id="templateSelect" onchange="loadTemplate()"> 
+        <option value="custom">-- Tự soạn tin nhắn tự do --</option> 
+        <option value="remind" selected>Nhắc lịch khám sức khỏe định kỳ</option> 
+        <option value="result">Thông báo có kết quả xét nghiệm</option> 
+        <option value="survey">Khảo sát ý kiến chất lượng dịch vụ</option> 
+        </select> 
+        </div> 
+        <!-- Soạn thảo nội dung --> 
+        <div class="mb-2"> 
+        <div class="d-flex justify-content-between align-items-center mb-1"> 
+        <label for="smsContent" class="form-label fw-semibold text-secondary small mb-0">NỘI DUNG TIN NHẮN</label> 
+        <span class="text-muted small" id="charCountText">0 / 160 ký tự (0 tin)</span> 
+        </div> 
+        <textarea class="form-control" id="smsContent" rows="5" oninput="updateLivePreview()" placeholder="Nhập nội dung tin nhắn gửi tới bệnh nhân..."></textarea> 
+        </div> 
+        <!-- Nút chèn từ khóa nhanh --> 
+        <div class="mb-3 d-flex flex-wrap gap-2 align-items-center"> 
+        <span class="text-secondary small fw-semibold me-1">Chèn nhanh:</span> 
+        <button type="button" class="btn tag-btn" onclick="insertTag('[Họ tên]')">👤 [Họ tên]</button> 
+        <button type="button" class="btn tag-btn" onclick="insertTag('[Mã bệnh nhân]')">🆔 [Mã bệnh nhân]</button> 
+        <button type="button" class="btn tag-btn" onclick="insertTag('[Thời gian]')">📅 [Thời gian]</button> 
+        </div> 
+        <!-- LIVE PREVIEW (XEM TRƯỚC SMS THỰC TẾ) --> 
+        <div class="mb-2">
+        <label class="form-label fw-semibold text-secondary small">XEM TRƯỚC TIN NHẮN GỬI THỰC TẾ</label> 
+        <div class="preview-phone"> 
+        <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3 text-secondary small"> 
+        <span id="previewSender">Từ: <strong>HisSoft SMS</strong></span> 
+        <span id="previewTargetPhone">Tới: Chưa chọn bệnh nhân</span> 
+        </div> 
+        <div class="d-flex flex-column align-items-start"> 
+        <div class="preview-bubble" id="previewBubbleText"> 
+        Vui lòng chọn bệnh nhân và soạn tin nhắn để xem nội dung thực tế được cá nhân hóa tại đây. 
+        </div> 
+        <span class="preview-bubble-meta" id="previewBubbleTime">Vừa xong</span> 
+        </div> 
+        </div> 
+        </div> 
+    </div>
+    
+    <!-- TAB 2: TRÒ CHUYỆN SMS -->
+    <div class="tab-pane fade d-flex flex-column h-100" id="chat" role="tabpanel" aria-labelledby="chat-tab" style="min-height: 500px;">
+        <div class="chat-header p-3 border-bottom bg-light d-flex align-items-center gap-3">
+            <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                <i class="fas fa-user text-primary fs-5"></i>
+            </div>
+            <div>
+                <h6 class="mb-0 fw-bold text-dark" id="chatPatientName">Chọn bệnh nhân để trò chuyện</h6>
+                <small class="text-muted" id="chatPatientPhone">...</small>
+            </div>
+        </div>
+        
+        <div class="chat-history flex-grow-1 p-3 p-md-4" id="chatHistory" style="overflow-y: auto; background: #f8fafc; height: 350px;">
+            <div class="text-center text-muted my-5">
+                <i class="far fa-comments fs-1 mb-3 opacity-50"></i>
+                <p>Lịch sử trò chuyện sẽ hiển thị ở đây</p>
+            </div>
+        </div>
+        
+        <div class="chat-input-area p-3 border-top bg-white">
+            <form id="chatForm" onsubmit="sendDirectMessage(event)" class="d-flex gap-2">
+                <input type="text" class="form-control rounded-pill px-3 py-2 bg-light border-0" id="directMessageInput" placeholder="Nhập tin nhắn..." disabled required>
+                <button type="submit" class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" id="btnSendDirect" disabled style="width: 42px; height: 42px; background: linear-gradient(135deg, #3854A4 0%, #2e4589 100%); border: none;">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
 </div> 
 </div> 
 </div> 
@@ -454,7 +538,86 @@ row.classList.remove("selected-row");
 } 
 }); 
 updateLivePreview(); 
+
+// Load Chat History for the selected patient
+const patient = mockPatients[index];
+if (patient) loadChatHistory(patient);
 } 
+
+async function loadChatHistory(patient) {
+    document.getElementById("chatPatientName").innerText = patient.name;
+    document.getElementById("chatPatientPhone").innerText = patient.phone;
+    
+    // Enable inputs
+    document.getElementById("directMessageInput").disabled = false;
+    document.getElementById("btnSendDirect").disabled = false;
+    
+    const historyDiv = document.getElementById("chatHistory");
+    historyDiv.innerHTML = '<div class="text-center text-muted my-5"><span class="spinner-border spinner-border-sm text-primary"></span> Đang tải...</div>';
+    
+    try {
+        const resp = await fetch('/Home/GetChatHistory?sdtBenhNhan=' + encodeURIComponent(patient.phone));
+        const res = await resp.json();
+        
+        if (res.success) {
+            if (res.data.length === 0) {
+                historyDiv.innerHTML = `
+                    <div class="text-center text-muted my-5">
+                        <i class="far fa-comments fs-1 mb-3 opacity-50"></i>
+                        <p>Chưa có lịch sử trò chuyện với bệnh nhân này.</p>
+                    </div>`;
+            } else {
+                historyDiv.innerHTML = res.data.map(msg => {
+                    const type = msg.isSender ? 'sent' : 'received';
+                    return `
+                        <div class="chat-row ${type}">
+                            <div class="chat-bubble ${type}">${msg.noiDung}</div>
+                            <div class="chat-time">${msg.thoiGian}</div>
+                        </div>
+                    `;
+                }).join('');
+                // Scroll to bottom
+                historyDiv.scrollTop = historyDiv.scrollHeight;
+            }
+        }
+    } catch (e) {
+        historyDiv.innerHTML = '<div class="text-center text-danger my-5">Lỗi tải dữ liệu.</div>';
+    }
+}
+
+async function sendDirectMessage(e) {
+    e.preventDefault();
+    const input = document.getElementById("directMessageInput");
+    const message = input.value.trim();
+    if (!message) return;
+    
+    const patient = mockPatients[activePreviewIndex];
+    if (!patient) return;
+    
+    const btn = document.getElementById("btnSendDirect");
+    btn.disabled = true;
+    
+    try {
+        const resp = await fetch('/Home/TraLoiTinNhan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nguoiNhan: patient.phone, message: message })
+        });
+        const res = await resp.json();
+        if (res.success) {
+            input.value = '';
+            // Reload history
+            loadChatHistory(patient);
+        } else {
+            alert(res.message);
+        }
+    } catch (err) {
+        alert("Lỗi khi gửi tin nhắn.");
+    } finally {
+        btn.disabled = false;
+    }
+}
+
 // Lọc bệnh nhân khi tìm kiếm 
 function filterPatients() { 
 const query = document.getElementById("searchPatient").value.toLowerCase().trim(); 
