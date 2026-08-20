@@ -13,7 +13,7 @@
         background: linear-gradient(to right, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.85) 65%, rgba(15, 23, 42, 0) 100%), url('@img') no-repeat center center fixed !important; 
         background-size: cover !important;
         padding-top: 74px !important; 
-        padding-bottom: 20px !important; 
+        padding-bottom: 160px !important; 
         margin: 0 !important; 
         font-family: 'Inter', system-ui, sans-serif; 
     }
@@ -52,14 +52,14 @@
     .ytv-dropdown a i { font-size: 20px; width: 26px; text-align: center; color: #3b82f6; }
 
     /* Layout */
-    .ytv-main { display: flex; width: 100%; min-height: calc(100vh - 164px); align-items: flex-start; padding-left: 250px; box-sizing: border-box; }
+    .ytv-main { display: flex; width: 100%; min-height: calc(100vh - 214px); align-items: flex-start; padding-left: 250px; box-sizing: border-box; }
 
     /* Sidebar */
     .ytv-sidebar {
         width: 250px; flex-shrink: 0; background: white;
         border-right: 1px solid #e2e8f0;
         display: flex; flex-direction: column; padding: 24px 0 16px 0;
-        position: fixed; top: 74px; left: 0; height: 100%; overflow-y: auto; z-index: 100;
+        position: fixed; top: 74px; left: 0; bottom: 140px; overflow-y: auto; z-index: 100;
     }
     .ytv-sidebar::-webkit-scrollbar {
         width: 5px;
@@ -75,7 +75,7 @@
         background: #94a3b8;
     }
     .sidebar-logo-container {
-        text-align: center;
+        text-align: left;
         margin-bottom: 24px;
         padding: 0 16px;
     }
@@ -441,6 +441,40 @@
         .oh-header { margin-bottom: 4px !important; }
         .oh-time { font-size: 14px !important; margin-bottom: 4px !important; }
         .oh-status { padding: 2px 6px !important; }
+
+        /* Stats Footer Responsive */
+        .stats-footer-bar {
+            position: relative !important;
+            bottom: auto !important;
+            left: auto !important;
+            width: 100% !important;
+            padding: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            border-top: none !important;
+            z-index: 1 !important;
+        }
+        .stats-footer-bar .stats-grid {
+            max-width: 100% !important;
+        }
+        .stats-footer-bar .stat-card {
+            background: transparent !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            padding: 20px !important;
+        }
+        .stats-footer-bar .stat-info .value {
+            color: white !important;
+        }
+        .stats-footer-bar .stat-info .title {
+            color: rgba(255, 255, 255, 0.9) !important;
+        }
+        .stats-footer-bar .stat-info .desc {
+            color: rgba(255, 255, 255, 0.6) !important;
+        }
+        .stats-footer-bar .stat-icon.blue { background: rgba(59, 130, 246, 0.15) !important; color: #60a5fa !important; }
+        .stats-footer-bar .stat-icon.green { background: rgba(34, 197, 94, 0.15) !important; color: #4ade80 !important; }
+        .stats-footer-bar .stat-icon.purple { background: rgba(168, 85, 247, 0.15) !important; color: #c084fc !important; }
+        .stats-footer-bar .stat-icon.orange { background: rgba(249, 115, 22, 0.15) !important; color: #ff9d5c !important; }
     }
     @@media (max-width: 576px) {
         .stats-grid { grid-template-columns: 1fr; }
@@ -514,11 +548,114 @@
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15), 0 0 0 0 rgba(29, 78, 216, 0);
         }
     }
+
+    /* FOOTER */
+    .ytv-footer {
+        background: #e0f2fe; /* xanh nhạt */
+        color: #334155;
+        padding: 12px 30px;
+        display: flex;
+        flex-direction: column;
+        border-top: 4px solid var(--ytv-primary);
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
+    }
+    .ytv-footer-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+    .ytv-support-col {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .ytv-support-phones {
+        font-size: 16px;
+        font-weight: 500;
+    }
+    .ytv-support-contacts {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    .ytv-support-contacts div {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .ytv-support-contacts div i {
+        color: var(--ytv-primary);
+    }
+    .ytv-email-link {
+        color: var(--ytv-primary);
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .ytv-email-link:hover {
+        text-decoration: underline;
+    }
+    .ytv-support-phones span {
+        color: var(--ytv-primary);
+        font-weight: 700;
+        font-size: 18px;
+    }
+
+    /* Stats Footer (Second Footer) */
+    .stats-footer-bar {
+        background: #ffffff;
+        border-top: 1.5px solid #e2e8f0;
+        position: fixed;
+        bottom: 50px; /* Right above the contact footer */
+        left: 0;
+        width: 100%;
+        z-index: 999;
+        padding: 12px 30px;
+        box-sizing: border-box;
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+    }
+    .stats-footer-bar .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    .stats-footer-bar .stat-card {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: none;
+    }
+    .stats-footer-bar .stat-info .value {
+        color: #1d4ed8;
+    }
+    .stats-footer-bar .stat-info .title {
+        color: #334155;
+    }
+    .stats-footer-bar .stat-info .desc {
+        color: #64748b;
+    }
+    .stats-footer-bar .stat-icon.blue { background: #eff6ff; color: #3b82f6; }
+    .stats-footer-bar .stat-icon.green { background: #f0fdf4; color: #22c55e; }
+    .stats-footer-bar .stat-icon.purple { background: #faf5ff; color: #a855f7; }
+    .stats-footer-bar .stat-icon.orange { background: #fff7ed; color: #f97316; }
 </style>
 
 <div class="ytv-header">
     <a href="/Home/ThongTinBenhNhan" class="ytv-logo-area">
-        <img src="/static/logo-yte.png" alt="Logo" style="height: 50px; width: 50px; object-fit: cover; background: white; border-radius: 50%; padding: 0;" />
+        <img src="/static/icon-512.png" alt="Logo" style="height: 50px; width: 50px; object-fit: cover; background: white; border-radius: 50%; padding: 0;" />
         <div class="ytv-logo-text">Y TẾ<br>VIỆT</div>
     </a>
     <div class="ytv-header-title">
@@ -549,16 +686,19 @@
             <i class="fas fa-stethoscope"></i> Dịch vụ
         </a>
         <a class="ytv-menu-item" onclick="showTab('doi-ngu', this)" href="#doi-ngu">
-            <i class="fas fa-user-md"></i> Đội ngũ bác sĩ
+            <i class="fas fa-user-md"></i> Đội ngũ y bác sĩ
         </a>
         <a class="ytv-menu-item" onclick="showTab('trang-thiet-bi', this)" href="#trang-thiet-bi">
             <i class="fas fa-tools"></i> Các trang thiết bị
         </a>
-        <a class="ytv-menu-item" onclick="showTab('cskh', this)" href="#cskh">
-            <i class="fas fa-headset"></i> Chăm sóc khách hàng
+        <a class="ytv-menu-item" onclick="showTab('lien-he', this)" href="#lien-he">
+            <i class="fas fa-headset"></i> Liên hệ
         </a>
         
         <div class="hospital-actions">
+            <a href="/DangNhap/Login" class="btn-outline" style="background-color: #1d4ed8; color:aliceblue">
+                <i class="fas fa-sign-in-alt" style="color: aliceblue"></i> Đăng ký khám
+            </a>
             <a href="javascript:void(0)" onclick="openLoginModal()" class="btn-outline">
                 <i class="fas fa-sign-in-alt"></i> Đăng nhập
             </a>
@@ -664,41 +804,7 @@
             </div>
         </div>
 
-        <!-- Stats Grid (Page Content Footer) -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon blue"><i class="fas fa-headset"></i></div>
-                <div class="stat-info">
-                    <div class="value">24/7</div>
-                    <div class="title">Hỗ trợ</div>
-                    <div class="desc">Luôn sẵn sàng</div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon green"><i class="far fa-star"></i></div>
-                <div class="stat-info">
-                    <div class="value">4.8/5</div>
-                    <div class="title">Đánh giá</div>
-                    <div class="desc">Từ 1.248 khách hàng</div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon purple"><i class="fas fa-user-friends"></i></div>
-                <div class="stat-info">
-                    <div class="value">50+</div>
-                    <div class="title">Bác sĩ</div>
-                    <div class="desc">Giàu kinh nghiệm</div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon orange"><i class="fas fa-briefcase-medical"></i></div>
-                <div class="stat-info">
-                    <div class="value">20+</div>
-                    <div class="title">Dịch vụ</div>
-                    <div class="desc">Đa dạng chuyên khoa</div>
-                </div>
-            </div>
-        </div>
+
     </div>
 </div>
 
@@ -936,11 +1042,60 @@
     </div>
 </div>
 
-<!-- Floating Action Button (Đăng ký khám) -->
+<div class="stats-footer-bar">
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon blue"><i class="fas fa-headset"></i></div>
+            <div class="stat-info">
+                <div class="value">24/7</div>
+                <div class="title">Hỗ trợ</div>
+                <div class="desc">Luôn sẵn sàng</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon green"><i class="far fa-star"></i></div>
+            <div class="stat-info">
+                <div class="value">4.8/5</div>
+                <div class="title">Đánh giá</div>
+                <div class="desc">Từ 1.248 khách hàng</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon purple"><i class="fas fa-user-friends"></i></div>
+            <div class="stat-info">
+                <div class="value">50+</div>
+                <div class="title">Bác sĩ</div>
+                <div class="desc">Giàu kinh nghiệm</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon orange"><i class="fas fa-briefcase-medical"></i></div>
+            <div class="stat-info">
+                <div class="value">20+</div>
+                <div class="title">Dịch vụ</div>
+                <div class="desc">Đa dạng chuyên khoa</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="ytv-footer">
+    <div class="ytv-footer-top">
+        <div class="ytv-support-col" style="width: 100%;">
+            <div class="ytv-support-phones ytv-support-contacts">
+                <div><i class="fas fa-headset me-2"></i> <span>0901 87 88 96</span> - <span>0364 956 007</span></div>
+                <div><i class="fas fa-envelope me-2"></i> <a href="mailto:Sixossoft@gmail.com" class="ytv-email-link">sixossoft@gmail.com</a></div>
+                <div><i class="fas fa-globe me-2"></i> <a href="https://sixossoft.com" target="_blank" rel="noopener noreferrer" class="ytv-email-link">sixossoft.com</a></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Action Button (Đăng ký khám) 
 <a href="/DangNhap/Login" class="fab-btn">
     <i class="far fa-calendar-plus"></i>
     <span class="fab-text">ĐĂNG<br>KÝ<br>KHÁM</span>
-</a>
+</a> -->
 
 <script>
     function showTab(tabId, el) {
