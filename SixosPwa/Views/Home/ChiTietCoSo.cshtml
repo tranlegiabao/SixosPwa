@@ -316,16 +316,18 @@
     .stat-info .title { font-size: 14px; font-weight: 600; color: rgba(255, 255, 255, 0.9); margin: 2px 0; }
     .stat-info .desc { font-size: 12px; color: rgba(255, 255, 255, 0.6); margin: 0; }
 
-    /* Intro Section */
     .intro-section {
         background: transparent;
         border-radius: 16px;
         padding: 32px;
-        display: flex;
+        display: none;
         justify-content: space-between;
         align-items: center;
         border: 1px solid rgba(255, 255, 255, 0.2);
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+    .intro-section.active-tab {
+        display: flex !important;
     }
     .intro-content { flex: 1; max-width: 600px; }
     .intro-title { display: flex; align-items: center; gap: 10px; font-size: 24px; font-weight: 700; color: #38bdf8; margin-bottom: 20px; }
@@ -610,8 +612,8 @@
             </div>
         </div>
 
-        <!-- Intro Section -->
-        <div class="intro-section" id="gioi-thieu">
+        <!-- Intro Sections (Tabs) -->
+        <div class="intro-section active-tab" id="gioi-thieu">
             <div class="intro-content">
                 <div class="intro-title">
                     <i class="fas fa-info-circle"></i> Giới thiệu
@@ -620,6 +622,46 @@
                 <p>Với đội ngũ bác sĩ chuyên khoa giỏi, trang thiết bị hiện đại và quy trình khám bệnh chuyên nghiệp, chúng tôi tự hào là địa chỉ tin cậy cho hàng triệu <strong>bệnh nhân</strong>.</p>
             </div>
             <!-- <img src="https://img.freepik.com/free-vector/hospital-building-concept-illustration_114360-8440.jpg?w=800" alt="Hospital Illustration" class="intro-image" /> -->
+        </div>
+
+        <div class="intro-section" id="dich-vu">
+            <div class="intro-content">
+                <div class="intro-title">
+                    <i class="fas fa-stethoscope"></i> Dịch vụ khám chữa bệnh
+                </div>
+                <p>@tenCoSo cung cấp đa dạng các gói dịch vụ khám sức khỏe toàn diện và điều trị chuyên sâu. Chúng tôi tiếp nhận khám bảo hiểm y tế và khám dịch vụ theo yêu cầu với quy trình nhanh gọn, tối ưu thời gian chờ đợi.</p>
+                <p>Các chuyên khoa mũi nhọn bao gồm: Nội tổng quát, Ngoại sản, Nhi khoa, Tai Mũi Họng, Răng Hàm Mặt và hỗ trợ tầm soát ung thư sớm bằng công nghệ tiên tiến nhất.</p>
+            </div>
+        </div>
+
+        <div class="intro-section" id="doi-ngu">
+            <div class="intro-content">
+                <div class="intro-title">
+                    <i class="fas fa-user-md"></i> Đội ngũ bác sĩ chuyên khoa
+                </div>
+                <p>Chúng tôi tự hào quy tụ đội ngũ phó giáo sư, tiến sĩ, thạc sĩ và bác sĩ chuyên khoa cấp I, cấp II giàu kinh nghiệm tại Việt Nam. Các bác sĩ tại @tenCoSo luôn tận tâm, chu đáo, không ngừng nâng cao tay nghề chuyên môn.</p>
+                <p>Nhiều chuyên gia y tế tại đây đã có thời gian tu nghiệp và giảng dạy tại các bệnh viện lớn trong và ngoài nước, cam kết đưa ra chẩn đoán chính xác và phác đồ điều trị tối ưu.</p>
+            </div>
+        </div>
+
+        <div class="intro-section" id="trang-thiet-bi">
+            <div class="intro-content">
+                <div class="intro-title">
+                    <i class="fas fa-tools"></i> Trang thiết bị hiện đại
+                </div>
+                <p>Để phục vụ công tác chẩn đoán hình ảnh và xét nghiệm chuẩn xác, @tenCoSo liên tục đầu tư hệ thống máy móc nhập khẩu đồng bộ từ các tập đoàn y tế hàng đầu thế giới (GE, Siemens, Philips).</p>
+                <p>Hệ thống bao gồm máy chụp MRI công nghệ cao, máy cắt lớp vi tính CT đa dãy, hệ thống nội soi tiêu hóa không đau NBI, máy siêu âm màu 4D thế hệ mới và phòng xét nghiệm tự động đạt chuẩn quốc tế.</p>
+            </div>
+        </div>
+
+        <div class="intro-section" id="cskh">
+            <div class="intro-content">
+                <div class="intro-title">
+                    <i class="fas fa-headset"></i> Chăm sóc & Hỗ trợ khách hàng
+                </div>
+                <p>Tại @tenCoSo, sự hài lòng và trải nghiệm thoải mái của bệnh nhân là ưu tiên số một. Bộ phận chăm sóc khách hàng luôn sẵn sàng tiếp đón, hướng dẫn thủ tục hành chính, giải đáp thắc mắc và hỗ trợ đặt lịch hẹn trực tuyến.</p>
+                <p>Chúng tôi cung cấp đường dây nóng hỗ trợ khẩn cấp 24/7, dịch vụ tư vấn y tế từ xa, chăm sóc sau điều trị và tiếp thu ý kiến phản hồi để không ngừng cải thiện chất lượng dịch vụ phục vụ nhân dân.</p>
+            </div>
         </div>
 
         <!-- Stats Grid (Page Content Footer) -->
@@ -902,9 +944,16 @@
 
 <script>
     function showTab(tabId, el) {
-        // Here we just handle active state in sidebar, actual scrolling is handled by href="#"
+        // Handle active state in sidebar
         document.querySelectorAll('.ytv-menu-item').forEach(m => m.classList.remove('active'));
         el.classList.add('active');
+
+        // Handle active content tab
+        document.querySelectorAll('.intro-section').forEach(sec => sec.classList.remove('active-tab'));
+        var targetSec = document.getElementById(tabId);
+        if (targetSec) {
+            targetSec.classList.add('active-tab');
+        }
     }
 
     function toggleMenu() {
