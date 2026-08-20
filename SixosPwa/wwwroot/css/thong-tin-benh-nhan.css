@@ -1,7 +1,7 @@
     /* Hide layout parts */
     .app-nav, .bottom-nav, .app-foot { display: none !important; }
-    body { background-color: #f0f4f8; margin: 0; padding-bottom: 120px !important; font-family: 'Inter', sans-serif; }
-    .container, main.container { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+    html, body { height: 100vh; overflow: hidden !important; margin: 0; padding: 0 !important; background-color: #f0f4f8; font-family: 'Inter', sans-serif; display: flex; flex-direction: column; }
+    .container, main.container { max-width: 100% !important; padding: 0 !important; margin: 0 !important; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
     /* Layout Variables */
     :root {
@@ -14,6 +14,7 @@
 
     /* HEADER */
     .ytv-header {
+        flex-shrink: 0;
         background: linear-gradient(135deg, #3b82f6, #60a5fa);
         color: white;
         padding: 15px 30px;
@@ -131,6 +132,8 @@
         display: flex;
         flex-wrap: wrap;
         min-height: 0;
+        flex: 1;
+        overflow: hidden;
         background: #f8fafc;
     }
 
@@ -179,19 +182,27 @@
         padding: 20px;
         display: flex;
         flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
     }
     .ytv-slider {
         width: 100%;
-        height: auto;
-        min-height: 380px;
-        border-radius: 15px;
-        overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         position: relative;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        background: white;
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    .carousel-inner {
+        flex: 1;
+        height: 100%;
     }
     .carousel-item {
-        height: auto;
-        min-height: 380px;
+        height: 100%;
     }
     .carousel-item img {
         width: 100%;
@@ -207,18 +218,18 @@
 
     /* Parallelogram card styling */
     .para-card-wrapper {
-        padding: 40px 20px;
+        padding: 20px 10px;
         display: flex;
         justify-content: center;
         align-items: center;
         height: 100%;
-        min-height: 400px;
+        min-height: 0;
         background: linear-gradient(135deg, #e5e7eb 0%, #9ca3af 100%);
     }
     .para-card {
         width: 90%;
         height: 100%;
-        min-height: 360px;
+        min-height: 0;
         background-size: cover;
         background-position: center;
         border-radius: 50% 0 50% 0;
@@ -290,8 +301,9 @@
     /* COMPANY INFORMATION */
     .ytv-company-info {
         display: grid;
-        flex: 0 0 100%;
-        grid-template-columns: minmax(180px, 1fr) minmax(190px, 1.25fr) minmax(160px, 1.1fr) minmax(260px, 1.8fr);
+        flex: 0 0 auto;
+        width: 100%;
+        grid-template-columns: minmax(180px, 1fr) minmax(280px, 1.3fr) minmax(350px, 2.5fr);
         gap: 16px;
         align-items: stretch;
         margin: 0;
@@ -426,11 +438,11 @@
     @media (max-width: 768px) {
         .para-card-wrapper {
             padding: 10px 15px;
-            min-height: 320px;
+            min-height: 0;
         }
         .para-card {
             width: 100%;
-            min-height: 280px;
+            min-height: 0;
             border-radius: 80px 0 80px 0;
         }
         .para-card-content {
@@ -454,6 +466,7 @@
 
     /* FOOTER */
     .ytv-footer {
+        flex-shrink: 0;
         background: #e0f2fe; /* xanh nhạt */
         color: #334155;
         padding: 20px 30px 10px 30px;
