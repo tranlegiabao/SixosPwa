@@ -1,0 +1,17 @@
+@model CoSoYTeEditViewModel
+
+<div class="col-md-6">
+    <label asp-for="Tinh" class="form-label">Tỉnh/thành phố</label>
+    <select asp-for="Tinh" class="form-select" data-address-province data-selected-value="@Model.Tinh">
+        <option value="">Đang tải tỉnh/thành...</option>
+    </select>
+    <span asp-validation-for="Tinh" class="text-danger field-error"></span>
+</div>
+<div class="col-md-6">
+    <label asp-for="Huyen" class="form-label">Quận/huyện</label>
+    <select asp-for="Huyen" class="form-select" data-address-district data-selected-value="@Model.Huyen" disabled>
+        <option value="">Chọn tỉnh/thành trước</option>
+    </select>
+    <span asp-validation-for="Huyen" class="text-danger field-error"></span>
+</div>
+<div class="col-12"><small class="text-muted" data-address-status role="status"></small></div>

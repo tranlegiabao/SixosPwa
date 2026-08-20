@@ -18,6 +18,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<PhongKham> PhongKhams => Set<PhongKham>();
     public DbSet<LichSuKham> LichSuKhams => Set<LichSuKham>();
     public DbSet<DMCSKCB> DMCSKCBs => Set<DMCSKCB>();
+    public DbSet<NDCSKCB> NDCSKCBs => Set<NDCSKCB>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -113,6 +114,15 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<DMCSKCB>().Property(e => e.LoaiCS).HasMaxLength(20);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.TGLamViec).HasMaxLength(50);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.Img).HasMaxLength(500);
+        modelBuilder.Entity<DMCSKCB>().Property(e => e.Tinh);
+        modelBuilder.Entity<DMCSKCB>().Property(e => e.Huyen);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.QuangCao).HasColumnType("decimal(15,0)");
+
+        // Configure ND_CSKCB
+        modelBuilder.Entity<NDCSKCB>().ToTable("ND_CSKCB");
+        modelBuilder.Entity<NDCSKCB>().HasKey(e => e.Id);
+        modelBuilder.Entity<NDCSKCB>().Property(e => e.MaCoSo).HasMaxLength(10);
+        modelBuilder.Entity<NDCSKCB>().Property(e => e.TenCoSo).HasMaxLength(100);
+        modelBuilder.Entity<NDCSKCB>().Property(e => e.LoaiND).HasMaxLength(20);
     }
 }
