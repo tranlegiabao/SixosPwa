@@ -22,8 +22,8 @@
                 </div>
                 <button type="button" class="btn-close d-lg-none ms-auto" data-bs-dismiss="offcanvas" data-bs-target="#adminSidebar" aria-label="Đóng menu"></button>
             </div>
-
-            <div class="admin-sidebar-label" id="adminSidebarTitle">Không gian làm việc</div>
+                
+            <div class="admin-sidebar-label" id="adminSidebarTitle">@* Không gian làm việc *@</div>
             <nav class="admin-nav" aria-label="Điều hướng quản trị">
                 <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")">
                     <span class="nav-symbol">⌂</span><span>Tổng quan</span>
