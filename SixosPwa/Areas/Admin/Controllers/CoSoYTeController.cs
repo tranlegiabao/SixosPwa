@@ -10,8 +10,13 @@ public sealed class CoSoYTeController : AdminControllerBase
 {
     private static readonly string[] AllowedTypes = { "benhvien", "pkdk", "nhakhoa", "phongmach", "nhathuoc" };
     private readonly ApplicationDbContext _db;
+    private readonly IWebHostEnvironment _environment;
 
-    public CoSoYTeController(ApplicationDbContext db) => _db = db;
+    public CoSoYTeController(ApplicationDbContext db, IWebHostEnvironment environment)
+    {
+        _db = db;
+        _environment = environment;
+    }
 
     public async Task<IActionResult> Index(string? q, string? loaiCS, int page = 1)
     {
@@ -50,8 +55,11 @@ public sealed class CoSoYTeController : AdminControllerBase
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CoSoYTeEditViewModel model)
     {
+        if (model.ImageFile != null)
+            model.Img = await SaveImageAsync(model.ImageFile);
         Normalize(model);
         ValidateType(model.LoaiCS);
+        ValidateAdvertisingAmount(model.QuangCao);
         ValidateImageUrl(model.Img);
         if (ModelState.IsValid && !string.IsNullOrWhiteSpace(model.MaCoSo)
             && await _db.DMCSKCBs.AnyAsync(x => x.MaCoSo == model.MaCoSo))
@@ -77,8 +85,11 @@ public sealed class CoSoYTeController : AdminControllerBase
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(CoSoYTeEditViewModel model)
     {
+        if (model.ImageFile != null)
+            model.Img = await SaveImageAsync(model.ImageFile);
         Normalize(model);
         ValidateType(model.LoaiCS);
+        ValidateAdvertisingAmount(model.QuangCao);
         ValidateImageUrl(model.Img);
         var entity = await _db.DMCSKCBs.FirstOrDefaultAsync(x => x.Id == model.Id);
         if (entity == null) return NotFound();
@@ -111,9 +122,47 @@ public sealed class CoSoYTeController : AdminControllerBase
     private void ValidateImageUrl(string? imageUrl)
     {
         if (string.IsNullOrWhiteSpace(imageUrl)) return;
+        if (imageUrl.StartsWith("/uploads/co-so-y-te/", StringComparison.OrdinalIgnoreCase)) return;
         if (!Uri.TryCreate(imageUrl, UriKind.Absolute, out var uri)
             || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
             ModelState.AddModelError(nameof(CoSoYTeEditViewModel.Img), "Chỉ chấp nhận URL http hoặc https.");
+    }
+
+    private void ValidateAdvertisingAmount(decimal? amount)
+    {
+        if (amount.HasValue && amount.Value != decimal.Truncate(amount.Value))
+            ModelState.AddModelError(nameof(CoSoYTeEditViewModel.QuangCao), "Số tiền quảng cáo phải là số nguyên VNĐ.");
+    }
+
+    private async Task<string?> SaveImageAsync(IFormFile imageFile)
+    {
+        const long maxFileSize = 5 * 1024 * 1024;
+        var allowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ".jpg", ".jpeg", ".png", ".webp", ".gif"
+        };
+
+        if (imageFile.Length == 0 || imageFile.Length > maxFileSize)
+        {
+            ModelState.AddModelError(nameof(CoSoYTeEditViewModel.ImageFile), "Ảnh phải có dung lượng từ 1 byte đến 5 MB.");
+            return null;
+        }
+
+        var extension = Path.GetExtension(imageFile.FileName);
+        if (!allowedExtensions.Contains(extension))
+        {
+            ModelState.AddModelError(nameof(CoSoYTeEditViewModel.ImageFile), "Chỉ hỗ trợ ảnh JPG, PNG, WEBP hoặc GIF.");
+            return null;
+        }
+
+        var uploadDirectory = Path.Combine(_environment.WebRootPath, "uploads", "co-so-y-te");
+        Directory.CreateDirectory(uploadDirectory);
+        var fileName = $"{Guid.NewGuid():N}{extension.ToLowerInvariant()}";
+        var filePath = Path.Combine(uploadDirectory, fileName);
+
+        await using var stream = new FileStream(filePath, FileMode.CreateNew);
+        await imageFile.CopyToAsync(stream);
+        return $"/uploads/co-so-y-te/{fileName}";
     }
 
     private static void Normalize(CoSoYTeEditViewModel model)

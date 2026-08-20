@@ -626,7 +626,7 @@
                 });
             }
 
-            // Sắp xếp theo thứ tự giảm dần của cột quảng cáo
+            // Sắp xếp theo số tiền quảng cáo đã thanh toán, số tiền càng lớn đứng trước
             filtered.sort((a, b) => b.quangCao - a.quangCao);
 
             renderClinics(filtered);

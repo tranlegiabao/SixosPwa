@@ -114,10 +114,11 @@ public sealed class CoSoYTeEditViewModel
     public bool XacMinh { get; set; }
 
     [StringLength(500)]
-    [Url(ErrorMessage = "URL hình ảnh không hợp lệ.")]
     public string? Img { get; set; }
 
-    [Range(0, 999999999999999, ErrorMessage = "Giá trị quảng cáo không hợp lệ.")]
+    public IFormFile? ImageFile { get; set; }
+
+    [Range(0, 999999999999999, ErrorMessage = "Số tiền quảng cáo không hợp lệ.")]
     public decimal? QuangCao { get; set; }
 }
 
