@@ -21,6 +21,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     {
         options.LoginPath = "/DangNhap/Login";
         options.LogoutPath = "/DangNhap/DangXuat";
+        options.AccessDeniedPath = "/Admin/AccessDenied";
         options.ExpireTimeSpan = TimeSpan.FromDays(365);
         options.SlidingExpiration = true;
         options.Cookie.Name = "SixosPwaAuthCookie";
@@ -181,6 +182,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // Vao thang la ra trang chu
+app.MapControllerRoute(
+    name: "areas",
+    pattern: "{area:exists}/{controller=Dashboard}/{action=Index}/{id?}");
+
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=ThongTinBenhNhan}/{id?}");

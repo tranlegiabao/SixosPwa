@@ -1,0 +1,18 @@
+@model TaiKhoanEditViewModel
+@{
+    ViewData["Title"] = "Tạo tài khoản";
+}
+<div class="page-header-row"><div><div class="page-kicker">TÀI KHOẢN</div><h1 class="page-heading">Tạo tài khoản</h1><p class="page-description">Thêm một số điện thoại được phép đăng nhập vào hệ thống.</p></div><a asp-action="Index" class="back-link">← Quay lại danh sách</a></div>
+<div class="admin-panel form-panel">
+    <form asp-action="Create" method="post" class="admin-form">
+        <div asp-validation-summary="ModelOnly" class="text-danger validation-summary"></div>
+        <div class="form-section-title">Thông tin đăng nhập</div>
+        <div class="row g-3">
+            <div class="col-md-7"><label asp-for="SDT" class="form-label">Số điện thoại <span>*</span></label><input asp-for="SDT" class="form-control" inputmode="tel" autocomplete="off" placeholder="Ví dụ: 0912345678" /><span asp-validation-for="SDT" class="text-danger field-error"></span></div>
+            <div class="col-md-5"><label asp-for="Role" class="form-label">Vai trò <span>*</span></label><select asp-for="Role" class="form-select"><option value="User">Người dùng</option><option value="DoiTac">Đối tác</option><option value="Admin">Admin</option></select><span asp-validation-for="Role" class="text-danger field-error"></span></div>
+        </div>
+        <div class="form-note"><span>i</span> Người dùng sẽ xác thực bằng OTP theo cơ chế đăng nhập hiện tại.</div>
+        <div class="form-actions"><a asp-action="Index" class="btn admin-btn-secondary">Hủy</a><button type="submit" class="btn admin-btn-primary">Lưu tài khoản</button></div>
+    </form>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

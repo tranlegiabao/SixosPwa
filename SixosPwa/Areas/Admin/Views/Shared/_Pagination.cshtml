@@ -1,0 +1,9 @@
+@model PaginationViewModel
+@if (Model.TotalPages > 1)
+{
+    <nav class="admin-pagination" aria-label="Phân trang">
+        @if (Model.Page > 1) { <a asp-route-page="@(Model.Page - 1)" asp-route-q="@Model.Query" asp-route-role="@Model.Role" asp-route-loaiCS="@Model.LoaiCS" asp-route-maDT="@Model.MaDT" aria-label="Trang trước">←</a> } else { <span class="disabled">←</span> }
+        <span>Trang <strong>@Model.Page</strong> / @Model.TotalPages</span>
+        @if (Model.Page < Model.TotalPages) { <a asp-route-page="@(Model.Page + 1)" asp-route-q="@Model.Query" asp-route-role="@Model.Role" asp-route-loaiCS="@Model.LoaiCS" asp-route-maDT="@Model.MaDT" aria-label="Trang sau">→</a> } else { <span class="disabled">→</span> }
+    </nav>
+}

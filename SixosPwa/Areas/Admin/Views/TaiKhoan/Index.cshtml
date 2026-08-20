@@ -1,0 +1,38 @@
+@model TaiKhoanListViewModel
+@{
+    ViewData["Title"] = "Tài khoản";
+}
+
+<div class="page-header-row">
+    <div><div class="page-kicker">QUẢN LÝ TRUY CẬP</div><h1 class="page-heading">Tài khoản</h1><p class="page-description">Kiểm soát người dùng và vai trò truy cập vào ứng dụng.</p></div>
+    <a asp-action="Create" class="btn admin-btn-primary"><span>+</span> Tạo tài khoản</a>
+</div>
+
+<div class="admin-panel">
+    <form method="get" class="filter-bar">
+        <div class="search-control"><span>⌕</span><input type="search" name="q" value="@Model.Query" placeholder="Tìm theo số điện thoại..." aria-label="Tìm tài khoản" /></div>
+        <select name="role" class="form-select filter-select" aria-label="Lọc theo vai trò"><option value="">Tất cả vai trò</option><option value="Admin" selected="@(Model.Role == "Admin" ? "selected" : null)">Admin</option><option value="DoiTac" selected="@(Model.Role == "DoiTac" ? "selected" : null)">Đối tác</option><option value="User" selected="@(Model.Role == "User" ? "selected" : null)">Người dùng</option></select>
+        <button class="btn admin-btn-secondary" type="submit">Lọc</button>
+        @if (!string.IsNullOrWhiteSpace(Model.Query) || !string.IsNullOrWhiteSpace(Model.Role)) { <a asp-action="Index" class="clear-filter">Xóa lọc</a> }
+    </form>
+    <div class="table-meta"><span><strong>@Model.TotalItems.ToString("N0")</strong> tài khoản</span><span>Chỉ Admin mới được thay đổi vai trò</span></div>
+    <div class="table-responsive">
+        <table class="table admin-table align-middle mb-0">
+            <thead><tr><th>Tài khoản</th><th>Vai trò</th><th>Mã định danh</th><th class="text-end">Thao tác</th></tr></thead>
+            <tbody>
+            @if (Model.Items.Count == 0)
+            {
+                <tr><td colspan="4"><div class="table-empty"><div>⌕</div><strong>Không tìm thấy tài khoản</strong><span>Thử thay đổi từ khóa hoặc bộ lọc.</span></div></td></tr>
+            }
+            else
+            {
+                foreach (var item in Model.Items)
+                {
+                    <tr><td><div class="table-person"><span class="mini-avatar">@(item.SDT.FirstOrDefault().ToString())</span><div><strong>@item.SDT</strong><small>Đăng nhập bằng số điện thoại</small></div></div></td><td><span class="role-badge role-@item.Role.ToLowerInvariant()">@item.Role</span></td><td class="text-muted">#@item.Id</td><td class="text-end"><a asp-action="Edit" asp-route-id="@item.Id" class="table-action">Chỉnh sửa <span>→</span></a></td></tr>
+                }
+            }
+            </tbody>
+        </table>
+    </div>
+    <partial name="_Pagination" model="new PaginationViewModel { Page = Model.Page, TotalPages = Model.TotalPages, Query = Model.Query, Role = Model.Role }" />
+</div>

@@ -1,0 +1,68 @@
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Tổng quan";
+}
+
+<section class="admin-welcome">
+    <div>
+        <div class="page-kicker">THỨ TƯ, @DateTime.Now.ToString("dd/MM/yyyy")</div>
+        <h1>Chào mừng trở lại <span class="welcome-dot">.</span></h1>
+        <p>Đây là bức tranh nhanh về hoạt động của hệ thống hôm nay.</p>
+    </div>
+    <div class="welcome-orb" aria-hidden="true"><span>✦</span></div>
+</section>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-xl-3"><div class="metric-card metric-blue"><div class="metric-icon">◎</div><div class="metric-label">Tài khoản</div><div class="metric-value">@Model.AccountCount.ToString("N0")</div><div class="metric-foot">Người dùng đã đăng ký</div></div></div>
+    <div class="col-6 col-xl-3"><div class="metric-card metric-purple"><div class="metric-icon">◇</div><div class="metric-label">Đối tác</div><div class="metric-value">@Model.PartnerCount.ToString("N0")</div><div class="metric-foot">Đang kết nối hệ thống</div></div></div>
+    <div class="col-6 col-xl-3"><div class="metric-card metric-green"><div class="metric-icon">◌</div><div class="metric-label">Bệnh nhân</div><div class="metric-value">@Model.PatientCount.ToString("N0")</div><div class="metric-foot">Hồ sơ trong hệ thống</div></div></div>
+    <div class="col-6 col-xl-3"><div class="metric-card metric-orange"><div class="metric-icon">+</div><div class="metric-label">Cơ sở y tế</div><div class="metric-value">@Model.FacilityCount.ToString("N0")</div><div class="metric-foot">Đang hiển thị trên ứng dụng</div></div></div>
+</div>
+
+<div class="row g-4">
+    <div class="col-12 col-xl-8">
+        <div class="admin-panel h-100">
+            <div class="panel-heading"><div><div class="panel-kicker">HOẠT ĐỘNG GẦN ĐÂY</div><h2>Thông báo mới nhất</h2></div><a class="panel-link" href="/Home/GuiTinNhan">Gửi thông báo <span>→</span></a></div>
+            @if (Model.RecentNotifications.Count == 0)
+            {
+                <div class="empty-state"><div class="empty-icon">○</div><strong>Chưa có thông báo</strong><span>Các hoạt động gửi thông báo sẽ xuất hiện ở đây.</span></div>
+            }
+            else
+            {
+                <div class="activity-list">
+                    @foreach (var item in Model.RecentNotifications)
+                    {
+                        <div class="activity-item"><div class="activity-icon">↗</div><div class="activity-body"><div class="activity-title">Tin nhắn tới <strong>@item.NguoiNhan</strong></div><div class="activity-text">@item.NoiDung</div><div class="activity-time">@item.ThoiGian.ToString("HH:mm · dd/MM/yyyy")</div></div><span class="activity-status @(item.DaDoc ? "is-read" : "")">@(item.DaDoc ? "Đã đọc" : "Mới")</span></div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+    <div class="col-12 col-xl-4">
+        <div class="admin-panel h-100">
+            <div class="panel-heading"><div><div class="panel-kicker">HỆ THỐNG</div><h2>Sức khỏe dữ liệu</h2></div><span class="health-badge"><span></span> Tốt</span></div>
+            <div class="health-row"><span>Push subscription</span><strong>@Model.PushSubscriptionCount.ToString("N0")</strong></div>
+            <div class="health-row"><span>Thông báo chưa đọc</span><strong class="text-orange">@Model.UnreadNotificationCount.ToString("N0")</strong></div>
+            <div class="health-row"><span>Phiên bản giao diện</span><strong>Admin 1.0</strong></div>
+            <div class="quick-actions">
+                <a asp-controller="TaiKhoan" asp-action="Create" class="quick-action"><span>+</span> Tạo tài khoản</a>
+                <a asp-controller="CoSoYTe" asp-action="Create" class="quick-action"><span>+</span> Thêm cơ sở</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="admin-panel mt-4">
+    <div class="panel-heading"><div><div class="panel-kicker">MỚI THAM GIA</div><h2>Tài khoản gần đây</h2></div><a class="panel-link" asp-controller="TaiKhoan" asp-action="Index">Xem tất cả <span>→</span></a></div>
+    <div class="table-responsive">
+        <table class="table admin-table align-middle mb-0">
+            <thead><tr><th>Số điện thoại</th><th>Vai trò</th><th>ID</th><th class="text-end">Trạng thái</th></tr></thead>
+            <tbody>
+            @foreach (var account in Model.RecentAccounts)
+            {
+                <tr><td><div class="table-person"><span class="mini-avatar">@(account.SDT.FirstOrDefault().ToString())</span><span>@account.SDT</span></div></td><td><span class="role-badge role-@account.Role.ToLowerInvariant()">@account.Role</span></td><td class="text-muted">#@account.Id</td><td class="text-end"><span class="active-status"><i></i> Hoạt động</span></td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

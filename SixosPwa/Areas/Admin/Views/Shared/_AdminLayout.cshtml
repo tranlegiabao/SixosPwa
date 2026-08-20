@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>@ViewData["Title"] - Quản trị HisSoft</title>
+    <partial name="_PwaHead" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+</head>
+<body class="admin-body">
+    <div class="admin-app">
+        <div class="offcanvas-lg offcanvas-start admin-sidebar" tabindex="-1" id="adminSidebar" aria-labelledby="adminSidebarTitle">
+            <div class="admin-brand">
+                <div class="brand-mark">H</div>
+                <div>
+                    <div class="brand-name">HisSoft</div>
+                    <div class="brand-caption">Trung tâm quản trị</div>
+                </div>
+                <button type="button" class="btn-close d-lg-none ms-auto" data-bs-dismiss="offcanvas" data-bs-target="#adminSidebar" aria-label="Đóng menu"></button>
+            </div>
+
+            <div class="admin-sidebar-label" id="adminSidebarTitle">Không gian làm việc</div>
+            <nav class="admin-nav" aria-label="Điều hướng quản trị">
+                <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")">
+                    <span class="nav-symbol">⌂</span><span>Tổng quan</span>
+                </a>
+                <a asp-area="Admin" asp-controller="TaiKhoan" asp-action="Index" class="admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "TaiKhoan" ? "active" : "")">
+                    <span class="nav-symbol">◎</span><span>Tài khoản</span>
+                </a>
+                <a asp-area="Admin" asp-controller="DoiTac" asp-action="Index" class="admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "DoiTac" ? "active" : "")">
+                    <span class="nav-symbol">◇</span><span>Đối tác</span>
+                </a>
+                <a asp-area="Admin" asp-controller="CoSoYTe" asp-action="Index" class="admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "CoSoYTe" ? "active" : "")">
+                    <span class="nav-symbol">+</span><span>Cơ sở y tế</span>
+                </a>
+                <a asp-area="Admin" asp-controller="BenhNhan" asp-action="Index" class="admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BenhNhan" ? "active" : "")">
+                    <span class="nav-symbol">◌</span><span>Bệnh nhân</span>
+                </a>
+            </nav>
+
+            <div class="admin-sidebar-label mt-4">Tiện ích</div>
+            <nav class="admin-nav">
+                <a href="/Home/GuiTinNhan" class="admin-nav-link">
+                    <span class="nav-symbol">↗</span><span>Gửi thông báo</span>
+                </a>
+                <a href="/Home/ThongTinBenhNhan" class="admin-nav-link">
+                    <span class="nav-symbol">↩</span><span>Về ứng dụng</span>
+                </a>
+            </nav>
+
+            <div class="admin-sidebar-footer">
+                <div class="admin-security-note"><span class="status-dot"></span> Kết nối an toàn</div>
+                <a href="/DangNhap/DangXuat" class="admin-logout">Đăng xuất <span>→</span></a>
+            </div>
+        </div>
+
+        <main class="admin-main">
+            <header class="admin-topbar">
+                <div class="d-flex align-items-center gap-3">
+                    <button class="admin-menu-button d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#adminSidebar" aria-controls="adminSidebar" aria-label="Mở menu">☰</button>
+                    <div>
+                        <div class="topbar-eyebrow">QUẢN TRỊ HỆ THỐNG</div>
+                        <div class="topbar-title">@ViewData["Title"]</div>
+                    </div>
+                </div>
+                <div class="admin-user-chip">
+                    <div class="user-avatar">@(User.Identity?.Name?.FirstOrDefault().ToString().ToUpperInvariant() ?? "A")</div>
+                    <div class="d-none d-sm-block">
+                        <div class="user-name">@(User.Identity?.Name ?? "Quản trị viên")</div>
+                        <div class="user-role">Quản trị viên</div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="admin-content">
+                @if (TempData["AdminSuccess"] is string success)
+                {
+                    <div class="alert admin-alert admin-alert-success" role="alert"><span>✓</span> @success</div>
+                }
+                @if (TempData["AdminError"] is string error)
+                {
+                    <div class="alert admin-alert admin-alert-error" role="alert"><span>!</span> @error</div>
+                }
+                @RenderBody()
+            </div>
+        </main>
+    </div>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/admin.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

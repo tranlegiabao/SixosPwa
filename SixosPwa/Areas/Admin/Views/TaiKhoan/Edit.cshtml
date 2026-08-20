@@ -1,0 +1,19 @@
+@model TaiKhoanEditViewModel
+@{
+    ViewData["Title"] = "Chỉnh sửa tài khoản";
+}
+<div class="page-header-row"><div><div class="page-kicker">TÀI KHOẢN #@Model.Id</div><h1 class="page-heading">Chỉnh sửa tài khoản</h1><p class="page-description">Cập nhật vai trò truy cập. Số điện thoại được giữ nguyên.</p></div><a asp-action="Index" class="back-link">← Quay lại danh sách</a></div>
+<div class="admin-panel form-panel">
+    <form asp-action="Edit" method="post" class="admin-form">
+        <input asp-for="Id" type="hidden" /><input asp-for="SDT" type="hidden" />
+        <div asp-validation-summary="ModelOnly" class="text-danger validation-summary"></div>
+        <div class="form-section-title">Thông tin tài khoản</div>
+        <div class="row g-3">
+            <div class="col-md-7"><label class="form-label">Số điện thoại</label><div class="readonly-field">@Model.SDT</div></div>
+            <div class="col-md-5"><label asp-for="Role" class="form-label">Vai trò <span>*</span></label><select asp-for="Role" class="form-select"><option value="User">Người dùng</option><option value="DoiTac">Đối tác</option><option value="Admin">Admin</option></select><span asp-validation-for="Role" class="text-danger field-error"></span></div>
+        </div>
+        <div class="form-note"><span>!</span> Không thể hạ quyền Admin cuối cùng hoặc tự hạ quyền tài khoản đang đăng nhập.</div>
+        <div class="form-actions"><a asp-action="Index" class="btn admin-btn-secondary">Hủy</a><button type="submit" class="btn admin-btn-primary">Lưu thay đổi</button></div>
+    </form>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }
