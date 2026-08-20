@@ -13,17 +13,15 @@
     <div class="admin-app">
         <div class="offcanvas-lg offcanvas-start admin-sidebar" tabindex="-1" id="adminSidebar" aria-labelledby="adminSidebarTitle">
             <div class="admin-brand">
-                <div class="brand-mark brand-mark-logo">
-                    <img src="~/static/logo-yte.png" asp-append-version="true" alt="Y TẾ VIỆT" />
-                </div>
+                <img class="brand-logo-image" src="~/static/icon-512.png" asp-append-version="true" alt="Y TẾ VIỆT" />
                 <div>
                     <div class="brand-name">Y TẾ VIỆT</div>
                     <div class="brand-caption">Trung tâm quản trị</div>
                 </div>
                 <button type="button" class="btn-close d-lg-none ms-auto" data-bs-dismiss="offcanvas" data-bs-target="#adminSidebar" aria-label="Đóng menu"></button>
             </div>
-
-            <div class="admin-sidebar-label" id="adminSidebarTitle">Không gian làm việc</div>
+                
+            <div class="admin-sidebar-label" id="adminSidebarTitle">@* Không gian làm việc *@</div>
             <nav class="admin-nav" aria-label="Điều hướng quản trị">
                 <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")">
                     <span class="nav-symbol">⌂</span><span>Tổng quan</span>
@@ -54,13 +52,13 @@
 
             <div class="admin-sidebar-footer">
                 <div class="admin-security-note"><span class="status-dot"></span> Kết nối an toàn</div>
-                <a href="/DangNhap/DangXuat" class="admin-logout">Đăng xuất <span>→</span></a>
+                <a href="/DangNhap/DangXuat" class="admin-logout"><span>Đăng xuất</span><svg class="admin-logout-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7"></path><path d="M10 12h10"></path><path d="m16 8 4 4-4 4"></path></svg></a>
             </div>
         </div>
 
         <main class="admin-main">
             <header class="admin-topbar">
-                <div class="d-flex align-items-center gap-3">
+                <div class="admin-topbar-heading d-flex align-items-center gap-3">
                     <button class="admin-menu-button d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#adminSidebar" aria-controls="adminSidebar" aria-label="Mở menu">☰</button>
                     <div>
                         <div class="topbar-eyebrow">QUẢN TRỊ HỆ THỐNG</div>
