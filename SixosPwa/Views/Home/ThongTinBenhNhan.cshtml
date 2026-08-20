@@ -182,61 +182,321 @@
         </div>
     </div>
 
-    <div class="ytv-company-info" aria-label="Thông tin Công Ty Công Nghệ và Giải Pháp Phần Mềm SixOs">
-    <div class="ytv-company-name">
-        Công Ty Công Nghệ và<br />
-        Giải Pháp Phần Mềm SixOs
-    </div>
+    <style>
+            .sixos-card {
+                background: white;
+                border-radius: 16px;
+                padding: 16px 12px;
+                box-shadow: 0 4px 15px -5px rgba(0,0,0,0.05);
+                border: 1px solid #f1f5f9;
+                display: flex;
+                flex-direction: column;
+                position: relative;
+            }
+            .sixos-card.primary {
+                border-left: 5px solid #2563eb;
+                text-align: center;
+                align-items: center;
+                justify-content: center;
+            }
+            .sixos-logo-box {
+                width: 50px;
+                height: 50px;
+                background: #eff6ff;
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 8px;
+                color: #2563eb;
+                font-size: 24px;
+            }
+            .sixos-title {
+                font-size: 18px;
+                font-weight: 800;
+                color: #1e40af;
+                margin-bottom: 2px;
+                letter-spacing: 0.5px;
+            }
+            .sixos-subtitle {
+                font-size: 13px;
+                font-weight: 700;
+                color: #0f172a;
+                margin-bottom: 6px;
+                line-height: 1.3;
+            }
+            .sixos-desc {
+                font-size: 11px;
+                color: #64748b;
+                line-height: 1.4;
+            }
+            
+            .sixos-card-header {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin-bottom: 12px;
+                padding-bottom: 8px;
+                border-bottom: 1px solid #f1f5f9;
+            }
+            .sixos-icon {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+            }
+            .sixos-icon.blue { background: #eff6ff; color: #2563eb; }
+            .sixos-icon.green { background: #f0fdf4; color: #16a34a; }
+            
+            .sixos-header-title {
+                font-size: 16px;
+                font-weight: 700;
+                color: #0f172a;
+            }
+            
+            .sixos-list {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            .sixos-item {
+                display: flex;
+                align-items: flex-start;
+                gap: 10px;
+                text-decoration: none;
+                padding: 6px;
+                border-radius: 10px;
+                transition: background 0.2s;
+                margin: -6px;
+            }
+            .sixos-item:hover {
+                background: #f8fafc;
+            }
+            .sixos-item-icon {
+                width: 30px;
+                height: 30px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: #f1f5f9;
+                color: #3b82f6;
+                flex-shrink: 0;
+            }
+            .sixos-item-icon.green-bg { background: #dcfce7; color: #16a34a; }
+            
+            .sixos-item-content { flex: 1; }
+            .sixos-item-title {
+                font-size: 14px;
+                font-weight: 700;
+                color: #1e293b;
+                margin-bottom: 2px;
+                text-align: left;
+            }
+            .sixos-item-desc {
+                font-size: 12px;
+                color: #64748b;
+                line-height: 1.4;
+                text-align: left;
+            }
+            .sixos-item-arrow {
+                color: #cbd5e1;
+                font-size: 12px;
+                margin-top: 6px;
+            }
+            .sixos-item:hover .sixos-item-arrow { color: #3b82f6; transform: translateX(2px); transition: all 0.2s; }
+        </style>
+        <div class="ytv-company-info" aria-label="Thông tin Công Ty Công Nghệ và Giải Pháp Phần Mềm SixOs">
+            <!-- Card 1 -->
+            <div class="sixos-card primary">
+                <div class="sixos-logo-box" style="background: transparent; height: auto; width: auto; margin-bottom: 8px;">
+                    <img src="/static/logo-sixos.png" alt="SixOs Logo" style="width: 56px; height: 56px; object-fit: cover; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" />
+                </div>
+                <div class="sixos-title">SIXOS</div>
+                <div class="sixos-subtitle">Công Ty Công Nghệ và<br>Giải Pháp Phần Mềm</div>
+                <div class="sixos-desc">Đưa công nghệ đến gần hơn với doanh nghiệp, tạo nên giá trị bền vững.</div>
+            </div>
 
-    <div class="ytv-company-list">
-        <ul>
-            <li>Phần mềm lập trình theo yêu cầu</li>
-            <li>Cho thuê theo yêu cầu</li>
-        </ul>
-    </div>
+            <!-- Card 2 -->
+            <div class="sixos-card">
+                <div class="sixos-card-header">
+                    <div class="sixos-icon blue"><i class="fas fa-laptop-code"></i></div>
+                    <div class="sixos-header-title">Dịch vụ phần mềm</div>
+                </div>
+                <div class="sixos-list">
+                    <a href="javascript:void(0)" class="sixos-item">
+                        <div class="sixos-item-icon"><i class="fas fa-cog"></i></div>
+                        <div class="sixos-item-content">
+                            <div class="sixos-item-title">Phần mềm lập trình theo yêu cầu</div>
+                            <div class="sixos-item-desc">Giải pháp phù hợp với nhu cầu và đặc thù của doanh nghiệp.</div>
+                        </div>
+                        <div class="sixos-item-arrow"><i class="fas fa-chevron-right"></i></div>
+                    </a>
+                    <a href="javascript:void(0)" class="sixos-item">
+                        <div class="sixos-item-icon"><i class="fas fa-cloud"></i></div>
+                        <div class="sixos-item-content">
+                            <div class="sixos-item-title">Cho thuê theo yêu cầu</div>
+                            <div class="sixos-item-desc">Linh hoạt, tiết kiệm chi phí, hỗ trợ nhanh chóng.</div>
+                        </div>
+                        <div class="sixos-item-arrow"><i class="fas fa-chevron-right"></i></div>
+                    </a>
+                </div>
+            </div>
 
-    <div class="ytv-company-list">
-        <ul>
-            <li>Server dự phòng</li>
-            <li>Sao lưu dữ liệu</li>
-        </ul>
-    </div>
-
-    <div class="ytv-company-rolling" aria-label="Các giải pháp phần mềm">
-        <a class="ytv-company-service is-active" href="https://sixossoft.com/phan-mem-quan-ly-tong-the-benh-vien" target="_blank" rel="noopener noreferrer" aria-hidden="false" tabindex="0">
-            <img class="ytv-company-service-icon" src="/static/bieu-tuong/benh-vien.svg" alt="" aria-hidden="true" />
-            <ul><li>Phần mềm quản lý bệnh viện</li></ul>
-        </a>
-        <a class="ytv-company-service" href="https://sixossoft.com/phan-mem-quan-ly-phong-kham-da-khoa" target="_blank" rel="noopener noreferrer" aria-hidden="true" tabindex="-1">
-            <img class="ytv-company-service-icon" src="/static/bieu-tuong/phong-kham.svg" alt="" aria-hidden="true" />
-            <ul><li>Phần mềm quản lý phòng khám đa khoa</li></ul>
-        </a>
-        <a class="ytv-company-service" href="https://sixossoft.com/phan-mem-quan-ly-nha-khoa" target="_blank" rel="noopener noreferrer" aria-hidden="true" tabindex="-1">
-            <img class="ytv-company-service-icon" src="/static/bieu-tuong/nha-khoa.svg" alt="" aria-hidden="true" />
-            <ul><li>Phần mềm quản lý nha khoa</li></ul>
-        </a>
-        <a class="ytv-company-service" href="https://sixossoft.com/phan-mem-quan-ly-ban-hang" target="_blank" rel="noopener noreferrer" aria-hidden="true" tabindex="-1">
-            <img class="ytv-company-service-icon" src="/static/bieu-tuong/nha-thuoc.svg" alt="" aria-hidden="true" />
-            <ul><li>Phần mềm quản lý thuốc</li></ul>
-        </a>
-    </div>
+            <!-- Card 3 -->
+            <div class="sixos-card">
+                <div class="sixos-card-header">
+                    <div class="sixos-icon green"><i class="fas fa-shield-alt"></i></div>
+                    <div class="sixos-header-title">Hạ tầng & bảo mật</div>
+                </div>
+                <div class="sixos-list">
+                    <a href="https://sixossoft.com/dich-vu" target="_blank" rel="noopener noreferrer" class="sixos-item">
+                        <div class="sixos-item-icon green-bg"><i class="fas fa-server"></i></div>
+                        <div class="sixos-item-content">
+                            <div class="sixos-item-title">Server dự phòng</div>
+                            <div class="sixos-item-desc">Hệ thống dự phòng ổn định, sẵn sàng 24/7.</div>
+                        </div>
+                        <div class="sixos-item-arrow"><i class="fas fa-chevron-right"></i></div>
+                    </a>
+                    <a href="https://sixossoft.com/dich-vu" target="_blank" rel="noopener noreferrer" class="sixos-item">
+                        <div class="sixos-item-icon green-bg"><i class="fas fa-cloud-upload-alt"></i></div>
+                        <div class="sixos-item-content">
+                            <div class="sixos-item-title">Sao lưu dữ liệu</div>
+                            <div class="sixos-item-desc">Đảm bảo an toàn dữ liệu, khôi phục nhanh chóng.</div>
+                        </div>
+                        <div class="sixos-item-arrow"><i class="fas fa-chevron-right"></i></div>
+                    </a>
+                </div>
+            </div>
+        <div class="ytv-company-4th-col" style="display: flex; flex-direction: column; background: white; border-radius: 16px; box-shadow: 0 4px 15px -5px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; border-top: 4px solid #93c5fd; overflow: hidden;">
+            <div class="ytv-company-rolling" aria-label="Các giải pháp phần mềm" style="flex: none; border: none; box-shadow: none; border-radius: 0; background: transparent; height: 60px;">
+                <a class="ytv-company-service is-active" href="https://sixossoft.com/phan-mem-quan-ly-tong-the-benh-vien" target="_blank" rel="noopener noreferrer" aria-hidden="false" tabindex="0" style="align-items: flex-start; padding-top: 16px;">
+                    <img class="ytv-company-service-icon" src="/static/bieu-tuong/benh-vien.svg" alt="" aria-hidden="true" />
+                    <ul><li style="font-weight: 700; color: #0f172a;">Phần mềm quản lý bệnh viện</li></ul>
+                </a>
+                <a class="ytv-company-service" href="https://sixossoft.com/phan-mem-quan-ly-phong-kham-da-khoa" target="_blank" rel="noopener noreferrer" aria-hidden="true" tabindex="-1" style="align-items: flex-start; padding-top: 16px;">
+                    <img class="ytv-company-service-icon" src="/static/bieu-tuong/phong-kham.svg" alt="" aria-hidden="true" />
+                    <ul><li style="font-weight: 700; color: #0f172a;">Phần mềm quản lý phòng khám đa khoa</li></ul>
+                </a>
+                <a class="ytv-company-service" href="https://sixossoft.com/phan-mem-quan-ly-nha-khoa" target="_blank" rel="noopener noreferrer" aria-hidden="true" tabindex="-1" style="align-items: flex-start; padding-top: 16px;">
+                    <img class="ytv-company-service-icon" src="/static/bieu-tuong/nha-khoa.svg" alt="" aria-hidden="true" />
+                    <ul><li style="font-weight: 700; color: #0f172a;">Phần mềm quản lý nha khoa</li></ul>
+                </a>
+                <a class="ytv-company-service" href="https://sixossoft.com/phan-mem-quan-ly-ban-hang" target="_blank" rel="noopener noreferrer" aria-hidden="true" tabindex="-1" style="align-items: flex-start; padding-top: 16px;">
+                    <img class="ytv-company-service-icon" src="/static/bieu-tuong/nha-thuoc.svg" alt="" aria-hidden="true" />
+                    <ul><li style="font-weight: 700; color: #0f172a;">Phần mềm quản lý nhà thuốc</li></ul>
+                </a>
+            </div>
+            
+            <style>
+            .policy-cards-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+                padding: 8px 12px 12px 12px;
+                flex: 1;
+            }
+            .policy-card {
+                display: flex;
+                flex-direction: column;
+                border-radius: 12px;
+                padding: 10px;
+                text-decoration: none;
+                transition: transform 0.2s, box-shadow 0.2s;
+                position: relative;
+                overflow: hidden;
+                min-height: 85px;
+            }
+            .policy-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            }
+            .policy-card-icon-box {
+                width: 24px;
+                height: 24px;
+                border-radius: 6px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 11px;
+                margin-bottom: 6px;
+            }
+            .policy-card-title {
+                font-size: 11px;
+                font-weight: 700;
+                color: #1e3a8a;
+                line-height: 1.3;
+                max-width: 85%;
+            }
+            .policy-card-arrow {
+                position: absolute;
+                bottom: 10px;
+                right: 10px;
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 9px;
+                transition: transform 0.2s;
+            }
+            .policy-card:hover .policy-card-arrow {
+                transform: translateX(2px);
+            }
+            .policy-blue { background: #f4f7ff; border: 1px solid #dbeafe; }
+            .policy-blue .policy-card-icon-box { background: #dbeafe; color: #2563eb; }
+            .policy-blue .policy-card-arrow { background: #3b82f6; color: white; }
+            
+            .policy-purple { background: #faf5ff; border: 1px solid #f3e8ff; }
+            .policy-purple .policy-card-icon-box { background: #f3e8ff; color: #9333ea; }
+            .policy-purple .policy-card-arrow { background: #a855f7; color: white; }
+            
+            .policy-teal { background: #f0fdfa; border: 1px solid #ccfbf1; }
+            .policy-teal .policy-card-icon-box { background: #ccfbf1; color: #0d9488; }
+            .policy-teal .policy-card-arrow { background: #14b8a6; color: white; }
+            
+            .policy-orange { background: #fffbeb; border: 1px solid #fef3c7; }
+            .policy-orange .policy-card-icon-box { background: #fef3c7; color: #d97706; }
+            .policy-orange .policy-card-arrow { background: #f59e0b; color: white; }
+            </style>
+            <div class="policy-cards-grid">
+                <a href="javascript:void(0)" onclick="showPolicy('baomat')" class="policy-card policy-blue">
+                    <div class="policy-card-icon-box"><i class="fas fa-shield-alt"></i></div>
+                    <div class="policy-card-title">Chính sách<br>bảo mật</div>
+                    <div class="policy-card-arrow"><i class="fas fa-arrow-right"></i></div>
+                </a>
+                <a href="javascript:void(0)" onclick="showPolicy('khieunai')" class="policy-card policy-purple">
+                    <div class="policy-card-icon-box"><i class="fas fa-headset"></i></div>
+                    <div class="policy-card-title">Giải quyết<br>khiếu nại</div>
+                    <div class="policy-card-arrow"><i class="fas fa-arrow-right"></i></div>
+                </a>
+                <a href="javascript:void(0)" onclick="showPolicy('dieukhoan')" class="policy-card policy-teal">
+                    <div class="policy-card-icon-box"><i class="fas fa-user-check"></i></div>
+                    <div class="policy-card-title">Điều khoản<br>sử dụng</div>
+                    <div class="policy-card-arrow"><i class="fas fa-arrow-right"></i></div>
+                </a>
+                <a href="javascript:void(0)" onclick="showPolicy('baohanh')" class="policy-card policy-orange">
+                    <div class="policy-card-icon-box"><i class="fas fa-file-contract"></i></div>
+                    <div class="policy-card-title">Chính sách<br>bảo hành</div>
+                    <div class="policy-card-arrow"><i class="fas fa-arrow-right"></i></div>
+                </a>
+            </div>
+        </div>
     </div>
 </div>
 
 <div class="ytv-footer">
     <div class="ytv-footer-top">
-        <div class="ytv-support-col">
+        <div class="ytv-support-col" style="width: 100%;">
             <div class="ytv-support-phones ytv-support-contacts">
-                <div><i class="fas fa-headset me-2"></i> Hỗ trợ: <span>0901 87 88 96</span> - <span>0364 956 007</span></div>
-                <div><i class="fas fa-envelope me-2"></i> Email: <a href="mailto:Sixossoft@gmail.com" class="ytv-email-link">sixossoft@gmail.com</a></div>
+                <div><i class="fas fa-headset me-2"></i> <span>0901 87 88 96</span> - <span>0364 956 007</span></div>
+                <div><i class="fas fa-envelope me-2"></i> <a href="mailto:Sixossoft@gmail.com" class="ytv-email-link">sixossoft@gmail.com</a></div>
+                <div><i class="fas fa-globe me-2"></i> <a href="https://sixossoft.com" target="_blank" rel="noopener noreferrer" class="ytv-email-link">sixossoft.com</a></div>
             </div>
-        </div>
-        
-        <div class="ytv-policies-col">
-            <a href="#" onclick="showPolicy('baomat')">Chính sách bảo mật</a> <span class="separator">|</span>
-            <a href="#" onclick="showPolicy('dieukhoan')">Điều khoản sử dụng</a> <span class="separator">|</span>
-            <a href="#" onclick="showPolicy('khieunai')">Giải quyết khiếu nại</a> <span class="separator">|</span>
-            <a href="#" onclick="showPolicy('baohanh')">Chính sách bảo hành</a>
         </div>
     </div>
 </div>
