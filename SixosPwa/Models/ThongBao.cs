@@ -10,7 +10,7 @@ public class ThongBao
     /// <summary>Thời gian gửi</summary>
     public DateTime ThoiGian { get; set; } = DateTime.Now;
 
-    /// <summary>SĐT / tên người gửi (Admin hoặc DoiTac)</summary>
+    /// <summary>SĐT / tên người gửi (Admin)</summary>
     public string NguoiGui { get; set; } = "";
 
     /// <summary>SĐT tài khoản nhận thông báo (bệnh nhân)</summary>

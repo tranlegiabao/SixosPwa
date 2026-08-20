@@ -26,7 +26,7 @@ public class HomeController : Controller
     {
         var userName = User.Identity?.Name ?? "Khách hàng";
         ViewData["UserName"] = userName;
-        ViewData["UserRole"] = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "User";
+        ViewData["UserRole"] = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "BenhNhan";
         ViewData["PhongKhamId"] = phongKhamId;
         
         // Lấy danh sách thông báo
@@ -92,7 +92,7 @@ public class HomeController : Controller
 
     [HttpGet("/Home/DangKyOnline/{ten?}")]
     [AllowAnonymous]
-    public async Task<IActionResult> ChiTietCoSo(string? ten, string? diaChi, string? type, string? img)
+    public async Task<IActionResult> ChiTietCoSo(string? ten, string? diaChi, string? type, string? img, string? logo)
     {
         if (!string.IsNullOrEmpty(ten))
         {
@@ -108,6 +108,7 @@ public class HomeController : Controller
                 ViewData["DiaChi"] = matchedCS.DiaChi ?? "Đang cập nhật";
                 ViewData["Type"] = matchedCS.LoaiCS ?? "benhvien";
                 ViewData["Img"] = matchedCS.Img ?? "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80";
+                ViewData["Logo"] = matchedCS.logo ?? logo ?? "https://tse1.mm.bing.net/th/id/OIP.JgUNpJPll-8BkzE3XN6LggHaHa?r=0&pid=Api&P=0&h=180";
                 return View();
             }
         }
@@ -116,6 +117,7 @@ public class HomeController : Controller
         ViewData["DiaChi"] = diaChi ?? "Đang cập nhật";
         ViewData["Type"] = type ?? "benhvien";
         ViewData["Img"] = img ?? "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80";
+        ViewData["Logo"] = logo ?? "https://tse1.mm.bing.net/th/id/OIP.JgUNpJPll-8BkzE3XN6LggHaHa?r=0&pid=Api&P=0&h=180";
         return View();
     }
 
@@ -201,7 +203,7 @@ public class HomeController : Controller
         }
 
         ViewData["UserName"] = sdt;
-        ViewData["UserRole"] = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "User";
+        ViewData["UserRole"] = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "BenhNhan";
 
         // Lấy thông tin bệnh nhân
         var benhNhan = await _db.BenhNhans
@@ -290,7 +292,7 @@ public class HomeController : Controller
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin,DoiTac")]
+    [Authorize(Roles = "Admin")]
     public IActionResult GuiTinNhan()
     {
         var doiTacs = _db.DoiTacs.ToList();
@@ -298,7 +300,7 @@ public class HomeController : Controller
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin,DoiTac")]
+    [Authorize(Roles = "Admin")]
     public IActionResult LocDanhSachBN([FromBody] LocBNRequest model)
     {
         if (string.IsNullOrWhiteSpace(model.TenDT) || string.IsNullOrWhiteSpace(model.Password))
@@ -380,14 +382,14 @@ public class HomeController : Controller
     }
 
     // -------------------------------------------------------------------------
-    // Lấy danh sách tài khoản User thật từ DB (cho GuiTinNhan dùng)
+    // Lấy danh sách tài khoản bệnh nhân thật từ DB (cho GuiTinNhan dùng)
     // -------------------------------------------------------------------------
     [HttpGet]
-    [Authorize(Roles = "Admin,DoiTac")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DanhSachNguoiDung()
     {
         var danhSach = await _db.TaiKhoans
-            .Where(t => t.Role == "User")
+            .Where(t => t.Role != "Admin")
             .Select(t => new { t.Id, t.SDT, t.Role })
             .ToListAsync();
         return Json(danhSach);
@@ -438,7 +440,7 @@ public class HomeController : Controller
     // Gửi tin nhắn hàng loạt – lưu DB + gửi Web Push tới từng thiết bị
     // -------------------------------------------------------------------------
     [HttpPost]
-    [Authorize(Roles = "Admin,DoiTac")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GuiTinNhan([FromBody] SendSmsRequest model)
     {
         var nguoiGui = User.Identity?.Name;
@@ -651,7 +653,7 @@ public class HomeController : Controller
     // Lấy lịch sử trò chuyện (Admin <-> Bệnh nhân)
     // -------------------------------------------------------------------------
     [HttpGet]
-    [Authorize(Roles = "Admin,DoiTac")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetChatHistory(string sdtBenhNhan)
     {
         var adminId = User.Identity?.Name;

@@ -111,6 +111,7 @@
         let confirmationResultObj = null;
         let recaptchaVerifier = null;
         let currentSdt = '';
+        const adminReturnUrl = new URLSearchParams(window.location.search).get('returnUrl');
 
         function showAlert(msg, type = 'info') {
             const alertBox = document.getElementById('alertBox');
@@ -309,7 +310,8 @@
                         body: JSON.stringify({ 
                             soDienThoai: userPhone,
                             deviceId: getDeviceId(),
-                            deviceName: getDeviceName()
+                            deviceName: getDeviceName(),
+                            returnUrl: adminReturnUrl
                         })
                     });
 
@@ -337,7 +339,8 @@
                             soDienThoai: currentSdt, 
                             otp: otpInput,
                             deviceId: getDeviceId(),
-                            deviceName: getDeviceName()
+                            deviceName: getDeviceName(),
+                            returnUrl: adminReturnUrl
                         })
                     });
 

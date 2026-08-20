@@ -1,0 +1,121 @@
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Tổng quan";
+
+    string TypeName(string? type) => type switch
+    {
+        "benhvien" => "Bệnh viện",
+        "pkdk" => "Phòng khám",
+        "nhakhoa" => "Nha khoa",
+        "phongmach" => "Phòng mạch",
+        "nhathuoc" => "Nhà thuốc",
+        _ => "Chưa phân loại"
+    };
+
+    string Initial(string? value) => string.IsNullOrWhiteSpace(value) ? "?" : value.Trim()[0].ToString().ToUpperInvariant();
+    var adminPercent = Model.AccountCount == 0 ? 0 : Math.Round(Model.AdminAccountCount * 100d / Model.AccountCount);
+    var patientPercent = Model.AccountCount == 0 ? 0 : Math.Round(Model.PatientAccountCount * 100d / Model.AccountCount);
+}
+
+<div class="dashboard-page">
+    <header class="dashboard-header">
+        <div>
+            <div class="dashboard-breadcrumb"><span>Quản trị</span><b>/</b><span>Tổng quan</span></div>
+            <h1 class="dashboard-title">Trung tâm điều hành</h1>
+            <p class="dashboard-subtitle">Theo dõi nhanh hoạt động và dữ liệu của Y TẾ VIỆT trong ngày @DateTime.Now.ToString("dd/MM/yyyy").</p>
+        </div>
+        <div class="dashboard-header-actions">
+            <div class="live-indicator"><i></i> Dữ liệu trực tuyến</div>
+            <a asp-controller="TaiKhoan" asp-action="Create" class="btn admin-btn-primary"><span>+</span> Tạo mới</a>
+        </div>
+    </header>
+
+    <section class="dashboard-kpis" aria-label="Chỉ số tổng quan">
+        <a asp-controller="TaiKhoan" asp-action="Index" class="dashboard-kpi kpi-blue"><span class="kpi-icon">◎</span><span class="kpi-label">Tài khoản</span><strong>@Model.AccountCount.ToString("N0")</strong><small><b>@Model.AdminAccountCount</b> quản trị viên</small></a>
+        <a asp-controller="DoiTac" asp-action="Index" class="dashboard-kpi kpi-violet"><span class="kpi-icon">◇</span><span class="kpi-label">Đối tác</span><strong>@Model.PartnerCount.ToString("N0")</strong><small>Danh mục đơn vị kết nối</small></a>
+        <a asp-controller="BenhNhan" asp-action="Index" class="dashboard-kpi kpi-teal"><span class="kpi-icon">◌</span><span class="kpi-label">Bệnh nhân</span><strong>@Model.PatientCount.ToString("N0")</strong><small>Hồ sơ trong hệ thống</small></a>
+        <a asp-controller="CoSoYTe" asp-action="Index" class="dashboard-kpi kpi-orange"><span class="kpi-icon">+</span><span class="kpi-label">Cơ sở y tế</span><strong>@Model.FacilityCount.ToString("N0")</strong><small><b>@Model.VerifiedFacilityCount</b> đã xác minh</small></a>
+        <div class="dashboard-kpi kpi-slate"><span class="kpi-icon">↗</span><span class="kpi-label">Thông báo</span><strong>@Model.NotificationCount.ToString("N0")</strong><small><b class="accent-orange">@Model.UnreadNotificationCount</b> chưa đọc</small></div>
+        <div class="dashboard-kpi kpi-indigo"><span class="kpi-icon">⌁</span><span class="kpi-label">Thiết bị push</span><strong>@Model.PushSubscriptionCount.ToString("N0")</strong><small>Subscription đang hoạt động</small></div>
+    </section>
+
+    <section class="dashboard-main-grid">
+        <article class="dashboard-card activity-card">
+            <div class="dashboard-card-heading"><div><span class="section-overline">DÒNG HOẠT ĐỘNG</span><h2>Thông báo gần đây</h2></div><a href="/Home/GuiTinNhan" class="card-link">Quản lý thông báo <span>→</span></a></div>
+            @if (Model.RecentNotifications.Count == 0)
+            {
+                <div class="dashboard-empty"><span class="empty-circle">○</span><strong>Chưa có hoạt động</strong><small>Các tin nhắn mới gửi sẽ được hiển thị tại đây.</small></div>
+            }
+            else
+            {
+                <div class="dashboard-activity-list">
+                    @foreach (var item in Model.RecentNotifications)
+                    {
+                        <div class="dashboard-activity-item"><span class="activity-marker @(item.DaDoc ? "read" : "unread")">↗</span><div class="activity-copy"><div><strong>Thông báo tới @item.NguoiNhan</strong><span class="activity-state @(item.DaDoc ? "read" : "unread")">@(item.DaDoc ? "Đã đọc" : "Mới")</span></div><p>@item.NoiDung</p><time>@item.ThoiGian.ToString("HH:mm · dd/MM/yyyy")</time></div></div>
+                    }
+                </div>
+            }
+        </article>
+
+        <aside class="dashboard-card overview-card">
+            <div class="dashboard-card-heading"><div><span class="section-overline">PHÂN BỔ</span><h2>Cơ cấu tài khoản</h2></div><span class="card-count">@Model.AccountCount</span></div>
+            <div class="donut-summary"><div class="donut-chart" style="--admin-pct:@adminPercent%;--patient-pct:@patientPercent%"><div><strong>@Model.AccountCount</strong><span>Tổng số</span></div></div><div class="donut-legend"><div><i class="legend-blue"></i><span>Admin</span><b>@adminPercent%</b></div><div><i class="legend-violet"></i><span>Bệnh nhân</span><b>@patientPercent%</b></div></div></div>
+            <div class="progress-stack"><div class="progress-label"><span>Tài khoản bệnh nhân</span><b>@Model.PatientAccountCount / @Model.AccountCount</b></div><div class="progress-track"><span style="width:@patientPercent%"></span></div></div>
+            <div class="overview-facts"><div><span class="fact-icon fact-green">✓</span><span><b>@Model.VerifiedFacilityCount</b><small>Cơ sở đã xác minh</small></span></div><div><span class="fact-icon fact-orange">!</span><span><b>@Model.UnreadNotificationCount</b><small>Thông báo cần xem</small></span></div></div>
+        </aside>
+    </section>
+
+    <section class="dashboard-bottom-grid">
+        <article class="dashboard-card collection-card">
+            <div class="dashboard-card-heading"><div><span class="section-overline">NỘI DUNG ĐƯỢC QUẢN LÝ</span><h2>Cơ sở y tế mới cập nhật</h2></div><a asp-controller="CoSoYTe" asp-action="Index" class="card-link">Xem tất cả <span>→</span></a></div>
+            @if (Model.RecentFacilities.Count == 0)
+            {
+                <div class="dashboard-empty compact"><span class="empty-circle">+</span><strong>Chưa có cơ sở</strong><small>Thêm cơ sở đầu tiên để bắt đầu.</small></div>
+            }
+            else
+            {
+                <div class="collection-list">
+                    @foreach (var item in Model.RecentFacilities)
+                    {
+                        <div class="collection-item"><div class="collection-avatar facility-avatar">+</div><div class="collection-copy"><strong>@(item.TenCoSo ?? "Chưa đặt tên")</strong><small>@TypeName(item.LoaiCS) · @(item.DiaChi ?? "Chưa cập nhật địa chỉ")</small></div><span class="mini-status @(item.XacMinh == 1 ? "verified" : "draft")">@(item.XacMinh == 1 ? "Đã duyệt" : "Nháp")</span></div>
+                    }
+                </div>
+            }
+        </article>
+
+        <article class="dashboard-card collection-card">
+            <div class="dashboard-card-heading"><div><span class="section-overline">QUAN HỆ ĐỐI TÁC</span><h2>Đối tác mới</h2></div><a asp-controller="DoiTac" asp-action="Index" class="card-link">Xem tất cả <span>→</span></a></div>
+            @if (Model.RecentPartners.Count == 0)
+            {
+                <div class="dashboard-empty compact"><span class="empty-circle">◇</span><strong>Chưa có đối tác</strong><small>Danh sách đối tác sẽ xuất hiện tại đây.</small></div>
+            }
+            else
+            {
+                <div class="collection-list">
+                    @foreach (var item in Model.RecentPartners)
+                    {
+                        <div class="collection-item"><div class="collection-avatar partner-avatar">@Initial(item.TenDT)</div><div class="collection-copy"><strong>@item.TenDT</strong><small>@item.MaDT · @(item.Email ?? "Chưa có email")</small></div><span class="collection-arrow">→</span></div>
+                    }
+                </div>
+            }
+        </article>
+
+        <article class="dashboard-card accounts-card">
+            <div class="dashboard-card-heading"><div><span class="section-overline">TRUY CẬP GẦN ĐÂY</span><h2>Tài khoản mới tham gia</h2></div><a asp-controller="TaiKhoan" asp-action="Index" class="card-link">Xem tất cả <span>→</span></a></div>
+            @if (Model.RecentAccounts.Count == 0)
+            {
+                <div class="dashboard-empty compact"><span class="empty-circle">◎</span><strong>Chưa có tài khoản</strong><small>Danh sách tài khoản sẽ xuất hiện tại đây.</small></div>
+            }
+            else
+            {
+                <div class="accounts-list">
+                    @foreach (var account in Model.RecentAccounts)
+                    {
+                        <div class="account-row"><span class="collection-avatar account-avatar">@Initial(account.SDT)</span><div class="collection-copy"><strong>@account.SDT</strong><small>Mã tài khoản #@account.Id</small></div><span class="role-badge role-@account.Role.ToLowerInvariant()">@account.Role</span></div>
+                    }
+                </div>
+            }
+        </article>
+    </section>
+
+</div>

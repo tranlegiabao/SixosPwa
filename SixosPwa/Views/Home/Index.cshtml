@@ -639,9 +639,15 @@ else
                 <i class="fas fa-cog"></i> Cài đặt tài khoản
             </a>
             
-            @if (ViewData["UserRole"] as string == "Admin" || ViewData["UserRole"] as string == "DoiTac")
+            @if (ViewData["UserRole"] as string == "Admin")
             {
                 <div class="menu-section">QUẢN TRỊ</div>
+                @if (ViewData["UserRole"] as string == "Admin")
+                {
+                    <a href="/Admin" class="menu-item">
+                        Quan tri he thong
+                    </a>
+                }
                 <a href="/Home/GuiTinNhan" class="menu-item">
                     <i class="fas fa-paper-plane"></i> Gửi tin nhắn
                 </a>
