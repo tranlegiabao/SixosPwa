@@ -118,6 +118,32 @@ using (var scope = app.Services.CreateScope())
                 TenThietBi  NVARCHAR(255) NULL
             )
         ");
+
+        db.Database.ExecuteSqlRaw(@"
+            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='ND_CSKCB' AND xtype='U')
+            BEGIN
+                CREATE TABLE ND_CSKCB (
+                    ID          BIGINT IDENTITY(1,1) PRIMARY KEY,
+                    MaCoSo     NVARCHAR(10) NULL,
+                    TenCoSo    NVARCHAR(100) NULL,
+                    NoiDung    NVARCHAR(MAX) NULL,
+                    LoaiND     NVARCHAR(20) NULL
+                )
+            END
+            ELSE IF COL_LENGTH('ND_CSKCB', 'LoaiND') IS NOT NULL
+                AND (SELECT max_length FROM sys.columns WHERE object_id = OBJECT_ID('ND_CSKCB') AND name = 'LoaiND') < 40
+            BEGIN
+                ALTER TABLE ND_CSKCB ALTER COLUMN LoaiND NVARCHAR(20) NULL
+            END
+        ");
+
+        db.Database.ExecuteSqlRaw(@"
+            IF OBJECT_ID('DMCSKCB', 'U') IS NOT NULL
+                AND COL_LENGTH('DMCSKCB', 'Huyen') IS NULL
+            BEGIN
+                ALTER TABLE DMCSKCB ADD Huyen INT NULL
+            END
+        ");
         
         // Thêm dữ liệu mẫu phòng khám nếu chưa có
         db.Database.ExecuteSqlRaw(@"

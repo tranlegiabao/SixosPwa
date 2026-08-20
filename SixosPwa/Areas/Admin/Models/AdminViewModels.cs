@@ -78,6 +78,9 @@ public sealed class DoiTacEditViewModel
 
     [StringLength(100)]
     public string? BrandName { get; set; }
+
+    [StringLength(255, ErrorMessage = "Mật khẩu đối tác tối đa 255 ký tự.")]
+    public string? Password { get; set; }
 }
 
 public sealed class CoSoYTeListViewModel
@@ -105,6 +108,10 @@ public sealed class CoSoYTeEditViewModel
     [StringLength(255)]
     public string? DiaChi { get; set; }
 
+    public int? Tinh { get; set; }
+
+    public int? Huyen { get; set; }
+
     [StringLength(20)]
     public string? LoaiCS { get; set; }
 
@@ -118,8 +125,19 @@ public sealed class CoSoYTeEditViewModel
 
     public IFormFile? ImageFile { get; set; }
 
+    [StringLength(500)]
+    public string? Logo { get; set; }
+
+    public IFormFile? LogoFile { get; set; }
+
     [Range(0, 999999999999999, ErrorMessage = "Số tiền quảng cáo không hợp lệ.")]
     public decimal? QuangCao { get; set; }
+
+    public string? NoiDungGioiThieu { get; set; }
+    public string? NoiDungDichVu { get; set; }
+    public string? NoiDungDoiNgu { get; set; }
+    public string? NoiDungTrangThietBi { get; set; }
+    public string? NoiDungLienHe { get; set; }
 }
 
 public sealed class BenhNhanListViewModel

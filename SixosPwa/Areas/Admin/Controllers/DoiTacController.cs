@@ -47,6 +47,8 @@ public sealed class DoiTacController : AdminControllerBase
     public async Task<IActionResult> Create(DoiTacEditViewModel model)
     {
         Normalize(model);
+        if (string.IsNullOrWhiteSpace(model.Password))
+            ModelState.AddModelError(nameof(model.Password), "Vui lòng nhập mật khẩu đối tác.");
         if (ModelState.IsValid && await _db.DoiTacs.AnyAsync(x => x.MaDT == model.MaDT))
             ModelState.AddModelError(nameof(model.MaDT), "Mã đối tác đã tồn tại.");
 
@@ -85,7 +87,8 @@ public sealed class DoiTacController : AdminControllerBase
         entity.SDT = model.SDT;
         entity.Email = model.Email;
         entity.BrandName = model.BrandName;
-        // Password không được đọc hoặc ghi từ màn hình admin.
+        if (!string.IsNullOrWhiteSpace(model.Password))
+            entity.Password = model.Password;
         await _db.SaveChangesAsync();
         Success("Đã cập nhật thông tin đối tác.");
         return RedirectToAction(nameof(Index));
@@ -99,6 +102,7 @@ public sealed class DoiTacController : AdminControllerBase
         model.SDT = model.SDT?.Trim();
         model.Email = model.Email?.Trim();
         model.BrandName = model.BrandName?.Trim();
+        model.Password = model.Password?.Trim();
     }
 
     private static DoiTac ToEntity(DoiTacEditViewModel model) => new()
@@ -108,7 +112,8 @@ public sealed class DoiTacController : AdminControllerBase
         DiaChi = model.DiaChi,
         SDT = model.SDT,
         Email = model.Email,
-        BrandName = model.BrandName
+        BrandName = model.BrandName,
+        Password = model.Password
     };
 
     private static DoiTacEditViewModel ToViewModel(DoiTac entity) => new()
