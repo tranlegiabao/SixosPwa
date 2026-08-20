@@ -108,9 +108,14 @@ public sealed class CoSoYTeEditViewModel
     [StringLength(255)]
     public string? DiaChi { get; set; }
 
+    [StringLength(100)]
+    public string? SoToaNha { get; set; }
+
     public int? Tinh { get; set; }
 
     public int? Huyen { get; set; }
+
+    public int? PhuongXa { get; set; }
 
     [StringLength(20)]
     public string? LoaiCS { get; set; }

@@ -113,8 +113,10 @@ public sealed class CoSoYTeController : AdminControllerBase
         entity.MaCoSo = model.MaCoSo;
         entity.TenCoSo = model.TenCoSo;
         entity.DiaChi = model.DiaChi;
+        entity.SoToaNha = model.SoToaNha;
         entity.Tinh = model.Tinh;
         entity.Huyen = model.Huyen;
+        entity.PhuongXa = model.PhuongXa;
         entity.LoaiCS = model.LoaiCS;
         entity.TGLamViec = model.TGLamViec;
         entity.XacMinh = model.XacMinh ? 1 : 0;
@@ -188,6 +190,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         model.MaCoSo = model.MaCoSo?.Trim();
         model.TenCoSo = model.TenCoSo?.Trim();
         model.DiaChi = model.DiaChi?.Trim();
+        model.SoToaNha = model.SoToaNha?.Trim();
         model.LoaiCS = model.LoaiCS?.Trim().ToLowerInvariant();
         model.TGLamViec = model.TGLamViec?.Trim();
         model.Img = model.Img?.Trim();
@@ -199,8 +202,10 @@ public sealed class CoSoYTeController : AdminControllerBase
         MaCoSo = model.MaCoSo,
         TenCoSo = model.TenCoSo,
         DiaChi = model.DiaChi,
+        SoToaNha = model.SoToaNha,
         Tinh = model.Tinh,
         Huyen = model.Huyen,
+        PhuongXa = model.PhuongXa,
         LoaiCS = model.LoaiCS,
         TGLamViec = model.TGLamViec,
         XacMinh = model.XacMinh ? 1 : 0,
@@ -275,8 +280,10 @@ public sealed class CoSoYTeController : AdminControllerBase
         MaCoSo = entity.MaCoSo,
         TenCoSo = entity.TenCoSo,
         DiaChi = entity.DiaChi,
+        SoToaNha = entity.SoToaNha,
         Tinh = entity.Tinh,
         Huyen = entity.Huyen,
+        PhuongXa = entity.PhuongXa,
         LoaiCS = entity.LoaiCS,
         TGLamViec = entity.TGLamViec,
         XacMinh = entity.XacMinh == 1,

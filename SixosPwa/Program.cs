@@ -144,6 +144,16 @@ using (var scope = app.Services.CreateScope())
                 ALTER TABLE DMCSKCB ADD Huyen INT NULL
             END
         ");
+        db.Database.ExecuteSqlRaw(@"
+            IF OBJECT_ID('DMCSKCB', 'U') IS NOT NULL
+            BEGIN
+                IF COL_LENGTH('DMCSKCB', 'SoToaNha') IS NULL
+                    ALTER TABLE DMCSKCB ADD SoToaNha NVARCHAR(100) NULL
+
+                IF COL_LENGTH('DMCSKCB', 'PhuongXa') IS NULL
+                    ALTER TABLE DMCSKCB ADD PhuongXa INT NULL
+            END
+        ");
         
         // Thêm dữ liệu mẫu phòng khám nếu chưa có
         db.Database.ExecuteSqlRaw(@"
