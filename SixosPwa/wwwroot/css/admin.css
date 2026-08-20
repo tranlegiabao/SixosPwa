@@ -121,14 +121,6 @@
 }
 
 /* TomSelect cho tra cuu danh sach quan tri */
-.admin-search-control .ts-wrapper { flex: 1; min-width: 0; }
-.admin-search-control .ts-control { min-height: 30px; padding: 4px 0; border: 0; box-shadow: none; background: transparent; }
-.admin-search-control .ts-control > input { min-width: 0; }
-.admin-search-control .ts-dropdown { display: none !important; }
-.admin-search-control .ts-wrapper.single .ts-control { padding-right: 4px; }
-.admin-search-control .ts-control input { color: var(--admin-ink); font-size: 13px; }
-.admin-search-control .ts-control input::placeholder { color: #a1adbf; opacity: 1; }
-.admin-search-control.partner-filter { flex: 0 1 170px; min-width: 150px; }
 
 /* Readability pass: tăng cỡ chữ cho khu vực admin */
 .admin-body { font-size: 14px; }
@@ -166,9 +158,6 @@
 .admin-btn-primary, .admin-btn-secondary { font-size: 13px; }
 .page-heading { font-size: 32px; }
 
-@media (max-width: 575.98px) {
-    .admin-search-control.partner-filter { flex: 1; width: auto; min-width: 100%; }
-}
 .page-description { font-size: 14px; }
 .admin-footer-brand { font-size: 11px; }
 .admin-pagination { flex-wrap: nowrap; min-width: max-content; white-space: nowrap; }
