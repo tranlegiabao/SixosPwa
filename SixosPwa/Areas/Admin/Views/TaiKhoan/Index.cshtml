@@ -11,7 +11,7 @@
 <div class="admin-panel">
     <form method="get" class="filter-bar">
         <div class="search-control"><span>⌕</span><input type="search" name="q" value="@Model.Query" placeholder="Tìm theo số điện thoại..." aria-label="Tìm tài khoản" /></div>
-        <select name="role" class="form-select filter-select" aria-label="Lọc theo vai trò"><option value="">Tất cả vai trò</option><option value="Admin" selected="@(Model.Role == "Admin" ? "selected" : null)">Admin</option><option value="DoiTac" selected="@(Model.Role == "DoiTac" ? "selected" : null)">Đối tác</option><option value="User" selected="@(Model.Role == "User" ? "selected" : null)">Người dùng</option></select>
+        <select name="role" class="form-select filter-select" aria-label="Lọc theo vai trò"><option value="">Tất cả vai trò</option><option value="Admin" selected="@(Model.Role == "Admin" ? "selected" : null)">Admin</option><option value="BenhNhan" selected="@(Model.Role == "BenhNhan" ? "selected" : null)">Bệnh nhân</option></select>
         <button class="btn admin-btn-secondary" type="submit">Lọc</button>
         @if (!string.IsNullOrWhiteSpace(Model.Query) || !string.IsNullOrWhiteSpace(Model.Role)) { <a asp-action="Index" class="clear-filter">Xóa lọc</a> }
     </form>

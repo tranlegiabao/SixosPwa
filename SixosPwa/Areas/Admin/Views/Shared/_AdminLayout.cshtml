@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>@ViewData["Title"] - Quản trị HisSoft</title>
+    <title>@ViewData["Title"] - Quản trị Y TẾ VIỆT</title>
     <partial name="_PwaHead" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
@@ -12,9 +12,11 @@
     <div class="admin-app">
         <div class="offcanvas-lg offcanvas-start admin-sidebar" tabindex="-1" id="adminSidebar" aria-labelledby="adminSidebarTitle">
             <div class="admin-brand">
-                <div class="brand-mark">H</div>
+                <div class="brand-mark brand-mark-logo">
+                    <img src="~/static/logo-yte.png" asp-append-version="true" alt="Y TẾ VIỆT" />
+                </div>
                 <div>
-                    <div class="brand-name">HisSoft</div>
+                    <div class="brand-name">Y TẾ VIỆT</div>
                     <div class="brand-caption">Trung tâm quản trị</div>
                 </div>
                 <button type="button" class="btn-close d-lg-none ms-auto" data-bs-dismiss="offcanvas" data-bs-target="#adminSidebar" aria-label="Đóng menu"></button>
@@ -84,6 +86,10 @@
                 }
                 @RenderBody()
             </div>
+
+            <footer class="admin-footer">
+                <div class="admin-footer-brand"><strong>Y TẾ VIỆT</strong><span>· Trung tâm quản trị</span></div>
+            </footer>
         </main>
     </div>
 

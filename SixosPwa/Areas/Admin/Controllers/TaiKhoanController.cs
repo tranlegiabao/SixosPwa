@@ -23,8 +23,10 @@ public sealed class TaiKhoanController : AdminControllerBase
             query = query.Where(x => x.SDT.Contains(q));
         }
 
-        if (!string.IsNullOrWhiteSpace(role) && AllowedRoles.Contains(role))
-            query = query.Where(x => x.Role == role);
+        if (string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
+            query = query.Where(x => x.Role == "Admin");
+        else if (string.Equals(role, "BenhNhan", StringComparison.OrdinalIgnoreCase))
+            query = query.Where(x => x.Role != "Admin");
 
         var total = await query.CountAsync();
         var items = await query.OrderByDescending(x => x.Id)
@@ -34,7 +36,11 @@ public sealed class TaiKhoanController : AdminControllerBase
 
         return View(new TaiKhoanListViewModel
         {
-            Items = items,
+            Items = items.Select(x =>
+            {
+                x.Role = NormalizeRole(x.Role);
+                return x;
+            }).ToList(),
             Query = q,
             Role = role,
             Page = page,
@@ -51,7 +57,7 @@ public sealed class TaiKhoanController : AdminControllerBase
     public async Task<IActionResult> Create(TaiKhoanEditViewModel model)
     {
         model.SDT = model.SDT.Trim();
-        model.Role = model.Role.Trim();
+        model.Role = NormalizeRole(model.Role.Trim());
         ValidateRole(model.Role);
 
         if (ModelState.IsValid && await _db.TaiKhoans.AnyAsync(x => x.SDT == model.SDT))
@@ -78,7 +84,7 @@ public sealed class TaiKhoanController : AdminControllerBase
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(TaiKhoanEditViewModel model)
     {
-        model.Role = model.Role.Trim();
+        model.Role = NormalizeRole(model.Role.Trim());
         ValidateRole(model.Role);
 
         var entity = await _db.TaiKhoans.FirstOrDefaultAsync(x => x.Id == model.Id);
@@ -88,13 +94,13 @@ public sealed class TaiKhoanController : AdminControllerBase
         if (entity.SDT == currentPhone && model.Role != "Admin")
             ModelState.AddModelError(nameof(model.Role), "Không thể tự hạ quyền tài khoản Admin đang đăng nhập.");
 
-        if (entity.Role == "Admin" && model.Role != "Admin"
+        if (NormalizeRole(entity.Role) == "Admin" && model.Role != "Admin"
             && await _db.TaiKhoans.CountAsync(x => x.Role == "Admin") <= 1)
             ModelState.AddModelError(nameof(model.Role), "Không thể hạ quyền Admin cuối cùng của hệ thống.");
 
         if (!ModelState.IsValid) return View(model);
 
-        entity.Role = model.Role;
+        entity.Role = NormalizeRole(model.Role);
         await _db.SaveChangesAsync();
         Success("Đã cập nhật vai trò tài khoản.");
         return RedirectToAction(nameof(Index));

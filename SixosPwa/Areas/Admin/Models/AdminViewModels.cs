@@ -6,13 +6,19 @@ namespace SixosPwa.Areas.Admin.Models;
 public sealed class DashboardViewModel
 {
     public int AccountCount { get; init; }
+    public int AdminAccountCount { get; init; }
+    public int PatientAccountCount { get; init; }
     public int PartnerCount { get; init; }
     public int PatientCount { get; init; }
     public int FacilityCount { get; init; }
+    public int VerifiedFacilityCount { get; init; }
+    public int NotificationCount { get; init; }
     public int PushSubscriptionCount { get; init; }
     public int UnreadNotificationCount { get; init; }
     public IReadOnlyList<ThongBao> RecentNotifications { get; init; } = Array.Empty<ThongBao>();
     public IReadOnlyList<TaiKhoan> RecentAccounts { get; init; } = Array.Empty<TaiKhoan>();
+    public IReadOnlyList<DoiTac> RecentPartners { get; init; } = Array.Empty<DoiTac>();
+    public IReadOnlyList<DMCSKCB> RecentFacilities { get; init; } = Array.Empty<DMCSKCB>();
 }
 
 public sealed class TaiKhoanListViewModel
@@ -35,7 +41,7 @@ public sealed class TaiKhoanEditViewModel
     public string SDT { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Vui lòng chọn vai trò.")]
-    public string Role { get; set; } = "User";
+    public string Role { get; set; } = "BenhNhan";
 }
 
 public sealed class DoiTacListViewModel

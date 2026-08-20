@@ -1,7 +1,10 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using SixosPwa.Data;
+using SixosPwa.Security;
 using SixosPwa.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +30,14 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.Name = "SixosPwaAuthCookie";
         options.Cookie.HttpOnly = true;
         options.Cookie.IsEssential = true;
+    })
+    .AddCookie(AdminReauthentication.Scheme, options =>
+    {
+        options.Cookie.Name = AdminReauthentication.CookieName;
+        options.Cookie.HttpOnly = true;
+        options.Cookie.IsEssential = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.SlidingExpiration = false;
     });
 
 var app = builder.Build();
@@ -179,6 +190,35 @@ app.UseStaticFiles(new StaticFileOptions
 app.UseRouting();
 
 app.UseAuthentication();
+
+// Admin luôn yêu cầu một phiên xác thực riêng, không dùng lại phiên đăng nhập chung.
+app.Use(async (context, next) =>
+{
+    var isAdminArea = context.Request.Path.StartsWithSegments("/Admin", StringComparison.OrdinalIgnoreCase);
+    var isAccessDeniedPage = context.Request.Path.StartsWithSegments("/Admin/AccessDenied", StringComparison.OrdinalIgnoreCase);
+
+    if (isAdminArea && !isAccessDeniedPage)
+    {
+        var adminAuth = await context.AuthenticateAsync(AdminReauthentication.Scheme);
+        var currentAccount = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? context.User.Identity?.Name;
+        var adminAccount = adminAuth.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? adminAuth.Principal?.Identity?.Name;
+
+        if (context.User.Identity?.IsAuthenticated != true
+            || !adminAuth.Succeeded
+            || string.IsNullOrWhiteSpace(currentAccount)
+            || !string.Equals(currentAccount, adminAccount, StringComparison.OrdinalIgnoreCase))
+        {
+            var returnUrl = context.Request.PathBase + context.Request.Path + context.Request.QueryString;
+            context.Response.Redirect("/DangNhap/Login?returnUrl=" + Uri.EscapeDataString(returnUrl));
+            return;
+        }
+    }
+
+    await next();
+});
+
 app.UseAuthorization();
 
 // Vao thang la ra trang chu
