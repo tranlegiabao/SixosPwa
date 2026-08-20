@@ -220,35 +220,29 @@
         min-height: 340px;
         background-size: cover;
         background-position: center;
-        border-radius: 16px;
+        border-radius: 150px 0 150px 0;
         position: relative;
-        transform: skewX(-12deg);
         overflow: hidden;
         box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
-        border: 2px solid rgba(255, 255, 255, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.8);
         display: flex;
         align-items: center;
         justify-content: center;
+        transition: border-radius 0.3s ease;
     }
     .para-card::before {
         content: "";
         position: absolute;
         top: 0; left: 0; right: 0; bottom: 0;
-        background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.7));
+        background: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.7));
         z-index: 1;
     }
     .para-card-content {
-        transform: skewX(12deg); /* counter-skew to keep content upright */
         color: white;
         padding: 40px;
         text-align: center;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        width: 100%;
-        height: 100%;
         z-index: 2;
+        max-width: 600px;
     }
     .para-card-title {
         font-size: 26px;
@@ -435,10 +429,9 @@
         .para-card {
             width: 100%;
             min-height: 280px;
-            transform: skewX(-6deg); /* Less skew on mobile */
+            border-radius: 80px 0 80px 0;
         }
         .para-card-content {
-            transform: skewX(6deg);
             padding: 20px;
         }
         .para-card-title {
