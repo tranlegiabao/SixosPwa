@@ -10,7 +10,7 @@
     .app-nav { display: none !important; }
     .bottom-nav { display: none !important; }
     body { 
-        background: url('/static/bg-hospital.png') no-repeat center center fixed !important; 
+        background: linear-gradient(to right, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.85) 65%, rgba(15, 23, 42, 0) 100%), url('@img') no-repeat center center fixed !important; 
         background-size: cover !important;
         padding-top: 74px !important; 
         padding-bottom: 60px !important; 
@@ -58,8 +58,39 @@
     .ytv-sidebar {
         width: 250px; flex-shrink: 0; background: white;
         border-right: 1px solid #e2e8f0;
-        display: flex; flex-direction: column; padding: 20px 0;
+        display: flex; flex-direction: column; padding: 24px 0 16px 0;
         position: fixed; top: 74px; left: 0; height: calc(100vh - 164px); overflow-y: auto; z-index: 100;
+    }
+    .ytv-sidebar::-webkit-scrollbar {
+        width: 5px;
+    }
+    .ytv-sidebar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .ytv-sidebar::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+    }
+    .ytv-sidebar::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+    .sidebar-logo-container {
+        text-align: center;
+        margin-bottom: 24px;
+        padding: 0 16px;
+    }
+    .sidebar-logo {
+        width: 100px;
+        height: 100px;
+        object-fit: contain;
+        border-radius: 50%;
+        border: 3px solid #f1f5f9;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        background: white;
+        transition: transform 0.3s ease;
+    }
+    .sidebar-logo:hover {
+        transform: scale(1.05);
     }
     .ytv-sidebar-title {
         font-size: 11px; font-weight: 700; color: #94a3b8;
@@ -67,27 +98,31 @@
         padding: 0 20px 10px; border-bottom: 1px solid #f1f5f9; margin-bottom: 8px;
     }
     .ytv-menu-item {
-        display: flex; align-items: center; padding: 13px 20px; gap: 12px;
-        color: #475569; font-size: 15px; font-weight: 500; text-decoration: none;
-        transition: all 0.2s; border-left: 3px solid transparent; cursor: pointer;
+        display: flex; align-items: center; padding: 12px 16px; margin: 4px 16px; gap: 12px;
+        color: #475569; font-size: 14px; font-weight: 600; text-decoration: none;
+        transition: all 0.2s ease; border-radius: 12px; cursor: pointer;
     }
-    .ytv-menu-item i { font-size: 17px; width: 22px; text-align: center; color: #94a3b8; }
-    .ytv-menu-item:hover, .ytv-menu-item.active {
-        background: #eff6ff; border-left-color: var(--ytv-secondary); color: var(--ytv-primary);
+    .ytv-menu-item i { font-size: 16px; width: 20px; text-align: center; color: #64748b; transition: color 0.2s ease; }
+    .ytv-menu-item:hover {
+        background: #f1f5f9; color: #0f172a;
     }
-    .ytv-menu-item:hover i, .ytv-menu-item.active i { color: var(--ytv-secondary); }
+    .ytv-menu-item:hover i { color: #475569; }
+    .ytv-menu-item.active {
+        background: #eff6ff; color: #1d4ed8;
+    }
+    .ytv-menu-item.active i { color: #1d4ed8; }
 
     /* Content Area */
-    .ytv-content { flex: 1; background: transparent; padding: 30px; display: flex; flex-direction: column; gap: 20px; min-width: 0; max-width: 1050px; margin: 0 auto; }
+    .ytv-content { flex: 1; background: transparent; padding: 30px; display: flex; flex-direction: column; gap: 24px; min-width: 0; max-width: 1050px; margin: 0; }
 
     /* New Content Styles */
     .hospital-card {
-        background: white;
+        background: transparent;
         border-radius: 16px;
         display: flex;
         overflow: hidden;
-        border: 1px solid #f1f5f9;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     }
     .hospital-card-img {
         width: 300px;
@@ -102,8 +137,8 @@
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        background: #eff6ff;
-        color: #2563eb;
+        background: rgba(255, 255, 255, 0.15);
+        color: #60a5fa;
         font-size: 13px;
         font-weight: 600;
         padding: 6px 14px;
@@ -113,26 +148,26 @@
     .verified-badge i { color: #10b981; }
     
     .hospital-title {
-        font-size: 26px;
+        font-size: 32px;
         font-weight: 700;
-        color: #0f172a;
+        color: white;
         margin: 0 0 8px 0;
     }
     .hospital-rating {
         display: flex;
         align-items: center;
         gap: 8px;
-        font-size: 14px;
-        color: #64748b;
+        font-size: 16px;
+        color: rgba(255, 255, 255, 0.75);
         margin-bottom: 20px;
     }
     .hospital-rating .score {
-        color: #0f172a;
+        color: white;
         font-weight: 600;
-        font-size: 16px;
+        font-size: 18px;
     }
-    .hospital-rating .stars i { color: #f59e0b; font-size: 15px; }
-    .hospital-rating .count { color: #2563eb; }
+    .hospital-rating .stars i { color: #f59e0b; font-size: 17px; }
+    .hospital-rating .count { color: #38bdf8; }
 
     .hospital-info-grid {
         display: flex;
@@ -151,51 +186,151 @@
         display: flex;
         align-items: center;
         gap: 12px;
-        color: #475569;
-        font-size: 15px;
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 17px;
     }
-    .detail-item i { width: 18px; color: #64748b; text-align: center; }
-    .detail-item a { color: #2563eb; text-decoration: none; }
+    .detail-item i { width: 18px; color: rgba(255, 255, 255, 0.7); text-align: center; }
+    .detail-item a { color: #38bdf8; text-decoration: none; }
 
     .operating-hours-box {
         background: #f8fafc;
-        border-radius: 12px;
-        padding: 20px;
-        width: 220px;
-        flex-shrink: 0;
-        border: 1px solid #f1f5f9;
+        border-radius: 16px;
+        padding: 16px;
+        margin: 12px 16px;
+        border: 1px solid #e2e8f0;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
     }
-    .oh-header { display: flex; align-items: center; gap: 8px; color: #475569; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
-    .oh-days { font-size: 14px; color: #0f172a; font-weight: 600; }
-    .oh-time { font-size: 18px; color: #16a34a; font-weight: 700; margin-top: 4px; margin-bottom: 12px; }
-    .oh-status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #16a34a; font-weight: 600; }
-    .status-dot { width: 8px; height: 8px; background: #16a34a; border-radius: 50%; }
+    .oh-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+    .oh-header i {
+        font-size: 14px;
+        color: #94a3b8;
+    }
+    .oh-days {
+        font-size: 13px;
+        color: #334155;
+        font-weight: 600;
+    }
+    .oh-time {
+        font-size: 16px;
+        color: #0f172a;
+        font-weight: 700;
+        margin-top: 4px;
+        margin-bottom: 8px;
+    }
+    .oh-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: #16a34a;
+        font-weight: 700;
+        background: #f0fdf4;
+        padding: 4px 8px;
+        border-radius: 20px;
+        border: 1px solid #bbf7d0;
+    }
+    .status-dot {
+        width: 6px;
+        height: 6px;
+        background: #16a34a;
+        border-radius: 50%;
+        display: inline-block;
+        animation: status-pulse 2s infinite;
+    }
+    
+    @@keyframes status-pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.4);
+        }
+        70% {
+            box-shadow: 0 0 0 6px rgba(22, 163, 74, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(22, 163, 74, 0);
+        }
+    }
 
-    .hospital-actions { display: flex; gap: 16px; }
+    .hospital-actions { padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; }
     .btn-primary { background: #1d4ed8; color: white; padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; border: none; cursor: pointer; transition: background 0.2s; flex: 1; }
     .btn-primary:hover { background: #1e40af; color: white; }
-    .btn-outline { background: white; color: #1d4ed8; padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; border: 1px solid #93c5fd; cursor: pointer; transition: all 0.2s; flex: 1; }
-    .btn-outline:hover { background: #eff6ff; }
+    .btn-outline {
+        background: #ffffff;
+        color: #1d4ed8;
+        padding: 12px 16px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-decoration: none;
+        border: 1.5px solid #1d4ed8;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .btn-outline:hover {
+        background: #eff6ff;
+        border-color: #1e40af;
+        color: #1e40af;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(29, 78, 216, 0.08);
+    }
 
     /* Stats Grid */
     .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
-    .stat-card { background: white; border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 16px; border: 1px solid #f1f5f9; box-shadow: 0 4px 10px -5px rgba(0,0,0,0.05); }
+    .stat-card {
+        background: transparent;
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    }
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(255, 255, 255, 0.05);
+        background: rgba(255, 255, 255, 0.08);
+    }
     .stat-icon { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
-    .stat-icon.blue { background: #eff6ff; color: #3b82f6; }
-    .stat-icon.green { background: #f0fdf4; color: #22c55e; }
-    .stat-icon.purple { background: #faf5ff; color: #a855f7; }
-    .stat-icon.orange { background: #fff7ed; color: #f97316; }
+    .stat-icon.blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+    .stat-icon.green { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+    .stat-icon.purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+    .stat-icon.orange { background: rgba(249, 115, 22, 0.15); color: #ff9d5c; }
     .stat-info { display: flex; flex-direction: column; }
-    .stat-info .value { margin: 0; font-size: 20px; font-weight: 800; color: #1e40af; }
-    .stat-info .title { font-size: 14px; font-weight: 600; color: #334155; margin: 2px 0; }
-    .stat-info .desc { font-size: 12px; color: #64748b; margin: 0; }
+    .stat-info .value { margin: 0; font-size: 20px; font-weight: 800; color: white; }
+    .stat-info .title { font-size: 14px; font-weight: 600; color: rgba(255, 255, 255, 0.9); margin: 2px 0; }
+    .stat-info .desc { font-size: 12px; color: rgba(255, 255, 255, 0.6); margin: 0; }
 
     /* Intro Section */
-    .intro-section { background: white; border-radius: 16px; padding: 32px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #f1f5f9; box-shadow: 0 4px 10px -5px rgba(0,0,0,0.05); }
+    .intro-section {
+        background: transparent;
+        border-radius: 16px;
+        padding: 32px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
     .intro-content { flex: 1; max-width: 600px; }
-    .intro-title { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; color: #1d4ed8; margin-bottom: 20px; }
-    .intro-content p { color: #475569; line-height: 1.8; font-size: 15px; margin-bottom: 16px; }
-    .intro-image { width: 320px; height: auto; opacity: 0.9; mix-blend-mode: multiply; }
+    .intro-title { display: flex; align-items: center; gap: 10px; font-size: 24px; font-weight: 700; color: #38bdf8; margin-bottom: 20px; }
+    .intro-content p { color: rgba(255, 255, 255, 0.9); line-height: 1.8; font-size: 17px; margin-bottom: 16px; }
+    .intro-image { width: 320px; height: auto; opacity: 0.85; border-radius: 12px; }
 
 
 
@@ -256,20 +391,126 @@
 
     @@media (max-width: 992px) {
         .ytv-main { flex-direction: column; padding-left: 0; }
-        .ytv-sidebar { position: relative; top: 0; left: 0; height: auto; z-index: 1; width: 100%; flex-direction: row; overflow-x: auto; padding: 10px 0; border-right: none; border-bottom: 1px solid #e2e8f0; }
-        .ytv-menu-item { border-left: none; border-bottom: 3px solid transparent; white-space: nowrap; }
+        .ytv-sidebar { 
+            position: relative; top: 0; left: 0; height: auto; z-index: 1; width: 100%; 
+            flex-direction: row; overflow-x: auto; padding: 10px 16px; 
+            border-right: none; border-bottom: 1px solid #e2e8f0; 
+            align-items: center; gap: 12px;
+        }
+        .ytv-menu-item { 
+            margin: 0 !important; 
+            padding: 8px 16px !important;
+            border-radius: 8px !important;
+            white-space: nowrap; 
+        }
+        .sidebar-logo-container {
+            margin-bottom: 0 !important;
+            padding: 0 !important;
+            flex-shrink: 0 !important;
+        }
+        .sidebar-logo {
+            width: 50px !important;
+            height: 50px !important;
+            border-width: 1.5px !important;
+        }
         .hospital-card { flex-direction: column; }
         .hospital-card-img { width: 100%; height: 250px; }
         .stats-grid { grid-template-columns: repeat(2, 1fr); }
         .intro-section { flex-direction: column; text-align: left; }
         .intro-image { margin-top: 24px; width: 100%; max-width: 400px; }
         .hospital-title-row { flex-direction: column; gap: 16px; }
-        .operating-hours-box { width: 100%; }
-        .hospital-actions { flex-direction: column; }
-        .btn-primary, .btn-outline { max-width: 100%; }
+        .operating-hours-box { 
+            width: auto !important; 
+            margin: 0 !important; 
+            padding: 10px 16px !important; 
+            flex-shrink: 0 !important; 
+        }
+        .hospital-actions { 
+            padding: 0 !important; 
+            margin: 0 !important; 
+            flex-shrink: 0 !important; 
+        }
+        .btn-outline { 
+            padding: 8px 16px !important; 
+            border-radius: 8px !important; 
+            font-size: 13px !important; 
+            width: auto !important;
+        }
+        .oh-header { margin-bottom: 4px !important; }
+        .oh-time { font-size: 14px !important; margin-bottom: 4px !important; }
+        .oh-status { padding: 2px 6px !important; }
     }
     @@media (max-width: 576px) {
         .stats-grid { grid-template-columns: 1fr; }
+        .fab-btn {
+            width: 56px !important;
+            height: 130px !important;
+            right: 12px !important;
+            gap: 6px !important;
+            border-width: 2px !important;
+        }
+        .fab-btn i {
+            font-size: 20px !important;
+        }
+        .fab-text {
+            font-size: 11px !important;
+            line-height: 1.2 !important;
+        }
+    }
+
+    /* Floating Action Button (FAB) */
+    .fab-btn {
+        position: fixed;
+        top: 50%;
+        right: 24px;
+        transform: translateY(-50%);
+        z-index: 1005; /* Above the footer and header */
+        background: #ffffff;
+        color: #1d4ed8 !important;
+        border: 2.5px solid #1d4ed8;
+        width: 70px;
+        height: 160px;
+        border-radius: 40px; /* Vertical oval */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-decoration: none !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        transition: all 0.3s ease;
+        animation: fab-pulse 2s infinite;
+    }
+    .fab-btn i {
+        font-size: 24px;
+    }
+    .fab-text {
+        font-size: 13px;
+        font-weight: 800;
+        text-align: center;
+        line-height: 1.25;
+        letter-spacing: 0.5px;
+    }
+    .fab-btn:hover {
+        background: #1d4ed8;
+        color: white !important;
+        transform: translateY(-50%) scale(1.08);
+        box-shadow: 0 8px 25px rgba(29, 78, 216, 0.4);
+    }
+    .fab-btn:active {
+        transform: translateY(-50%) scale(1.02);
+    }
+
+    @@keyframes fab-pulse {
+        0% {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15), 0 0 0 0 rgba(29, 78, 216, 0.4);
+        }
+        70% {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15), 0 0 0 15px rgba(29, 78, 216, 0);
+        }
+        100% {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15), 0 0 0 0 rgba(29, 78, 216, 0);
+        }
     }
 </style>
 
@@ -296,10 +537,9 @@
 
 <div class="ytv-main">
     <div class="ytv-sidebar">
-        <div style="text-align: center; margin-bottom: 10px; padding: 0 20px;">
-            <img src="@logo" alt="Logo" style="width: 120px; height: 120px; object-fit: contain; border-radius: 50%; border: 2px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); background: white;" />
+        <div class="sidebar-logo-container">
+            <img src="@logo" alt="Logo" class="sidebar-logo" />
         </div>
-        <div class="ytv-sidebar-title">Danh mục</div>
         <a class="ytv-menu-item active" onclick="showTab('gioi-thieu', this)" href="#gioi-thieu">
             <i class="fas fa-info-circle"></i> Giới thiệu
         </a>
@@ -312,12 +552,28 @@
         <a class="ytv-menu-item" onclick="showTab('trang-thiet-bi', this)" href="#trang-thiet-bi">
             <i class="fas fa-tools"></i> Các trang thiết bị
         </a>
+        <a class="ytv-menu-item" onclick="showTab('cskh', this)" href="#cskh">
+            <i class="fas fa-headset"></i> Chăm sóc khách hàng
+        </a>
+        
+        <div class="hospital-actions">
+            <a href="javascript:void(0)" onclick="openLoginModal()" class="btn-outline">
+                <i class="fas fa-sign-in-alt"></i> Đăng nhập
+            </a>
+        </div>
+        <div class="operating-hours-box">
+            <div class="oh-header"><i class="far fa-clock"></i> Giờ hoạt động</div>
+            <div class="oh-days">Thứ 2 - Chủ nhật</div>
+            <div class="oh-time">07:00 - 17:00</div>
+            <div class="oh-status"><span class="status-dot"></span> Đang mở cửa</div>
+        </div>
     </div>
+    
 
     <div class="ytv-content">
         <!-- Main Hospital Card -->
         <div class="hospital-card">
-            <img src="@img" class="hospital-card-img" alt="@tenCoSo" />
+            <!--   <img src="@img" class="hospital-card-img" alt="@tenCoSo" /> -->
             <div class="hospital-card-content">
                 <div class="verified-badge">
                     <i class="fas fa-shield-check"></i> Đã xác minh
@@ -350,27 +606,23 @@
                             <a href="https://www.bvdhyd.vn" target="_blank">www.bvdhyd.vn</a>
                         </div>
                     </div>
-                    
-                    <div class="operating-hours-box">
-                        <div class="oh-header"><i class="far fa-clock"></i> Giờ hoạt động</div>
-                        <div class="oh-days">Thứ 2 - Chủ nhật</div>
-                        <div class="oh-time">07:00 - 17:00</div>
-                        <div class="oh-status"><span class="status-dot"></span> Đang mở cửa</div>
-                    </div>
-                </div>
-
-                <div class="hospital-actions">
-                    <a href="/DangNhap/Login" class="btn-primary">
-                        <i class="far fa-calendar-plus"></i> Đăng ký khám
-                    </a>
-                    <a href="javascript:void(0)" onclick="openLoginModal()" class="btn-outline">
-                        <i class="fas fa-sign-in-alt"></i> Đăng nhập
-                    </a>
                 </div>
             </div>
         </div>
 
-        <!-- Stats Grid -->
+        <!-- Intro Section -->
+        <div class="intro-section" id="gioi-thieu">
+            <div class="intro-content">
+                <div class="intro-title">
+                    <i class="fas fa-info-circle"></i> Giới thiệu
+                </div>
+                <p>@tenCoSo là một trong những cơ sở y tế uy tín hàng đầu tại khu vực. Được thành lập từ nhiều năm qua, chúng tôi luôn cam kết mang lại dịch vụ chăm sóc sức khỏe chất lượng cao nhất cho người dân.</p>
+                <p>Với đội ngũ bác sĩ chuyên khoa giỏi, trang thiết bị hiện đại và quy trình khám bệnh chuyên nghiệp, chúng tôi tự hào là địa chỉ tin cậy cho hàng triệu <strong>bệnh nhân</strong>.</p>
+            </div>
+            <!-- <img src="https://img.freepik.com/free-vector/hospital-building-concept-illustration_114360-8440.jpg?w=800" alt="Hospital Illustration" class="intro-image" /> -->
+        </div>
+
+        <!-- Stats Grid (Page Content Footer) -->
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-icon blue"><i class="fas fa-headset"></i></div>
@@ -404,18 +656,6 @@
                     <div class="desc">Đa dạng chuyên khoa</div>
                 </div>
             </div>
-        </div>
-
-        <!-- Intro Section -->
-        <div class="intro-section" id="gioi-thieu">
-            <div class="intro-content">
-                <div class="intro-title">
-                    <i class="fas fa-info-circle"></i> Giới thiệu
-                </div>
-                <p>@tenCoSo là một trong những cơ sở y tế uy tín hàng đầu tại khu vực. Được thành lập từ nhiều năm qua, chúng tôi luôn cam kết mang lại dịch vụ chăm sóc sức khỏe chất lượng cao nhất cho người dân.</p>
-                <p>Với đội ngũ bác sĩ chuyên khoa giỏi, trang thiết bị hiện đại và quy trình khám bệnh chuyên nghiệp, chúng tôi tự hào là địa chỉ tin cậy cho hàng triệu <strong>bệnh nhân</strong>.</p>
-            </div>
-            <img src="https://img.freepik.com/free-vector/hospital-building-concept-illustration_114360-8440.jpg?w=800" alt="Hospital Illustration" class="intro-image" />
         </div>
     </div>
 </div>
@@ -457,6 +697,12 @@
         </div>
     </div>
 </div>
+
+<!-- Floating Action Button (Đăng ký khám) -->
+<a href="/DangNhap/Login" class="fab-btn">
+    <i class="far fa-calendar-plus"></i>
+    <span class="fab-text">ĐĂNG<br>KÝ<br>KHÁM</span>
+</a>
 
 <div style="position: fixed; bottom: 0; left: 0; width: 100%; background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 12px 0; text-align: center; font-size: 14px; color: #475569; z-index: 1000; box-shadow: 0 -2px 10px rgba(0,0,0,0.05);">
     Đơn vị phối hợp thực hiện: <strong>Công Ty Phần mềm Vũ Phong - SixOSSoft.com</strong>
