@@ -13,7 +13,7 @@
         background: linear-gradient(to right, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.85) 65%, rgba(15, 23, 42, 0) 100%), url('@img') no-repeat center center fixed !important; 
         background-size: cover !important;
         padding-top: 74px !important; 
-        padding-bottom: 160px !important; 
+        padding-bottom: 130px !important; 
         margin: 0 !important; 
         font-family: 'Inter', system-ui, sans-serif; 
     }
@@ -52,14 +52,14 @@
     .ytv-dropdown a i { font-size: 20px; width: 26px; text-align: center; color: #3b82f6; }
 
     /* Layout */
-    .ytv-main { display: flex; width: 100%; min-height: calc(100vh - 214px); align-items: flex-start; padding-left: 250px; box-sizing: border-box; }
+    .ytv-main { display: flex; width: 100%; min-height: calc(100vh - 184px); align-items: flex-start; padding-left: 250px; box-sizing: border-box; }
 
     /* Sidebar */
     .ytv-sidebar {
         width: 250px; flex-shrink: 0; background: white;
         border-right: 1px solid #e2e8f0;
         display: flex; flex-direction: column; padding: 24px 0 16px 0;
-        position: fixed; top: 74px; left: 0; bottom: 140px; overflow-y: auto; z-index: 100;
+        position: fixed; top: 74px; left: 0; bottom: 110px; overflow-y: auto; z-index: 100;
     }
     .ytv-sidebar::-webkit-scrollbar {
         width: 5px;
@@ -617,35 +617,58 @@
         left: 0;
         width: 100%;
         z-index: 999;
-        padding: 12px 30px;
+        padding: 6px 30px; /* Minimized vertical padding */
         box-sizing: border-box;
-        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 -3px 10px rgba(0, 0, 0, 0.03);
     }
     .stats-footer-bar .stats-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        gap: 20px;
+        gap: 12px; /* Minimized gap */
         max-width: 1200px;
         margin: 0 auto;
     }
     .stats-footer-bar .stat-card {
         background: #f8fafc;
-        border-radius: 12px;
-        padding: 12px 20px;
+        border-radius: 10px;
+        padding: 6px 12px; /* Minimized padding inside cards */
         display: flex;
         align-items: center;
-        gap: 12px;
-        border: 1px solid #e2e8f0;
+        gap: 10px; /* Minimized gap between icon and text */
+        border: 1px solid #f1f5f9;
         box-shadow: none;
+    }
+    .stats-footer-bar .stat-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .stats-footer-bar .stat-info {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.1;
     }
     .stats-footer-bar .stat-info .value {
         color: #1d4ed8;
+        font-size: 15px;
+        font-weight: 700;
+        margin: 0;
     }
     .stats-footer-bar .stat-info .title {
         color: #334155;
+        font-size: 12px;
+        font-weight: 600;
+        margin: 2px 0 1px 0;
     }
     .stats-footer-bar .stat-info .desc {
         color: #64748b;
+        font-size: 10px;
+        margin: 0;
     }
     .stats-footer-bar .stat-icon.blue { background: #eff6ff; color: #3b82f6; }
     .stats-footer-bar .stat-icon.green { background: #f0fdf4; color: #22c55e; }
