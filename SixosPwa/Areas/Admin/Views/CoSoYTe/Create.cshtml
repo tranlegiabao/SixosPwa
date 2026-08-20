@@ -1,5 +1,41 @@
 @model CoSoYTeEditViewModel
 @{ ViewData["Title"] = "Thêm cơ sở y tế"; }
-<div class="page-header-row"><div><div class="page-kicker">CƠ SỞ Y TẾ</div><h1 class="page-heading">Thêm cơ sở</h1><p class="page-description">Tạo địa điểm mới để hiển thị trên ứng dụng.</p></div><a asp-action="Index" class="back-link">← Quay lại danh sách</a></div>
-<div class="admin-panel form-panel"><form asp-action="Create" method="post" enctype="multipart/form-data" class="admin-form"><div asp-validation-summary="ModelOnly" class="text-danger validation-summary"></div><div class="form-section-title">Thông tin hiển thị</div><div class="row g-3"><div class="col-md-4"><label asp-for="MaCoSo" class="form-label">Mã cơ sở</label><input asp-for="MaCoSo" class="form-control" autocomplete="off" /><span asp-validation-for="MaCoSo" class="text-danger field-error"></span></div><div class="col-md-8"><label asp-for="TenCoSo" class="form-label">Tên cơ sở <span>*</span></label><input asp-for="TenCoSo" class="form-control" /><span asp-validation-for="TenCoSo" class="text-danger field-error"></span></div><div class="col-md-4"><label asp-for="LoaiCS" class="form-label">Loại hình</label><select asp-for="LoaiCS" class="form-select"><option value="">Chưa phân loại</option><option value="benhvien">Bệnh viện</option><option value="pkdk">Phòng khám</option><option value="nhakhoa">Nha khoa</option><option value="phongmach">Phòng mạch</option><option value="nhathuoc">Nhà thuốc</option></select></div><div class="col-md-8"><label asp-for="TGLamViec" class="form-label">Giờ làm việc</label><input asp-for="TGLamViec" class="form-control" placeholder="Ví dụ: 07:00 - 17:00, Thứ 2 - Thứ 7" /></div><div class="col-12"><label asp-for="DiaChi" class="form-label">Địa chỉ</label><textarea asp-for="DiaChi" class="form-control" rows="2"></textarea></div><div class="col-12"><div class="media-ad-row"><div class="image-source-cell"><div class="image-source-control"><button type="button" class="image-source-toggle" id="moKhungAnh" aria-expanded="false" aria-label="Mở tùy chọn ảnh" title="Mở tùy chọn ảnh"><svg class="image-source-toggle-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="8.5" cy="9" r="1.5"></circle><path d="m4 17 5-5 3 3 2-2 6 6"></path></svg><span>Ảnh cơ sở</span></button><div class="image-source-panel d-none" id="khungNguonAnh"><div class="image-dropzone" id="vungThaAnh"><svg class="image-dropzone-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="8.5" cy="9" r="1.5"></circle><path d="m4 17 5-5 3 3 2-2 6 6"></path></svg><span>Kéo hình ảnh vào đây hoặc</span><label for="ImageFile" class="image-upload-link">tải tệp lên</label><input asp-for="ImageFile" class="image-file-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif" /></div><div class="image-url-divider"><span>HOẶC</span></div><div class="image-url-row"><input asp-for="Img" class="form-control" type="text" placeholder="Dán đường dẫn liên kết của hình ảnh" /><button type="button" class="image-url-button" id="timAnhTheoUrl">Tìm kiếm</button></div><span asp-validation-for="Img" class="text-danger field-error"></span><span asp-validation-for="ImageFile" class="text-danger field-error"></span><img id="anhXemTruoc" class="image-preview d-none" alt="Ảnh xem trước" /></div></div></div><div class="ad-amount-cell"><label asp-for="QuangCao" class="form-label">Số tiền đã trả cho quảng cáo (VNĐ)</label><div class="input-group"><input asp-for="QuangCao" class="form-control" type="number" min="0" step="1000" inputmode="numeric" placeholder="Nhập số tiền đã thanh toán" /><span class="input-group-text">VNĐ</span></div></div></div></div><div class="col-12"><div class="form-check form-switch"><input asp-for="XacMinh" class="form-check-input" /><label asp-for="XacMinh" class="form-check-label">Đã xác minh và cho phép hiển thị</label></div></div></div><div class="form-note"><span>i</span> Nhập số tiền đã thanh toán bằng VNĐ; số tiền cao hơn sẽ được ưu tiên hiển thị trước.</div><div class="form-actions"><a asp-action="Index" class="btn admin-btn-secondary">Hủy</a><button type="submit" class="btn admin-btn-primary">Lưu cơ sở</button></div></form></div>
+
+<div class="page-header-row">
+    <div><div class="page-kicker">CƠ SỞ Y TẾ</div><h1 class="page-heading">Thêm cơ sở</h1><p class="page-description">Tạo địa điểm mới để hiển thị trên ứng dụng.</p></div>
+    <a asp-action="Index" class="back-link">← Quay lại danh sách</a>
+</div>
+
+<div class="admin-panel form-panel">
+    <form asp-action="Create" method="post" enctype="multipart/form-data" class="admin-form">
+        <div asp-validation-summary="ModelOnly" class="text-danger validation-summary"></div>
+
+        <div class="form-section-title">Thông tin cơ sở</div>
+        <div class="row g-3">
+            <div class="col-md-4"><label asp-for="MaCoSo" class="form-label">Mã cơ sở</label><input asp-for="MaCoSo" class="form-control" autocomplete="off" /><span asp-validation-for="MaCoSo" class="text-danger field-error"></span></div>
+            <div class="col-md-8"><label asp-for="TenCoSo" class="form-label">Tên cơ sở <span>*</span></label><input asp-for="TenCoSo" class="form-control" /><span asp-validation-for="TenCoSo" class="text-danger field-error"></span></div>
+            <div class="col-md-4"><label asp-for="LoaiCS" class="form-label">Loại hình</label><select asp-for="LoaiCS" class="form-select"><option value="">Chưa phân loại</option><option value="benhvien">Bệnh viện</option><option value="pkdk">Phòng khám</option><option value="nhakhoa">Nha khoa</option><option value="phongmach">Phòng mạch</option><option value="nhathuoc">Nhà thuốc</option></select></div>
+            <div class="col-md-8"><label asp-for="TGLamViec" class="form-label">Giờ làm việc</label><input asp-for="TGLamViec" class="form-control" placeholder="Ví dụ: 07:00 - 17:00, Thứ 2 - Thứ 7" /></div>
+            @await Html.PartialAsync("_CoSoYTeAddressFields", Model)
+        </div>
+
+        <div class="form-section-title">Hình ảnh hiển thị</div>
+        <div class="row g-3">
+            <div class="col-lg-6"><label class="form-label">Ảnh cơ sở</label>@await Html.PartialAsync("_CoSoYTeImageSourceField", Model)</div>
+            <div class="col-lg-6"><label class="form-label">Logo cơ sở</label>@await Html.PartialAsync("_CoSoYTeLogoSourceField", Model)</div>
+        </div>
+
+        <div class="form-section-title">Quảng cáo và hiển thị</div>
+        <div class="row g-3">
+            <div class="col-md-6"><label asp-for="QuangCao" class="form-label">Số tiền đã trả cho quảng cáo (VNĐ)</label><div class="input-group"><input asp-for="QuangCao" class="form-control" type="number" min="0" step="1000" inputmode="numeric" placeholder="Nhập số tiền đã thanh toán" /><span class="input-group-text">VNĐ</span></div><span asp-validation-for="QuangCao" class="text-danger field-error"></span></div>
+            <div class="col-md-6 d-flex align-items-end"><div class="form-check form-switch"><input asp-for="XacMinh" class="form-check-input" /><label asp-for="XacMinh" class="form-check-label">Đã xác minh và cho phép hiển thị</label></div></div>
+        </div>
+        <div class="form-note"><span>i</span> Số tiền quảng cáo cao hơn sẽ được ưu tiên hiển thị trước.</div>
+
+        @await Html.PartialAsync("_NoiDungCskcbFields", Model)
+
+        <div class="form-actions"><a asp-action="Index" class="btn admin-btn-secondary">Hủy</a><button type="submit" class="btn admin-btn-primary">Lưu cơ sở</button></div>
+    </form>
+</div>
+
 @section Scripts { <script src="~/js/admin-co-so-y-te.js" asp-append-version="true"></script><partial name="_ValidationScriptsPartial" /> }

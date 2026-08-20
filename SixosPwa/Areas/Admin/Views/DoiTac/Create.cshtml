@@ -1,5 +1,35 @@
 @model DoiTacEditViewModel
 @{ ViewData["Title"] = "Thêm đối tác"; }
-<div class="page-header-row"><div><div class="page-kicker">ĐỐI TÁC</div><h1 class="page-heading">Thêm đối tác</h1><p class="page-description">Tạo hồ sơ đơn vị mới cho hệ thống.</p></div><a asp-action="Index" class="back-link">← Quay lại danh sách</a></div>
-<div class="admin-panel form-panel"><form asp-action="Create" method="post" class="admin-form"><div asp-validation-summary="ModelOnly" class="text-danger validation-summary"></div><div class="form-section-title">Thông tin cơ bản</div><div class="row g-3"><div class="col-md-4"><label asp-for="MaDT" class="form-label">Mã đối tác <span>*</span></label><input asp-for="MaDT" class="form-control" autocomplete="off" /><span asp-validation-for="MaDT" class="text-danger field-error"></span></div><div class="col-md-8"><label asp-for="TenDT" class="form-label">Tên đối tác <span>*</span></label><input asp-for="TenDT" class="form-control" /><span asp-validation-for="TenDT" class="text-danger field-error"></span></div><div class="col-12"><label asp-for="BrandName" class="form-label">Tên thương hiệu</label><input asp-for="BrandName" class="form-control" placeholder="Tên hiển thị trên ứng dụng (nếu có)" /></div><div class="col-12"><label asp-for="DiaChi" class="form-label">Địa chỉ</label><textarea asp-for="DiaChi" class="form-control" rows="2"></textarea></div><div class="col-md-6"><label asp-for="SDT" class="form-label">Số điện thoại</label><input asp-for="SDT" class="form-control" inputmode="tel" /></div><div class="col-md-6"><label asp-for="Email" class="form-label">Email</label><input asp-for="Email" class="form-control" type="email" /><span asp-validation-for="Email" class="text-danger field-error"></span></div></div><div class="form-note"><span>i</span> Mật khẩu đối tác không được hiển thị hoặc chỉnh sửa tại màn hình này.</div><div class="form-actions"><a asp-action="Index" class="btn admin-btn-secondary">Hủy</a><button type="submit" class="btn admin-btn-primary">Lưu đối tác</button></div></form></div>
+
+<div class="page-header-row">
+    <div><div class="page-kicker">ĐỐI TÁC</div><h1 class="page-heading">Thêm đối tác</h1><p class="page-description">Tạo hồ sơ đơn vị mới cho hệ thống.</p></div>
+    <a asp-action="Index" class="back-link">← Quay lại danh sách</a>
+</div>
+
+<div class="admin-panel form-panel">
+    <form asp-action="Create" method="post" class="admin-form">
+        <div asp-validation-summary="ModelOnly" class="text-danger validation-summary"></div>
+
+        <div class="form-section-title">Thông tin đối tác</div>
+        <div class="row g-3">
+            <div class="col-md-4"><label asp-for="MaDT" class="form-label">Mã đối tác <span>*</span></label><input asp-for="MaDT" class="form-control" autocomplete="off" /><span asp-validation-for="MaDT" class="text-danger field-error"></span></div>
+            <div class="col-md-8"><label asp-for="TenDT" class="form-label">Tên đối tác <span>*</span></label><input asp-for="TenDT" class="form-control" /><span asp-validation-for="TenDT" class="text-danger field-error"></span></div>
+            <div class="col-12"><label asp-for="BrandName" class="form-label">Tên thương hiệu</label><input asp-for="BrandName" class="form-control" placeholder="Tên hiển thị trên ứng dụng (nếu có)" /></div>
+        </div>
+
+        <div class="form-section-title">Thông tin xác thực API</div>
+        <div class="row g-3">@await Html.PartialAsync("_DoiTacPasswordField", Model)</div>
+        <div class="form-note"><span>i</span> Nhập mật khẩu dùng để xác thực khi gọi API đối tác.</div>
+
+        <div class="form-section-title">Thông tin liên hệ</div>
+        <div class="row g-3">
+            <div class="col-12"><label asp-for="DiaChi" class="form-label">Địa chỉ</label><textarea asp-for="DiaChi" class="form-control" rows="2"></textarea></div>
+            <div class="col-md-6"><label asp-for="SDT" class="form-label">Số điện thoại</label><input asp-for="SDT" class="form-control" inputmode="tel" /></div>
+            <div class="col-md-6"><label asp-for="Email" class="form-label">Email</label><input asp-for="Email" class="form-control" type="email" /><span asp-validation-for="Email" class="text-danger field-error"></span></div>
+        </div>
+
+        <div class="form-actions"><a asp-action="Index" class="btn admin-btn-secondary">Hủy</a><button type="submit" class="btn admin-btn-primary">Lưu đối tác</button></div>
+    </form>
+</div>
+
 @section Scripts { <partial name="_ValidationScriptsPartial" /> }

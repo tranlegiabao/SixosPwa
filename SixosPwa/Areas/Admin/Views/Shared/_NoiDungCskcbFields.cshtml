@@ -1,0 +1,28 @@
+@model CoSoYTeEditViewModel
+
+<div class="col-12">
+    <div class="form-section-title">Nội dung quảng cáo</div>
+    <p class="form-description">Nhập nội dung hiển thị tương ứng với từng mục trên trang giới thiệu cơ sở.</p>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label asp-for="NoiDungGioiThieu" class="form-label">Giới thiệu</label>
+            <textarea asp-for="NoiDungGioiThieu" class="form-control" rows="5"></textarea>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="NoiDungDichVu" class="form-label">Dịch vụ</label>
+            <textarea asp-for="NoiDungDichVu" class="form-control" rows="5"></textarea>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="NoiDungDoiNgu" class="form-label">Đội ngũ</label>
+            <textarea asp-for="NoiDungDoiNgu" class="form-control" rows="5"></textarea>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="NoiDungTrangThietBi" class="form-label">Trang thiết bị</label>
+            <textarea asp-for="NoiDungTrangThietBi" class="form-control" rows="5"></textarea>
+        </div>
+        <div class="col-12">
+            <label asp-for="NoiDungLienHe" class="form-label">Liên hệ</label>
+            <textarea asp-for="NoiDungLienHe" class="form-control" rows="4"></textarea>
+        </div>
+    </div>
+</div>

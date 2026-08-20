@@ -109,6 +109,7 @@ public class HomeController : Controller
                 ViewData["Type"] = matchedCS.LoaiCS ?? "benhvien";
                 ViewData["Img"] = matchedCS.Img ?? "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80";
                 ViewData["Logo"] = matchedCS.logo ?? logo ?? "https://tse1.mm.bing.net/th/id/OIP.JgUNpJPll-8BkzE3XN6LggHaHa?r=0&pid=Api&P=0&h=180";
+                ViewData["NoiDungCskcb"] = await LoadNoiDungAsync(matchedCS);
                 return View();
             }
         }
@@ -119,6 +120,28 @@ public class HomeController : Controller
         ViewData["Img"] = img ?? "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80";
         ViewData["Logo"] = logo ?? "https://tse1.mm.bing.net/th/id/OIP.JgUNpJPll-8BkzE3XN6LggHaHa?r=0&pid=Api&P=0&h=180";
         return View();
+    }
+
+    private async Task<IReadOnlyDictionary<string, string>> LoadNoiDungAsync(DMCSKCB coSo)
+    {
+        IQueryable<NDCSKCB> query = _db.NDCSKCBs.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(coSo.MaCoSo))
+        {
+            query = query.Where(x => x.MaCoSo == coSo.MaCoSo);
+        }
+        else
+        {
+            query = query.Where(x => (x.MaCoSo == null || x.MaCoSo == "") && x.TenCoSo == coSo.TenCoSo);
+        }
+
+        var items = await query
+            .Where(x => NDCSKCB.AllowedLoaiND.Contains(x.LoaiND!))
+            .OrderBy(x => x.Id)
+            .ToListAsync();
+
+        return items
+            .GroupBy(x => x.LoaiND!, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(x => x.Key, x => x.First().NoiDung ?? "", StringComparer.OrdinalIgnoreCase);
     }
 
     private static string RemoveAccentsAndSpaces(string text)

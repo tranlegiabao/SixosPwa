@@ -4,6 +4,13 @@
     var type = ViewData["Type"]?.ToString() ?? "benhvien";
     var img = Uri.UnescapeDataString(ViewData["Img"]?.ToString() ?? "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80");
     var logo = Uri.UnescapeDataString(ViewData["Logo"]?.ToString() ?? "https://tse1.mm.bing.net/th/id/OIP.JgUNpJPll-8BkzE3XN6LggHaHa?r=0&pid=Api&P=0&h=180");
+    var noiDungCskcb = ViewData["NoiDungCskcb"] as IReadOnlyDictionary<string, string>
+        ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    var noiDungGioiThieu = noiDungCskcb.GetValueOrDefault(NDCSKCB.GioiThieu);
+    var noiDungDichVu = noiDungCskcb.GetValueOrDefault(NDCSKCB.DichVu);
+    var noiDungDoiNgu = noiDungCskcb.GetValueOrDefault(NDCSKCB.DoiNgu);
+    var noiDungTrangThietBi = noiDungCskcb.GetValueOrDefault(NDCSKCB.TrangThietBi);
+    var noiDungLienHe = noiDungCskcb.GetValueOrDefault(NDCSKCB.LienHe);
 }
 
 <style>
@@ -13,7 +20,7 @@
         background: linear-gradient(to right, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.85) 65%, rgba(15, 23, 42, 0) 100%), url('@img') no-repeat center center fixed !important; 
         background-size: cover !important;
         padding-top: 74px !important; 
-        padding-bottom: 20px !important; 
+        padding-bottom: 130px !important; 
         margin: 0 !important; 
         font-family: 'Inter', system-ui, sans-serif; 
     }
@@ -52,14 +59,14 @@
     .ytv-dropdown a i { font-size: 20px; width: 26px; text-align: center; color: #3b82f6; }
 
     /* Layout */
-    .ytv-main { display: flex; width: 100%; min-height: calc(100vh - 164px); align-items: flex-start; padding-left: 250px; box-sizing: border-box; }
+    .ytv-main { display: flex; width: 100%; min-height: calc(100vh - 184px); align-items: flex-start; padding-left: 250px; box-sizing: border-box; }
 
     /* Sidebar */
     .ytv-sidebar {
         width: 250px; flex-shrink: 0; background: white;
         border-right: 1px solid #e2e8f0;
         display: flex; flex-direction: column; padding: 24px 0 16px 0;
-        position: fixed; top: 74px; left: 0; height: 100%; overflow-y: auto; z-index: 100;
+        position: fixed; top: 74px; left: 0; bottom: 110px; overflow-y: auto; z-index: 100;
     }
     .ytv-sidebar::-webkit-scrollbar {
         width: 5px;
@@ -75,7 +82,7 @@
         background: #94a3b8;
     }
     .sidebar-logo-container {
-        text-align: center;
+        text-align: left;
         margin-bottom: 24px;
         padding: 0 16px;
     }
@@ -316,20 +323,23 @@
     .stat-info .title { font-size: 14px; font-weight: 600; color: rgba(255, 255, 255, 0.9); margin: 2px 0; }
     .stat-info .desc { font-size: 12px; color: rgba(255, 255, 255, 0.6); margin: 0; }
 
-    /* Intro Section */
     .intro-section {
         background: transparent;
         border-radius: 16px;
         padding: 32px;
-        display: flex;
+        display: none;
         justify-content: space-between;
         align-items: center;
         border: 1px solid rgba(255, 255, 255, 0.2);
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     }
+    .intro-section.active-tab {
+        display: flex !important;
+    }
     .intro-content { flex: 1; max-width: 600px; }
     .intro-title { display: flex; align-items: center; gap: 10px; font-size: 24px; font-weight: 700; color: #38bdf8; margin-bottom: 20px; }
     .intro-content p { color: rgba(255, 255, 255, 0.9); line-height: 1.8; font-size: 17px; margin-bottom: 16px; }
+    .intro-content .nd-cskcb-text { color: rgba(255, 255, 255, 0.9); line-height: 1.8; font-size: 17px; white-space: pre-line; }
     .intro-image { width: 320px; height: auto; opacity: 0.85; border-radius: 12px; }
 
 
@@ -439,6 +449,40 @@
         .oh-header { margin-bottom: 4px !important; }
         .oh-time { font-size: 14px !important; margin-bottom: 4px !important; }
         .oh-status { padding: 2px 6px !important; }
+
+        /* Stats Footer Responsive */
+        .stats-footer-bar {
+            position: relative !important;
+            bottom: auto !important;
+            left: auto !important;
+            width: 100% !important;
+            padding: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            border-top: none !important;
+            z-index: 1 !important;
+        }
+        .stats-footer-bar .stats-grid {
+            max-width: 100% !important;
+        }
+        .stats-footer-bar .stat-card {
+            background: transparent !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            padding: 20px !important;
+        }
+        .stats-footer-bar .stat-info .value {
+            color: white !important;
+        }
+        .stats-footer-bar .stat-info .title {
+            color: rgba(255, 255, 255, 0.9) !important;
+        }
+        .stats-footer-bar .stat-info .desc {
+            color: rgba(255, 255, 255, 0.6) !important;
+        }
+        .stats-footer-bar .stat-icon.blue { background: rgba(59, 130, 246, 0.15) !important; color: #60a5fa !important; }
+        .stats-footer-bar .stat-icon.green { background: rgba(34, 197, 94, 0.15) !important; color: #4ade80 !important; }
+        .stats-footer-bar .stat-icon.purple { background: rgba(168, 85, 247, 0.15) !important; color: #c084fc !important; }
+        .stats-footer-bar .stat-icon.orange { background: rgba(249, 115, 22, 0.15) !important; color: #ff9d5c !important; }
     }
     @@media (max-width: 576px) {
         .stats-grid { grid-template-columns: 1fr; }
@@ -512,11 +556,137 @@
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15), 0 0 0 0 rgba(29, 78, 216, 0);
         }
     }
+
+    /* FOOTER */
+    .ytv-footer {
+        background: #e0f2fe; /* xanh nhạt */
+        color: #334155;
+        padding: 12px 30px;
+        display: flex;
+        flex-direction: column;
+        border-top: 4px solid var(--ytv-primary);
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
+    }
+    .ytv-footer-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+    .ytv-support-col {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .ytv-support-phones {
+        font-size: 16px;
+        font-weight: 500;
+    }
+    .ytv-support-contacts {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    .ytv-support-contacts div {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .ytv-support-contacts div i {
+        color: var(--ytv-primary);
+    }
+    .ytv-email-link {
+        color: var(--ytv-primary);
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .ytv-email-link:hover {
+        text-decoration: underline;
+    }
+    .ytv-support-phones span {
+        color: var(--ytv-primary);
+        font-weight: 700;
+        font-size: 18px;
+    }
+
+    /* Stats Footer (Second Footer) */
+    .stats-footer-bar {
+        background: #ffffff;
+        border-top: 1.5px solid #e2e8f0;
+        position: fixed;
+        bottom: 50px; /* Right above the contact footer */
+        left: 0;
+        width: 100%;
+        z-index: 999;
+        padding: 6px 30px; /* Minimized vertical padding */
+        box-sizing: border-box;
+        box-shadow: 0 -3px 10px rgba(0, 0, 0, 0.03);
+    }
+    .stats-footer-bar .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px; /* Minimized gap */
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    .stats-footer-bar .stat-card {
+        background: #f8fafc;
+        border-radius: 10px;
+        padding: 6px 12px; /* Minimized padding inside cards */
+        display: flex;
+        align-items: center;
+        gap: 10px; /* Minimized gap between icon and text */
+        border: 1px solid #f1f5f9;
+        box-shadow: none;
+    }
+    .stats-footer-bar .stat-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .stats-footer-bar .stat-info {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.1;
+    }
+    .stats-footer-bar .stat-info .value {
+        color: #1d4ed8;
+        font-size: 15px;
+        font-weight: 700;
+        margin: 0;
+    }
+    .stats-footer-bar .stat-info .title {
+        color: #334155;
+        font-size: 12px;
+        font-weight: 600;
+        margin: 2px 0 1px 0;
+    }
+    .stats-footer-bar .stat-info .desc {
+        color: #64748b;
+        font-size: 10px;
+        margin: 0;
+    }
+    .stats-footer-bar .stat-icon.blue { background: #eff6ff; color: #3b82f6; }
+    .stats-footer-bar .stat-icon.green { background: #f0fdf4; color: #22c55e; }
+    .stats-footer-bar .stat-icon.purple { background: #faf5ff; color: #a855f7; }
+    .stats-footer-bar .stat-icon.orange { background: #fff7ed; color: #f97316; }
 </style>
 
 <div class="ytv-header">
     <a href="/Home/ThongTinBenhNhan" class="ytv-logo-area">
-        <img src="/static/logo-yte.png" alt="Logo" style="height: 50px; width: 50px; object-fit: cover; background: white; border-radius: 50%; padding: 0;" />
+        <img src="/static/icon-512.png" alt="Logo" style="height: 50px; width: 50px; object-fit: cover; background: white; border-radius: 50%; padding: 0;" />
         <div class="ytv-logo-text">Y TẾ<br>VIỆT</div>
     </a>
     <div class="ytv-header-title">
@@ -547,16 +717,19 @@
             <i class="fas fa-stethoscope"></i> Dịch vụ
         </a>
         <a class="ytv-menu-item" onclick="showTab('doi-ngu', this)" href="#doi-ngu">
-            <i class="fas fa-user-md"></i> Đội ngũ bác sĩ
+            <i class="fas fa-user-md"></i> Đội ngũ y bác sĩ
         </a>
         <a class="ytv-menu-item" onclick="showTab('trang-thiet-bi', this)" href="#trang-thiet-bi">
             <i class="fas fa-tools"></i> Các trang thiết bị
         </a>
-        <a class="ytv-menu-item" onclick="showTab('cskh', this)" href="#cskh">
-            <i class="fas fa-headset"></i> Chăm sóc khách hàng
+        <a class="ytv-menu-item" onclick="showTab('lien-he', this)" href="#lien-he">
+            <i class="fas fa-headset"></i> Liên hệ
         </a>
         
         <div class="hospital-actions">
+            <a href="/DangNhap/Login" class="btn-outline" style="background-color: #1d4ed8; color:aliceblue">
+                <i class="fas fa-sign-in-alt" style="color: aliceblue"></i> Đăng ký khám
+            </a>
             <a href="javascript:void(0)" onclick="openLoginModal()" class="btn-outline">
                 <i class="fas fa-sign-in-alt"></i> Đăng nhập
             </a>
@@ -610,53 +783,94 @@
             </div>
         </div>
 
-        <!-- Intro Section -->
-        <div class="intro-section" id="gioi-thieu">
+        <!-- Intro Sections (Tabs) -->
+        <div class="intro-section active-tab" id="gioi-thieu">
             <div class="intro-content">
                 <div class="intro-title">
                     <i class="fas fa-info-circle"></i> Giới thiệu
                 </div>
-                <p>@tenCoSo là một trong những cơ sở y tế uy tín hàng đầu tại khu vực. Được thành lập từ nhiều năm qua, chúng tôi luôn cam kết mang lại dịch vụ chăm sóc sức khỏe chất lượng cao nhất cho người dân.</p>
-                <p>Với đội ngũ bác sĩ chuyên khoa giỏi, trang thiết bị hiện đại và quy trình khám bệnh chuyên nghiệp, chúng tôi tự hào là địa chỉ tin cậy cho hàng triệu <strong>bệnh nhân</strong>.</p>
+                @if (string.IsNullOrWhiteSpace(noiDungGioiThieu))
+                {
+                    <p>@tenCoSo là một trong những cơ sở y tế uy tín hàng đầu tại khu vực. Được thành lập từ nhiều năm qua, chúng tôi luôn cam kết mang lại dịch vụ chăm sóc sức khỏe chất lượng cao nhất cho người dân.</p>
+                    <p>Với đội ngũ bác sĩ chuyên khoa giỏi, trang thiết bị hiện đại và quy trình khám bệnh chuyên nghiệp, chúng tôi tự hào là địa chỉ tin cậy cho hàng triệu <strong>bệnh nhân</strong>.</p>
+                }
+                else
+                {
+                    <div class="nd-cskcb-text">@noiDungGioiThieu</div>
+                }
             </div>
             <!-- <img src="https://img.freepik.com/free-vector/hospital-building-concept-illustration_114360-8440.jpg?w=800" alt="Hospital Illustration" class="intro-image" /> -->
         </div>
 
-        <!-- Stats Grid (Page Content Footer) -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon blue"><i class="fas fa-headset"></i></div>
-                <div class="stat-info">
-                    <div class="value">24/7</div>
-                    <div class="title">Hỗ trợ</div>
-                    <div class="desc">Luôn sẵn sàng</div>
+        <div class="intro-section" id="dich-vu">
+            <div class="intro-content">
+                <div class="intro-title">
+                    <i class="fas fa-stethoscope"></i> Dịch vụ khám chữa bệnh
                 </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon green"><i class="far fa-star"></i></div>
-                <div class="stat-info">
-                    <div class="value">4.8/5</div>
-                    <div class="title">Đánh giá</div>
-                    <div class="desc">Từ 1.248 khách hàng</div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon purple"><i class="fas fa-user-friends"></i></div>
-                <div class="stat-info">
-                    <div class="value">50+</div>
-                    <div class="title">Bác sĩ</div>
-                    <div class="desc">Giàu kinh nghiệm</div>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon orange"><i class="fas fa-briefcase-medical"></i></div>
-                <div class="stat-info">
-                    <div class="value">20+</div>
-                    <div class="title">Dịch vụ</div>
-                    <div class="desc">Đa dạng chuyên khoa</div>
-                </div>
+                @if (string.IsNullOrWhiteSpace(noiDungDichVu))
+                {
+                    <p>@tenCoSo cung cấp đa dạng các gói dịch vụ khám sức khỏe toàn diện và điều trị chuyên sâu. Chúng tôi tiếp nhận khám bảo hiểm y tế và khám dịch vụ theo yêu cầu với quy trình nhanh gọn, tối ưu thời gian chờ đợi.</p>
+                    <p>Các chuyên khoa mũi nhọn bao gồm: Nội tổng quát, Ngoại sản, Nhi khoa, Tai Mũi Họng, Răng Hàm Mặt và hỗ trợ tầm soát ung thư sớm bằng công nghệ tiên tiến nhất.</p>
+                }
+                else
+                {
+                    <div class="nd-cskcb-text">@noiDungDichVu</div>
+                }
             </div>
         </div>
+
+        <div class="intro-section" id="doi-ngu">
+            <div class="intro-content">
+                <div class="intro-title">
+                    <i class="fas fa-user-md"></i> Đội ngũ bác sĩ chuyên khoa
+                </div>
+                @if (string.IsNullOrWhiteSpace(noiDungDoiNgu))
+                {
+                    <p>Chúng tôi tự hào quy tụ đội ngũ phó giáo sư, tiến sĩ, thạc sĩ và bác sĩ chuyên khoa cấp I, cấp II giàu kinh nghiệm tại Việt Nam. Các bác sĩ tại @tenCoSo luôn tận tâm, chu đáo, không ngừng nâng cao tay nghề chuyên môn.</p>
+                    <p>Nhiều chuyên gia y tế tại đây đã có thời gian tu nghiệp và giảng dạy tại các bệnh viện lớn trong và ngoài nước, cam kết đưa ra chẩn đoán chính xác và phác đồ điều trị tối ưu.</p>
+                }
+                else
+                {
+                    <div class="nd-cskcb-text">@noiDungDoiNgu</div>
+                }
+            </div>
+        </div>
+
+        <div class="intro-section" id="trang-thiet-bi">
+            <div class="intro-content">
+                <div class="intro-title">
+                    <i class="fas fa-tools"></i> Trang thiết bị hiện đại
+                </div>
+                @if (string.IsNullOrWhiteSpace(noiDungTrangThietBi))
+                {
+                    <p>Để phục vụ công tác chẩn đoán hình ảnh và xét nghiệm chuẩn xác, @tenCoSo liên tục đầu tư hệ thống máy móc nhập khẩu đồng bộ từ các tập đoàn y tế hàng đầu thế giới (GE, Siemens, Philips).</p>
+                    <p>Hệ thống bao gồm máy chụp MRI công nghệ cao, máy cắt lớp vi tính CT đa dãy, hệ thống nội soi tiêu hóa không đau NBI, máy siêu âm màu 4D thế hệ mới và phòng xét nghiệm tự động đạt chuẩn quốc tế.</p>
+                }
+                else
+                {
+                    <div class="nd-cskcb-text">@noiDungTrangThietBi</div>
+                }
+            </div>
+        </div>
+
+        <div class="intro-section" id="lien-he">
+            <div class="intro-content">
+                <div class="intro-title">
+                    <i class="fas fa-headset"></i> Chăm sóc & Hỗ trợ khách hàng
+                </div>
+                @if (string.IsNullOrWhiteSpace(noiDungLienHe))
+                {
+                    <p>Tại @tenCoSo, sự hài lòng và trải nghiệm thoải mái của bệnh nhân là ưu tiên số một. Bộ phận chăm sóc khách hàng luôn sẵn sàng tiếp đón, hướng dẫn thủ tục hành chính, giải đáp thắc mắc và hỗ trợ đặt lịch hẹn trực tuyến.</p>
+                    <p>Chúng tôi cung cấp đường dây nóng hỗ trợ khẩn cấp 24/7, dịch vụ tư vấn y tế từ xa, chăm sóc sau điều trị và tiếp thu ý kiến phản hồi để không ngừng cải thiện chất lượng dịch vụ phục vụ nhân dân.</p>
+                }
+                else
+                {
+                    <div class="nd-cskcb-text">@noiDungLienHe</div>
+                }
+            </div>
+        </div>
+
+
     </div>
 </div>
 
@@ -894,17 +1108,73 @@
     </div>
 </div>
 
-<!-- Floating Action Button (Đăng ký khám) -->
+<div class="stats-footer-bar">
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon blue"><i class="fas fa-headset"></i></div>
+            <div class="stat-info">
+                <div class="value">24/7</div>
+                <div class="title">Hỗ trợ</div>
+                <div class="desc">Luôn sẵn sàng</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon green"><i class="far fa-star"></i></div>
+            <div class="stat-info">
+                <div class="value">4.8/5</div>
+                <div class="title">Đánh giá</div>
+                <div class="desc">Từ 1.248 khách hàng</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon purple"><i class="fas fa-user-friends"></i></div>
+            <div class="stat-info">
+                <div class="value">50+</div>
+                <div class="title">Bác sĩ</div>
+                <div class="desc">Giàu kinh nghiệm</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon orange"><i class="fas fa-briefcase-medical"></i></div>
+            <div class="stat-info">
+                <div class="value">20+</div>
+                <div class="title">Dịch vụ</div>
+                <div class="desc">Đa dạng chuyên khoa</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="ytv-footer">
+    <div class="ytv-footer-top">
+        <div class="ytv-support-col" style="width: 100%;">
+            <div class="ytv-support-phones ytv-support-contacts">
+                <div><i class="fas fa-headset me-2"></i> <span>0901 87 88 96</span> - <span>0364 956 007</span></div>
+                <div><i class="fas fa-envelope me-2"></i> <a href="mailto:Sixossoft@gmail.com" class="ytv-email-link">sixossoft@gmail.com</a></div>
+                <div><i class="fas fa-globe me-2"></i> <a href="https://sixossoft.com" target="_blank" rel="noopener noreferrer" class="ytv-email-link">sixossoft.com</a></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Action Button (Đăng ký khám) 
 <a href="/DangNhap/Login" class="fab-btn">
     <i class="far fa-calendar-plus"></i>
     <span class="fab-text">ĐĂNG<br>KÝ<br>KHÁM</span>
-</a>
+</a> -->
 
 <script>
     function showTab(tabId, el) {
-        // Here we just handle active state in sidebar, actual scrolling is handled by href="#"
+        // Handle active state in sidebar
         document.querySelectorAll('.ytv-menu-item').forEach(m => m.classList.remove('active'));
         el.classList.add('active');
+
+        // Handle active content tab
+        document.querySelectorAll('.intro-section').forEach(sec => sec.classList.remove('active-tab'));
+        var targetSec = document.getElementById(tabId);
+        if (targetSec) {
+            targetSec.classList.add('active-tab');
+        }
     }
 
     function toggleMenu() {
