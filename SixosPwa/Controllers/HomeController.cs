@@ -92,7 +92,7 @@ public class HomeController : Controller
 
     [HttpGet("/Home/DangKyOnline/{ten?}")]
     [AllowAnonymous]
-    public async Task<IActionResult> ChiTietCoSo(string? ten, string? diaChi, string? type, string? img)
+    public async Task<IActionResult> ChiTietCoSo(string? ten, string? diaChi, string? type, string? img, string? logo)
     {
         if (!string.IsNullOrEmpty(ten))
         {
@@ -108,6 +108,7 @@ public class HomeController : Controller
                 ViewData["DiaChi"] = matchedCS.DiaChi ?? "Đang cập nhật";
                 ViewData["Type"] = matchedCS.LoaiCS ?? "benhvien";
                 ViewData["Img"] = matchedCS.Img ?? "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80";
+                ViewData["Logo"] = matchedCS.logo ?? logo ?? "https://tse1.mm.bing.net/th/id/OIP.JgUNpJPll-8BkzE3XN6LggHaHa?r=0&pid=Api&P=0&h=180";
                 return View();
             }
         }
@@ -116,6 +117,7 @@ public class HomeController : Controller
         ViewData["DiaChi"] = diaChi ?? "Đang cập nhật";
         ViewData["Type"] = type ?? "benhvien";
         ViewData["Img"] = img ?? "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80";
+        ViewData["Logo"] = logo ?? "https://tse1.mm.bing.net/th/id/OIP.JgUNpJPll-8BkzE3XN6LggHaHa?r=0&pid=Api&P=0&h=180";
         return View();
     }
 
