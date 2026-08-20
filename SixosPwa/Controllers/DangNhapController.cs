@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
@@ -29,7 +29,7 @@ public class DangNhapController : Controller
         // Neu da dang nhap truoc do (Cookie truong ton hop le)
         if (User.Identity?.IsAuthenticated == true)
         {
-            // Admin và Đối tác vào trang Index như cũ, bệnh nhân giờ cũng vào Index (Dashboard mới)
+            // Admin vÃ  Äá»‘i tÃ¡c vÃ o trang Index nhÆ° cÅ©, bá»‡nh nhÃ¢n giá» cÅ©ng vÃ o Index (Dashboard má»›i)
             return RedirectToAction("Index", "Home");
         }
 
@@ -41,7 +41,7 @@ public class DangNhapController : Controller
     {
         if (string.IsNullOrWhiteSpace(model.SoDienThoai) || model.SoDienThoai.Trim().Length < 9)
         {
-            return Json(new { success = false, message = "Số điện thoại không hợp lệ!" });
+            return Json(new { success = false, message = "Sá»‘ Ä‘iá»‡n thoáº¡i khÃ´ng há»£p lá»‡!" });
         }
 
         var sdt = model.SoDienThoai.Trim();
@@ -53,7 +53,7 @@ public class DangNhapController : Controller
 
         return Json(new { 
             success = true, 
-            message = $"Mã OTP đã gửi thành công tới số {sdt}!",
+            message = $"MÃ£ OTP Ä‘Ã£ gá»­i thÃ nh cÃ´ng tá»›i sá»‘ {sdt}!",
             otpDemo = otpCode
         });
     }
@@ -63,7 +63,7 @@ public class DangNhapController : Controller
     {
         if (string.IsNullOrWhiteSpace(model.SoDienThoai) || string.IsNullOrWhiteSpace(model.Otp))
         {
-            return Json(new { success = false, message = "Vui lòng nhập đầy đủ số điện thoại và mã OTP!" });
+            return Json(new { success = false, message = "Vui lÃ²ng nháº­p Ä‘áº§y Ä‘á»§ sá»‘ Ä‘iá»‡n thoáº¡i vÃ  mÃ£ OTP!" });
         }
 
         var sdt = model.SoDienThoai.Trim();
@@ -74,7 +74,7 @@ public class DangNhapController : Controller
         // Chap nhan neu dung ma trong cache hoac dung ma mac dinh "123456" hoac "1234" cho tien test
         if (otpInput == "123456" || otpInput == "1234" || (cachedOtp != null && cachedOtp == otpInput))
         {
-            // Tìm tài khoản từ database theo SĐT
+            // TÃ¬m tÃ i khoáº£n tá»« database theo SÄT
             var taiKhoan = await _taiKhoanService.DangNhapAsync(sdt, "");
             
             string role = "User";
@@ -107,16 +107,16 @@ public class DangNhapController : Controller
 
             _cache.Remove($"OTP_{sdt}");
 
-            // Lưu thông tin thiết bị đăng nhập vào database
+            // LÆ°u thÃ´ng tin thiáº¿t bá»‹ Ä‘Äƒng nháº­p vÃ o database
             await LuuThietBiDangNhapAsync(sdt, model.DeviceId, model.DeviceName);
 
-            // Tất cả user đều vào Dashboard mới ở Index
+            // Táº¥t cáº£ user Ä‘á»u vÃ o Dashboard má»›i á»Ÿ Index
             var redirectUrl = Url.Action("Index", "Home");
 
             return Json(new { success = true, redirectUrl });
         }
 
-        return Json(new { success = false, message = "Mã OTP không chính xác hoặc đã hết hạn!" });
+        return Json(new { success = false, message = "MÃ£ OTP khÃ´ng chÃ­nh xÃ¡c hoáº·c Ä‘Ã£ háº¿t háº¡n!" });
     }
 
     [HttpPost]
@@ -124,7 +124,7 @@ public class DangNhapController : Controller
     {
         if (string.IsNullOrWhiteSpace(model.SoDienThoai))
         {
-            return Json(new { success = false, message = "Số điện thoại không hợp lệ!" });
+            return Json(new { success = false, message = "Sá»‘ Ä‘iá»‡n thoáº¡i khÃ´ng há»£p lá»‡!" });
         }
 
         var sdt = model.SoDienThoai.Trim();
@@ -150,7 +150,7 @@ public class DangNhapController : Controller
             new ClaimsPrincipal(claimsIdentity),
             authProperties);
 
-        // Lưu thông tin thiết bị đăng nhập vào database
+        // LÆ°u thÃ´ng tin thiáº¿t bá»‹ Ä‘Äƒng nháº­p vÃ o database
         await LuuThietBiDangNhapAsync(sdt, model.DeviceId, model.DeviceName);
 
         return Json(new { success = true, redirectUrl = Url.Action("Index", "Home") });
@@ -189,7 +189,7 @@ public class DangNhapController : Controller
         }
         catch (Exception)
         {
-            // Bỏ qua lỗi để không làm gián đoạn đăng nhập của người dùng
+            // Bá» qua lá»—i Ä‘á»ƒ khÃ´ng lÃ m giÃ¡n Ä‘oáº¡n Ä‘Äƒng nháº­p cá»§a ngÆ°á»i dÃ¹ng
         }
     }
 
@@ -197,9 +197,17 @@ public class DangNhapController : Controller
     [HttpPost]
     public async Task<IActionResult> DangXuat()
     {
+        var role = User.FindFirst(ClaimTypes.Role)?.Value ?? "User";
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        
+        if (role == "User")
+        {
+            return RedirectToAction("ChiTietCoSo", "Home", new { ten = "Bá»‡nh Viá»‡n ÄHYD" });
+        }
+        
         return RedirectToAction(nameof(Login));
     }
+
 }
 
 public class GuiOtpRequest
@@ -216,4 +224,5 @@ public class XacNhanOtpRequest
     public string? DeviceId { get; set; }
     public string? DeviceName { get; set; }
 }
+
 

@@ -363,6 +363,36 @@
             document.querySelector('.step-1').style.display = 'block';
             document.getElementById('soDienThoai').focus();
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputSdt = document.getElementById('soDienThoai');
+            const inputOtp = document.getElementById('maOtp');
+
+            if (inputSdt) {
+                inputSdt.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        guiOtp();
+                    }
+                });
+            }
+
+            if (inputOtp) {
+                inputOtp.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        xacNhanOtp();
+                    }
+                });
+
+                inputOtp.addEventListener('input', function(e) {
+                    // Tự động xác nhận nếu đã nhập đủ 6 số
+                    if (this.value.length === 6) {
+                        xacNhanOtp();
+                    }
+                });
+            }
+        });
     </script>
 </body>
 </html>
