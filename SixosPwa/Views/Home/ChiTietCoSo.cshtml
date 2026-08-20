@@ -3,6 +3,7 @@
     var diaChi = Uri.UnescapeDataString(ViewData["DiaChi"]?.ToString() ?? "215 Hồng Bàng, Phường Chợ Lớn");
     var type = ViewData["Type"]?.ToString() ?? "benhvien";
     var img = Uri.UnescapeDataString(ViewData["Img"]?.ToString() ?? "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80");
+    var logo = Uri.UnescapeDataString(ViewData["Logo"]?.ToString() ?? "https://tse1.mm.bing.net/th/id/OIP.JgUNpJPll-8BkzE3XN6LggHaHa?r=0&pid=Api&P=0&h=180");
 }
 
 <style>
@@ -12,7 +13,7 @@
         background: url('/static/bg-hospital.png') no-repeat center center fixed !important; 
         background-size: cover !important;
         padding-top: 74px !important; 
-        padding-bottom: 120px !important; 
+        padding-bottom: 60px !important; 
         margin: 0 !important; 
         font-family: 'Inter', system-ui, sans-serif; 
     }
@@ -196,23 +197,7 @@
     .intro-content p { color: #475569; line-height: 1.8; font-size: 15px; margin-bottom: 16px; }
     .intro-image { width: 320px; height: auto; opacity: 0.9; mix-blend-mode: multiply; }
 
-    /* Footer */
-    .ytv-footer {
-        background: #e0f2fe; 
-        color: #334155;
-        padding: 15px 40px;
-        display: flex;
-        flex-direction: column;
-        border-top: 1px solid #bae6fd;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        z-index: 1000;
-        box-sizing: border-box;
-    }
-    .ytv-footer-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-    .ytv-footer-bottom { text-align: center; font-size: 13px; color: #64748b; border-top: 1px solid #bae6fd; padding-top: 10px; margin-top: 5px; }
+
 
     /* Login Modal Styles */
     .ytv-modal-overlay {
@@ -295,7 +280,7 @@
     </a>
     <div class="ytv-header-title">
         <h1>@tenCoSo</h1>
-        <p>Thông tin chi tiết cơ sở y tế</p>
+        <p>Hotline: 19008198</p>
     </div>
     <div class="ytv-header-menu" id="menuBtn" onclick="toggleMenu()">
         <i class="fas fa-bars"></i>
@@ -311,6 +296,9 @@
 
 <div class="ytv-main">
     <div class="ytv-sidebar">
+        <div style="text-align: center; margin-bottom: 10px; padding: 0 20px;">
+            <img src="@logo" alt="Logo" style="width: 120px; height: 120px; object-fit: contain; border-radius: 50%; border: 2px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); background: white;" />
+        </div>
         <div class="ytv-sidebar-title">Danh mục</div>
         <a class="ytv-menu-item active" onclick="showTab('gioi-thieu', this)" href="#gioi-thieu">
             <i class="fas fa-info-circle"></i> Giới thiệu
@@ -470,15 +458,8 @@
     </div>
 </div>
 
-<div class="ytv-footer">
-    <div class="ytv-footer-top">
-        <div style="font-size:15px;font-weight:600;color:#1e293b;display:flex;align-items:center;gap:8px;">
-            <i class="fas fa-headset" style="color:#64748b;"></i> Hỗ trợ: <span style="color:#3b82f6;">19008198</span>
-        </div>
-    </div>
-    @* <div class="ytv-footer-bottom">
-        Đơn vị phối hợp thực hiện: <strong>Công Ty Phần mềm Vũ Phong - SixOSSoft.com</strong>
-    </div> *@
+<div style="position: fixed; bottom: 0; left: 0; width: 100%; background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 12px 0; text-align: center; font-size: 14px; color: #475569; z-index: 1000; box-shadow: 0 -2px 10px rgba(0,0,0,0.05);">
+    Đơn vị phối hợp thực hiện: <strong>Công Ty Phần mềm Vũ Phong - SixOSSoft.com</strong>
 </div>
 
 <script>
