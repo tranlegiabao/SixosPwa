@@ -453,7 +453,6 @@
         .ytv-grid { grid-template-columns: repeat(2, 1fr); }
         .ytv-footer-top { flex-direction: column; gap: 20px; align-items: center; text-align: center; }
         .ytv-policies-col { justify-content: center; }
-    }
     @@media (max-width: 576px) {
         .ytv-grid { grid-template-columns: 1fr; }
         .ytv-sidebar { padding: 10px; }
@@ -506,7 +505,7 @@
                 </div>
             </div>
             <ul class="ytv-district-list" id="districtList">
-                <li class="active" data-code="">Tất cả quận huyện <i class="fas fa-check"></i></li>
+                <li class="active" data-code="">Tất cả phường/xã <i class="fas fa-check"></i></li>
             </ul>
         </div>
     </div>
@@ -544,14 +543,13 @@
             <a href="#" onclick="showPolicy('baohanh')">Chính sách bảo hành</a>
         </div>
     </div>
-    @* <div class="ytv-footer-bottom">
-        Đơn vị phối hợp thực hiện: <strong>Công Ty Phần mềm Vũ Phong - SixOSSoft.com</strong>
-    </div> *@
 </div>
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         let provinceData = [];
+        let currentWards = [];
+        let wardFetchId = 0;
         const provinceSelect = document.getElementById("provinceSelect");
         const districtList = document.getElementById("districtList");
         const clinicGrid = document.getElementById("clinicGrid");
@@ -574,6 +572,7 @@
             address: c.DiaChi || c.diaChi || "Đang cập nhật",
             img: c.Img || c.img || images[i % images.length],
             tinh: c.Tinh !== undefined ? c.Tinh : c.tinh,
+            phuongXa: c.PhuongXa !== undefined ? c.PhuongXa : c.phuongXa,
             quangCao: c.QuangCao !== undefined ? c.QuangCao : (c.quangCao || 0)
         }));
 
@@ -584,19 +583,22 @@
         function applyFilter() {
             const selectedProvinceCode = provinceSelect.value;
             const activeLi = districtList.querySelector("li.active");
-            let selectedDistrictName = "";
+            let selectedWardName = "";
+            let selectedWardCode = "";
             
             if (activeLi) {
-                selectedDistrictName = activeLi.textContent.replace("Tất cả quận huyện", "").replace(/✔|check/g, "").trim();
+                selectedWardCode = activeLi.dataset.code || "";
+                selectedWardName = activeLi.textContent.replace("Tất cả phường/xã", "").replace("Tất cả quận huyện", "").replace(/✔|check/g, "").trim();
             }
-            if (selectedDistrictName.includes("Tất cả quận huyện") || (activeLi && activeLi.dataset.code === "")) {
-                selectedDistrictName = "";
+            if (!selectedWardCode || selectedWardName.includes("Tất cả")) {
+                selectedWardName = "";
+                selectedWardCode = "";
             }
             const keyword = searchInput.value.toLowerCase().trim();
 
             let filtered = clinics;
 
-            const isSearching = selectedProvinceCode || selectedDistrictName || keyword;
+            const isSearching = selectedProvinceCode || selectedWardCode || keyword;
 
             if (!isSearching) {
                 // Nếu không tìm kiếm, ẩn các cơ sở có quảng cáo = 0
@@ -608,12 +610,13 @@
                 filtered = filtered.filter(c => c.tinh == selectedProvinceCode);
             }
 
-            // 2. Lọc theo quận huyện (kiểm tra địa chỉ chứa tên quận huyện)
-            if (selectedDistrictName) {
-                const normalizedDistrict = removeAccents(selectedDistrictName.toLowerCase());
+            // 2. Lọc theo phường xã
+            if (selectedWardCode) {
+                const normalizedWard = removeAccents(selectedWardName.toLowerCase());
                 filtered = filtered.filter(c => {
+                    if (c.phuongXa && String(c.phuongXa) === String(selectedWardCode)) return true;
                     const normalizedAddress = removeAccents(c.address.toLowerCase());
-                    return normalizedAddress.includes(normalizedDistrict);
+                    return normalizedAddress.includes(normalizedWard);
                 });
             }
 
@@ -657,6 +660,7 @@
 
         // Loại bỏ dấu tiếng Việt để tìm kiếm không dấu
         function removeAccents(str) {
+            if (!str) return "";
             return str.normalize("NFD")
                       .replace(/[\u0300-\u036f]/g, "")
                       .replace(/đ/g, "d")
@@ -685,18 +689,40 @@
                 "ct": "can tho",
                 "bd": "binh duong",
                 "dna": "dong nai",
+                "dnai": "dong nai",
                 "la": "long an",
                 "tg": "tien giang",
                 "vt": "vung tau",
                 "brvt": "vung tau",
                 "nt": "nha trang",
                 "qn": "quang ninh",
+                "qng": "quang ngai",
                 "qb": "quang binh",
                 "qt": "quang tri",
-                "tth": "thua thien hue",
+                "qtri": "quang tri",
+                "th": "thanh hoa",
+                "na": "nghe an",
+                "ht": "ha tinh",
+                "hue": "hue",
+                "tth": "hue",
                 "gl": "gia lai",
                 "dl": "dak lak",
-                "ld": "lam dong"
+                "ld": "lam dong",
+                "tn": "tay ninh",
+                "dt": "dong thap",
+                "vl": "vinh long",
+                "ag": "an giang",
+                "cm": "ca mau",
+                "cb": "cao bang",
+                "db": "dien bien",
+                "lc": "lai chau",
+                "sl": "son la",
+                "ls": "lang son",
+                "bn": "bac ninh",
+                "pt": "phu tho",
+                "hy": "hung yen",
+                "nb": "ninh binh",
+                "kh": "khanh hoa"
             };
             
             if (abbrevMap[normalizedKw] && normalizedName.includes(abbrevMap[normalizedKw])) {
@@ -753,44 +779,87 @@
             renderCustomProvinceOptions(filtered);
         });
 
-        // Lấy danh sách 63 tỉnh thành
-        fetch("https://provinces.open-api.vn/api/?depth=2")
+        // Lấy danh sách tỉnh thành từ API v2
+        fetch("https://provinces.open-api.vn/api/v2/p/")
             .then(res => res.json())
             .then(data => {
-                provinceData = data;
-                data.forEach(p => {
+                provinceData = Array.isArray(data) ? data : [];
+                provinceData.forEach(p => {
                     const opt = document.createElement("option");
                     opt.value = p.code;
                     opt.textContent = p.name;
                     provinceSelect.appendChild(opt);
                 });
-                renderCustomProvinceOptions(data);
+                renderCustomProvinceOptions(provinceData);
             })
-            .catch(err => console.error("Lỗi lấy dữ liệu tỉnh thành: ", err));
+            .catch(err => console.error("Lỗi lấy dữ liệu tỉnh thành v2: ", err));
 
         // Sự kiện thay đổi tỉnh thành
-        provinceSelect.addEventListener("change", function () {
+        provinceSelect.addEventListener("change", async function () {
             const selectedCode = this.value;
             if (!selectedCode) {
-                districtList.innerHTML = `<li class="active" data-code="">Tất cả quận huyện <i class="fas fa-check text-primary"></i></li>`;
+                districtList.innerHTML = `<li class="active" data-code="">Tất cả phường/xã <i class="fas fa-check text-primary"></i></li>`;
+                currentWards = [];
                 applyFilter();
                 return;
             }
-            const selectedProvince = provinceData.find(p => p.code == selectedCode);
-            renderDistricts(selectedProvince);
+
+            const currentId = ++wardFetchId;
+            districtList.innerHTML = `<li class="active" data-code="">Tất cả phường/xã <i class="fas fa-check text-primary"></i></li><li style="color:#94a3b8; padding:8px 12px;">Đang tải phường/xã...</li>`;
             applyFilter();
+
+            try {
+                const res = await fetch(`https://provinces.open-api.vn/api/v2/p/${encodeURIComponent(selectedCode)}?depth=2`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                if (currentId !== wardFetchId) return;
+
+                currentWards = Array.isArray(data?.wards) ? data.wards : [];
+                renderWards(currentWards);
+            } catch (err) {
+                if (currentId !== wardFetchId) return;
+                console.error("Lỗi lấy danh sách phường/xã v2: ", err);
+                districtList.innerHTML = `<li class="active" data-code="">Tất cả phường/xã <i class="fas fa-check text-primary"></i></li><li style="color:#ef4444; padding:8px 12px;">Không tải được phường/xã</li>`;
+            }
         });
 
-        function showEmptyState() {
-            resultCount.textContent = "0";
-            clinicGrid.style.display = "block";
-            clinicGrid.innerHTML = `
-                <div style="text-align: center; padding: 50px 20px; color: #64748b; background: #f8fafc; border-radius: 12px; border: 2px dashed #cbd5e1;">
-                    <i class="fas fa-search-location" style="font-size: 48px; color: #94a3b8; margin-bottom: 15px;"></i>
-                    <h3 style="font-size: 18px; font-weight: 600; color: #475569;">Vui lòng chọn khu vực hoặc tìm kiếm</h3>
-                    <p style="margin: 0;">Hãy chọn Tỉnh / Thành phố bên trái, hoặc gõ tên cơ sở vào ô tìm kiếm</p>
-                </div>
-            `;
+        function renderWards(wards) {
+            districtList.innerHTML = `<li class="active" data-code="">Tất cả phường/xã <i class="fas fa-check text-primary"></i></li>`;
+            if (Array.isArray(wards) && wards.length > 0) {
+                wards.forEach(w => {
+                    const li = document.createElement("li");
+                    li.dataset.code = w.code;
+                    li.textContent = w.name;
+                    li.addEventListener("click", function() {
+                        districtList.querySelectorAll("li").forEach(item => {
+                            item.classList.remove("active");
+                            const icon = item.querySelector("i");
+                            if (icon) icon.remove();
+                        });
+                        this.classList.add("active");
+                        this.innerHTML += ' <i class="fas fa-check text-primary"></i>';
+                        applyFilter();
+                    });
+                    districtList.appendChild(li);
+                });
+            } else {
+                const emptyLi = document.createElement("li");
+                emptyLi.style.color = "#94a3b8";
+                emptyLi.style.padding = "8px 12px";
+                emptyLi.textContent = "Không có dữ liệu phường/xã";
+                districtList.appendChild(emptyLi);
+            }
+
+            districtList.firstElementChild.addEventListener("click", function() {
+                districtList.querySelectorAll("li").forEach(item => {
+                    item.classList.remove("active");
+                    const icon = item.querySelector("i");
+                    if (icon) icon.remove();
+                });
+                this.classList.add("active");
+                this.innerHTML += ' <i class="fas fa-check text-primary"></i>';
+                applyFilter();
+            });
         }
 
         function renderClinics(list) {
@@ -819,38 +888,6 @@
                         <a href="/Home/DangKyOnline/${toSlug(c.name)}" class="ytv-card-btn">Xem chi tiết</a>
                     </div>
                 </div>`).join("");
-        }
-
-        function renderDistricts(province) {
-            districtList.innerHTML = `<li class="active" data-code="">Tất cả quận huyện <i class="fas fa-check text-primary"></i></li>`;
-            if (province && province.districts) {
-                province.districts.forEach(d => {
-                    const li = document.createElement("li");
-                    li.dataset.code = d.code;
-                    li.textContent = d.name;
-                    li.addEventListener("click", function() {
-                        districtList.querySelectorAll("li").forEach(item => {
-                            item.classList.remove("active");
-                            const icon = item.querySelector("i");
-                            if (icon) icon.remove();
-                        });
-                        this.classList.add("active");
-                        this.innerHTML += ' <i class="fas fa-check text-primary"></i>';
-                        applyFilter();
-                    });
-                    districtList.appendChild(li);
-                });
-            }
-            districtList.firstElementChild.addEventListener("click", function() {
-                districtList.querySelectorAll("li").forEach(item => {
-                    item.classList.remove("active");
-                    const icon = item.querySelector("i");
-                    if (icon) icon.remove();
-                });
-                this.classList.add("active");
-                this.innerHTML += ' <i class="fas fa-check text-primary"></i>';
-                applyFilter();
-            });
         }
     });
 

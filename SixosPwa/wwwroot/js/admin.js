@@ -3,7 +3,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         if (window.TomSelect) {
-            document.querySelectorAll('select.form-select').forEach((select) => {
+            document.querySelectorAll('select.form-select:not([data-address-province]):not([data-address-ward])').forEach((select) => {
                 if (select.tomselect) return;
 
                 new TomSelect(select, {
@@ -14,13 +14,13 @@
                 });
             });
 
-        document.querySelectorAll('select.admin-filter-select').forEach((select) => {
-            const form = select.closest('form');
-            if (!form || select.dataset.autoSubmitBound === 'true') return;
+            document.querySelectorAll('select.admin-filter-select').forEach((select) => {
+                const form = select.closest('form');
+                if (!form || select.dataset.autoSubmitBound === 'true') return;
 
-            select.dataset.autoSubmitBound = 'true';
-            select.addEventListener('change', () => form.requestSubmit());
-        });
+                select.dataset.autoSubmitBound = 'true';
+                select.addEventListener('change', () => form.requestSubmit());
+            });
         }
 
         document.querySelectorAll('[data-confirm]').forEach((form) => {
