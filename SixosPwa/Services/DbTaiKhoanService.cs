@@ -13,10 +13,21 @@ public class DbTaiKhoanService : ITaiKhoanService
         _context = context;
     }
 
-    public async Task<TaiKhoan?> DangNhapAsync(string soDienThoai, string matKhau)
+    public async Task<TaiKhoan?> DangNhapAsync(string soDienThoaiOrEmail, string matKhau)
     {
-        return await _context.TaiKhoans
-            .FirstOrDefaultAsync(tk => tk.SDT == soDienThoai);
+        if (string.IsNullOrWhiteSpace(soDienThoaiOrEmail)) return null;
+
+        var term = soDienThoaiOrEmail.Trim().ToLower();
+        if (term.Contains('@'))
+        {
+            return await _context.TaiKhoans
+                .FirstOrDefaultAsync(tk => tk.Email != null && tk.Email.ToLower() == term);
+        }
+        else
+        {
+            return await _context.TaiKhoans
+                .FirstOrDefaultAsync(tk => tk.SDT == term);
+        }
     }
 
     public async Task<TaiKhoan?> LayTaiKhoanTheoSoDienThoaiAsync(string soDienThoai)
