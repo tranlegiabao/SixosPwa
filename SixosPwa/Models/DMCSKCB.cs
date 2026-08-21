@@ -16,4 +16,12 @@ public class DMCSKCB
     public int? Huyen { get; set; }
     public int? PhuongXa { get; set; }
     public string? logo { get; set; }
+    public string? TenTM { get; set; }
+    public string? SDT { get; set; }
+    public string? Email { get; set; }
+    public int? QC_Cap1 { get; set; }
+    public int? QC_Cap2 { get; set; }
+    public int? QC_Cap3 { get; set; }
+    public int? Active { get; set; }
+
 }
