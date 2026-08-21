@@ -109,6 +109,7 @@ public class HomeController : Controller
                 ViewData["Type"] = matchedCS.LoaiCS ?? "benhvien";
                 ViewData["Img"] = matchedCS.Img ?? "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80";
                 ViewData["Logo"] = matchedCS.logo ?? logo ?? "https://tse1.mm.bing.net/th/id/OIP.JgUNpJPll-8BkzE3XN6LggHaHa?r=0&pid=Api&P=0&h=180";
+                ViewData["TGLamViec"] = matchedCS.TGLamViec;
                 ViewData["NoiDungCskcb"] = await LoadNoiDungAsync(matchedCS);
                 return View();
             }

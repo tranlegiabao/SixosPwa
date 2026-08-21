@@ -4,6 +4,8 @@
     var type = ViewData["Type"]?.ToString() ?? "benhvien";
     var img = Uri.UnescapeDataString(ViewData["Img"]?.ToString() ?? "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80");
     var logo = Uri.UnescapeDataString(ViewData["Logo"]?.ToString() ?? "https://tse1.mm.bing.net/th/id/OIP.JgUNpJPll-8BkzE3XN6LggHaHa?r=0&pid=Api&P=0&h=180");
+    OperatingHours.TryParse(ViewData["TGLamViec"]?.ToString(), out var parsedOperatingHours);
+    var operatingHours = parsedOperatingHours ?? OperatingHours.Default;
     var noiDungCskcb = ViewData["NoiDungCskcb"] as IReadOnlyDictionary<string, string>
         ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
     var noiDungGioiThieu = noiDungCskcb.GetValueOrDefault(NDCSKCB.GioiThieu);
@@ -736,8 +738,8 @@
         </div>
         <div class="operating-hours-box">
             <div class="oh-header"><i class="far fa-clock"></i> Giờ hoạt động</div>
-            <div class="oh-days">Thứ 2 - Chủ nhật</div>
-            <div class="oh-time">07:00 - 17:00</div>
+            <div class="oh-days">@operatingHours.Days</div>
+            <div class="oh-time">@operatingHours.OpenTime - @operatingHours.CloseTime</div>
             <div class="oh-status"><span class="status-dot"></span> Đang mở cửa</div>
         </div>
     </div>
@@ -768,7 +770,7 @@
                         </div>
                         <div class="detail-item">
                             <i class="far fa-clock"></i> 
-                            <span>07:00 - 17:00 (Thứ 2 - Chủ nhật)</span>
+                            <span>@operatingHours.OpenTime - @operatingHours.CloseTime (@operatingHours.Days)</span>
                         </div>
                         <div class="detail-item">
                             <i class="fas fa-phone-alt"></i> 
