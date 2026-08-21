@@ -16,4 +16,5 @@ public class DMCSKCB
     public int? Huyen { get; set; }
     public int? PhuongXa { get; set; }
     public string? logo { get; set; }
+    public int? Active { get; set; }
 }

@@ -42,10 +42,10 @@ public sealed class DashboardController : AdminControllerBase
                 .OrderByDescending(x => x.Id)
                 .Take(4)
                 .ToListAsync(),
-            RecentFacilities = await _db.DMCSKCBs.AsNoTracking()
-                .OrderByDescending(x => x.Id)
-                .Take(4)
-                .ToListAsync()
+            RecentFacilities = await _db.DMCSKCBs.AsNoTracking().OrderByDescending(x => x.Id).Take(4).ToListAsync(),
+            NhomCSList = await _db.DMNhomCSs.AsNoTracking().ToListAsync(),
+            ChuDeList = await _db.DMChuDes.AsNoTracking().ToListAsync(),
+            FacilityList = await _db.DMCSKCBs.AsNoTracking().ToListAsync()
         };
 
         return View(model);

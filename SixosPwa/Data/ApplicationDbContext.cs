@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SixosPwa.Models;
 
 namespace SixosPwa.Data;
@@ -20,6 +20,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<DMCSKCB> DMCSKCBs => Set<DMCSKCB>();
     public DbSet<NDCSKCB> NDCSKCBs => Set<NDCSKCB>();
     public DbSet<QCKCB> QCKCBs => Set<QCKCB>();
+    public DbSet<DMNhomCS> DMNhomCSs => Set<DMNhomCS>();
+    public DbSet<DMChuDe> DMChuDes => Set<DMChuDe>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -137,3 +139,4 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<QCKCB>().Property(e => e.Img).HasColumnType("nvarchar(max)");
     }
 }
+
