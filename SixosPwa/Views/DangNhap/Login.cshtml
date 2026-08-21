@@ -14,6 +14,8 @@
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/show-toast.css" asp-append-version="true" />
+    <script src="~/js/show-toast.js" asp-append-version="true"></script>
     <style>
         .otp-input-group {
             letter-spacing: 0.25rem;
@@ -37,7 +39,6 @@
 
         <div class="card auth__card">
             <div class="card-body">
-                <div id="alertBox" class="alert alert-info d-none" role="alert"></div>
 
                 <!-- BƯỚC 1: NHẬP SỐ ĐIỆN THOẠI -->
                 <form id="formStep1" class="step-1" onsubmit="event.preventDefault(); guiOtp();">
@@ -114,14 +115,12 @@
         const adminReturnUrl = new URLSearchParams(window.location.search).get('returnUrl');
 
         function showAlert(msg, type = 'info') {
-            const alertBox = document.getElementById('alertBox');
-            alertBox.className = `alert alert-${type}`;
-            alertBox.innerHTML = msg;
-            alertBox.classList.remove('d-none');
+            const plainMessage = String(msg ?? '').replace(/<[^>]*>/g, '');
+            showToast(plainMessage, type);
         }
 
         function hideAlert() {
-            document.getElementById('alertBox').classList.add('d-none');
+            // Thông báo đăng nhập được hiển thị bằng showToast.
         }
 
         // Chuyển 0987654321 thành +84987654321 cho định dạng quốc tế của Firebase

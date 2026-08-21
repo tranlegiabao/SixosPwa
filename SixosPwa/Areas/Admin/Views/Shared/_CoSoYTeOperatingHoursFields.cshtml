@@ -1,0 +1,23 @@
+@model CoSoYTeEditViewModel
+
+<div class="col-md-8">
+    <label asp-for="NgayLamViec" class="form-label">Ngày hoạt động</label>
+    <select asp-for="NgayLamViec" class="form-select">
+        <option value="">Chọn ngày hoạt động</option>
+        <option value="Thứ 2 - Chủ nhật">Thứ 2 - Chủ nhật</option>
+        <option value="Thứ 2 - Thứ 7">Thứ 2 - Thứ 7</option>
+        <option value="Thứ 2 - Thứ 6">Thứ 2 - Thứ 6</option>
+        <option value="Thứ 7 - Chủ nhật">Thứ 7 - Chủ nhật</option>
+    </select>
+    <span asp-validation-for="NgayLamViec" class="text-danger field-error"></span>
+</div>
+<div class="col-md-4">
+    <label asp-for="GioMoCua" class="form-label">Giờ mở cửa</label>
+    <input asp-for="GioMoCua" class="form-control" type="time" step="300" />
+    <span asp-validation-for="GioMoCua" class="text-danger field-error"></span>
+</div>
+<div class="col-md-4">
+    <label asp-for="GioDongCua" class="form-label">Giờ đóng cửa</label>
+    <input asp-for="GioDongCua" class="form-control" type="time" step="300" />
+    <span asp-validation-for="GioDongCua" class="text-danger field-error"></span>
+</div>

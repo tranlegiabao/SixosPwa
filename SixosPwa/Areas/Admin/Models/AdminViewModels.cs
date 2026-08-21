@@ -123,6 +123,13 @@ public sealed class CoSoYTeEditViewModel
     [StringLength(50)]
     public string? TGLamViec { get; set; }
 
+    [StringLength(50)]
+    public string? NgayLamViec { get; set; }
+
+    public string? GioMoCua { get; set; }
+
+    public string? GioDongCua { get; set; }
+
     public bool XacMinh { get; set; }
 
     [StringLength(500)]
@@ -137,6 +144,13 @@ public sealed class CoSoYTeEditViewModel
 
     [Range(0, 999999999999999, ErrorMessage = "Số tiền quảng cáo không hợp lệ.")]
     public decimal? QuangCao { get; set; }
+
+    public string? NoiDungQuangCao { get; set; }
+
+    [StringLength(2000)]
+    public string? QuangCaoImg { get; set; }
+
+    public IFormFile? QuangCaoImageFile { get; set; }
 
     public string? NoiDungGioiThieu { get; set; }
     public string? NoiDungDichVu { get; set; }

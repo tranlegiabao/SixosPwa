@@ -19,6 +19,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<LichSuKham> LichSuKhams => Set<LichSuKham>();
     public DbSet<DMCSKCB> DMCSKCBs => Set<DMCSKCB>();
     public DbSet<NDCSKCB> NDCSKCBs => Set<NDCSKCB>();
+    public DbSet<QCKCB> QCKCBs => Set<QCKCB>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -126,5 +127,13 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<NDCSKCB>().Property(e => e.MaCoSo).HasMaxLength(10);
         modelBuilder.Entity<NDCSKCB>().Property(e => e.TenCoSo).HasMaxLength(100);
         modelBuilder.Entity<NDCSKCB>().Property(e => e.LoaiND).HasMaxLength(20);
+
+        // Configure QC_KCB
+        modelBuilder.Entity<QCKCB>().ToTable("QC_KCB");
+        modelBuilder.Entity<QCKCB>().HasKey(e => e.Id);
+        modelBuilder.Entity<QCKCB>().Property(e => e.MaCoSo).HasMaxLength(10);
+        modelBuilder.Entity<QCKCB>().Property(e => e.TenCoSo).HasMaxLength(100);
+        modelBuilder.Entity<QCKCB>().Property(e => e.NoiDung).HasColumnType("nvarchar(max)");
+        modelBuilder.Entity<QCKCB>().Property(e => e.Img).HasColumnType("nvarchar(max)");
     }
 }
