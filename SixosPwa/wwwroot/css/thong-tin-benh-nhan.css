@@ -111,6 +111,7 @@
         font-size: 16px;
         font-weight: 600;
         text-decoration: none;
+        white-space: nowrap;
         border-bottom: 1px solid #f1f5f9;
         transition: all 0.2s;
     }
@@ -307,7 +308,7 @@
         gap: 16px;
         align-items: stretch;
         margin: 0;
-        padding: 18px 24px 20px;
+        padding: 6px 24px 6px;
         box-sizing: border-box;
         background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='none' stroke='white' opacity='0.15' stroke-width='2' d='M0 100 C 20 80 40 100 100 60 M0 90 C 30 70 50 100 100 50 M0 80 C 40 60 60 100 100 40' /%3E%3C/svg%3E") bottom left no-repeat,
                     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='none' stroke='white' opacity='0.15' stroke-width='2' d='M100 100 C 80 80 60 100 0 60 M100 90 C 70 70 50 100 0 50 M100 80 C 60 60 40 100 0 40' /%3E%3C/svg%3E") bottom right no-repeat,
@@ -331,7 +332,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        min-height: 112px;
+        min-height: 80px;
         padding: 18px;
         box-sizing: border-box;
         text-align: left;
@@ -348,7 +349,7 @@
     .ytv-company-list {
         display: flex;
         align-items: center;
-        min-height: 112px;
+        min-height: 80px;
         padding: 16px 18px;
         box-sizing: border-box;
         background: rgba(255, 255, 255, 0.86);
@@ -374,7 +375,7 @@
         border-top: 1px solid #eef2f7;
     }
     .ytv-company-rolling {
-        height: 112px;
+        height: 80px;
         overflow: hidden;
         position: relative;
         display: flex;
@@ -606,10 +607,4 @@
     background-color: white; /* Ensure white background */
 }
 
-/* Card 2 cross decoration */
-.ytv-company-info > div:nth-child(2) {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath fill='%237dd3fc' d='M12 0 h16 v12 h12 v16 h-12 v12 h-16 v-12 h-12 v-16 h12 z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: bottom 15px right 15px;
-    background-size: 50px;
-}
+

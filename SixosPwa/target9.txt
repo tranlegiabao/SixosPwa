@@ -1,0 +1,30 @@
+﻿            <div class="sixos-card">
+                <div class="sixos-list" style="display: flex; flex-direction: column; gap: 2px;">
+                    <a href="https://sixossoft.com" target="_blank" class="sixos-item">
+                        <div class="sixos-item-icon text-primary bg-transparent" style="font-size: 16px; width: 30px;"><i class="far fa-check-square"></i></div>
+                        <div class="sixos-item-content">
+                            <div class="sixos-item-title">Dịch vụ cho thuê phần mềm y tế</div>
+                        </div>
+                    </a>
+                    <a href="https://sixossoft.com" target="_blank" class="sixos-item">
+                        <div class="sixos-item-icon text-primary bg-transparent" style="font-size: 16px; width: 30px;"><i class="far fa-check-square"></i></div>
+                        <div class="sixos-item-content">
+                            <div class="sixos-item-title">Lập trình phần mềm theo yêu cầu</div>
+                        </div>
+                    </a>
+                    <a href="https://sixossoft.com" target="_blank" class="sixos-item">
+                        <div class="sixos-item-icon text-primary bg-transparent" style="font-size: 16px; width: 30px;"><i class="far fa-check-square"></i></div>
+                        <div class="sixos-item-content">
+                            <div class="sixos-item-title">Bệnh án điện tử</div>
+                        </div>
+                    </a>
+                    <a href="https://sixossoft.com" target="_blank" class="sixos-item">
+                        <div class="sixos-item-icon text-primary bg-transparent" style="font-size: 16px; width: 30px;"><i class="far fa-check-square"></i></div>
+                        <div class="sixos-item-content">
+                            <div class="sixos-item-title">Cloud server</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+             <div class="ytv-company-4th-col" style="display: flex; flex-direction: column; background: white; border-radius: 16px; box-shadow: 0 4px 15px -5px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; overflow: hidden; padding: 6px;">
+            <div class="ytv-company-rolling position-relative w-100 h-100" aria-label="Các giải pháp phần mềm" style="min-height: 140px; flex: 1;">

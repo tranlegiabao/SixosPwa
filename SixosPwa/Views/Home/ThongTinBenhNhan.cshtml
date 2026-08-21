@@ -1,4 +1,4 @@
-@model List<SixosPwa.Models.LichSuKham>
+﻿@model List<SixosPwa.Models.LichSuKham>
 @{
     ViewData["Title"] = "Y TẾ VIỆT - Đăng Ký Khám Bệnh";
     Layout = "_Layout";
@@ -186,7 +186,7 @@
             .sixos-card {
                 background: white;
                 border-radius: 16px;
-                padding: 16px 12px;
+                padding: 6px 12px;
                 box-shadow: 0 4px 15px -5px rgba(0,0,0,0.05);
                 border: 1px solid #f1f5f9;
                 display: flex;
@@ -211,7 +211,7 @@
                 font-size: 24px;
             }
             .sixos-title {
-                font-size: 18px;
+                font-size: 16px;
                 font-weight: 800;
                 color: #1e40af;
                 margin-bottom: 2px;
@@ -221,7 +221,7 @@
                 font-size: 13px;
                 font-weight: 700;
                 color: #0f172a;
-                margin-bottom: 6px;
+                margin-bottom: 2px;
                 line-height: 1.3;
             }
             .sixos-desc {
@@ -245,7 +245,7 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 14px;
+                font-size: 13px;
             }
             .sixos-icon.blue { background: #eff6ff; color: #2563eb; }
             .sixos-icon.green { background: #f0fdf4; color: #16a34a; }
@@ -289,7 +289,7 @@
             
             .sixos-item-content { flex: 1; }
             .sixos-item-title {
-                font-size: 14px;
+                font-size: 13px;
                 font-weight: 700;
                 color: #1e293b;
                 margin-bottom: 2px;
@@ -311,106 +311,97 @@
         <div class="ytv-company-info" aria-label="Thông tin Công Ty Công Nghệ và Giải Pháp Phần Mềm SixOs">
             <!-- Card 1 -->
             <div class="sixos-card primary">
-                <div class="sixos-logo-box" style="background: transparent; height: auto; width: auto; margin-bottom: 8px;">
-                    <img src="/static/logo-sixos.png" alt="SixOs Logo" style="width: 56px; height: 56px; object-fit: cover; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" />
+                <div class="sixos-logo-box" style="background: transparent; height: auto; width: auto; margin-bottom: 4px;">
+                    <img src="/static/logo-sixos.png" alt="SixOs Logo" style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" />
                 </div>
                 <div class="sixos-title">SIXOS</div>
-                <div class="sixos-subtitle">Công Ty Công Nghệ và<br>Giải Pháp Phần Mềm</div>
-                <div class="sixos-desc">Đưa công nghệ đến gần hơn với doanh nghiệp, tạo nên giá trị bền vững.</div>
+                <div class="sixos-subtitle">Công Ty Công Nghệ và<br>Giải Pháp Phần Mềm Vũ Phong</div>
             </div>
 
             <!-- Card 2 (Combined Services) -->
             <div class="sixos-card">
-                <div class="sixos-list" style="display: flex; flex-direction: column; gap: 8px;">
+                <div class="sixos-list" style="display: flex; flex-direction: column; justify-content: center; align-items: flex-start; height: 100%; width: fit-content; margin: 0 auto; gap: 2px;">
                     <a href="https://sixossoft.com" target="_blank" class="sixos-item">
-                        <div class="sixos-item-icon text-primary bg-transparent" style="font-size: 22px; width: 30px;"><i class="far fa-check-square"></i></div>
+                        <div class="sixos-item-icon text-primary bg-transparent" style="font-size: 16px; width: 30px;"><i class="far fa-check-square"></i></div>
                         <div class="sixos-item-content">
                             <div class="sixos-item-title">Dịch vụ cho thuê phần mềm y tế</div>
                         </div>
                     </a>
                     <a href="https://sixossoft.com" target="_blank" class="sixos-item">
-                        <div class="sixos-item-icon text-primary bg-transparent" style="font-size: 22px; width: 30px;"><i class="far fa-check-square"></i></div>
+                        <div class="sixos-item-icon text-primary bg-transparent" style="font-size: 16px; width: 30px;"><i class="far fa-check-square"></i></div>
                         <div class="sixos-item-content">
                             <div class="sixos-item-title">Lập trình phần mềm theo yêu cầu</div>
                         </div>
                     </a>
                     <a href="https://sixossoft.com" target="_blank" class="sixos-item">
-                        <div class="sixos-item-icon text-primary bg-transparent" style="font-size: 22px; width: 30px;"><i class="far fa-check-square"></i></div>
+                        <div class="sixos-item-icon text-primary bg-transparent" style="font-size: 16px; width: 30px;"><i class="far fa-check-square"></i></div>
                         <div class="sixos-item-content">
                             <div class="sixos-item-title">Bệnh án điện tử</div>
                         </div>
                     </a>
                     <a href="https://sixossoft.com" target="_blank" class="sixos-item">
-                        <div class="sixos-item-icon text-primary bg-transparent" style="font-size: 22px; width: 30px;"><i class="far fa-check-square"></i></div>
+                        <div class="sixos-item-icon text-primary bg-transparent" style="font-size: 16px; width: 30px;"><i class="far fa-check-square"></i></div>
                         <div class="sixos-item-content">
                             <div class="sixos-item-title">Cloud server</div>
                         </div>
                     </a>
                 </div>
             </div>
-        <style>
-            .ytv-company-4th-col .ytv-company-service.is-active { transform: translateY(0) scale(1) !important; }
-            .ytv-company-4th-col .ytv-company-service { transform: translateY(10px) scale(0.95) !important; padding: 12px !important; }
-        </style>
-        <div class="ytv-company-4th-col" style="display: flex; flex-direction: column; background: white; border-radius: 16px; box-shadow: 0 4px 15px -5px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; overflow: hidden;">
-            <div class="ytv-company-rolling position-relative w-100 h-100" aria-label="Các giải pháp phần mềm" style="min-height: 160px; flex: 1;">
+             <div class="ytv-company-4th-col" style="display: flex; flex-direction: column; background: white; border-radius: 16px; box-shadow: 0 4px 15px -5px rgba(0,0,0,0.05); border: 1px solid #f1f5f9; overflow: hidden; padding: 6px;">
+            <div class="ytv-company-rolling position-relative w-100 h-100" aria-label="Các giải pháp phần mềm" style="min-height: 140px; flex: 1;">
                 
-                <a class="ytv-company-service is-active" href="https://sixossoft.com/phan-mem-quan-ly-tong-the-benh-vien" target="_blank" rel="noopener noreferrer" aria-hidden="false" tabindex="0" style="width: 100%; height: 100%;">
-                    <div class="d-flex w-100 h-100 align-items-center gap-3">
-                        <div style="flex: 1.5; height: 100%;">
-                            <img src="https://tse4.mm.bing.net/th/id/OIP.MLwK3hx_Oo1p-VVaTjLpFAHaEl?r=0&pid=Api&P=0&h=180" alt="Bệnh viện" style="width: 100%; height: 100%; max-height: 140px; object-fit: contain; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.05);" />
+                <div class="ytv-company-service is-active" style="display: flex; flex-direction: row !important; justify-content: center; align-items: center; gap: 8px; width: 100%; height: 100%; padding: 0 !important; background: none;">
+                    <a href="https://sixossoft.com/phan-mem-quan-ly-tong-the-benh-vien" target="_blank" rel="noopener noreferrer" style="text-decoration: none; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; flex: 1; padding: 4px 0; min-width: 0;">
+                        <div style="display: flex; align-items: center; justify-content: center;">
+                            <img src="https://sixossoft.com/assets/images/ui-software/phan-mem-quan-ly-benh-vien.webp" alt="Bệnh viện" style="width: 100%; max-height: 70px; object-fit: contain;" />
                         </div>
-                        <div style="flex: 1; text-align: center;">
-                            <div style="font-family: 'Times New Roman', Times, serif; font-weight: 900; color: #12345b; font-size: 22px; line-height: 1.3;">Phần mềm<br>quản lý bệnh viện</div>
+                        <div style="text-align: center;">
+                            <div style="font-family: 'Times New Roman', Times, serif; font-weight: 900; color: #12345b; font-size: 15px; line-height: 1.2;">Phần mềm<br>quản lý bệnh viện</div>
                         </div>
-                    </div>
-                </a>
-                
-                <a class="ytv-company-service" href="https://sixossoft.com/phan-mem-quan-ly-phong-kham-da-khoa" target="_blank" rel="noopener noreferrer" aria-hidden="true" tabindex="-1" style="width: 100%; height: 100%;">
-                    <div class="d-flex w-100 h-100 align-items-center gap-3">
-                        <div style="flex: 1.5; height: 100%;">
-                            <img src="https://tse3.mm.bing.net/th/id/OIP.IFt0AHhq-VYPMJWvTF5ayAHaDR?r=0&pid=Api&P=0&h=180" alt="Phòng khám" style="width: 100%; height: 100%; max-height: 140px; object-fit: contain; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.05);" />
+                    </a>
+                    <div style="width: 1px; background-color: #e2e8f0; height: 80%; align-self: center;"></div>
+                    <a href="https://sixossoft.com/phan-mem-quan-ly-phong-kham-da-khoa" target="_blank" rel="noopener noreferrer" style="text-decoration: none; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; flex: 1; padding: 4px 0; min-width: 0;">
+                        <div style="display: flex; align-items: center; justify-content: center;">
+                            <img src="https://sixossoft.com/assets/images/ui-software/phan-mem-quan-ly-phong-kham-da-khoa.webp" alt="Phòng khám" style="width: 100%; max-height: 70px; object-fit: contain;" />
                         </div>
-                        <div style="flex: 1; text-align: center;">
-                            <div style="font-family: 'Times New Roman', Times, serif; font-weight: 900; color: #12345b; font-size: 22px; line-height: 1.3;">Phần mềm<br>quản lý phòng khám</div>
+                        <div style="text-align: center;">
+                            <div style="font-family: 'Times New Roman', Times, serif; font-weight: 900; color: #12345b; font-size: 15px; line-height: 1.2;">Phần mềm<br>quản lý phòng khám</div>
                         </div>
-                    </div>
-                </a>
-                
-                <a class="ytv-company-service" href="https://sixossoft.com/phan-mem-quan-ly-nha-khoa" target="_blank" rel="noopener noreferrer" aria-hidden="true" tabindex="-1" style="width: 100%; height: 100%;">
-                    <div class="d-flex w-100 h-100 align-items-center gap-3">
-                        <div style="flex: 1.5; height: 100%;">
-                            <img src="https://tse4.mm.bing.net/th/id/OIP.RyFilriY9J3FWphxSIVPBAHaFp?r=0&pid=Api&P=0&h=180" alt="Nha khoa" style="width: 100%; height: 100%; max-height: 140px; object-fit: contain; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.05);" />
+                    </a>
+                </div>
+
+                <div class="ytv-company-service" style="display: flex; flex-direction: row !important; justify-content: center; align-items: center; gap: 8px; width: 100%; height: 100%; padding: 0 !important; background: none;" aria-hidden="true" tabindex="-1">
+                    <a href="https://sixossoft.com/phan-mem-quan-ly-nha-khoa" target="_blank" rel="noopener noreferrer" style="text-decoration: none; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; flex: 1; padding: 4px 0; min-width: 0;">
+                        <div style="display: flex; align-items: center; justify-content: center;">
+                            <img src="https://sixossoft.com/assets/images/ui-software/phan-mem-quan-ly-nha-khoa.webp" alt="Nha khoa" style="width: 100%; max-height: 70px; object-fit: contain;" />
                         </div>
-                        <div style="flex: 1; text-align: center;">
-                            <div style="font-family: 'Times New Roman', Times, serif; font-weight: 900; color: #12345b; font-size: 22px; line-height: 1.3;">Phần mềm<br>quản lý nha khoa</div>
+                        <div style="text-align: center;">
+                            <div style="font-family: 'Times New Roman', Times, serif; font-weight: 900; color: #12345b; font-size: 15px; line-height: 1.2;">Phần mềm<br>quản lý nha khoa</div>
                         </div>
-                    </div>
-                </a>
-                
-                <a class="ytv-company-service" href="https://sixossoft.com/phan-mem-quan-ly-ban-hang" target="_blank" rel="noopener noreferrer" aria-hidden="true" tabindex="-1" style="width: 100%; height: 100%;">
-                    <div class="d-flex w-100 h-100 align-items-center gap-3">
-                        <div style="flex: 1.5; height: 100%;">
-                            <img src="https://sixossoft.com/assets/images/ui-software/phan-mem-quan-ly-ban-hang.webp" alt="Bán hàng" style="width: 100%; height: 100%; max-height: 140px; object-fit: contain; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.05);" />
+                    </a>
+                    <div style="width: 1px; background-color: #e2e8f0; height: 80%; align-self: center;"></div>
+                    <a href="https://sixossoft.com/phan-mem-quan-ly-ban-hang" target="_blank" rel="noopener noreferrer" style="text-decoration: none; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; flex: 1; padding: 4px 0; min-width: 0;">
+                        <div style="display: flex; align-items: center; justify-content: center;">
+                            <img src="https://sixossoft.com/assets/images/ui-software/phan-mem-quan-ly-ban-hang.webp" alt="Bán hàng" style="width: 100%; max-height: 70px; object-fit: contain;" />
                         </div>
-                        <div style="flex: 1; text-align: center;">
-                            <div style="font-family: 'Times New Roman', Times, serif; font-weight: 900; color: #12345b; font-size: 22px; line-height: 1.3;">Phần mềm<br>quản lý nhà thuốc</div>
+                        <div style="text-align: center;">
+                            <div style="font-family: 'Times New Roman', Times, serif; font-weight: 900; color: #12345b; font-size: 15px; line-height: 1.2;">Phần mềm<br>quản lý nhà thuốc</div>
                         </div>
-                    </div>
-                </a>
+                    </a>
+                </div>
 
             </div>
         </div>
     </div>
 </div>
 
-<div class="ytv-footer d-flex flex-column flex-md-row justify-content-between align-items-center gap-3" style="background: #e0f2fe; padding: 15px 30px; border-top: 1px solid #bae6fd;">
+<div class="ytv-footer d-flex flex-column flex-md-row justify-content-between align-items-center gap-3" style="background: #e0f2fe; padding: 2px 30px; border-top: 1px solid #bae6fd;">
     <div class="ytv-footer-left d-flex flex-column flex-md-row align-items-center gap-2 gap-md-4">
-        <div style="font-size: 14px; color: #334155;"><i class="fas fa-headset me-2 text-secondary"></i><strong class="text-primary">0901 87 88 96</strong> - <strong class="text-primary">0364 956 007</strong></div>
-        <div style="font-size: 14px; color: #334155;"><i class="fas fa-envelope me-2 text-secondary"></i><a href="mailto:sixossoft@gmail.com" class="text-primary text-decoration-none">sixossoft@gmail.com</a></div>
-        <div style="font-size: 14px; color: #334155;"><i class="fas fa-globe me-2 text-secondary"></i><a href="https://sixossoft.com" target="_blank" rel="noopener noreferrer" class="text-primary text-decoration-none">sixossoft.com</a></div>
+        <div style="font-size: 13px; color: #334155;"><i class="fas fa-headset me-2 text-secondary"></i><strong class="text-primary">0901 87 88 96</strong> - <strong class="text-primary">0364 956 007</strong></div>
+        <div style="font-size: 13px; color: #334155;"><i class="fas fa-envelope me-2 text-secondary"></i><a href="mailto:sixossoft@gmail.com" class="text-primary text-decoration-none">sixossoft@gmail.com</a></div>
+        <div style="font-size: 13px; color: #334155;"><i class="fas fa-globe me-2 text-secondary"></i><a href="https://sixossoft.com" target="_blank" rel="noopener noreferrer" class="text-primary text-decoration-none">sixossoft.com</a></div>
     </div>
-    <div class="ytv-footer-right d-flex flex-wrap justify-content-center align-items-center" style="font-size: 14px; row-gap: 8px;">
+    <div class="ytv-footer-right d-flex flex-wrap justify-content-center align-items-center" style="font-size: 13px; row-gap: 8px;">
         <a href="javascript:void(0)" onclick="showPolicy('baomat')" class="text-dark text-decoration-none hover-primary">Chính sách bảo mật</a>
         <span class="mx-2 text-muted d-none d-sm-inline">|</span>
         <a href="javascript:void(0)" onclick="showPolicy('dieukhoan')" class="text-dark text-decoration-none hover-primary">Điều khoản sử dụng</a>
@@ -444,3 +435,7 @@
     </div>
   </div>
 </div>
+
+
+
+

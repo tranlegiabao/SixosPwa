@@ -1,4 +1,4 @@
-@{
+﻿@{
     var tenCoSo = Uri.UnescapeDataString(ViewData["TenCoSo"]?.ToString() ?? "Bệnh Viện ĐHYD");
     var diaChi = Uri.UnescapeDataString(ViewData["DiaChi"]?.ToString() ?? "215 Hồng Bàng, Phường Chợ Lớn");
     var type = ViewData["Type"]?.ToString() ?? "benhvien";
@@ -103,7 +103,7 @@
     .ytv-sidebar-title {
         font-size: 11px; font-weight: 700; color: #94a3b8;
         text-transform: uppercase; letter-spacing: 1px;
-        padding: 0 20px 10px; border-bottom: 1px solid #f1f5f9; margin-bottom: 8px;
+        padding: 0 20px 10px; border-bottom: 1px solid #f1f5f9; margin-bottom: 0px;
     }
     .ytv-menu-item {
         display: flex; align-items: center; padding: 12px 16px; margin: 4px 16px; gap: 12px;
@@ -217,7 +217,7 @@
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        margin-bottom: 8px;
+        margin-bottom: 0px;
     }
     .oh-header i {
         font-size: 14px;
@@ -233,7 +233,7 @@
         color: #0f172a;
         font-weight: 700;
         margin-top: 4px;
-        margin-bottom: 8px;
+        margin-bottom: 0px;
     }
     .oh-status {
         display: inline-flex;
@@ -640,7 +640,7 @@
     .stats-footer-bar .stat-card {
         background: #f8fafc;
         border-radius: 10px;
-        padding: 6px 12px; /* Minimized padding inside cards */
+        padding: 2px 12px; /* Minimized padding inside cards */
         display: flex;
         align-items: center;
         gap: 10px; /* Minimized gap between icon and text */
@@ -950,7 +950,7 @@
                 font-size: 24px;
                 font-weight: 800;
                 color: #1e40af;
-                margin-bottom: 8px;
+                margin-bottom: 0px;
                 letter-spacing: 1px;
             }
             .sixos-subtitle {
@@ -1028,7 +1028,7 @@
                 font-size: 15px;
                 font-weight: 700;
                 color: #1e293b;
-                margin-bottom: 4px;
+                margin-bottom: 0px;
             }
             .sixos-item-desc {
                 font-size: 13px;
@@ -1050,8 +1050,7 @@
                     <i class="fab fa-connectdevelop"></i>
                 </div>
                 <div class="sixos-title">SIXOS</div>
-                <div class="sixos-subtitle">Công Ty Công Nghệ và<br>Giải Pháp Phần Mềm</div>
-                <div class="sixos-desc">Đưa công nghệ đến gần hơn với doanh nghiệp, tạo nên giá trị bền vững.</div>
+                <div class="sixos-subtitle">Công Ty Công Nghệ và<br>Giải Pháp Phần Mềm Vũ Phong</div>
             </div>
 
             <!-- Card 2 -->
@@ -1301,3 +1300,5 @@
         }
     }
 </script>
+
+
