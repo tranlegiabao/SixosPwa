@@ -138,6 +138,19 @@ using (var scope = app.Services.CreateScope())
         ");
 
         db.Database.ExecuteSqlRaw(@"
+            IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='QC_KCB' AND xtype='U')
+            BEGIN
+                CREATE TABLE QC_KCB (
+                    ID          BIGINT IDENTITY(1,1) PRIMARY KEY,
+                    MaCoSo     NVARCHAR(10) NULL,
+                    TenCoSo    NVARCHAR(100) NULL,
+                    NoiDung    NVARCHAR(MAX) NULL,
+                    Img        NVARCHAR(MAX) NULL
+                )
+            END
+        ");
+
+        db.Database.ExecuteSqlRaw(@"
             IF OBJECT_ID('DMCSKCB', 'U') IS NOT NULL
                 AND COL_LENGTH('DMCSKCB', 'Huyen') IS NULL
             BEGIN

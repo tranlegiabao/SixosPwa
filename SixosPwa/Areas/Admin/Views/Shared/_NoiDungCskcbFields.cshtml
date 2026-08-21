@@ -2,6 +2,19 @@
 
 <div class="col-12">
     <div class="form-section-title">Nội dung quảng cáo</div>
+    <p class="form-description">Nhập nội dung hiển thị tương ứng với từng mục trên trang quảng cáo cơ sở.</p>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label asp-for="NoiDungQuangCao" class="form-label">Nội dung quảng cáo</label>
+            <textarea asp-for="NoiDungQuangCao" class="form-control" rows="5"></textarea>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Ảnh đại diện quảng cáo</label>
+            @await Html.PartialAsync("_QuangCaoImageSourceField", Model)
+        </div>
+    </div>
+
+    <div class="form-section-title mt-4">Nội dung giới thiệu</div>
     <p class="form-description">Nhập nội dung hiển thị tương ứng với từng mục trên trang giới thiệu cơ sở.</p>
     <div class="row g-3">
         <div class="col-md-6">

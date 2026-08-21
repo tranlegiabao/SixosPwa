@@ -121,11 +121,11 @@ const selectedOption = partnerSelect.options[partnerSelect.selectedIndex];
 const tenDT = selectedOption ? selectedOption.text : ""; 
 const password = document.getElementById("smsPassword").value.trim(); 
 if (!tenDT || tenDT === "-- Tự cấu hình đối tác khác..." || partnerSelect.value === "custom") { 
-alert("Vui lòng chọn một đối tác từ danh sách trước khi lọc bệnh nhân!"); 
+ showToast("Vui lòng chọn một đối tác từ danh sách trước khi lọc bệnh nhân!", 'warning');
 return; 
 } 
 if (!password) { 
-alert("Vui lòng nhập mật khẩu đối tác!"); 
+ showToast("Vui lòng nhập mật khẩu đối tác!", 'warning');
 return; 
 } 
 // Hiển thị spinner trên nút 
@@ -147,11 +147,11 @@ body: JSON.stringify({ tenDT, password })
 }); 
 const result = await resp.json(); 
 if (!result.success) { 
-alert("❌ " + result.message); 
+ showToast(result.message, 'error');
 return; 
 } 
 if (!result.data || result.data.length === 0) { 
-alert("Không tìm thấy bệnh nhân nào thuộc đối tác này."); 
+ showToast("Không tìm thấy bệnh nhân nào thuộc đối tác này.", 'info');
 // Xoá bảng cũ 
 mockPatients = []; 
 refreshPatientSearch();
@@ -171,15 +171,10 @@ refreshPatientSearch();
 renderPatientTable(); 
 updateLivePreview(); 
 // Hiển thị toast thông báo lọc thành công 
-const toastEl = document.getElementById('smsToast'); 
-document.getElementById('smsToastMessage').innerHTML = 
-`✅ <strong>Lọc thành công!</strong> Tìm thấy <strong>${mockPatients.length}</strong> bệnh nhân thuộc đối tác <strong>${tenDT}</strong>.`; 
-document.getElementById('smsToast').className = 'toast align-items-center text-white bg-primary border-0'; 
-const toast = new bootstrap.Toast(toastEl); 
-toast.show(); 
+showToast(`Lọc thành công! Tìm thấy ${mockPatients.length} bệnh nhân thuộc đối tác ${tenDT}.`, 'success');
 } catch (err) { 
 console.error(err); 
-alert("Lỗi kết nối máy chủ khi lọc danh sách bệnh nhân!"); 
+ showToast("Lỗi kết nối máy chủ khi lọc danh sách bệnh nhân!", 'error');
 } finally { 
 btn.disabled = false; 
 spinner.classList.add("d-none"); 
@@ -308,10 +303,10 @@ async function sendDirectMessage(e) {
             // Reload history
             loadChatHistory(patient);
         } else {
-            alert(res.message);
+            showToast(res.message, 'error');
         }
     } catch (err) {
-        alert("Lỗi khi gửi tin nhắn.");
+        showToast("Lỗi khi gửi tin nhắn.", 'error');
     } finally {
         btn.disabled = false;
     }
@@ -432,15 +427,15 @@ const partner = document.getElementById("partnerSelect").value === "custom"
 : document.getElementById("partnerSelect").value; 
 // Validate dữ liệu 
 if (selectedCheckboxes.length === 0) { 
-alert("Vui lòng chọn ít nhất 1 bệnh nhân để gửi tin!"); 
+showToast("Vui lòng chọn ít nhất 1 bệnh nhân để gửi tin!", 'warning');
 return; 
 } 
 if (!content) { 
-alert("Vui lòng nhập nội dung tin nhắn!"); 
+showToast("Vui lòng nhập nội dung tin nhắn!", 'warning');
 return; 
 } 
 if (!partner) { 
-alert("Vui lòng nhập/chọn đối tác SMS!"); 
+showToast("Vui lòng nhập/chọn đối tác SMS!", 'warning');
 return; 
 } 
 // Lấy danh sách index và số điện thoại các bệnh nhân được chọn 
@@ -533,10 +528,7 @@ btnText.innerText = "Gửi Tin Nhắn Hàng Loạt";
 progressStatus.innerText = `✅ Đã hoàn tất gửi ${totalPatients} tin nhắn${apiSuccess ? " và lưu thông báo thành công!" : " (chế độ demo)!"}`; 
 progressBar.classList.remove("progress-bar-animated");
 // Show Toast 
-const toastEl = document.getElementById('smsToast'); 
-document.getElementById('smsToastMessage').innerHTML = `🎉 <strong>Gửi thành công!</strong> Đã gửi SMS cho ${totalPatients} bệnh nhân thông qua cổng <strong>${partner}</strong>. Bệnh nhân sẽ nhận được thông báo đẩy ngay!`; 
-const toast = new bootstrap.Toast(toastEl); 
-toast.show(); 
+showToast(`Gửi thành công! Đã gửi SMS cho ${totalPatients} bệnh nhân thông qua cổng ${partner}. Bệnh nhân sẽ nhận được thông báo đẩy ngay!`, 'success');
 // Tự động ẩn Progress Card sau 5 giây 
 setTimeout(() => { 
 progressCard.classList.add("d-none"); 

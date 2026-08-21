@@ -5,10 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>@ViewData["Title"] — HisSoft</title>
 
+    <script>
+        // PWA Last Page Restore Feature (run immediately to prevent flash)
+        (function() {
+            var currentPath = window.location.pathname;
+            var isIgnored = /^\/(DangNhap|Admin)/i.test(currentPath);
+            var isRootPage = currentPath === '/' || currentPath === '/Home' || currentPath === '/Home/Index';
+
+            if (!isIgnored) {
+                if (isRootPage) {
+                    var referrer = document.referrer;
+                    var hasReferrerSameOrigin = referrer && referrer.indexOf(window.location.origin) === 0;
+                    
+                    if (!hasReferrerSameOrigin) {
+                        var lastVisited = localStorage.getItem('lastVisitedUrl');
+                        if (lastVisited && lastVisited !== (currentPath + window.location.search + window.location.hash)) {
+                            var targetPath = lastVisited.split('?')[0].split('#')[0];
+                            var isTargetRoot = targetPath === '/' || targetPath === '/Home' || targetPath === '/Home/Index';
+                            if (!isTargetRoot) {
+                                window.location.replace(lastVisited);
+                            }
+                        }
+                    }
+                } else {
+                    localStorage.setItem('lastVisitedUrl', currentPath + window.location.search + window.location.hash);
+                }
+            }
+        })();
+    </script>
+
     <partial name="_PwaHead" />
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/show-toast.css" asp-append-version="true" />
+    <script src="~/js/show-toast.js" asp-append-version="true"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
     <style>
@@ -742,10 +773,10 @@
                         chatBody.scrollTop = chatBody.scrollHeight;
                         input.value = '';
                     } else {
-                        alert("Lỗi: " + (data.message || "Không thể gửi tin nhắn"));
+                        showToast(data.message || "Không thể gửi tin nhắn", 'error');
                     }
                 } catch (err) {
-                    alert("Lỗi mạng, không thể gửi tin nhắn.");
+                    showToast("Lỗi mạng, không thể gửi tin nhắn.", 'error');
                 } finally {
                     input.disabled = false;
                     btnSend.disabled = false;
@@ -777,7 +808,7 @@
         // Đăng ký push – chỉ gọi khi user đã click (bắt buộc với iOS)
         async function dangKyWebPush() {
             if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-                alert('Trình duyệt của bạn chưa hỗ trợ thông báo đẩy.\nVui lòng dùng Chrome (Android) hoặc cài PWA lên màn hình chính (iOS).');
+                showToast('Trình duyệt của bạn chưa hỗ trợ thông báo đẩy.\nVui lòng dùng Chrome (Android) hoặc cài PWA lên màn hình chính (iOS).', 'warning');
                 return;
             }
 
@@ -785,7 +816,7 @@
                 // Xin quyền thông báo (phải do user click mới không bị block)
                 const permission = await Notification.requestPermission();
                 if (permission !== 'granted') {
-                    alert('Bạn đã từ chối quyền thông báo.\nVào Cài đặt trình duyệt để bật lại.');
+                    showToast('Bạn đã từ chối quyền thông báo.\nVào Cài đặt trình duyệt để bật lại.', 'warning');
                     return;
                 }
 
@@ -817,16 +848,11 @@
                 if (result.success) {
                     // Ẩn banner, hiện thông báo thành công
                     document.getElementById('push-banner')?.remove();
-                    // Hiện toast nhỏ
-                    const toast = document.createElement('div');
-                    toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#10b981;color:#fff;padding:12px 24px;border-radius:12px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.3)';
-                    toast.textContent = '✅ Đã bật thông báo thành công!';
-                    document.body.appendChild(toast);
-                    setTimeout(() => toast.remove(), 3000);
+                    showToast('Đã bật thông báo thành công!', 'success');
                 }
             } catch (err) {
                 console.warn('Lỗi đăng ký Web Push:', err);
-                alert('Lỗi khi đăng ký thông báo: ' + err.message);
+                showToast('Lỗi khi đăng ký thông báo: ' + err.message, 'error');
             }
         }
 

@@ -4,6 +4,8 @@
     var type = ViewData["Type"]?.ToString() ?? "benhvien";
     var img = Uri.UnescapeDataString(ViewData["Img"]?.ToString() ?? "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80");
     var logo = Uri.UnescapeDataString(ViewData["Logo"]?.ToString() ?? "https://tse1.mm.bing.net/th/id/OIP.JgUNpJPll-8BkzE3XN6LggHaHa?r=0&pid=Api&P=0&h=180");
+    OperatingHours.TryParse(ViewData["TGLamViec"]?.ToString(), out var parsedOperatingHours);
+    var operatingHours = parsedOperatingHours ?? OperatingHours.Default;
     var noiDungCskcb = ViewData["NoiDungCskcb"] as IReadOnlyDictionary<string, string>
         ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
     var noiDungGioiThieu = noiDungCskcb.GetValueOrDefault(NDCSKCB.GioiThieu);
@@ -53,7 +55,7 @@
         from { opacity: 0; transform: translateY(-10px); }
         to   { opacity: 1; transform: translateY(0); }
     }
-    .ytv-dropdown a { display: flex; align-items: center; gap: 14px; padding: 15px 20px; color: #334155; font-size: 16px; font-weight: 600; text-decoration: none; border-bottom: 1px solid #f1f5f9; transition: all 0.2s; }
+    .ytv-dropdown a { display: flex; align-items: center; gap: 14px; padding: 15px 20px; color: #334155; font-size: 16px; font-weight: 600; text-decoration: none; border-bottom: 1px solid #f1f5f9; transition: all 0.2s; white-space: nowrap; }
     .ytv-dropdown a:last-child { border-bottom: none; }
     .ytv-dropdown a:hover { background: #eff6ff; color: #1d4ed8; padding-left: 28px; }
     .ytv-dropdown a i { font-size: 20px; width: 26px; text-align: center; color: #3b82f6; }
@@ -736,8 +738,8 @@
         </div>
         <div class="operating-hours-box">
             <div class="oh-header"><i class="far fa-clock"></i> Giờ hoạt động</div>
-            <div class="oh-days">Thứ 2 - Chủ nhật</div>
-            <div class="oh-time">07:00 - 17:00</div>
+            <div class="oh-days">@operatingHours.Days</div>
+            <div class="oh-time">@operatingHours.OpenTime - @operatingHours.CloseTime</div>
             <div class="oh-status"><span class="status-dot"></span> Đang mở cửa</div>
         </div>
     </div>
@@ -768,7 +770,7 @@
                         </div>
                         <div class="detail-item">
                             <i class="far fa-clock"></i> 
-                            <span>07:00 - 17:00 (Thứ 2 - Chủ nhật)</span>
+                            <span>@operatingHours.OpenTime - @operatingHours.CloseTime (@operatingHours.Days)</span>
                         </div>
                         <div class="detail-item">
                             <i class="fas fa-phone-alt"></i> 
@@ -1229,7 +1231,7 @@
     async function sendOTP() {
         var phone = document.getElementById('phoneNumber').value;
         if(phone.length < 9) {
-            alert("Vui lòng nhập số điện thoại hợp lệ (từ 9 số trở lên)!");
+            showToast("Vui lòng nhập số điện thoại hợp lệ (từ 9 số trở lên)!", 'warning');
             return;
         }
 
@@ -1241,7 +1243,7 @@
             });
             const data = await response.json();
             if (!data.success) {
-                alert(data.message);
+                showToast(data.message, 'error');
                 return;
             }
         } catch (err) {
@@ -1290,13 +1292,13 @@
                     closeLoginModal();
                     window.location.href = data.redirectUrl;
                 } else {
-                    alert(data.message);
+                    showToast(data.message, 'error');
                 }
             } catch (err) {
-                alert('Lỗi xác thực OTP!');
+                showToast('Lỗi xác thực OTP!', 'error');
             }
         } else {
-            alert("Vui lòng nhập đầy đủ 4 số mã OTP!");
+            showToast("Vui lòng nhập đầy đủ 4 số mã OTP!", 'warning');
         }
     }
 </script>
