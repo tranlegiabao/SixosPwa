@@ -138,6 +138,13 @@ public sealed class CoSoYTeEditViewModel
     [Range(0, 999999999999999, ErrorMessage = "Số tiền quảng cáo không hợp lệ.")]
     public decimal? QuangCao { get; set; }
 
+    public string? NoiDungQuangCao { get; set; }
+
+    [StringLength(2000)]
+    public string? QuangCaoImg { get; set; }
+
+    public IFormFile? QuangCaoImageFile { get; set; }
+
     public string? NoiDungGioiThieu { get; set; }
     public string? NoiDungDichVu { get; set; }
     public string? NoiDungDoiNgu { get; set; }

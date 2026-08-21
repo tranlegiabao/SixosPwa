@@ -5,24 +5,24 @@
     <textarea asp-for="DiaChi" class="form-control" rows="2" data-address-result readonly aria-readonly="true"></textarea>
     <small class="text-muted">Địa chỉ sẽ tự ghép từ các thông tin bên dưới.</small>
 </div>
-<div class="col-md-3">
-    <label asp-for="SoToaNha" class="form-label">Số tòa nhà</label>
-    <input asp-for="SoToaNha" class="form-control" data-address-building placeholder="Ví dụ: 123" autocomplete="address-line1" />
-    <span asp-validation-for="SoToaNha" class="text-danger field-error"></span>
+<div class="col-md-4">
+    <label asp-for="Tinh" class="form-label">Tỉnh/thành phố</label>
+    <select asp-for="Tinh" class="form-select" data-address-province data-selected-value="@Model.Tinh">
+        <option value="">Chọn tỉnh/thành phố</option>
+    </select>
+    <span asp-validation-for="Tinh" class="text-danger field-error"></span>
 </div>
-<div class="col-md-3">
+<div class="col-md-4">
     <label asp-for="PhuongXa" class="form-label">Phường/xã</label>
     <select asp-for="PhuongXa" class="form-select" data-address-ward data-selected-value="@Model.PhuongXa" disabled>
         <option value="">Chọn tỉnh/thành phố trước</option>
     </select>
     <span asp-validation-for="PhuongXa" class="text-danger field-error"></span>
 </div>
-<div class="col-md-3">
-    <label asp-for="Tinh" class="form-label">Tỉnh/thành phố</label>
-    <select asp-for="Tinh" class="form-select" data-address-province data-selected-value="@Model.Tinh">
-        <option value="">Chọn tỉnh/thành phố</option>
-    </select>
-    <span asp-validation-for="Tinh" class="text-danger field-error"></span>
+<div class="col-md-4">
+    <label asp-for="SoToaNha" class="form-label">Số nhà / tên đường</label>
+    <input asp-for="SoToaNha" class="form-control" data-address-building placeholder="Ví dụ: 123 Lê Lợi" autocomplete="address-line1" />
+    <span asp-validation-for="SoToaNha" class="text-danger field-error"></span>
 </div>
 <input asp-for="Huyen" type="hidden" />
 <div class="col-12"><small class="text-muted" data-address-status role="status"></small></div>

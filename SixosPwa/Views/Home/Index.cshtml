@@ -1119,16 +1119,13 @@ else
 
                 const data = await response.json();
                 if (data.success) {
-                    const toastEl = document.getElementById('bookingToast');
-                    document.getElementById('toastMessage').innerHTML = `💬 <strong>Gửi tin thành công!</strong><br/>${data.message}<br/><small class="text-white-50">${data.details}</small>`;
-                    const toast = new bootstrap.Toast(toastEl);
-                    toast.show();
+                    showToast(`Gửi tin thành công! ${data.message}`, 'success');
                 } else {
-                    alert("Lỗi: " + data.message);
+                    showToast(data.message, 'error');
                 }
             } catch (err) {
                 console.error(err);
-                alert("Lỗi kết nối máy chủ!");
+                showToast("Lỗi kết nối máy chủ!", 'error');
             }
         }
 
@@ -1149,24 +1146,21 @@ else
             if (modalInstance) modalInstance.hide();
 
             // Hiển thị Toast thông báo
-            const toastEl = document.getElementById('bookingToast');
-            document.getElementById('toastMessage').innerHTML = `🎉 <strong>Đăng ký thành công!</strong><br/>${goiKham} vào ${gioKham} ngày ${ngayKham}. Nhân viên y tế sẽ gọi xác nhận!`;
-            const toast = new bootstrap.Toast(toastEl);
-            toast.show();
+            showToast(`Đăng ký thành công! ${goiKham} vào ${gioKham} ngày ${ngayKham}. Nhân viên y tế sẽ gọi xác nhận!`, 'success');
         }
 
         function showAppointmentDetail() {
-            alert("📋 CHI TIẾT PHIẾU HẸN KHÁM:\n\n- Mã Phiếu: KSK-2026-9902\n- Gói Khám: Khám Sức Khỏe Tổng Quát\n- Thời gian: 08:30 AM - 15/08/2026\n- Địa điểm: Phòng 302, Lầu 3, Bệnh viện HisSoft.\n\nVui lòng mang theo CCCD và thẻ BHYT khi tới khám.");
+            showToast("CHI TIẾT PHIẾU HẸN KHÁM:\n\n- Mã Phiếu: KSK-2026-9902\n- Gói Khám: Khám Sức Khỏe Tổng Quát\n- Thời gian: 08:30 AM - 15/08/2026\n- Địa điểm: Phòng 302, Lầu 3, Bệnh viện HisSoft.\n\nVui lòng mang theo CCCD và thẻ BHYT khi tới khám.", 'info');
         }
 
         function cancelAppointment() {
             if (confirm("Bạn có chắc chắn muốn hủy lịch khám này không?")) {
-                alert("Đã hủy lịch khám thành công!");
+                showToast("Đã hủy lịch khám thành công!", 'success');
             }
         }
 
         function viewReport(maPhieu) {
-            alert(`📄 Đang mở Hồ sơ Kết quả Khám sức khỏe mã phiếu [${maPhieu}]...\nChỉ số sức khỏe bình thường, không phát hiện bất thường.`);
+            showToast(`Đang mở Hồ sơ Kết quả Khám sức khỏe mã phiếu [${maPhieu}]...\nChỉ số sức khỏe bình thường, không phát hiện bất thường.`, 'info');
         }
     </script>
 
@@ -1195,7 +1189,7 @@ else
         const recipient = document.getElementById('replyRecipient').value;
         const message = document.getElementById('replyMessageText').value;
         if (!message.trim()) {
-            alert('Vui lòng nhập nội dung trả lời!');
+            showToast('Vui lòng nhập nội dung trả lời!', 'warning');
             return;
         }
 
@@ -1207,14 +1201,14 @@ else
             });
             const data = await resp.json();
             if (data.success) {
-                alert('Đã gửi phản hồi thành công!');
+                showToast('Đã gửi phản hồi thành công!', 'success');
                 var modal = bootstrap.Modal.getInstance(document.getElementById('replyModal'));
                 modal.hide();
             } else {
-                alert(data.message || 'Có lỗi xảy ra, vui lòng thử lại.');
+                showToast(data.message || 'Có lỗi xảy ra, vui lòng thử lại.', 'error');
             }
         } catch (e) {
-            alert('Có lỗi xảy ra khi kết nối đến máy chủ.');
+            showToast('Có lỗi xảy ra khi kết nối đến máy chủ.', 'error');
         }
     }
 </script>

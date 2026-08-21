@@ -7,6 +7,8 @@
     <partial name="_PwaHead" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/show-toast.css" asp-append-version="true" />
+    <script src="~/js/show-toast.js" asp-append-version="true"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.bootstrap5.min.css" />
 </head>
 <body class="admin-body">
@@ -77,11 +79,11 @@
             <div class="admin-content">
                 @if (TempData["AdminSuccess"] is string success)
                 {
-                    <div class="alert admin-alert admin-alert-success" role="alert"><span>✓</span> @success</div>
+                    <script>showToast(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(success)), 'success');</script>
                 }
                 @if (TempData["AdminError"] is string error)
                 {
-                    <div class="alert admin-alert admin-alert-error" role="alert"><span>!</span> @error</div>
+                    <script>showToast(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(error)), 'error');</script>
                 }
                 @RenderBody()
             </div>
@@ -94,6 +96,7 @@
 
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/js/admin.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

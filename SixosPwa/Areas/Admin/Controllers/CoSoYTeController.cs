@@ -59,11 +59,14 @@ public sealed class CoSoYTeController : AdminControllerBase
             model.Img = await SaveImageAsync(model.ImageFile, "static/img_cs", "/static/img_cs", nameof(model.ImageFile));
         if (model.LogoFile != null)
             model.Logo = await SaveImageAsync(model.LogoFile, "static/logo_cs", "/static/logo_cs", nameof(model.LogoFile));
+        if (model.QuangCaoImageFile != null)
+            model.QuangCaoImg = await SaveImageAsync(model.QuangCaoImageFile, "static/img_qc_kcb", "/static/img_qc_kcb", nameof(model.QuangCaoImageFile));
         Normalize(model);
         ValidateType(model.LoaiCS);
         ValidateAdvertisingAmount(model.QuangCao);
         ValidateImageUrl(model.Img, nameof(model.Img), "/static/img_cs/", "/uploads/co-so-y-te/");
         ValidateImageUrl(model.Logo, nameof(model.Logo), "/static/logo_cs/", "/uploads/co-so-y-te/logo/");
+        ValidateImageUrl(model.QuangCaoImg, nameof(model.QuangCaoImg), "/static/img_qc_kcb/", "/uploads/co-so-y-te/");
         if (ModelState.IsValid && !string.IsNullOrWhiteSpace(model.MaCoSo)
             && await _db.DMCSKCBs.AnyAsync(x => x.MaCoSo == model.MaCoSo))
             ModelState.AddModelError(nameof(model.MaCoSo), "Mã cơ sở đã tồn tại.");
@@ -73,6 +76,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         var entity = ToEntity(model);
         _db.DMCSKCBs.Add(entity);
         UpdateNoiDung(entity, model, Array.Empty<NDCSKCB>());
+        UpdateQuangCao(entity, model, Array.Empty<QCKCB>());
         await _db.SaveChangesAsync();
         Success("Đã thêm cơ sở y tế.");
         return RedirectToAction(nameof(Index));
@@ -84,7 +88,8 @@ public sealed class CoSoYTeController : AdminControllerBase
         var entity = await _db.DMCSKCBs.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
         if (entity == null) return NotFound();
         var noiDung = await FindNoiDungAsync(entity.MaCoSo, entity.TenCoSo);
-        return View(ToViewModel(entity, noiDung));
+        var quangCao = await FindQuangCaoAsync(entity.MaCoSo, entity.TenCoSo);
+        return View(ToViewModel(entity, noiDung, quangCao));
     }
 
     [HttpPost]
@@ -95,14 +100,18 @@ public sealed class CoSoYTeController : AdminControllerBase
             model.Img = await SaveImageAsync(model.ImageFile, "static/img_cs", "/static/img_cs", nameof(model.ImageFile));
         if (model.LogoFile != null)
             model.Logo = await SaveImageAsync(model.LogoFile, "static/logo_cs", "/static/logo_cs", nameof(model.LogoFile));
+        if (model.QuangCaoImageFile != null)
+            model.QuangCaoImg = await SaveImageAsync(model.QuangCaoImageFile, "static/img_qc_kcb", "/static/img_qc_kcb", nameof(model.QuangCaoImageFile));
         Normalize(model);
         ValidateType(model.LoaiCS);
         ValidateAdvertisingAmount(model.QuangCao);
         ValidateImageUrl(model.Img, nameof(model.Img), "/static/img_cs/", "/uploads/co-so-y-te/");
         ValidateImageUrl(model.Logo, nameof(model.Logo), "/static/logo_cs/", "/uploads/co-so-y-te/logo/");
+        ValidateImageUrl(model.QuangCaoImg, nameof(model.QuangCaoImg), "/static/img_qc_kcb/", "/uploads/co-so-y-te/");
         var entity = await _db.DMCSKCBs.FirstOrDefaultAsync(x => x.Id == model.Id);
         if (entity == null) return NotFound();
         var noiDung = await FindNoiDungAsync(entity.MaCoSo, entity.TenCoSo);
+        var quangCao = await FindQuangCaoAsync(entity.MaCoSo, entity.TenCoSo);
 
         if (ModelState.IsValid && !string.IsNullOrWhiteSpace(model.MaCoSo)
             && await _db.DMCSKCBs.AnyAsync(x => x.Id != model.Id && x.MaCoSo == model.MaCoSo))
@@ -124,6 +133,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         entity.logo = model.Logo;
         entity.QuangCao = model.QuangCao;
         UpdateNoiDung(entity, model, noiDung);
+        UpdateQuangCao(entity, model, quangCao);
         await _db.SaveChangesAsync();
         Success("Đã cập nhật cơ sở y tế.");
         return RedirectToAction(nameof(Index));
@@ -195,6 +205,8 @@ public sealed class CoSoYTeController : AdminControllerBase
         model.TGLamViec = model.TGLamViec?.Trim();
         model.Img = model.Img?.Trim();
         model.Logo = model.Logo?.Trim();
+        model.NoiDungQuangCao = model.NoiDungQuangCao?.Trim();
+        model.QuangCaoImg = model.QuangCaoImg?.Trim();
     }
 
     private static DMCSKCB ToEntity(CoSoYTeEditViewModel model) => new()
@@ -224,6 +236,20 @@ public sealed class CoSoYTeController : AdminControllerBase
         }
 
         return await _db.NDCSKCBs
+            .Where(x => (x.MaCoSo == null || x.MaCoSo == "") && x.TenCoSo == tenCoSo)
+            .ToListAsync();
+    }
+
+    private async Task<List<QCKCB>> FindQuangCaoAsync(string? maCoSo, string? tenCoSo)
+    {
+        if (!string.IsNullOrWhiteSpace(maCoSo))
+        {
+            return await _db.QCKCBs
+                .Where(x => x.MaCoSo == maCoSo)
+                .ToListAsync();
+        }
+
+        return await _db.QCKCBs
             .Where(x => (x.MaCoSo == null || x.MaCoSo == "") && x.TenCoSo == tenCoSo)
             .ToListAsync();
     }
@@ -272,9 +298,46 @@ public sealed class CoSoYTeController : AdminControllerBase
         }
     }
 
+    private void UpdateQuangCao(
+        DMCSKCB coSo,
+        CoSoYTeEditViewModel model,
+        IReadOnlyCollection<QCKCB> existingItems)
+    {
+        var noiDung = model.NoiDungQuangCao?.Trim();
+        var image = model.QuangCaoImg?.Trim();
+        var rows = existingItems.ToList();
+
+        if (string.IsNullOrWhiteSpace(noiDung) && string.IsNullOrWhiteSpace(image))
+        {
+            if (rows.Count > 0) _db.QCKCBs.RemoveRange(rows);
+            return;
+        }
+
+        var row = rows.FirstOrDefault();
+        if (row == null)
+        {
+            _db.QCKCBs.Add(new QCKCB
+            {
+                MaCoSo = coSo.MaCoSo,
+                TenCoSo = coSo.TenCoSo,
+                NoiDung = noiDung,
+                Img = image
+            });
+        }
+        else
+        {
+            row.MaCoSo = coSo.MaCoSo;
+            row.TenCoSo = coSo.TenCoSo;
+            row.NoiDung = noiDung;
+            row.Img = image;
+            _db.QCKCBs.RemoveRange(rows.Skip(1));
+        }
+    }
+
     private static CoSoYTeEditViewModel ToViewModel(
         DMCSKCB entity,
-        IReadOnlyCollection<NDCSKCB> noiDung) => new()
+        IReadOnlyCollection<NDCSKCB> noiDung,
+        IReadOnlyCollection<QCKCB> quangCao) => new()
     {
         Id = entity.Id,
         MaCoSo = entity.MaCoSo,
@@ -290,6 +353,8 @@ public sealed class CoSoYTeController : AdminControllerBase
         Img = entity.Img,
         Logo = entity.logo,
         QuangCao = entity.QuangCao,
+        NoiDungQuangCao = quangCao.FirstOrDefault()?.NoiDung,
+        QuangCaoImg = quangCao.FirstOrDefault()?.Img,
         NoiDungGioiThieu = GetNoiDung(noiDung, NDCSKCB.GioiThieu),
         NoiDungDichVu = GetNoiDung(noiDung, NDCSKCB.DichVu),
         NoiDungDoiNgu = GetNoiDung(noiDung, NDCSKCB.DoiNgu),
