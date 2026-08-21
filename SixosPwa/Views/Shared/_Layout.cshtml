@@ -5,6 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>@ViewData["Title"] — HisSoft</title>
 
+    <script>
+        // PWA Last Page Restore Feature (run immediately to prevent flash)
+        (function() {
+            var currentPath = window.location.pathname;
+            var isIgnored = /^\/(DangNhap|Admin)/i.test(currentPath);
+            var isRootPage = currentPath === '/' || currentPath === '/Home' || currentPath === '/Home/Index';
+
+            if (!isIgnored) {
+                if (isRootPage) {
+                    var referrer = document.referrer;
+                    var hasReferrerSameOrigin = referrer && referrer.indexOf(window.location.origin) === 0;
+                    
+                    if (!hasReferrerSameOrigin) {
+                        var lastVisited = localStorage.getItem('lastVisitedUrl');
+                        if (lastVisited && lastVisited !== (currentPath + window.location.search + window.location.hash)) {
+                            var targetPath = lastVisited.split('?')[0].split('#')[0];
+                            var isTargetRoot = targetPath === '/' || targetPath === '/Home' || targetPath === '/Home/Index';
+                            if (!isTargetRoot) {
+                                window.location.replace(lastVisited);
+                            }
+                        }
+                    }
+                } else {
+                    localStorage.setItem('lastVisitedUrl', currentPath + window.location.search + window.location.hash);
+                }
+            }
+        })();
+    </script>
+
     <partial name="_PwaHead" />
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
