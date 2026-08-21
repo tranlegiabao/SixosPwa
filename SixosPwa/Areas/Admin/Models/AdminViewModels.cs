@@ -126,6 +126,13 @@ public sealed class CoSoYTeEditViewModel
     [StringLength(50)]
     public string? TGLamViec { get; set; }
 
+    [StringLength(50)]
+    public string? NgayLamViec { get; set; }
+
+    public string? GioMoCua { get; set; }
+
+    public string? GioDongCua { get; set; }
+
     public bool XacMinh { get; set; }
 
     [StringLength(500)]

@@ -66,6 +66,31 @@
 
 @section Scripts {
 <script>
+    var originalPKOptions = [];
+
+    function backupOptions() {
+        if (originalPKOptions.length > 0) return;
+        var cboPhongKham = document.getElementById("cboPhongKham");
+        if (cboPhongKham) {
+            var hasDbOptions = false;
+            var optionsToBackup = [];
+            for (var i = 0; i < cboPhongKham.options.length; i++) {
+                var opt = cboPhongKham.options[i];
+                if (opt.value !== "") {
+                    hasDbOptions = true;
+                }
+                optionsToBackup.push({
+                    value: opt.value,
+                    text: opt.text,
+                    loaiCS: opt.getAttribute("data-loaics")
+                });
+            }
+            if (hasDbOptions) {
+                originalPKOptions = optionsToBackup;
+            }
+        }
+    }
+
     window.updatePKDropdown = function() {
         var cboNhomKH = document.getElementById("cboNhomKH");
         var cboPhongKham = document.getElementById("cboPhongKham");
@@ -73,56 +98,100 @@
         
         if(!cboNhomKH || !cboPhongKham || !cboChuDe) return;
 
+        // Backup options from DOM on first run
+        backupOptions();
+
         var selectedOpt = cboNhomKH.options[cboNhomKH.selectedIndex];
         var loaiCS = selectedOpt ? selectedOpt.getAttribute("data-loaics") : null;
         if (loaiCS) loaiCS = loaiCS.trim().toLowerCase();
 
+        var placeholderOption = { value: "", text: "-- Chọn phòng khám --" };
+
         if (!loaiCS || loaiCS === "") {
-            cboPhongKham.value = "";
-            cboPhongKham.disabled = true;
+            // Update cboPhongKham DOM & TomSelect
+            updateSelectUI(cboPhongKham, [placeholderOption], true);
+            
+            // Disable cboChuDe
             cboChuDe.value = "";
             cboChuDe.disabled = true;
+            if (cboChuDe.tomselect) {
+                cboChuDe.tomselect.clear();
+                cboChuDe.tomselect.disable();
+            }
         } else {
-            cboPhongKham.disabled = false;
-            
-            for (var i = 0; i < cboPhongKham.options.length; i++) {
-                var opt = cboPhongKham.options[i];
-                if (opt.value === "") continue;
-                
-                var optLoai = opt.getAttribute("data-loaics");
-                if (optLoai && optLoai.trim().toLowerCase() === loaiCS) {
-                    opt.hidden = false;
-                    opt.style.display = "";
-                    opt.disabled = false;
-                } else {
-                    opt.hidden = true;
-                    opt.style.display = "none";
-                    opt.disabled = true;
-                }
-            }
-
-            if (cboPhongKham.selectedIndex > 0 && cboPhongKham.options[cboPhongKham.selectedIndex].hidden) {
-                cboPhongKham.value = "";
+            // Filter matched options from backup
+            var matched = [];
+            if (originalPKOptions.length > 0) {
+                matched = originalPKOptions.filter(function(opt) {
+                    if (opt.value === "") return false;
+                    return opt.loaiCS && opt.loaiCS.trim().toLowerCase() === loaiCS;
+                });
             }
             
-            window.onPhongKhamChange();
+            var newOptions = [placeholderOption].concat(matched);
+            updateSelectUI(cboPhongKham, newOptions, false);
         }
     };
+
+    function updateSelectUI(selectEl, options, isDisabled) {
+        // 1. Update standard select element
+        selectEl.innerHTML = "";
+        options.forEach(function(opt) {
+            var newOpt = document.createElement("option");
+            newOpt.value = opt.value;
+            newOpt.text = opt.text;
+            if (opt.loaiCS) {
+                newOpt.setAttribute("data-loaics", opt.loaiCS);
+            }
+            selectEl.appendChild(newOpt);
+        });
+        selectEl.value = "";
+        selectEl.disabled = isDisabled;
+
+        // 2. Sync with TomSelect if initialized on this element
+        if (selectEl.tomselect) {
+            var ts = selectEl.tomselect;
+            
+            ts.clearOptions();
+            ts.clear();
+            
+            options.forEach(function(opt) {
+                ts.addOption({
+                    value: opt.value,
+                    text: opt.text
+                });
+            });
+            
+            if (isDisabled) {
+                ts.disable();
+            } else {
+                ts.enable();
+            }
+        }
+    }
 
     window.onPhongKhamChange = function() {
         var cboPhongKham = document.getElementById("cboPhongKham");
         var cboChuDe = document.getElementById("cboChuDe");
         if (cboPhongKham && cboChuDe) {
-            if (cboPhongKham.value !== "") {
-                cboChuDe.disabled = false;
-            } else {
-                cboChuDe.value = "";
-                cboChuDe.disabled = true;
+            var isDisabled = (cboPhongKham.value === "");
+            cboChuDe.disabled = isDisabled;
+            if (cboChuDe.tomselect) {
+                if (isDisabled) {
+                    cboChuDe.tomselect.clear();
+                    cboChuDe.tomselect.disable();
+                } else {
+                    cboChuDe.tomselect.enable();
+                }
             }
         }
     };
 
-    document.addEventListener("DOMContentLoaded", window.updatePKDropdown);
-    setTimeout(window.updatePKDropdown, 100);
+    document.addEventListener("DOMContentLoaded", function() {
+        window.updatePKDropdown();
+    });
+    if (document.readyState === "complete" || document.readyState === "interactive") {
+        window.updatePKDropdown();
+    }
 </script>
 }

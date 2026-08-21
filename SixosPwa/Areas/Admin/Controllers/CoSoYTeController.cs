@@ -62,6 +62,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         if (model.QuangCaoImageFile != null)
             model.QuangCaoImg = await SaveImageAsync(model.QuangCaoImageFile, "static/img_qc_kcb", "/static/img_qc_kcb", nameof(model.QuangCaoImageFile));
         Normalize(model);
+        ApplyOperatingHours(model);
         ValidateType(model.LoaiCS);
         ValidateAdvertisingAmount(model.QuangCao);
         ValidateImageUrl(model.Img, nameof(model.Img), "/static/img_cs/", "/uploads/co-so-y-te/");
@@ -103,6 +104,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         if (model.QuangCaoImageFile != null)
             model.QuangCaoImg = await SaveImageAsync(model.QuangCaoImageFile, "static/img_qc_kcb", "/static/img_qc_kcb", nameof(model.QuangCaoImageFile));
         Normalize(model);
+        ApplyOperatingHours(model);
         ValidateType(model.LoaiCS);
         ValidateAdvertisingAmount(model.QuangCao);
         ValidateImageUrl(model.Img, nameof(model.Img), "/static/img_cs/", "/uploads/co-so-y-te/");
@@ -203,10 +205,49 @@ public sealed class CoSoYTeController : AdminControllerBase
         model.SoToaNha = model.SoToaNha?.Trim();
         model.LoaiCS = model.LoaiCS?.Trim().ToLowerInvariant();
         model.TGLamViec = model.TGLamViec?.Trim();
+        model.NgayLamViec = model.NgayLamViec?.Trim();
+        model.GioMoCua = model.GioMoCua?.Trim();
+        model.GioDongCua = model.GioDongCua?.Trim();
         model.Img = model.Img?.Trim();
         model.Logo = model.Logo?.Trim();
         model.NoiDungQuangCao = model.NoiDungQuangCao?.Trim();
         model.QuangCaoImg = model.QuangCaoImg?.Trim();
+    }
+
+    private void ApplyOperatingHours(CoSoYTeEditViewModel model)
+    {
+        var hasSelection = !string.IsNullOrWhiteSpace(model.NgayLamViec)
+            || !string.IsNullOrWhiteSpace(model.GioMoCua)
+            || !string.IsNullOrWhiteSpace(model.GioDongCua);
+
+        if (!hasSelection)
+        {
+            model.TGLamViec = null;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(model.NgayLamViec))
+            ModelState.AddModelError(nameof(model.NgayLamViec), "Vui lòng chọn ngày hoạt động.");
+        var validOpenTime = OperatingHours.TryParseTime(model.GioMoCua, out var openTime);
+        var validCloseTime = OperatingHours.TryParseTime(model.GioDongCua, out var closeTime);
+        if (!validOpenTime)
+            ModelState.AddModelError(nameof(model.GioMoCua), "Vui lòng chọn giờ mở cửa.");
+        if (!validCloseTime)
+            ModelState.AddModelError(nameof(model.GioDongCua), "Vui lòng chọn giờ đóng cửa.");
+
+        if (!ModelState.IsValid || !validOpenTime || !validCloseTime)
+            return;
+
+        if (closeTime <= openTime)
+        {
+            ModelState.AddModelError(nameof(model.GioDongCua), "Giờ đóng cửa phải sau giờ mở cửa.");
+            return;
+        }
+
+        model.TGLamViec = OperatingHours.Encode(
+            model.NgayLamViec!,
+            openTime.ToString("HH:mm"),
+            closeTime.ToString("HH:mm"));
     }
 
     private static DMCSKCB ToEntity(CoSoYTeEditViewModel model) => new()
@@ -337,30 +378,38 @@ public sealed class CoSoYTeController : AdminControllerBase
     private static CoSoYTeEditViewModel ToViewModel(
         DMCSKCB entity,
         IReadOnlyCollection<NDCSKCB> noiDung,
-        IReadOnlyCollection<QCKCB> quangCao) => new()
+        IReadOnlyCollection<QCKCB> quangCao)
     {
-        Id = entity.Id,
-        MaCoSo = entity.MaCoSo,
-        TenCoSo = entity.TenCoSo,
-        DiaChi = entity.DiaChi,
-        SoToaNha = entity.SoToaNha,
-        Tinh = entity.Tinh,
-        Huyen = entity.Huyen,
-        PhuongXa = entity.PhuongXa,
-        LoaiCS = entity.LoaiCS,
-        TGLamViec = entity.TGLamViec,
-        XacMinh = entity.XacMinh == 1,
-        Img = entity.Img,
-        Logo = entity.logo,
-        QuangCao = entity.QuangCao,
-        NoiDungQuangCao = quangCao.FirstOrDefault()?.NoiDung,
-        QuangCaoImg = quangCao.FirstOrDefault()?.Img,
-        NoiDungGioiThieu = GetNoiDung(noiDung, NDCSKCB.GioiThieu),
-        NoiDungDichVu = GetNoiDung(noiDung, NDCSKCB.DichVu),
-        NoiDungDoiNgu = GetNoiDung(noiDung, NDCSKCB.DoiNgu),
-        NoiDungTrangThietBi = GetNoiDung(noiDung, NDCSKCB.TrangThietBi),
-        NoiDungLienHe = GetNoiDung(noiDung, NDCSKCB.LienHe)
-    };
+        OperatingHours.TryParse(entity.TGLamViec, out var operatingHours);
+
+        return new CoSoYTeEditViewModel
+        {
+            Id = entity.Id,
+            MaCoSo = entity.MaCoSo,
+            TenCoSo = entity.TenCoSo,
+            DiaChi = entity.DiaChi,
+            SoToaNha = entity.SoToaNha,
+            Tinh = entity.Tinh,
+            Huyen = entity.Huyen,
+            PhuongXa = entity.PhuongXa,
+            LoaiCS = entity.LoaiCS,
+            TGLamViec = entity.TGLamViec,
+            NgayLamViec = operatingHours?.Days,
+            GioMoCua = operatingHours?.OpenTime,
+            GioDongCua = operatingHours?.CloseTime,
+            XacMinh = entity.XacMinh == 1,
+            Img = entity.Img,
+            Logo = entity.logo,
+            QuangCao = entity.QuangCao,
+            NoiDungQuangCao = quangCao.FirstOrDefault()?.NoiDung,
+            QuangCaoImg = quangCao.FirstOrDefault()?.Img,
+            NoiDungGioiThieu = GetNoiDung(noiDung, NDCSKCB.GioiThieu),
+            NoiDungDichVu = GetNoiDung(noiDung, NDCSKCB.DichVu),
+            NoiDungDoiNgu = GetNoiDung(noiDung, NDCSKCB.DoiNgu),
+            NoiDungTrangThietBi = GetNoiDung(noiDung, NDCSKCB.TrangThietBi),
+            NoiDungLienHe = GetNoiDung(noiDung, NDCSKCB.LienHe)
+        };
+    }
 
     private static string? GetNoiDung(IEnumerable<NDCSKCB> noiDung, string loaiND) =>
         noiDung.FirstOrDefault(x => x.LoaiND == loaiND)?.NoiDung;
