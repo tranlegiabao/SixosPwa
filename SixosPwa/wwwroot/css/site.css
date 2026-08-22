@@ -218,3 +218,19 @@ body {
 .hello__dot--grey {
     background: #9ca3af;
 }
+
+@media (max-width: 576px) {
+    /* Ép hi?n th? 2 c?t cho các link chính sách ? chân trang */
+    .ytv-footer-right, .ytv-policies-col {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        width: 100%;
+        text-align: center;
+    }
+    .ytv-footer-right a, .ytv-policies-col a {
+        text-align: center;
+        width: 100%;
+    }
+}
+

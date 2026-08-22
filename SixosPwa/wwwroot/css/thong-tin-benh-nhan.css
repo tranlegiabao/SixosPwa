@@ -628,6 +628,17 @@
             gap: 12px;
         }
         .ytv-company-name { min-height: 70px; }
+        
+        /* Bắt buộc chia 2 cột cho các link chính sách ở footer bằng CSS */
+        .ytv-footer-right {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            width: 100%;
+        }
+        .ytv-footer-right a {
+            text-align: center;
+        }
     }
 /* Decorative Backgrounds for Company Info Cards */
 .ytv-company-info > div {
