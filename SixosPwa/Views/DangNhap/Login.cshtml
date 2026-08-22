@@ -42,11 +42,30 @@
 
                 <!-- BƯỚC 1: NHẬP SỐ ĐIỆN THOẠI HOẶC EMAIL -->
                 <form id="formStep1" class="step-1" onsubmit="event.preventDefault(); guiOtp();">
+                    @if (!string.IsNullOrWhiteSpace(ViewBag.TenCoSo as string))
+                    {
+                        @* Ma co so den tu trang co so (?coSo=slug). Chi de xem —
+                           benh nhan khong duoc doi, vi no quyet dinh toan bo luong phia sau. *@
+                        <div class="mb-3">
+                            <label class="form-label" for="maCoSo">Mã CSKCB</label>
+                            <input type="text" class="form-control form-control-lg" id="maCoSo" readonly
+                                   value="@ViewBag.MaCoSo — @ViewBag.TenCoSo" />
+                            <div class="form-text">Cơ sở bạn đang đăng ký khám.</div>
+                        </div>
+                    }
+
                     <div class="mb-3">
                         <label class="form-label" for="soDienThoai">Số điện thoại hoặc Email</label>
                         <input type="text" class="form-control form-control-lg" id="soDienThoai" 
                                placeholder="Ví dụ: 0987654321 hoặc ten@domain.com" autocomplete="username" maxlength="50" required />
                         <div class="form-text">Nhập số điện thoại hoặc email để nhận mã xác thực OTP.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="cccd">Số Căn cước công dân</label>
+                        <input type="text" class="form-control form-control-lg" id="cccd" inputmode="numeric"
+                               placeholder="12 số trên thẻ căn cước" autocomplete="off" maxlength="20" required />
+                        <div class="form-text">Dùng để tìm hồ sơ của bạn tại cơ sở khám chữa bệnh.</div>
                     </div>
 
                     <button type="submit" id="btnGuiOtp" class="btn btn-primary w-100 py-2 fw-bold">
@@ -113,6 +132,8 @@
         let recaptchaVerifier = null;
         let currentSdt = '';
         const adminReturnUrl = new URLSearchParams(window.location.search).get('returnUrl');
+        const maCoSoHienTai = '@(ViewBag.MaCoSo as string ?? "")';
+        let currentCccd = '';
 
         function showAlert(msg, type = 'info') {
             const plainMessage = String(msg ?? '').replace(/<[^>]*>/g, '');
@@ -141,6 +162,14 @@
                 showAlert('Vui lòng nhập số điện thoại hoặc email!', 'danger');
                 return;
             }
+
+            const oCccd = document.getElementById('cccd');
+            const cccdInput = oCccd ? oCccd.value.trim() : '';
+            if (oCccd && !cccdInput) {
+                showAlert('Vui lòng nhập số Căn cước công dân!', 'danger');
+                return;
+            }
+            currentCccd = cccdInput;
 
             const isEmail = sdtInput.indexOf('@@') !== -1;
             if (isEmail) {
@@ -199,7 +228,7 @@
                     const response = await fetch('/DangNhap/GuiOtp', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ soDienThoai: sdtInput })
+                        body: JSON.stringify({ soDienThoai: sdtInput, maCoSo: maCoSoHienTai, cccd: currentCccd })
                     });
 
                     const data = await response.json();
@@ -328,6 +357,8 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ 
                             soDienThoai: userPhone,
+                            maCoSo: maCoSoHienTai,
+                            cccd: currentCccd,
                             deviceId: getDeviceId(),
                             deviceName: getDeviceName(),
                             returnUrl: adminReturnUrl
@@ -357,6 +388,8 @@
                         body: JSON.stringify({ 
                             soDienThoai: currentSdt, 
                             otp: otpInput,
+                            maCoSo: maCoSoHienTai,
+                            cccd: currentCccd,
                             deviceId: getDeviceId(),
                             deviceName: getDeviceName(),
                             returnUrl: adminReturnUrl

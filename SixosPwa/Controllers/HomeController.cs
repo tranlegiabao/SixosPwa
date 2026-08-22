@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SixosPwa.Data;
 using SixosPwa.Models;
+using SixosPwa.Services.Partner;
 using WebPush;
 
 namespace SixosPwa.Controllers;
@@ -90,37 +91,133 @@ public class HomeController : Controller
         return View(dsCoso);
     }
 
+    /// <summary>
+    /// URL co dinh cua tung co so. Slug do quan tri vien dat tay (DMCSKCB.Slug),
+    /// KHONG sinh tu ten, nen doi ten co so khong lam gay URL da phat cho doi tac.
+    /// </summary>
+    [HttpGet("/pk/{slug}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ChiTietCoSo(string slug)
+    {
+        var coSo = await _db.DMCSKCBs.FirstOrDefaultAsync(x => x.Slug == slug);
+
+        if (coSo == null) return NotFound();
+
+        await DoDuLieuCoSoAsync(coSo);
+        return View();
+    }
+
+    /// <summary>
+    /// URL cu khop co so bang cach bo dau ten. Giu lai va chuyen huong 301 sang
+    /// /pk/{slug} de moi duong link da phat di khong chet.
+    /// </summary>
     [HttpGet("/Home/DangKyOnline/{ten?}")]
     [AllowAnonymous]
-    public async Task<IActionResult> ChiTietCoSo(string? ten, string? diaChi, string? type, string? img, string? logo)
+    public async Task<IActionResult> ChiTietCoSoTheoTen(string? ten, string? diaChi, string? type, string? img, string? logo)
     {
         if (!string.IsNullOrEmpty(ten))
         {
             var cleanTen = RemoveAccentsAndSpaces(ten);
             var allCS = await _db.DMCSKCBs.ToListAsync();
-            var matchedCS = allCS.FirstOrDefault(x => 
+            var matchedCS = allCS.FirstOrDefault(x =>
                 RemoveAccentsAndSpaces(x.TenCoSo ?? "").Equals(cleanTen, StringComparison.OrdinalIgnoreCase) ||
                 (x.TenCoSo ?? "").Equals(ten, StringComparison.OrdinalIgnoreCase));
 
             if (matchedCS != null)
             {
-                ViewData["TenCoSo"] = matchedCS.TenCoSo;
-                ViewData["DiaChi"] = matchedCS.DiaChi ?? "Đang cập nhật";
-                ViewData["Type"] = matchedCS.LoaiCS ?? "benhvien";
-                ViewData["Img"] = matchedCS.Img ?? "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80";
-                ViewData["Logo"] = matchedCS.logo ?? logo ?? "https://tse1.mm.bing.net/th/id/OIP.JgUNpJPll-8BkzE3XN6LggHaHa?r=0&pid=Api&P=0&h=180";
-                ViewData["TGLamViec"] = matchedCS.TGLamViec;
-                ViewData["NoiDungCskcb"] = await LoadNoiDungAsync(matchedCS);
-                return View();
+                if (!string.IsNullOrWhiteSpace(matchedCS.Slug))
+                {
+                    return RedirectPermanent($"/pk/{matchedCS.Slug}");
+                }
+
+                // Co so chua duoc dat slug: van hien duoc trang, chi la khong co
+                // URL co dinh. Quan tri vien dat slug trong man Admin/CoSoYTe.
+                await DoDuLieuCoSoAsync(matchedCS);
+                return View(nameof(ChiTietCoSo));
             }
         }
 
         ViewData["TenCoSo"] = ten ?? "Cơ sở y tế";
         ViewData["DiaChi"] = diaChi ?? "Đang cập nhật";
         ViewData["Type"] = type ?? "benhvien";
-        ViewData["Img"] = img ?? "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80";
-        ViewData["Logo"] = logo ?? "https://tse1.mm.bing.net/th/id/OIP.JgUNpJPll-8BkzE3XN6LggHaHa?r=0&pid=Api&P=0&h=180";
+        ViewData["Img"] = img ?? AnhCoSoMacDinh;
+        ViewData["Logo"] = logo ?? LogoCoSoMacDinh;
+        return View(nameof(ChiTietCoSo));
+    }
+
+    /// <summary>
+    /// Trang chu cua benh nhan tai co so KHONG co API rieng. Dot 2026-08 moi chi
+    /// dung giao dien: ba the dich vu deu dan toi man "Dang cap nhat".
+    /// </summary>
+    [HttpGet("/benh-nhan")]
+    public async Task<IActionResult> TrangBenhNhan(string? loi = null)
+    {
+        var cccd = User.FindFirst(LuongCongBenhNhan.ClaimCccd)?.Value;
+        var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
+        var dinhDanh = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? string.Empty;
+
+        var coSo = string.IsNullOrWhiteSpace(maCoSo)
+            ? null
+            : await _db.DMCSKCBs.AsNoTracking().FirstOrDefaultAsync(x => x.MaCoSo == maCoSo);
+
+        var benhNhan = string.IsNullOrWhiteSpace(dinhDanh)
+            ? null
+            : await _db.BenhNhans.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.SDT == dinhDanh || x.Email == dinhDanh);
+
+        ViewBag.MaCoSo = maCoSo;
+        ViewBag.TenCoSo = coSo?.TenCoSo ?? "Cơ sở khám chữa bệnh";
+        ViewBag.TenBenhNhan = benhNhan?.TenBN ?? dinhDanh;
+        ViewBag.DienThoai = User.FindFirst(System.Security.Claims.ClaimTypes.MobilePhone)?.Value ?? benhNhan?.SDT;
+        ViewBag.CccdCheBot = CheBotCccd(cccd);
+        ViewBag.CoLoiKetNoi = loi == "khong-ket-noi-duoc";
+
         return View();
+    }
+
+    /// <summary>Man trong cho ba the chua noi du lieu.</summary>
+    [HttpGet("/benh-nhan/sap-co")]
+    public IActionResult SapCo(string? muc = null)
+    {
+        (ViewBag.TenMuc, ViewBag.BieuTuong) = muc switch
+        {
+            "dat-goi-kham" => ("Đăng ký khám theo gói", "▤"),
+            "lich-su-hen" => ("Lịch sử hẹn khám", "◷"),
+            "ho-so-kham" => ("Tra cứu hồ sơ khám bệnh", "◫"),
+            _ => ("Chức năng", "◌")
+        };
+
+        return View();
+    }
+
+    /// <summary>Che bot so CCCD khi hien tren man: 0772•••••069.</summary>
+    private static string CheBotCccd(string? cccd)
+    {
+        if (string.IsNullOrWhiteSpace(cccd)) return "—";
+        if (cccd.Length <= 7) return cccd;
+
+        return $"{cccd[..4]}{new string('\u2022', cccd.Length - 7)}{cccd[^3..]}";
+    }
+
+    private const string AnhCoSoMacDinh = "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80";
+    private const string LogoCoSoMacDinh = "https://tse1.mm.bing.net/th/id/OIP.JgUNpJPll-8BkzE3XN6LggHaHa?r=0&pid=Api&P=0&h=180";
+
+    /// <summary>
+    /// Do du lieu mot co so ra ViewData cho trang chi tiet. MaCoSo va Slug la hai
+    /// thu hai nut "Dang ky kham" / "Dang nhap" phai mang theo — thieu chung thi
+    /// man dang nhap khong biet benh nhan dang o co so nao.
+    /// </summary>
+    private async Task DoDuLieuCoSoAsync(DMCSKCB coSo)
+    {
+        ViewData["MaCoSo"] = coSo.MaCoSo;
+        ViewData["Slug"] = coSo.Slug;
+        ViewData["TenCoSo"] = coSo.TenCoSo;
+        ViewData["DiaChi"] = coSo.DiaChi ?? "Đang cập nhật";
+        ViewData["Type"] = coSo.LoaiCS ?? "benhvien";
+        ViewData["Img"] = coSo.Img ?? AnhCoSoMacDinh;
+        ViewData["Logo"] = coSo.logo ?? LogoCoSoMacDinh;
+        ViewData["TGLamViec"] = coSo.TGLamViec;
+        ViewData["NoiDungCskcb"] = await LoadNoiDungAsync(coSo);
     }
 
     private async Task<IReadOnlyDictionary<string, string>> LoadNoiDungAsync(DMCSKCB coSo)

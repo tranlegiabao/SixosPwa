@@ -727,11 +727,20 @@
             <i class="fas fa-headset"></i> Liên hệ
         </a>
         
+        @{
+            // Hai nut di chung MOT cong dang nhap, chi khac cho ha canh
+            // (returnUrl). Ca hai phai mang theo slug co so — thieu no thi man
+            // dang nhap khong biet benh nhan dang o co so nao.
+            var slugCoSo = ViewData["Slug"] as string;
+            var thamSoCoSo = string.IsNullOrWhiteSpace(slugCoSo)
+                ? string.Empty
+                : $"coSo={Uri.EscapeDataString(slugCoSo)}&amp;";
+        }
         <div class="hospital-actions">
-            <a href="/DangNhap/Login" class="btn-outline" style="background-color: #1d4ed8; color:aliceblue">
+            <a href="/DangNhap/Login?@(thamSoCoSo)returnUrl=%2Fdat-goi-kham" class="btn-outline" style="background-color: #1d4ed8; color:aliceblue">
                 <i class="fas fa-sign-in-alt" style="color: aliceblue"></i> Đăng ký khám
             </a>
-            <a href="javascript:void(0)" onclick="openLoginModal()" class="btn-outline">
+            <a href="/DangNhap/Login?@(thamSoCoSo)returnUrl=%2F" class="btn-outline">
                 <i class="fas fa-sign-in-alt"></i> Đăng nhập
             </a>
         </div>
@@ -836,238 +845,12 @@
     </div>
 </div>
 
-<!-- Login Modal -->
-<div class="ytv-modal-overlay" id="loginModal">
-    <div class="ytv-modal-content">
-        <button class="ytv-modal-close" onclick="closeLoginModal()">&times;</button>
-        
-        <!-- Step 1: Phone Input -->
-        <div class="login-step active" id="stepPhone">
-            <h2 class="login-title">Đăng nhập</h2>
-            <p class="login-desc">Vui lòng nhập số điện thoại của bạn để đăng nhập hoặc tạo tài khoản mới.</p>
-            
-            <div class="input-group">
-                <i class="fas fa-phone-alt"></i>
-                <input type="tel" id="phoneNumber" class="ytv-input" placeholder="Nhập số điện thoại..." autocomplete="off">
-            </div>
-            
-            <button class="btn-submit" onclick="sendOTP()">Gửi mã OTP</button>
-        </div>
-        
-        <!-- Step 2: OTP Input -->
-        <div class="login-step" id="stepOTP">
-            <h2 class="login-title">Xác thực OTP</h2>
-            <p class="login-desc">Mã xác thực gồm 4 số đã được gửi đến số <br><strong id="displayPhone" style="color:#0f172a; font-size: 16px;"></strong></p>
-            
-            <div class="otp-inputs" id="otpContainer">
-                <input type="text" class="otp-input" maxlength="1" onkeyup="moveToNext(this, event)">
-                <input type="text" class="otp-input" maxlength="1" onkeyup="moveToNext(this, event)">
-                <input type="text" class="otp-input" maxlength="1" onkeyup="moveToNext(this, event)">
-                <input type="text" class="otp-input" maxlength="1" onkeyup="moveToNext(this, event)">
-            </div>
-            
-            <button class="btn-submit" onclick="verifyOTP()">Xác nhận</button>
-            <div class="resend-text">
-                Chưa nhận được mã? <a class="resend-link" onclick="sendOTP()">Gửi lại</a>
-            </div>
-        </div>
-        <!-- Partner Cards Section -->
-        <style>
-            .sixos-section {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                gap: 24px;
-                margin-top: 20px;
-                font-family: 'Inter', sans-serif;
-            }
-            .sixos-card {
-                background: white;
-                border-radius: 20px;
-                padding: 32px 24px;
-                box-shadow: 0 10px 40px -10px rgba(0,0,0,0.05);
-                border: 1px solid #f1f5f9;
-                display: flex;
-                flex-direction: column;
-                position: relative;
-            }
-            .sixos-card.primary {
-                border-left: 6px solid #2563eb;
-                text-align: center;
-                align-items: center;
-            }
-            .sixos-logo-box {
-                width: 70px;
-                height: 70px;
-                background: #eff6ff;
-                border-radius: 16px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                margin-bottom: 20px;
-                color: #2563eb;
-                font-size: 32px;
-            }
-            .sixos-title {
-                font-size: 24px;
-                font-weight: 800;
-                color: #1e40af;
-                margin-bottom: 0px;
-                letter-spacing: 1px;
-            }
-            .sixos-subtitle {
-                font-size: 16px;
-                font-weight: 700;
-                color: #0f172a;
-                margin-bottom: 16px;
-                line-height: 1.4;
-            }
-            .sixos-desc {
-                font-size: 14px;
-                color: #64748b;
-                line-height: 1.6;
-            }
-            
-            .sixos-card-header {
-                display: flex;
-                align-items: center;
-                gap: 16px;
-                margin-bottom: 24px;
-                padding-bottom: 20px;
-                border-bottom: 1px solid #f1f5f9;
-            }
-            .sixos-icon {
-                width: 48px;
-                height: 48px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 20px;
-            }
-            .sixos-icon.blue { background: #eff6ff; color: #2563eb; }
-            .sixos-icon.green { background: #f0fdf4; color: #16a34a; }
-            
-            .sixos-header-title {
-                font-size: 18px;
-                font-weight: 700;
-                color: #0f172a;
-            }
-            
-            .sixos-list {
-                display: flex;
-                flex-direction: column;
-                gap: 20px;
-            }
-            .sixos-item {
-                display: flex;
-                align-items: flex-start;
-                gap: 16px;
-                text-decoration: none;
-                padding: 12px;
-                border-radius: 12px;
-                transition: background 0.2s;
-                margin: -12px;
-            }
-            .sixos-item:hover {
-                background: #f8fafc;
-            }
-            .sixos-item-icon {
-                width: 36px;
-                height: 36px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background: #f1f5f9;
-                color: #3b82f6;
-                flex-shrink: 0;
-            }
-            .sixos-item-icon.green-bg { background: #dcfce7; color: #16a34a; }
-            
-            .sixos-item-content { flex: 1; }
-            .sixos-item-title {
-                font-size: 15px;
-                font-weight: 700;
-                color: #1e293b;
-                margin-bottom: 0px;
-            }
-            .sixos-item-desc {
-                font-size: 13px;
-                color: #64748b;
-                line-height: 1.5;
-            }
-            .sixos-item-arrow {
-                color: #cbd5e1;
-                font-size: 14px;
-                margin-top: 10px;
-            }
-            .sixos-item:hover .sixos-item-arrow { color: #3b82f6; transform: translateX(2px); transition: all 0.2s; }
-        </style>
-
-        <div class="sixos-section">
-            <!-- Card 1 -->
-            <div class="sixos-card primary">
-                <div class="sixos-logo-box">
-                    <i class="fab fa-connectdevelop"></i>
-                </div>
-                <div class="sixos-title">SIXOS</div>
-                <div class="sixos-subtitle">Công Ty Công Nghệ và<br>Giải Pháp Phần Mềm Vũ Phong</div>
-            </div>
-
-            <!-- Card 2 -->
-            <div class="sixos-card">
-                <div class="sixos-card-header">
-                    <div class="sixos-icon blue"><i class="fas fa-laptop-code"></i></div>
-                    <div class="sixos-header-title">Dịch vụ phần mềm</div>
-                </div>
-                <div class="sixos-list">
-                    <a href="javascript:void(0)" class="sixos-item">
-                        <div class="sixos-item-icon"><i class="fas fa-cog"></i></div>
-                        <div class="sixos-item-content">
-                            <div class="sixos-item-title">Phần mềm lập trình theo yêu cầu</div>
-                            <div class="sixos-item-desc">Giải pháp phù hợp với nhu cầu và đặc thù của doanh nghiệp.</div>
-                        </div>
-                        <div class="sixos-item-arrow"><i class="fas fa-chevron-right"></i></div>
-                    </a>
-                    <a href="javascript:void(0)" class="sixos-item">
-                        <div class="sixos-item-icon"><i class="fas fa-cloud"></i></div>
-                        <div class="sixos-item-content">
-                            <div class="sixos-item-title">Cho thuê theo yêu cầu</div>
-                            <div class="sixos-item-desc">Linh hoạt, tiết kiệm chi phí, hỗ trợ nhanh chóng.</div>
-                        </div>
-                        <div class="sixos-item-arrow"><i class="fas fa-chevron-right"></i></div>
-                    </a>
-                </div>
-            </div>
-
-            <!-- Card 3 -->
-            <div class="sixos-card">
-                <div class="sixos-card-header">
-                    <div class="sixos-icon green"><i class="fas fa-shield-alt"></i></div>
-                    <div class="sixos-header-title">Hạ tầng & bảo mật</div>
-                </div>
-                <div class="sixos-list">
-                    <a href="javascript:void(0)" class="sixos-item">
-                        <div class="sixos-item-icon green-bg"><i class="fas fa-server"></i></div>
-                        <div class="sixos-item-content">
-                            <div class="sixos-item-title">Server dự phòng</div>
-                            <div class="sixos-item-desc">Hệ thống dự phòng ổn định, sẵn sàng 24/7.</div>
-                        </div>
-                        <div class="sixos-item-arrow"><i class="fas fa-chevron-right"></i></div>
-                    </a>
-                    <a href="javascript:void(0)" class="sixos-item">
-                        <div class="sixos-item-icon green-bg"><i class="fas fa-cloud-upload-alt"></i></div>
-                        <div class="sixos-item-content">
-                            <div class="sixos-item-title">Sao lưu dữ liệu</div>
-                            <div class="sixos-item-desc">Đảm bảo an toàn dữ liệu, khôi phục nhanh chóng.</div>
-                        </div>
-                        <div class="sixos-item-arrow"><i class="fas fa-chevron-right"></i></div>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+@* Man dang nhap noi trang da duoc go bo (2026-08-22).
+   Truoc day day la BAN SAO THU HAI cua /DangNhap/Login: sua mot cho quen
+   cho kia la chuyen som muon. Gio ca hai nut deu di ve cung mot cong.
+   Khoi gioi thieu SIXOS truoc kia bi chon ben trong modal nay (nen thuc te
+   khong ai nhin thay) cung di theo. Can lay lai: git show HEAD~1 -- 
+   SixosPwa/Views/Home/ChiTietCoSo.cshtml *@
 
 <div class="stats-footer-bar">
     <div class="stats-grid">
@@ -1167,99 +950,8 @@
                 }
             }
         }
-        var modal = document.getElementById('loginModal');
-        if (event.target == modal) {
-            closeLoginModal();
-        }
     }
 
-    // Login Modal Functions
-    function openLoginModal() {
-        document.getElementById('loginModal').classList.add('show');
-        document.getElementById('stepPhone').classList.add('active');
-        document.getElementById('stepOTP').classList.remove('active');
-        document.getElementById('phoneNumber').value = '';
-        document.querySelectorAll('.otp-input').forEach(inp => inp.value = '');
-        setTimeout(() => document.getElementById('phoneNumber').focus(), 100);
-    }
-
-    function closeLoginModal() {
-        document.getElementById('loginModal').classList.remove('show');
-    }
-
-    async function sendOTP() {
-        var phone = document.getElementById('phoneNumber').value;
-        if(phone.length < 9) {
-            showToast("Vui lòng nhập số điện thoại hợp lệ (từ 9 số trở lên)!", 'warning');
-            return;
-        }
-
-        try {
-            const response = await fetch('/DangNhap/GuiOtp', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ soDienThoai: phone })
-            });
-            const data = await response.json();
-            if (!data.success) {
-                showToast(data.message, 'error');
-                return;
-            }
-        } catch (err) {
-            console.error(err);
-        }
-
-        document.getElementById('displayPhone').innerText = phone;
-        document.getElementById('stepPhone').classList.remove('active');
-        document.getElementById('stepOTP').classList.add('active');
-        
-        setTimeout(() => {
-            document.querySelectorAll('.otp-input').forEach(inp => inp.value = '');
-            document.querySelector('.otp-input').focus();
-        }, 100);
-    }
-
-    function moveToNext(elem, event) {
-        if (event.key === 'Backspace') {
-            if (elem.previousElementSibling) {
-                elem.previousElementSibling.focus();
-            }
-        } else {
-            if (!/^\d*$/.test(elem.value)) {
-                elem.value = "";
-                return;
-            }
-            if (elem.value.length === 1 && elem.nextElementSibling) {
-                elem.nextElementSibling.focus();
-            }
-        }
-    }
-
-    async function verifyOTP() {
-        var otp = Array.from(document.querySelectorAll('.otp-input')).map(inp => inp.value).join('');
-        if(otp.length === 4) {
-            var phone = document.getElementById('phoneNumber').value;
-            try {
-                const response = await fetch('/DangNhap/XacNhanOtp', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ soDienThoai: phone, otp: otp })
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    closeLoginModal();
-                    window.location.href = data.redirectUrl;
-                } else {
-                    showToast(data.message, 'error');
-                }
-            } catch (err) {
-                showToast('Lỗi xác thực OTP!', 'error');
-            }
-        } else {
-            showToast("Vui lòng nhập đầy đủ 4 số mã OTP!", 'warning');
-        }
-    }
 </script>
 
 

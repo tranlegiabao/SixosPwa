@@ -122,6 +122,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         if (!ModelState.IsValid) return View(model);
 
         entity.MaCoSo = model.MaCoSo;
+        entity.Slug = model.Slug;
         entity.TenCoSo = model.TenCoSo;
         entity.DiaChi = model.DiaChi;
         entity.SoToaNha = model.SoToaNha;
@@ -200,6 +201,7 @@ public sealed class CoSoYTeController : AdminControllerBase
     private static void Normalize(CoSoYTeEditViewModel model)
     {
         model.MaCoSo = model.MaCoSo?.Trim();
+        model.Slug = string.IsNullOrWhiteSpace(model.Slug) ? null : model.Slug.Trim().ToLowerInvariant();
         model.TenCoSo = model.TenCoSo?.Trim();
         model.DiaChi = model.DiaChi?.Trim();
         model.SoToaNha = model.SoToaNha?.Trim();
@@ -253,6 +255,7 @@ public sealed class CoSoYTeController : AdminControllerBase
     private static DMCSKCB ToEntity(CoSoYTeEditViewModel model) => new()
     {
         MaCoSo = model.MaCoSo,
+        Slug = model.Slug,
         TenCoSo = model.TenCoSo,
         DiaChi = model.DiaChi,
         SoToaNha = model.SoToaNha,
@@ -386,6 +389,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         {
             Id = entity.Id,
             MaCoSo = entity.MaCoSo,
+            Slug = entity.Slug,
             TenCoSo = entity.TenCoSo,
             DiaChi = entity.DiaChi,
             SoToaNha = entity.SoToaNha,

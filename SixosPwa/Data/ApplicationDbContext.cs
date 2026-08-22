@@ -22,6 +22,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<QCKCB> QCKCBs => Set<QCKCB>();
     public DbSet<DMNhomCS> DMNhomCSs => Set<DMNhomCS>();
     public DbSet<DMChuDe> DMChuDes => Set<DMChuDe>();
+    public DbSet<DoiTacApi> DoiTacApis => Set<DoiTacApi>();
+    public DbSet<TaiKhoanDoiTac> TaiKhoanDoiTacs => Set<TaiKhoanDoiTac>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -61,6 +63,8 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<TaiKhoan>().HasKey(e => e.Id);
         modelBuilder.Entity<TaiKhoan>().Property(e => e.SDT).HasMaxLength(20).IsRequired();
         modelBuilder.Entity<TaiKhoan>().Property(e => e.Role).HasMaxLength(50).IsRequired();
+        modelBuilder.Entity<TaiKhoan>().Property(e => e.Email).HasMaxLength(50);
+        modelBuilder.Entity<TaiKhoan>().Property(e => e.CCCD).HasMaxLength(20);
 
         // Configure ThongBao
         modelBuilder.Entity<ThongBao>().ToTable("ThongBao");
@@ -112,6 +116,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<DMCSKCB>().ToTable("DMCSKCB");
         modelBuilder.Entity<DMCSKCB>().HasKey(e => e.Id);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.MaCoSo).HasMaxLength(10);
+        modelBuilder.Entity<DMCSKCB>().Property(e => e.Slug).HasMaxLength(100);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.TenCoSo).HasMaxLength(100);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.DiaChi).HasMaxLength(255);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.LoaiCS).HasMaxLength(20);
@@ -129,6 +134,24 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<NDCSKCB>().Property(e => e.MaCoSo).HasMaxLength(10);
         modelBuilder.Entity<NDCSKCB>().Property(e => e.TenCoSo).HasMaxLength(100);
         modelBuilder.Entity<NDCSKCB>().Property(e => e.LoaiND).HasMaxLength(20);
+
+        // Configure DM_DoiTacApi — bang dang ky API doi tac (V10)
+        modelBuilder.Entity<DoiTacApi>().ToTable("DM_DoiTacApi");
+        modelBuilder.Entity<DoiTacApi>().HasKey(e => e.Id);
+        modelBuilder.Entity<DoiTacApi>().Property(e => e.MaCoSo).HasMaxLength(10).IsRequired();
+        modelBuilder.Entity<DoiTacApi>().Property(e => e.KieuApi).HasMaxLength(20).IsRequired();
+        modelBuilder.Entity<DoiTacApi>().Property(e => e.BaseUrl).HasMaxLength(255);
+        modelBuilder.Entity<DoiTacApi>().Property(e => e.TrangChu).HasMaxLength(255);
+        modelBuilder.Entity<DoiTacApi>().HasIndex(e => e.MaCoSo).IsUnique();
+
+        // Configure TaiKhoan_DoiTac — credential cua benh nhan tai tung co so (ADR 0005)
+        modelBuilder.Entity<TaiKhoanDoiTac>().ToTable("TaiKhoan_DoiTac");
+        modelBuilder.Entity<TaiKhoanDoiTac>().HasKey(e => e.Id);
+        modelBuilder.Entity<TaiKhoanDoiTac>().Property(e => e.IdTaiKhoan).HasColumnName("IDTaiKhoan").IsRequired();
+        modelBuilder.Entity<TaiKhoanDoiTac>().Property(e => e.MaCoSo).HasMaxLength(10).IsRequired();
+        modelBuilder.Entity<TaiKhoanDoiTac>().Property(e => e.MatKhau).HasMaxLength(255);
+        modelBuilder.Entity<TaiKhoanDoiTac>().Property(e => e.MaXacNhanTam).HasMaxLength(10);
+        modelBuilder.Entity<TaiKhoanDoiTac>().HasIndex(e => new { e.IdTaiKhoan, e.MaCoSo }).IsUnique();
 
         // Configure QC_KCB
         modelBuilder.Entity<QCKCB>().ToTable("QC_KCB");

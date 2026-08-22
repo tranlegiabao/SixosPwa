@@ -104,6 +104,15 @@ public sealed class CoSoYTeEditViewModel
     [StringLength(10, ErrorMessage = "MÃ£ cÆ¡ sá»Ÿ tá»‘i Ä‘a 10 kÃ½ tá»±.")]
     public string? MaCoSo { get; set; }
 
+    /// <summary>
+    /// Doan chu lam nen URL co dinh /pk/{Slug}. Quan tri vien dat tay, KHONG tu
+    /// sinh tu ten, de doi ten co so khong lam gay URL da phat cho doi tac.
+    /// </summary>
+    [StringLength(100, ErrorMessage = "Đường dẫn tối đa 100 ký tự.")]
+    [RegularExpression("^[a-z0-9]+(-[a-z0-9]+)*$",
+        ErrorMessage = "Đường dẫn chỉ gồm chữ thường không dấu, số và dấu gạch ngang.")]
+    public string? Slug { get; set; }
+
     [Required(ErrorMessage = "Vui lÃ²ng nháº­p tÃªn cÆ¡ sá»Ÿ.")]
     [StringLength(100, ErrorMessage = "TÃªn cÆ¡ sá»Ÿ tá»‘i Ä‘a 100 kÃ½ tá»±.")]
     public string? TenCoSo { get; set; }

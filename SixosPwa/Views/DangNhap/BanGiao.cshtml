@@ -1,0 +1,103 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "Đang chuyển tới cơ sở";
+}
+
+<!doctype html>
+<html lang="vi">
+<head>
+    <title>Đang chuyển tới @ViewBag.TenCoSo — HisSoft</title>
+    <partial name="_CongHead" />
+    <style>
+        .khoi-cho { text-align: center; padding: 8px 0; }
+        .khoi-cho .spinner-border { width: 3rem; height: 3rem; }
+        #khoiChanPopup { display: none; }
+    </style>
+</head>
+<body class="page-center">
+
+    <main class="auth">
+        <div class="auth__brand">
+            <img src="~/static/icon-192.png" alt="HisSoft" width="72" height="72" />
+            <h1>Đang chuyển tới cơ sở</h1>
+            <p>@ViewBag.TenCoSo</p>
+        </div>
+
+        <div class="card auth__card">
+            <div class="card-body">
+
+                <div class="khoi-cho" id="khoiCho">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Đang xử lý</span>
+                    </div>
+                    <p class="mb-0">Vui lòng chờ trong giây lát…</p>
+                </div>
+
+                @* Popup bi trinh duyet chan: hien nut de benh nhan bam lai. Bam
+                   tay moi con "user gesture", nen popup se mo duoc. *@
+                <div id="khoiChanPopup">
+                    <p class="mb-3">
+                        Trình duyệt đang chặn cửa sổ tự mở. Bấm nút dưới đây để tiếp tục.
+                    </p>
+                    <button type="button" class="btn btn-primary w-100 py-2 fw-bold" onclick="banGiao()">
+                        Tiếp tục tới @ViewBag.TenCoSo
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <p class="auth__foot">
+            Nếu không tự chuyển,
+            <a href="@ViewBag.TrangChu" class="text-decoration-none">bấm vào đây</a>.
+        </p>
+    </main>
+
+    @*
+        BAT BUOC la form POST TOP-LEVEL trong popup, KHONG duoc dung fetch/AJAX
+        va cung KHONG duoc dung iframe an. Ly do (ADR 0003):
+        - Ben doi tac dung app.UseCors(AllowAnyOrigin) ma AllowAnyOrigin khong di
+          cung AllowCredentials => fetch khong dat duoc cookie.
+        - Cookie DKOnline_auth thuc te la SameSite=Lax (ho co cau hinh Strict
+          nhung quen app.UseCookiePolicy()), nen iframe lien site bi chan, con
+          dieu huong top-level thi van gui cookie.
+        Popup nhan Set-Cookie roi dong lai; cua so chinh dieu huong sang trang chu
+        cua doi tac va cookie duoc gui kem.
+    *@
+    <form id="formBanGiao" method="post" action="@ViewBag.Action" target="cuaSoBanGiao">
+        @foreach (var truong in (IReadOnlyDictionary<string, string>)ViewBag.Truong)
+        {
+            <input type="hidden" name="@truong.Key" value="@truong.Value" />
+        }
+    </form>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const trangChu = '@ViewBag.TrangChu';
+
+        // Doi tac can chut thoi gian de xu ly POST va tra Set-Cookie ve popup.
+        const CHO_DAT_COOKIE_MS = 1800;
+
+        function banGiao() {
+            const cuaSo = window.open('', 'cuaSoBanGiao', 'width=480,height=560');
+
+            if (!cuaSo) {
+                document.getElementById('khoiCho').style.display = 'none';
+                document.getElementById('khoiChanPopup').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('khoiCho').style.display = 'block';
+            document.getElementById('khoiChanPopup').style.display = 'none';
+            document.getElementById('formBanGiao').submit();
+
+            setTimeout(function () {
+                try { cuaSo.close(); } catch (loi) { /* popup tu dong roi */ }
+                window.location.href = trangChu;
+            }, CHO_DAT_COOKIE_MS);
+        }
+
+        banGiao();
+    </script>
+</body>
+</html>
