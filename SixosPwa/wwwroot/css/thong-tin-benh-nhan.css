@@ -290,6 +290,7 @@
         text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.9);
     }
     .para-card-text {
+        color: #fff;
         font-size: 16px;
         line-height: 1.6;
         margin-bottom: 25px;
@@ -299,6 +300,10 @@
         -webkit-line-clamp: 4;
         -webkit-box-orient: vertical;
         overflow: hidden;
+    }
+    .para-card-text > [style*="#000"],
+    .para-card-text > [style*="rgb(0, 0, 0)"] {
+        color: #fff !important;
     }
     .para-card-btn {
         background-color: var(--ytv-accent, #ffb703);
