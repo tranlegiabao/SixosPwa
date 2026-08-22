@@ -1,16 +1,42 @@
     function toggleMenu() {
         var menu = document.getElementById("dropdownMenu");
-        menu.classList.toggle("open");
+        var btn = document.getElementById("menuBtn");
+        var mo = menu.classList.toggle("open");
+        if (btn) btn.setAttribute("aria-expanded", mo ? "true" : "false");
     }
 
     // Auto-close menu when mouse leaves menu area
     document.addEventListener("DOMContentLoaded", function() {
+        // Slider: nguoi dung phai dung duoc, va ton trong prefers-reduced-motion
         var mainSlider = document.getElementById('mainSlider');
         if (mainSlider && typeof bootstrap !== 'undefined') {
-            new bootstrap.Carousel(mainSlider, {
-                interval: 3000,
-                ride: 'carousel'
+            var itHieuUng = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            var slider = new bootstrap.Carousel(mainSlider, {
+                interval: itHieuUng ? false : 5000,
+                ride: itHieuUng ? false : 'carousel',
+                pause: 'hover'
             });
+
+            var dangChay = !itHieuUng;
+            var nut = document.createElement('button');
+            nut.type = 'button';
+            nut.className = 'ytv-slider-dung';
+            function veNut() {
+                nut.innerHTML = dangChay
+                    ? '<i class="fas fa-pause" aria-hidden="true"></i>'
+                    : '<i class="fas fa-play" aria-hidden="true"></i>';
+                nut.setAttribute('aria-label', dangChay ? 'Tạm dừng trình chiếu' : 'Chạy trình chiếu');
+            }
+            veNut();
+            nut.addEventListener('click', function () {
+                dangChay = !dangChay;
+                if (dangChay) { slider.cycle(); } else { slider.pause(); }
+                veNut();
+            });
+            mainSlider.appendChild(nut);
+
+            // dung khi ban phim di vao slider
+            mainSlider.addEventListener('focusin', function () { slider.pause(); });
         }
 
         var menuBtn = document.getElementById("menuBtn");
