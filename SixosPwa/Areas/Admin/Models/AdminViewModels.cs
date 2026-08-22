@@ -22,6 +22,27 @@ public sealed class DashboardViewModel
     public IReadOnlyList<DMNhomCS> NhomCSList { get; init; } = Array.Empty<DMNhomCS>();
     public IReadOnlyList<DMChuDe> ChuDeList { get; init; } = Array.Empty<DMChuDe>();
     public IReadOnlyList<DMCSKCB> FacilityList { get; init; } = Array.Empty<DMCSKCB>();
+
+    // Nam sua 2026-08-22: giu lai lua chon phong kham / chu de sau khi Luu,
+    // de POST-redirect-GET khong lam admin phai chon lai tu dau.
+    public long? SelectedFacilityId { get; init; }
+    public long? SelectedTopicId { get; init; }
+}
+
+/// <summary>
+/// Nam sua 2026-08-22: du lieu form soan noi dung co so o man /Admin.
+/// </summary>
+public sealed class DashboardContentEditViewModel
+{
+    [Required(ErrorMessage = "Chưa chọn phòng khám.")]
+    [Range(1, long.MaxValue, ErrorMessage = "Chưa chọn phòng khám.")]
+    public long FacilityId { get; set; }
+
+    [Required(ErrorMessage = "Chưa chọn chủ đề.")]
+    [Range(1, long.MaxValue, ErrorMessage = "Chưa chọn chủ đề.")]
+    public long TopicId { get; set; }
+
+    public string? NoiDung { get; set; }
 }
 
 public sealed class TaiKhoanListViewModel
@@ -104,6 +125,15 @@ public sealed class CoSoYTeEditViewModel
     [StringLength(10, ErrorMessage = "MÃ£ cÆ¡ sá»Ÿ tá»‘i Ä‘a 10 kÃ½ tá»±.")]
     public string? MaCoSo { get; set; }
 
+    /// <summary>
+    /// Doan chu lam nen URL co dinh /pk/{Slug}. Quan tri vien dat tay, KHONG tu
+    /// sinh tu ten, de doi ten co so khong lam gay URL da phat cho doi tac.
+    /// </summary>
+    [StringLength(100, ErrorMessage = "Đường dẫn tối đa 100 ký tự.")]
+    [RegularExpression("^[a-z0-9]+(-[a-z0-9]+)*$",
+        ErrorMessage = "Đường dẫn chỉ gồm chữ thường không dấu, số và dấu gạch ngang.")]
+    public string? Slug { get; set; }
+
     [Required(ErrorMessage = "Vui lÃ²ng nháº­p tÃªn cÆ¡ sá»Ÿ.")]
     [StringLength(100, ErrorMessage = "TÃªn cÆ¡ sá»Ÿ tá»‘i Ä‘a 100 kÃ½ tá»±.")]
     public string? TenCoSo { get; set; }
@@ -115,8 +145,6 @@ public sealed class CoSoYTeEditViewModel
     public string? SoToaNha { get; set; }
 
     public int? Tinh { get; set; }
-
-    public int? Huyen { get; set; }
 
     public int? PhuongXa { get; set; }
 

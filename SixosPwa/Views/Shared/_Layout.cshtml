@@ -10,7 +10,7 @@
         (function() {
             var currentPath = window.location.pathname;
             var isIgnored = /^\/(DangNhap|Admin)/i.test(currentPath);
-            var isRootPage = currentPath === '/' || currentPath === '/Home' || currentPath === '/Home/Index';
+            var isRootPage = currentPath === '/' || currentPath === '/Home' || currentPath === '/benh-nhan';
 
             if (!isIgnored) {
                 if (isRootPage) {
@@ -21,7 +21,7 @@
                         var lastVisited = localStorage.getItem('lastVisitedUrl');
                         if (lastVisited && lastVisited !== (currentPath + window.location.search + window.location.hash)) {
                             var targetPath = lastVisited.split('?')[0].split('#')[0];
-                            var isTargetRoot = targetPath === '/' || targetPath === '/Home' || targetPath === '/Home/Index';
+                            var isTargetRoot = targetPath === '/' || targetPath === '/Home' || targetPath === '/benh-nhan';
                             if (!isTargetRoot) {
                                 window.location.replace(lastVisited);
                             }
@@ -403,7 +403,7 @@
 <body>
     <header class="app-nav shadow-sm py-2">
         <div class="container">
-            <a class="app-nav__brand text-white text-decoration-none d-flex align-items-center gap-2 fw-bold" asp-controller="Home" asp-action="Index">
+            <a class="app-nav__brand text-white text-decoration-none d-flex align-items-center gap-2 fw-bold" href="/benh-nhan">
                 <img src="~/static/icon-192.png" alt="HisSoft" width="36" height="36" class="rounded-2" />
                 <span class="fs-5">HisSoft Medical</span>
             </a>
@@ -450,7 +450,7 @@
 
     <!-- BOTTOM NAVIGATION BAR (Mobile Only) -->
     <nav class="bottom-nav fixed-bottom d-flex justify-content-around align-items-center shadow-sm">
-        <a href="/Home/Index" class="bottom-nav-item active text-decoration-none">
+        <a href="/benh-nhan" class="bottom-nav-item active text-decoration-none">
             <i class="fas fa-home fs-4"></i>
             <span class="d-block mt-1" style="font-size: 11px; font-weight: 600;">Trang chủ</span>
         </a>
@@ -496,7 +496,7 @@
             <hr class="mx-3 opacity-25">
 
             <!-- Danh sách menu -->
-            <a href="/Home/Index" class="fb-menu-item">
+            <a href="/benh-nhan" class="fb-menu-item">
                 <div class="fb-menu-icon"><i class="fas fa-home"></i></div>
                 Trang chủ
             </a>

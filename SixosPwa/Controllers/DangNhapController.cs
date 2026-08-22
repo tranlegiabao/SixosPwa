@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -8,6 +9,7 @@ using SixosPwa.Data;
 using SixosPwa.Models;
 using SixosPwa.Security;
 using SixosPwa.Services;
+using SixosPwa.Services.Partner;
 
 namespace SixosPwa.Controllers;
 
@@ -16,24 +18,60 @@ public class DangNhapController : Controller
     private readonly IMemoryCache _cache;
     private readonly ITaiKhoanService _taiKhoanService;
     private readonly ApplicationDbContext _dbContext;
+    private readonly ILuongCongBenhNhan _luong;
 
-    public DangNhapController(IMemoryCache cache, ITaiKhoanService taiKhoanService, ApplicationDbContext dbContext)
+    public DangNhapController(
+        IMemoryCache cache,
+        ITaiKhoanService taiKhoanService,
+        ApplicationDbContext dbContext,
+        ILuongCongBenhNhan luong)
     {
         _cache = cache;
         _taiKhoanService = taiKhoanService;
         _dbContext = dbContext;
+        _luong = luong;
     }
 
     [HttpGet]
-    public IActionResult Login(string? returnUrl = null)
+    public async Task<IActionResult> Login(string? returnUrl = null, string? coSo = null)
     {
         var adminReauth = AdminReauthentication.IsAdminReturnUrl(returnUrl) && Url.IsLocalUrl(returnUrl);
 
-        // Neu da dang nhap truoc do (Cookie truong ton hop le)
+        // ?coSo=slug den tu hai nut ben trang co so. Do ra ViewBag de man dang
+        // nhap hien o "Ma CSKCB" khoa cung, va de JS gui kem khi goi OTP.
+        string? maCoSoTuUrl = null;
+        if (!string.IsNullOrWhiteSpace(coSo))
+        {
+            var thongTin = await _dbContext.DMCSKCBs
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Slug == coSo);
+
+            maCoSoTuUrl = thongTin?.MaCoSo;
+            ViewBag.MaCoSo = thongTin?.MaCoSo;
+            ViewBag.TenCoSo = thongTin?.TenCoSo;
+            ViewBag.SlugCoSo = coSo;
+        }
+
+        // Con phien thi KHONG tu day di dau ca. Ly do: SixosPwa khong biet benh
+        // nhan vua dang xuat ben he doi tac hay chua (hai ten mien, khong co
+        // single-logout), nen tu dong ban giao lai se khien nut "Dang nhap"
+        // thanh nut khong cho dang nhap. Hien man dang nhap kem mot khoi lua
+        // chon: di tiep bang tai khoan dang co, hoac dang nhap tai khoan khac.
         if (User.Identity?.IsAuthenticated == true && !adminReauth)
         {
-            // Admin và Đối tác vào trang Index như cũ, bệnh nhân giờ cũng vào Index (Dashboard mới)
-            return RedirectToAction("Index", "Home");
+            var cccdPhien = User.FindFirst(LuongCongBenhNhan.ClaimCccd)?.Value;
+            var maCoSoDich = maCoSoTuUrl ?? User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
+
+            if (!string.IsNullOrWhiteSpace(cccdPhien))
+            {
+                ViewBag.DangDangNhapLa = User.FindFirst(ClaimTypes.Name)?.Value;
+                ViewBag.LinkDiTiep = Url.Action(nameof(DiTiep), new { coSo, returnUrl });
+            }
+            else
+            {
+                // Phien cu, thieu claim cua cong benh nhan: coi nhu chua dang nhap.
+                ViewBag.DangDangNhapLa = null;
+            }
         }
 
         ViewData["AdminReauth"] = adminReauth;
@@ -166,6 +204,17 @@ public class DangNhapController : Controller
                 claims.Add(new Claim(ClaimTypes.Email, emailClaimValue));
             }
 
+            // Hai claim nay la cach cac man phia sau (Dang ky / Lien ket / Ban
+            // giao / trang benh nhan) biet benh nhan la ai va dang o co so nao.
+            if (!string.IsNullOrWhiteSpace(model.Cccd))
+            {
+                claims.Add(new Claim(LuongCongBenhNhan.ClaimCccd, model.Cccd.Trim()));
+            }
+            if (!string.IsNullOrWhiteSpace(model.MaCoSo))
+            {
+                claims.Add(new Claim(LuongCongBenhNhan.ClaimMaCoSo, model.MaCoSo.Trim()));
+            }
+
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
             var authProperties = new AuthenticationProperties
@@ -194,8 +243,11 @@ public class DangNhapController : Controller
             // Lưu thông tin thiết bị đăng nhập vào database
             await LuuThietBiDangNhapAsync(username, model.DeviceId, model.DeviceName);
 
-            // Tất cả user đều vào Dashboard mới ở Index
-            var redirectUrl = adminReauth ? model.ReturnUrl : Url.Action("Index", "Home");
+            // Cay quyet dinh sau OTP: chi mot cho duy nhat, nam trong
+            // ILuongCongBenhNhan. Man hinh khong duoc tu kiem tra MaCoSo.
+            var redirectUrl = adminReauth
+                ? model.ReturnUrl
+                : await ChonDichDenAsync(model.MaCoSo, model.Cccd, input, model.ReturnUrl);
 
             return Json(new { success = true, redirectUrl });
         }
@@ -221,6 +273,15 @@ public class DangNhapController : Controller
             new Claim(ClaimTypes.MobilePhone, sdt),
             new Claim(ClaimTypes.Role, "BenhNhan")
         };
+
+        if (!string.IsNullOrWhiteSpace(model.Cccd))
+        {
+            claims.Add(new Claim(LuongCongBenhNhan.ClaimCccd, model.Cccd.Trim()));
+        }
+        if (!string.IsNullOrWhiteSpace(model.MaCoSo))
+        {
+            claims.Add(new Claim(LuongCongBenhNhan.ClaimMaCoSo, model.MaCoSo.Trim()));
+        }
 
         var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
@@ -248,7 +309,291 @@ public class DangNhapController : Controller
         // Lưu thông tin thiết bị đăng nhập vào database
         await LuuThietBiDangNhapAsync(sdt, model.DeviceId, model.DeviceName);
 
-        return Json(new { success = true, redirectUrl = adminReauth ? model.ReturnUrl : Url.Action("Index", "Home") });
+        var dichDen = adminReauth
+            ? model.ReturnUrl
+            : await ChonDichDenAsync(model.MaCoSo, model.Cccd, sdt, model.ReturnUrl);
+
+        return Json(new { success = true, redirectUrl = dichDen });
+    }
+
+    // ==================================================================
+    //  Cong benh nhan: Dang ky / Lien ket / Doi mat khau / Ban giao
+    //  Bon man nay chi den tu cay quyet dinh trong ILuongCongBenhNhan.
+    // ==================================================================
+
+    [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> DangKy(string coSo, string? returnUrl = null)
+    {
+        var maCoSo = LayMaCoSoPhien(coSo);
+        if (maCoSo is null) return RedirectToAction(nameof(Login));
+
+        await DoNguCanhRaViewBagAsync(maCoSo, returnUrl);
+        return View();
+    }
+
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> TaoTaiKhoan([FromBody] TaoTaiKhoanRequest model)
+    {
+        if (string.IsNullOrWhiteSpace(model.HoTen) || string.IsNullOrWhiteSpace(model.MatKhau))
+        {
+            return Json(new { success = false, message = "Vui lòng nhập đầy đủ họ tên và mật khẩu!" });
+        }
+
+        if (model.MatKhau.Length < 6)
+        {
+            return Json(new { success = false, message = "Mật khẩu phải có ít nhất 6 ký tự!" });
+        }
+
+        // KHONG tin cccd / maCoSo / dinhDanh tu body: neu tin thi bat ky ai cung
+        // POST duoc voi CCCD nguoi khac de mo tai khoan ben doi tac. Lay tu phien.
+        var (maCoSo, cccd, dinhDanh) = LayDanhTinhPhien();
+        if (maCoSo is null || cccd is null)
+        {
+            return Json(new { success = false, message = "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại!" });
+        }
+
+        var ketQua = await _luong.MoTaiKhoanAsync(
+            maCoSo, cccd, dinhDanh ?? string.Empty, model.HoTen.Trim(), model.MatKhau, model.ReturnUrl);
+
+        if (!ketQua.ThanhCong)
+        {
+            return Json(new { success = false, message = ketQua.ThongBao });
+        }
+
+        return Json(new { success = true, redirectUrl = ketQua.DichDen });
+    }
+
+    [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> LienKet(string coSo, string? returnUrl = null)
+    {
+        var maCoSo = LayMaCoSoPhien(coSo);
+        if (maCoSo is null) return RedirectToAction(nameof(Login));
+
+        await DoNguCanhRaViewBagAsync(maCoSo, returnUrl);
+        return View();
+    }
+
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> GuiMaLienKet([FromBody] GuiMaLienKetRequest model)
+    {
+        var (maCoSo, cccd, _) = LayDanhTinhPhien();
+        if (maCoSo is null || cccd is null)
+        {
+            return Json(new { success = false, message = "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại!" });
+        }
+
+        // Rieng so dien thoai thi lay tu form: no phai khop so benh nhan da dang
+        // ky BEN CO SO, co the khac so dung de dang nhap SixosPwa.
+        var ketQua = await _luong.GuiMaLienKetAsync(maCoSo, cccd, model.DienThoai);
+        return Json(new { success = ketQua.ThanhCong, message = ketQua.ThongBao });
+    }
+
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> XacNhanLienKet([FromBody] XacNhanLienKetRequest model)
+    {
+        if (string.IsNullOrWhiteSpace(model.Ma) || string.IsNullOrWhiteSpace(model.MatKhau))
+        {
+            return Json(new { success = false, message = "Vui lòng nhập đầy đủ mã xác thực và mật khẩu!" });
+        }
+
+        var (maCoSo, cccd, _) = LayDanhTinhPhien();
+        if (maCoSo is null || cccd is null)
+        {
+            return Json(new { success = false, message = "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại!" });
+        }
+
+        var ketQua = await _luong.XacNhanLienKetAsync(
+            maCoSo, cccd, model.DienThoai, model.Ma.Trim(), model.MatKhau);
+
+        if (!ketQua.ThanhCong)
+        {
+            return Json(new { success = false, message = ketQua.ThongBao });
+        }
+
+        return Json(new { success = true, redirectUrl = ketQua.DichDen });
+    }
+
+    [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> DoiMatKhau(string coSo)
+    {
+        var maCoSo = LayMaCoSoPhien(coSo);
+        if (maCoSo is null) return RedirectToAction(nameof(Login));
+
+        await DoNguCanhRaViewBagAsync(maCoSo, null);
+        return View();
+    }
+
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> LuuMatKhauMoi([FromBody] DoiMatKhauRequest model)
+    {
+        if (string.IsNullOrWhiteSpace(model.MatKhauMoi) || model.MatKhauMoi.Length < 6)
+        {
+            return Json(new { success = false, message = "Mật khẩu phải có ít nhất 6 ký tự!" });
+        }
+
+        var (maCoSo, _, _) = LayDanhTinhPhien();
+        if (maCoSo is null)
+        {
+            return Json(new { success = false, message = "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại!" });
+        }
+
+        var ketQua = await _luong.DoiMatKhauAsync(maCoSo, User, model.MatKhauMoi);
+
+        return Json(new { success = ketQua.ThanhCong, message = ketQua.ThongBao });
+    }
+
+    /// <summary>
+    /// Man trung gian ban giao phien sang he doi tac. KHONG goi HTTP o day —
+    /// cookie phai duoc dat tren trinh duyet benh nhan, nen view se POST bang
+    /// form top-level trong popup. Xem ADR 0003.
+    /// </summary>
+    [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> BanGiao(string coSo, string? returnUrl = null)
+    {
+        var maCoSo = LayMaCoSoPhien(coSo);
+        if (maCoSo is null) return RedirectToAction(nameof(Login));
+
+        // returnUrl la y dinh cua nut benh nhan da bam ("/dat-goi-kham"...).
+        // Doi tac se tu dich sang man tuong ung ben ho.
+        var yDinh = returnUrl?.Trim('/');
+        var thongTin = await _luong.DungThongTinBanGiaoAsync(maCoSo, User, yDinh);
+
+        if (thongTin is null)
+        {
+            // Khong dung duoc form ban giao (thieu credential, hoac co so khong
+            // co API): dua ve trang benh nhan noi bo thay vi treo man trang.
+            return Redirect("/benh-nhan");
+        }
+
+        await DoNguCanhRaViewBagAsync(maCoSo, null);
+        ViewBag.CacBuoc = thongTin.CacBuoc;
+        ViewBag.TrangChu = thongTin.DichCuoi;
+        return View();
+    }
+
+    /// <summary>
+    /// Nguoi dung chu dong bam "Tiep tuc" o man dang nhap khi phien van con.
+    /// Day moi la cho chay cay quyet dinh — KHONG tu chay khi chi mo trang.
+    /// </summary>
+    [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> DiTiep(string? coSo = null, string? returnUrl = null)
+    {
+        var cccd = User.FindFirst(LuongCongBenhNhan.ClaimCccd)?.Value;
+        var dinhDanh = User.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;
+
+        var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
+
+        if (!string.IsNullOrWhiteSpace(coSo))
+        {
+            var thongTin = await _dbContext.DMCSKCBs
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Slug == coSo);
+
+            if (thongTin?.MaCoSo is not null) maCoSo = thongTin.MaCoSo;
+        }
+
+        if (string.IsNullOrWhiteSpace(maCoSo) || string.IsNullOrWhiteSpace(cccd))
+        {
+            return Redirect("/benh-nhan");
+        }
+
+        // Bam nut tu mot co so KHAC voi co so cua phien: doi claim sang co so moi.
+        // Danh tinh da xac thuc bang OTP roi nen khong bat lam lai tu dau.
+        if (maCoSo != User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value)
+        {
+            await DoiCoSoTrongPhienAsync(maCoSo);
+        }
+
+        var dichDen = await _luong.ChonDichDenAsync(maCoSo, cccd, dinhDanh, returnUrl);
+        return Redirect(dichDen);
+    }
+
+    /// <summary>
+    /// Doi ma co so trong phien hien tai, giu nguyen moi claim khac. Dung khi
+    /// benh nhan da dang nhap roi bam nut tu mot co so khac — danh tinh da xac
+    /// thuc bang OTP nen khong co ly do bat ho lam lai tu dau.
+    /// </summary>
+    private async Task DoiCoSoTrongPhienAsync(string maCoSoMoi)
+    {
+        var claims = User.Claims
+            .Where(c => c.Type != LuongCongBenhNhan.ClaimMaCoSo)
+            .Select(c => new Claim(c.Type, c.Value))
+            .ToList();
+
+        claims.Add(new Claim(LuongCongBenhNhan.ClaimMaCoSo, maCoSoMoi));
+
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+        await HttpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            new ClaimsPrincipal(identity),
+            new AuthenticationProperties
+            {
+                IsPersistent = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddDays(365)
+            });
+    }
+
+    /// <summary>
+    /// Danh tinh benh nhan LAY TU PHIEN. Moi thao tac cham toi he doi tac deu
+    /// phai di qua day — khong bao gio tin cccd/maCoSo gui len tu trinh duyet.
+    /// </summary>
+    private (string? MaCoSo, string? Cccd, string? DinhDanh) LayDanhTinhPhien()
+        => (User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value,
+            User.FindFirst(LuongCongBenhNhan.ClaimCccd)?.Value,
+            User.FindFirst(ClaimTypes.Name)?.Value);
+
+    /// <summary>
+    /// Ma co so cua phien. Tham so tren URL chi duoc dung khi phien chua co —
+    /// va phai la ma co so hop le, de khong ai doi URL de nhay sang co so khac.
+    /// </summary>
+    private string? LayMaCoSoPhien(string? coSoTrenUrl)
+    {
+        var cuaPhien = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
+        if (!string.IsNullOrWhiteSpace(cuaPhien)) return cuaPhien;
+
+        return string.IsNullOrWhiteSpace(coSoTrenUrl) ? null : coSoTrenUrl;
+    }
+
+    /// <summary>Do ten co so + dinh danh benh nhan ra ViewBag cho bon man tren.</summary>
+    private async Task DoNguCanhRaViewBagAsync(string maCoSo, string? returnUrl)
+    {
+        var coSo = await _dbContext.DMCSKCBs
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.MaCoSo == maCoSo);
+
+        ViewBag.MaCoSo = maCoSo;
+        ViewBag.TenCoSo = coSo?.TenCoSo ?? "cơ sở khám chữa bệnh";
+        ViewBag.SlugCoSo = coSo?.Slug;
+        ViewBag.ReturnUrl = returnUrl;
+
+        ViewBag.Cccd = User.FindFirst(LuongCongBenhNhan.ClaimCccd)?.Value;
+        ViewBag.DinhDanh = User.FindFirst(ClaimTypes.Name)?.Value;
+        ViewBag.DienThoai = User.FindFirst(ClaimTypes.MobilePhone)?.Value;
+    }
+
+    /// <summary>
+    /// Cho ha canh sau khi xac thuc. Vao thang /DangNhap/Login (khong qua trang
+    /// co so) thi khong biet benh nhan o co so nao, nen chi ve duoc trang benh
+    /// nhan dang toi gian — muon di tiep phai vao lai qua /pk/{slug}.
+    /// </summary>
+    private async Task<string?> ChonDichDenAsync(string? maCoSo, string? cccd, string dinhDanh, string? returnUrl)
+    {
+        if (string.IsNullOrWhiteSpace(maCoSo) || string.IsNullOrWhiteSpace(cccd))
+        {
+            return "/benh-nhan";
+        }
+
+        return await _luong.ChonDichDenAsync(maCoSo, cccd.Trim(), dinhDanh, returnUrl);
     }
 
     private async Task LuuThietBiDangNhapAsync(string soDienThoai, string? deviceId, string? deviceName)
@@ -292,8 +637,28 @@ public class DangNhapController : Controller
     [HttpPost]
     public async Task<IActionResult> DangXuat()
     {
+        // Doc ma co so TRUOC khi dang xuat, vi sau SignOut la mat sach claim.
+        // Dang xuat khoi cong benh nhan cua mot co so thi phai quay ve dung
+        // trang co so do — ve /DangNhap/Login tran thi lan dang nhap sau khong
+        // con mang theo ma co so, va benh nhan roi thang vao nhanh noi bo.
+        var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
+
+        var slug = string.IsNullOrWhiteSpace(maCoSo)
+            ? null
+            : await _dbContext.DMCSKCBs
+                .AsNoTracking()
+                .Where(x => x.MaCoSo == maCoSo)
+                .Select(x => x.Slug)
+                .FirstOrDefaultAsync();
+
         await HttpContext.SignOutAsync(AdminReauthentication.Scheme);
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+        if (!string.IsNullOrWhiteSpace(slug))
+        {
+            return Redirect($"/pk/{slug}");
+        }
+
         return RedirectToAction(nameof(Login));
     }
 }
@@ -301,6 +666,13 @@ public class DangNhapController : Controller
 public class GuiOtpRequest
 {
     public string SoDienThoai { get; set; } = string.Empty;
+
+    /// <summary>Ma co so benh nhan dang dung (tu ?coSo=slug ben trang co so).</summary>
+    public string? MaCoSo { get; set; }
+
+    /// <summary>Khoa noi benh nhan sang he doi tac (V6).</summary>
+    public string? Cccd { get; set; }
+
     public string? DeviceId { get; set; }
     public string? DeviceName { get; set; }
     public string? ReturnUrl { get; set; }
@@ -310,8 +682,43 @@ public class XacNhanOtpRequest
 {
     public string SoDienThoai { get; set; } = string.Empty;
     public string Otp { get; set; } = string.Empty;
+
+    /// <summary>Ma co so benh nhan dang dung (tu ?coSo=slug ben trang co so).</summary>
+    public string? MaCoSo { get; set; }
+
+    /// <summary>Khoa noi benh nhan sang he doi tac (V6).</summary>
+    public string? Cccd { get; set; }
+
     public string? DeviceId { get; set; }
     public string? DeviceName { get; set; }
     public string? ReturnUrl { get; set; }
 }
 
+public class TaoTaiKhoanRequest
+{
+    // Khong nhan MaCoSo / Cccd / DinhDanh: chung duoc lay tu claim cua phien.
+    public string HoTen { get; set; } = string.Empty;
+    public string MatKhau { get; set; } = string.Empty;
+
+    /// <summary>Y dinh cua nut benh nhan da bam luc dau ("/dat-goi-kham"...).</summary>
+    public string? ReturnUrl { get; set; }
+}
+
+public class GuiMaLienKetRequest
+{
+    /// <summary>So dien thoai da dang ky BEN CO SO — co the khac so dang nhap.</summary>
+    public string DienThoai { get; set; } = string.Empty;
+}
+
+public class XacNhanLienKetRequest
+{
+    /// <summary>So dien thoai da dang ky BEN CO SO — co the khac so dang nhap.</summary>
+    public string DienThoai { get; set; } = string.Empty;
+    public string Ma { get; set; } = string.Empty;
+    public string MatKhau { get; set; } = string.Empty;
+}
+
+public class DoiMatKhauRequest
+{
+    public string MatKhauMoi { get; set; } = string.Empty;
+}

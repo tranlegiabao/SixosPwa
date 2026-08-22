@@ -1,0 +1,184 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "Đang chuyển tới cơ sở";
+}
+
+<!doctype html>
+<html lang="vi">
+<head>
+    <title>Đang chuyển tới @ViewBag.TenCoSo — HisSoft</title>
+    <partial name="_CongHead" />
+    <style>
+        .khoi-cho { text-align: center; padding: 8px 0; }
+        .khoi-cho .spinner-border { width: 3rem; height: 3rem; }
+        #khoiChanPopup { display: none; }
+    </style>
+</head>
+<body class="page-center">
+
+    <main class="auth">
+        <div class="auth__brand">
+            <img src="~/static/icon-192.png" alt="HisSoft" width="72" height="72" />
+            <h1>Đang chuyển tới cơ sở</h1>
+            <p>@ViewBag.TenCoSo</p>
+        </div>
+
+        <div class="card auth__card">
+            <div class="card-body">
+
+                <div class="khoi-cho" id="khoiCho">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Đang xử lý</span>
+                    </div>
+                    <p class="mb-0">Vui lòng chờ trong giây lát…</p>
+                </div>
+
+                @* Popup bi trinh duyet chan: hien nut de benh nhan bam lai. Bam
+                   tay moi con "user gesture", nen popup se mo duoc. *@
+                <div id="khoiChanPopup">
+                    <p class="mb-3">
+                        Trình duyệt đang chặn cửa sổ tự mở. Bấm nút dưới đây để tiếp tục.
+                    </p>
+                    <button type="button" class="btn btn-primary w-100 py-2 fw-bold" onclick="banGiao()">
+                        Tiếp tục tới @ViewBag.TenCoSo
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <p class="auth__foot">
+            Nếu không tự chuyển,
+            <a href="@ViewBag.TrangChu" class="text-decoration-none">bấm vào đây</a>.
+        </p>
+    </main>
+
+    @*
+        BAT BUOC la form POST TOP-LEVEL trong popup, KHONG duoc dung fetch/AJAX
+        va cung KHONG duoc dung iframe an. Ly do (ADR 0003):
+        - Ben doi tac dung app.UseCors(AllowAnyOrigin) ma AllowAnyOrigin khong di
+          cung AllowCredentials => fetch khong dat duoc cookie.
+        - Iframe lien site bi chinh sach cookie ben thu ba chan (Safari chan han).
+        Popup nhan Set-Cookie roi TU DIEU HUONG sang trang chu doi tac.
+    *@
+    @{
+        var cacBuoc = (IReadOnlyList<SixosPwa.Services.Partner.BuocBanGiao>)ViewBag.CacBuoc;
+    }
+    @for (var i = 0; i < cacBuoc.Count; i++)
+    {
+        <form id="buoc@(i)" method="post" action="@cacBuoc[i].Action" target="cuaSoBanGiao">
+            @foreach (var truong in cacBuoc[i].Truong)
+            {
+                <input type="hidden" name="@truong.Key" value="@truong.Value" />
+            }
+        </form>
+    }
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const trangChu = '@ViewBag.TrangChu';
+        const tenCoSo = @Html.Raw(Json.Serialize(ViewBag.TenCoSo as string ?? ""));
+
+        // Cho quay ve khi ban giao xong. Man nay TUYET DOI khong duoc la ngo cut:
+        // benh nhan dong tab cua doi tac la quay lai day, thay vong xoay treo mai
+        // va khong biet phai lam gi (nguoi gia se ket han o day).
+        const duongVe = @Html.Raw(Json.Serialize(
+            string.IsNullOrWhiteSpace(ViewBag.SlugCoSo as string)
+                ? "/benh-nhan"
+                : $"/pk/{ViewBag.SlugCoSo}"));
+
+        // Doi tac can chut thoi gian de xu ly POST va tra Set-Cookie ve popup.
+        // Het khoang nay thi day popup sang trang chu — cung la de che not phan
+        // JSON ma endpoint login cua ho tra ve.
+        const CHO_DAT_COOKIE_MS = 1200;
+
+        // Cho them chut nua roi moi roi man nay, de popup kip nhan focus.
+        const CHO_ROI_MAN_MS = 900;
+
+        function roiManBanGiao() {
+            // replace chu khong phai href: de benh nhan bam Back khong quay lai
+            // day va lam ca quy trinh chay lai tu dau.
+            window.location.replace(duongVe);
+        }
+
+        // Trang dem ve len popup NGAY khi vua mo, truoc khi POST. Neu khong,
+        // benh nhan nhin thay man trang roi thay JSON tho cua doi tac.
+        function veTrangDem(cuaSo) {
+            try {
+                cuaSo.document.open();
+                cuaSo.document.write(
+                    '<!doctype html><html lang="vi"><head><meta charset="utf-8">' +
+                    '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+                    '<title>Đang kết nối…</title><style>' +
+                    'html,body{height:100%;margin:0}' +
+                    'body{display:flex;align-items:center;justify-content:center;' +
+                    'font-family:"Segoe UI",system-ui,sans-serif;background:#f5f7fa;color:#12202e}' +
+                    '.h{text-align:center;padding:24px}' +
+                    '.v{width:48px;height:48px;margin:0 auto 18px;border-radius:50%;' +
+                    'border:4px solid #dde4ed;border-top-color:#0d5bd4;animation:q .9s linear infinite}' +
+                    '@@keyframes q{to{transform:rotate(360deg)}}' +
+                    '.t{font-size:16px;font-weight:600}' +
+                    '.s{font-size:13px;color:#66788a;margin-top:6px}' +
+                    '</style></head><body><div class="h"><div class="v"></div>' +
+                    '<div class="t">Đang kết nối tới</div>' +
+                    '<div class="s">' + tenCoSo + '</div></div></body></html>');
+                cuaSo.document.close();
+            } catch (loi) {
+                // Popup chua san sang de ghi — bo qua, chi mat man dem.
+            }
+        }
+
+        function banGiao() {
+            const cuaSo = window.open('', 'cuaSoBanGiao', 'width=480,height=560');
+
+            if (!cuaSo) {
+                document.getElementById('khoiCho').style.display = 'none';
+                document.getElementById('khoiChanPopup').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('khoiCho').style.display = 'block';
+            document.getElementById('khoiChanPopup').style.display = 'none';
+
+            veTrangDem(cuaSo);
+            chayBuoc(cuaSo, 0);
+        }
+
+        // He doi tac cong don claim qua tung lan POST (dang nhap -> chon chi
+        // nhanh), nen phai POST TUAN TU vao cung mot cua so, cho lan truoc xong
+        // moi den lan sau. Khong doc duoc phan hoi (khac ten mien) nen doi bang
+        // thoi gian la cach duy nhat.
+        function chayBuoc(cuaSo, i) {
+            if (cuaSo.closed) {
+                // Benh nhan tu dong tab: ho khong muon di tiep nua.
+                roiManBanGiao();
+                return;
+            }
+
+            const form = document.getElementById('buoc' + i);
+
+            if (form) {
+                form.submit();
+                setTimeout(function () { chayBuoc(cuaSo, i + 1); }, CHO_DAT_COOKIE_MS);
+                return;
+            }
+
+            // Het buoc: day popup sang dich cuoi. Cookie vua duoc dat nen day la
+            // dieu huong top-level GET cung site => cookie duoc gui kem.
+            try {
+                cuaSo.location.href = trangChu;
+                cuaSo.focus();
+            } catch (loi) {
+                window.location.href = trangChu;
+                return;
+            }
+
+            // Tab goc roi khoi man ban giao. Dong tab doi tac la ve trang co so
+            // binh thuong, khong con vong xoay treo.
+            setTimeout(roiManBanGiao, CHO_ROI_MAN_MS);
+        }
+
+        banGiao();
+    </script>
+</body>
+</html>

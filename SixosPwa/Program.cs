@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using SixosPwa.Data;
 using SixosPwa.Security;
 using SixosPwa.Services;
+using SixosPwa.Services.Partner;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +19,14 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 // Add Services
 builder.Services.AddScoped<ITaiKhoanService, DbTaiKhoanService>();
+
+// Cua doi tac: moi kieu API mot ban cai. Them doi tac o giai doan 2 = them
+// mot dong AddScoped o day + mot dong trong bang DM_DoiTacApi. Xem ADR 0003.
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<IPartnerGateway, NoApiGateway>();
+builder.Services.AddScoped<IPartnerGateway, UbGateway>();
+builder.Services.AddScoped<IPartnerGatewayFactory, PartnerGatewayFactory>();
+builder.Services.AddScoped<ILuongCongBenhNhan, LuongCongBenhNhan>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -150,13 +159,9 @@ using (var scope = app.Services.CreateScope())
             END
         ");
 
-        db.Database.ExecuteSqlRaw(@"
-            IF OBJECT_ID('DMCSKCB', 'U') IS NOT NULL
-                AND COL_LENGTH('DMCSKCB', 'Huyen') IS NULL
-            BEGIN
-                ALTER TABLE DMCSKCB ADD Huyen INT NULL
-            END
-        ");
+        // Cot DMCSKCB.Huyen da duoc go bo khoi DB (quyet dinh cua Hieu, 22/08).
+        // Doan tu them lai cot truoc day o day da bi xoa — de lai thi moi lan
+        // khoi dong app se dung len mot cot ma ben kia vua co y bo di.
         db.Database.ExecuteSqlRaw(@"
             IF OBJECT_ID('DMCSKCB', 'U') IS NOT NULL
             BEGIN
