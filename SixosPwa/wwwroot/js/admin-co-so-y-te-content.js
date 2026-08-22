@@ -24,8 +24,10 @@
         var editor = document.querySelector(selector);
         if (!editor) return;
 
-        if (window.jQuery && jQuery.fn.summernote && jQuery(selector).next('.note-editor').length) {
-            jQuery(selector).summernote('code', content || '');
+        var id = selector.replace('#', '');
+        var ed = typeof tinymce !== 'undefined' ? tinymce.get(id) : null;
+        if (ed) {
+            ed.setContent(content || '');
         } else {
             editor.value = content || '';
         }
@@ -56,55 +58,78 @@
         }
     }
 
-    function uploadImage(file, editor) {
-        var data = new FormData();
-        data.append('file', file);
-        jQuery.ajax({
-            url: '/Admin/CoSoYTe/UploadImage',
-            cache: false,
-            contentType: false,
-            processData: false,
-            data: data,
-            type: 'post',
-            success: function (response) {
-                jQuery(editor).summernote('insertImage', response.url);
-            },
-            error: function (xhr) {
-                if (typeof showToast === 'function') showToast(xhr.responseText || 'Lỗi upload ảnh.', 'error');
-            }
-        });
-    }
-
     function initializeEditor(selector, height) {
-        if (!jQuery(selector).length) return;
+        var el = document.querySelector(selector);
+        if (!el) return;
 
-        jQuery(selector).summernote({
-            tabsize: 2,
+        var id = selector.replace('#', '');
+        if (typeof tinymce !== 'undefined' && tinymce.get(id)) {
+            return;
+        }
+
+        tinymce.init({
+            selector: selector,
             height: height,
-            toolbar: [
-                ['para', ['ul', 'ol', 'paragraph']],
-                ['style', ['bold', 'underline', 'italic']],
-                ['fontsize', ['fontsize']],
-                ['color', ['color']],
-                ['history', ['undo', 'redo']],
-                ['height', ['height']],
-                ['table', ['table']],
-                ['insert', ['link', 'picture', 'video']]
-            ],
-            fontSizes: ['8', '9', '10', '11', '12', '14', '16', '18', '24', '36', '48', '64'],
-            callbacks: {
-                onImageUpload: function (files) {
-                    for (var i = 0; i < files.length; i++) uploadImage(files[i], this);
-                }
+            menubar: false,
+            branding: false,
+            promotion: false,
+            license_key: 'gpl',
+            plugins: 'advlist autolink lists link image table code',
+            toolbar: 'undo redo | bold italic underline | bullist numlist | ' +
+                     'alignleft aligncenter alignright | table image link | ' +
+                     'forecolor backcolor removeformat | code',
+            paste_data_images: false,
+            automatic_uploads: true,
+            setup: function (editor) {
+                editor.on('init', function () {
+                    if (selector === '#summernote') {
+                        loadContent();
+                    }
+                });
+            },
+            images_upload_handler: function (blobInfo) {
+                return new Promise(function (resolve, reject) {
+                    var form = new FormData();
+                    form.append('file', blobInfo.blob(), blobInfo.filename());
+                    var token = document.querySelector('#coSoYTeForm input[name="__RequestVerificationToken"]');
+                    if (token) form.append('__RequestVerificationToken', token.value);
+
+                    fetch('/Admin/CoSoYTe/UploadImage', {
+                        method: 'POST',
+                        body: form
+                    })
+                    .then(function (res) {
+                        if (!res.ok) {
+                            return res.text().then(function (text) { throw new Error(text); });
+                        }
+                        return res.json();
+                    })
+                    .then(function (json) {
+                        if (json && json.url) { resolve(json.url); }
+                        else { reject({ message: 'Tải ảnh thất bại.', remove: true }); }
+                    })
+                    .catch(function (err) { reject({ message: err.message || 'Không kết nối được máy chủ.', remove: true }); });
+                });
             }
         });
     }
+
+    window.initializeEditor = initializeEditor;
 
     function initialize() {
-        if (!window.jQuery || !jQuery.fn.summernote) return;
+        if (typeof tinymce === 'undefined') return;
 
-        initializeEditor('#summernote', 450);
-        initializeEditor('#advertisingContentEditor', 250);
+        var selectorEl = document.getElementById('editSectionSelector');
+        if (selectorEl) {
+            if (selectorEl.value === 'noiDungChiTiet') {
+                initializeEditor('#summernote', 450);
+            } else if (selectorEl.value === 'quangCao') {
+                initializeEditor('#advertisingContentEditor', 250);
+            }
+        } else {
+            initializeEditor('#summernote', 450);
+            initializeEditor('#advertisingContentEditor', 250);
+        }
     }
 
     function syncEditorValue(selector) {
@@ -112,8 +137,10 @@
         if (!editor) return;
 
         var html = editor.value || '';
-        if (window.jQuery && jQuery.fn.summernote && jQuery(selector).next('.note-editor').length) {
-            html = jQuery(selector).summernote('code');
+        var id = selector.replace('#', '');
+        var ed = typeof tinymce !== 'undefined' ? tinymce.get(id) : null;
+        if (ed) {
+            html = ed.getContent();
         }
         editor.value = ensureDefaultBlackHtml(html);
     }
