@@ -554,8 +554,28 @@ public class DangNhapController : Controller
     [HttpPost]
     public async Task<IActionResult> DangXuat()
     {
+        // Doc ma co so TRUOC khi dang xuat, vi sau SignOut la mat sach claim.
+        // Dang xuat khoi cong benh nhan cua mot co so thi phai quay ve dung
+        // trang co so do — ve /DangNhap/Login tran thi lan dang nhap sau khong
+        // con mang theo ma co so, va benh nhan roi thang vao nhanh noi bo.
+        var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
+
+        var slug = string.IsNullOrWhiteSpace(maCoSo)
+            ? null
+            : await _dbContext.DMCSKCBs
+                .AsNoTracking()
+                .Where(x => x.MaCoSo == maCoSo)
+                .Select(x => x.Slug)
+                .FirstOrDefaultAsync();
+
         await HttpContext.SignOutAsync(AdminReauthentication.Scheme);
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+        if (!string.IsNullOrWhiteSpace(slug))
+        {
+            return Redirect($"/pk/{slug}");
+        }
+
         return RedirectToAction(nameof(Login));
     }
 }
