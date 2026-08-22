@@ -639,6 +639,11 @@
         .ytv-footer-right a {
             text-align: center;
         }
+        
+        /* Đảo ngược thứ tự footer trên mobile: đưa policies lên trên, thông tin liên hệ xuống dưới */
+        .ytv-footer {
+            flex-direction: column-reverse !important;
+        }
     }
 /* Decorative Backgrounds for Company Info Cards */
 .ytv-company-info > div {
