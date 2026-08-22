@@ -58,11 +58,8 @@
         va cung KHONG duoc dung iframe an. Ly do (ADR 0003):
         - Ben doi tac dung app.UseCors(AllowAnyOrigin) ma AllowAnyOrigin khong di
           cung AllowCredentials => fetch khong dat duoc cookie.
-        - Cookie DKOnline_auth thuc te la SameSite=Lax (ho co cau hinh Strict
-          nhung quen app.UseCookiePolicy()), nen iframe lien site bi chan, con
-          dieu huong top-level thi van gui cookie.
-        Popup nhan Set-Cookie roi dong lai; cua so chinh dieu huong sang trang chu
-        cua doi tac va cookie duoc gui kem.
+        - Iframe lien site bi chinh sach cookie ben thu ba chan (Safari chan han).
+        Popup nhan Set-Cookie roi TU DIEU HUONG sang trang chu doi tac.
     *@
     <form id="formBanGiao" method="post" action="@ViewBag.Action" target="cuaSoBanGiao">
         @foreach (var truong in (IReadOnlyDictionary<string, string>)ViewBag.Truong)
@@ -74,9 +71,39 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const trangChu = '@ViewBag.TrangChu';
+        const tenCoSo = @Html.Raw(Json.Serialize(ViewBag.TenCoSo as string ?? ""));
 
         // Doi tac can chut thoi gian de xu ly POST va tra Set-Cookie ve popup.
-        const CHO_DAT_COOKIE_MS = 1800;
+        // Het khoang nay thi day popup sang trang chu — cung la de che not phan
+        // JSON ma endpoint login cua ho tra ve.
+        const CHO_DAT_COOKIE_MS = 1200;
+
+        // Trang dem ve len popup NGAY khi vua mo, truoc khi POST. Neu khong,
+        // benh nhan nhin thay man trang roi thay JSON tho cua doi tac.
+        function veTrangDem(cuaSo) {
+            try {
+                cuaSo.document.open();
+                cuaSo.document.write(
+                    '<!doctype html><html lang="vi"><head><meta charset="utf-8">' +
+                    '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+                    '<title>Đang kết nối…</title><style>' +
+                    'html,body{height:100%;margin:0}' +
+                    'body{display:flex;align-items:center;justify-content:center;' +
+                    'font-family:"Segoe UI",system-ui,sans-serif;background:#f5f7fa;color:#12202e}' +
+                    '.h{text-align:center;padding:24px}' +
+                    '.v{width:48px;height:48px;margin:0 auto 18px;border-radius:50%;' +
+                    'border:4px solid #dde4ed;border-top-color:#0d5bd4;animation:q .9s linear infinite}' +
+                    '@@keyframes q{to{transform:rotate(360deg)}}' +
+                    '.t{font-size:16px;font-weight:600}' +
+                    '.s{font-size:13px;color:#66788a;margin-top:6px}' +
+                    '</style></head><body><div class="h"><div class="v"></div>' +
+                    '<div class="t">Đang kết nối tới</div>' +
+                    '<div class="s">' + tenCoSo + '</div></div></body></html>');
+                cuaSo.document.close();
+            } catch (loi) {
+                // Popup chua san sang de ghi — bo qua, chi mat man dem.
+            }
+        }
 
         function banGiao() {
             const cuaSo = window.open('', 'cuaSoBanGiao', 'width=480,height=560');
@@ -89,11 +116,21 @@
 
             document.getElementById('khoiCho').style.display = 'block';
             document.getElementById('khoiChanPopup').style.display = 'none';
+
+            veTrangDem(cuaSo);
             document.getElementById('formBanGiao').submit();
 
             setTimeout(function () {
-                try { cuaSo.close(); } catch (loi) { /* popup tu dong roi */ }
-                window.location.href = trangChu;
+                // Day popup sang trang chu doi tac: cookie vua duoc dat nen day la
+                // dieu huong top-level GET cung site => cookie duoc gui kem.
+                // Benh nhan o lai chinh cua so nay va dung tiep.
+                try {
+                    cuaSo.location.href = trangChu;
+                    cuaSo.focus();
+                } catch (loi) {
+                    // Khong day duoc (hiem): de cua so chinh di thay.
+                    window.location.href = trangChu;
+                }
             }, CHO_DAT_COOKIE_MS);
         }
 
