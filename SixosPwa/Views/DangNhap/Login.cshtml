@@ -1,6 +1,6 @@
 @{
     Layout = null;
-    ViewData["Title"] = "Đăng nhập bằng SĐT";
+    ViewData["Title"] = "Đăng nhập";
 }
 
 <!doctype html>
@@ -34,19 +34,19 @@
         <div class="auth__brand">
             <img src="~/static/icon-192.png" alt="HisSoft" width="72" height="72" />
             <h1>HisSoft</h1>
-            <p>Đăng nhập nhanh bằng số điện thoại</p>
+            <p>Đăng nhập nhanh bằng số điện thoại hoặc email</p>
         </div>
 
         <div class="card auth__card">
             <div class="card-body">
 
-                <!-- BƯỚC 1: NHẬP SỐ ĐIỆN THOẠI -->
+                <!-- BƯỚC 1: NHẬP SỐ ĐIỆN THOẠI HOẶC EMAIL -->
                 <form id="formStep1" class="step-1" onsubmit="event.preventDefault(); guiOtp();">
                     <div class="mb-3">
-                        <label class="form-label" for="soDienThoai">Số điện thoại</label>
-                        <input type="tel" class="form-control form-control-lg" id="soDienThoai" 
-                               placeholder="Ví dụ: 0987654321" autocomplete="tel" maxlength="11" required />
-                        <div class="form-text">Nhập số điện thoại để nhận mã xác thực OTP qua SMS.</div>
+                        <label class="form-label" for="soDienThoai">Số điện thoại hoặc Email</label>
+                        <input type="text" class="form-control form-control-lg" id="soDienThoai" 
+                               placeholder="Ví dụ: 0987654321 hoặc ten@domain.com" autocomplete="username" maxlength="50" required />
+                        <div class="form-text">Nhập số điện thoại hoặc email để nhận mã xác thực OTP.</div>
                     </div>
 
                     <button type="submit" id="btnGuiOtp" class="btn btn-primary w-100 py-2 fw-bold">
@@ -69,7 +69,7 @@
 
                     <div class="d-flex justify-content-between align-items-center mt-3">
                         <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" onclick="quayLaiStep1()">
-                            &larr; Đổi số điện thoại
+                            &larr; Đổi số điện thoại hoặc email
                         </button>
                         <button type="button" id="btnGuiLaiOtp" class="btn btn-link btn-sm p-0 text-decoration-none" onclick="guiOtp()">
                             Gửi lại mã OTP
@@ -137,9 +137,23 @@
 
         async function guiOtp() {
             const sdtInput = document.getElementById('soDienThoai').value.trim();
-            if (!sdtInput || sdtInput.length < 9) {
-                showAlert('Vui lòng nhập đúng số điện thoại!', 'danger');
+            if (!sdtInput) {
+                showAlert('Vui lòng nhập số điện thoại hoặc email!', 'danger');
                 return;
+            }
+
+            const isEmail = sdtInput.indexOf('@@') !== -1;
+            if (isEmail) {
+                const emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+                if (!emailRegex.test(sdtInput)) {
+                    showAlert('Email không đúng định dạng!', 'danger');
+                    return;
+                }
+            } else {
+                if (sdtInput.length < 9) {
+                    showAlert('Số điện thoại không hợp lệ!', 'danger');
+                    return;
+                }
             }
 
             currentSdt = sdtInput;
@@ -148,6 +162,12 @@
             btnGui.innerText = 'Đang gửi mã...';
 
             if (useRealFirebase) {
+                if (isEmail) {
+                    showAlert('Chế độ OTP qua SMS thật không hỗ trợ Email!', 'danger');
+                    btnGui.disabled = false;
+                    btnGui.innerText = 'Gửi mã OTP';
+                    return;
+                }
                 // CHẾ ĐỘ 1: GỬI SMS THẬT QUA FIREBASE
                 try {
                     if (!recaptchaVerifier) {

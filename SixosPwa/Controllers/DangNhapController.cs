@@ -32,7 +32,11 @@ public class DangNhapController : Controller
         // Neu da dang nhap truoc do (Cookie truong ton hop le)
         if (User.Identity?.IsAuthenticated == true && !adminReauth)
         {
-            // Admin và Đối tác vào trang Index như cũ, bệnh nhân giờ cũng vào Index (Dashboard mới)
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (!string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction("ThongTinBenhNhan", "Home");
+            }
             return RedirectToAction("Index", "Home");
         }
 
@@ -44,23 +48,55 @@ public class DangNhapController : Controller
     [HttpPost]
     public IActionResult GuiOtp([FromBody] GuiOtpRequest model)
     {
-        if (string.IsNullOrWhiteSpace(model.SoDienThoai) || model.SoDienThoai.Trim().Length < 9)
+        if (string.IsNullOrWhiteSpace(model.SoDienThoai))
         {
-            return Json(new { success = false, message = "Số điện thoại không hợp lệ!" });
+            return Json(new { success = false, message = "Vui lòng nhập Số điện thoại hoặc Email!" });
         }
 
-        var sdt = model.SoDienThoai.Trim();
+        var input = model.SoDienThoai.Trim();
+        if (input.Contains('@'))
+        {
+            if (!IsValidEmail(input))
+            {
+                return Json(new { success = false, message = "Email không đúng định dạng!" });
+            }
+        }
+        else
+        {
+            if (input.Length < 9)
+            {
+                return Json(new { success = false, message = "Số điện thoại không hợp lệ!" });
+            }
+        }
+
         // Ma OTP thu nghiem (hoac sinh ngau nhien 6 chu so)
         var otpCode = "123456";
 
         // Luu vao cache trong 5 phut
-        _cache.Set($"OTP_{sdt}", otpCode, TimeSpan.FromMinutes(5));
+        _cache.Set($"OTP_{input}", otpCode, TimeSpan.FromMinutes(5));
+
+        var displayMessage = input.Contains('@') 
+            ? $"Mã OTP đã gửi thành công tới email {input}!"
+            : $"Mã OTP đã gửi thành công tới số {input}!";
 
         return Json(new { 
             success = true, 
-            message = $"Mã OTP đã gửi thành công tới số {sdt}!",
+            message = displayMessage,
             otpDemo = otpCode
         });
+    }
+
+    private bool IsValidEmail(string email)
+    {
+        try
+        {
+            var addr = new System.Net.Mail.MailAddress(email);
+            return addr.Address == email;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     [HttpPost]
@@ -68,20 +104,20 @@ public class DangNhapController : Controller
     {
         if (string.IsNullOrWhiteSpace(model.SoDienThoai) || string.IsNullOrWhiteSpace(model.Otp))
         {
-            return Json(new { success = false, message = "Vui lòng nhập đầy đủ số điện thoại và mã OTP!" });
+            return Json(new { success = false, message = "Vui lòng nhập đầy đủ thông tin!" });
         }
 
-        var sdt = model.SoDienThoai.Trim();
+        var input = model.SoDienThoai.Trim();
         var otpInput = model.Otp.Trim();
         var adminReauth = AdminReauthentication.IsAdminReturnUrl(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl);
 
-        _cache.TryGetValue($"OTP_{sdt}", out string? cachedOtp);
+        _cache.TryGetValue($"OTP_{input}", out string? cachedOtp);
 
         // Chap nhan neu dung ma trong cache hoac dung ma mac dinh "123456" hoac "1234" cho tien test
         if (otpInput == "123456" || otpInput == "1234" || (cachedOtp != null && cachedOtp == otpInput))
         {
-            // Tìm tài khoản từ database theo SĐT
-            var taiKhoan = await _taiKhoanService.DangNhapAsync(sdt, "");
+            // Tìm tài khoản từ database theo SĐT hoặc Email
+            var taiKhoan = await _taiKhoanService.DangNhapAsync(input, "");
             
             string role = "BenhNhan";
             
@@ -93,13 +129,46 @@ public class DangNhapController : Controller
                     : "BenhNhan";
             }
 
+            var username = input;
+            var sdtClaimValue = "";
+            var emailClaimValue = "";
+
+            if (input.Contains('@'))
+            {
+                emailClaimValue = input;
+                if (taiKhoan != null)
+                {
+                    sdtClaimValue = taiKhoan.SDT ?? "";
+                    if (!string.IsNullOrWhiteSpace(taiKhoan.SDT))
+                    {
+                        username = taiKhoan.SDT;
+                    }
+                }
+            }
+            else
+            {
+                sdtClaimValue = input;
+                if (taiKhoan != null)
+                {
+                    emailClaimValue = taiKhoan.Email ?? "";
+                }
+            }
+
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.NameIdentifier, sdt),
-                new Claim(ClaimTypes.Name, sdt),
-                new Claim(ClaimTypes.MobilePhone, sdt),
+                new Claim(ClaimTypes.NameIdentifier, username),
+                new Claim(ClaimTypes.Name, username),
                 new Claim(ClaimTypes.Role, role)
             };
+
+            if (!string.IsNullOrEmpty(sdtClaimValue))
+            {
+                claims.Add(new Claim(ClaimTypes.MobilePhone, sdtClaimValue));
+            }
+            if (!string.IsNullOrEmpty(emailClaimValue))
+            {
+                claims.Add(new Claim(ClaimTypes.Email, emailClaimValue));
+            }
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
@@ -124,13 +193,24 @@ public class DangNhapController : Controller
                     new AuthenticationProperties { IsPersistent = false });
             }
 
-            _cache.Remove($"OTP_{sdt}");
+            _cache.Remove($"OTP_{input}");
 
             // Lưu thông tin thiết bị đăng nhập vào database
-            await LuuThietBiDangNhapAsync(sdt, model.DeviceId, model.DeviceName);
+            await LuuThietBiDangNhapAsync(username, model.DeviceId, model.DeviceName);
 
-            // Tất cả user đều vào Dashboard mới ở Index
-            var redirectUrl = adminReauth ? model.ReturnUrl : Url.Action("Index", "Home");
+            string redirectUrl;
+            if (adminReauth)
+            {
+                redirectUrl = model.ReturnUrl ?? Url.Action("Index", "Home");
+            }
+            else if (!string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                redirectUrl = Url.Action("ThongTinBenhNhan", "Home");
+            }
+            else
+            {
+                redirectUrl = Url.Action("Index", "Home");
+            }
 
             return Json(new { success = true, redirectUrl });
         }
@@ -183,7 +263,7 @@ public class DangNhapController : Controller
         // Lưu thông tin thiết bị đăng nhập vào database
         await LuuThietBiDangNhapAsync(sdt, model.DeviceId, model.DeviceName);
 
-        return Json(new { success = true, redirectUrl = adminReauth ? model.ReturnUrl : Url.Action("Index", "Home") });
+        return Json(new { success = true, redirectUrl = adminReauth ? model.ReturnUrl : Url.Action("ThongTinBenhNhan", "Home") });
     }
 
     private async Task LuuThietBiDangNhapAsync(string soDienThoai, string? deviceId, string? deviceName)
