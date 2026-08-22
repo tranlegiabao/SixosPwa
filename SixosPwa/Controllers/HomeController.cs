@@ -23,32 +23,9 @@ public class HomeController : Controller
         _config = config;
     }
 
-    public async Task<IActionResult> Index(long? phongKhamId)
-    {
-        var userName = User.Identity?.Name ?? "Khách hàng";
-        ViewData["UserName"] = userName;
-        ViewData["UserRole"] = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "BenhNhan";
-        ViewData["PhongKhamId"] = phongKhamId;
-        
-        // Lấy danh sách thông báo
-        var thongBaos = await _db.ThongBaos
-            .Where(t => t.NguoiNhan == userName)
-            .OrderByDescending(t => t.ThoiGian)
-            .Take(10)
-            .ToListAsync();
-            
-        ViewData["UnreadCount"] = thongBaos.Count(t => !t.DaDoc);
-        ViewData["ThongBaos"] = thongBaos;
-        
-        // Lấy thông tin phòng khám nếu có
-        if (phongKhamId.HasValue)
-        {
-            var phongKham = await _db.PhongKhams.FirstOrDefaultAsync(p => p.Id == phongKhamId.Value);
-            ViewData["TenPhongKham"] = phongKham?.TenPhongKham ?? "Phòng khám";
-        }
-        
-        return View();
-    }
+    // Action Index (trang benh nhan cu) da duoc go bo ngay 2026-08-22 theo yeu cau
+    // cua user: luong do khong dung nua, thay bang /benh-nhan. Lay lai neu can:
+    //   git show 224341a -- SixosPwa/Views/Home/Index.cshtml
 
     public IActionResult TimBacSi(long phongKhamId)
     {

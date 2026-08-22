@@ -53,8 +53,8 @@ public class DangNhapController : Controller
         // Neu da dang nhap truoc do (Cookie truong ton hop le)
         if (User.Identity?.IsAuthenticated == true && !adminReauth)
         {
-            // Admin và Đối tác vào trang Index như cũ, bệnh nhân giờ cũng vào Index (Dashboard mới)
-            return RedirectToAction("Index", "Home");
+            // Da dang nhap roi thi vao thang trang benh nhan.
+            return Redirect("/benh-nhan");
         }
 
         ViewData["AdminReauth"] = adminReauth;
@@ -499,14 +499,15 @@ public class DangNhapController : Controller
     }
 
     /// <summary>
-    /// Cho ha canh sau khi xac thuc. Khong co ma co so (vao thang /DangNhap/Login
-    /// chu khong qua trang co so) thi giu nguyen hanh vi cu: ve Home/Index.
+    /// Cho ha canh sau khi xac thuc. Vao thang /DangNhap/Login (khong qua trang
+    /// co so) thi khong biet benh nhan o co so nao, nen chi ve duoc trang benh
+    /// nhan dang toi gian — muon di tiep phai vao lai qua /pk/{slug}.
     /// </summary>
     private async Task<string?> ChonDichDenAsync(string? maCoSo, string? cccd, string dinhDanh, string? returnUrl)
     {
         if (string.IsNullOrWhiteSpace(maCoSo) || string.IsNullOrWhiteSpace(cccd))
         {
-            return Url.Action("Index", "Home");
+            return "/benh-nhan";
         }
 
         return await _luong.ChonDichDenAsync(maCoSo, cccd.Trim(), dinhDanh, returnUrl);
