@@ -138,6 +138,29 @@
         background: #f8fafc;
     }
 
+    /* Desktop: keep the company block content-sized so the main slideshow
+       can use the remaining vertical space. Column widths stay unchanged. */
+    @media (min-width: 993px) {
+        .ytv-main {
+            display: grid;
+            grid-template-columns: 300px minmax(0, 1fr);
+            grid-template-rows: minmax(0, 1fr) auto;
+        }
+        .ytv-sidebar {
+            grid-column: 1;
+            grid-row: 1;
+        }
+        .ytv-content {
+            grid-column: 2;
+            grid-row: 1;
+        }
+        .ytv-company-info {
+            grid-column: 1 / -1;
+            grid-row: 2;
+            align-self: start;
+        }
+    }
+
     /* SIDEBAR */
     .ytv-sidebar {
         width: 300px;
