@@ -16,18 +16,35 @@
         <p>Tiện lợi - Nhanh chóng - Chính xác</p>
     </div>
     <div class="ytv-header-menu" id="menuBtn" onclick="toggleMenu()" role="button" tabindex="0"
-         aria-label="Mở menu tài khoản" aria-haspopup="true" aria-expanded="false" aria-controls="dropdownMenu">
+         aria-label="Mở menu" aria-haspopup="true" aria-expanded="false" aria-controls="dropdownMenu">
         <i class="fas fa-bars" aria-hidden="true"></i>
-        <div class="ytv-dropdown" id="dropdownMenu" role="menu" aria-label="Tài khoản">
+        <div class="ytv-dropdown" id="dropdownMenu" role="menu" aria-label="Menu">
+            @* Nhom 1 - loai co so: CHI hien tren dien thoai.
+               Tu tablet tro len da co san o sidebar than trang nen an di, khoi lap. *@
+            <div class="ytv-dropdown-coso">
+                <a href="/Home/DanhSachCoSo-benhvien" role="menuitem">
+                    <i class="fas fa-hospital bieu-tuong-benh-vien" aria-hidden="true"></i> Bệnh viện
+                </a>
+                <a href="/Home/DanhSachCoSo-pkdk" role="menuitem">
+                    <i class="fas fa-clinic-medical bieu-tuong-phong-kham" aria-hidden="true"></i> Phòng khám đa khoa
+                </a>
+                <a href="/Home/DanhSachCoSo-nhakhoa" role="menuitem">
+                    <i class="fas fa-tooth bieu-tuong-nha-khoa" aria-hidden="true"></i> Nha khoa
+                </a>
+                <a href="/Home/DanhSachCoSo-phongmach" role="menuitem">
+                    <i class="fas fa-stethoscope bieu-tuong-phong-mach" aria-hidden="true"></i> Phòng mạch
+                </a>
+                <a href="/Home/DanhSachCoSo-nhathuoc" role="menuitem">
+                    <i class="fas fa-pills bieu-tuong-nha-thuoc" aria-hidden="true"></i> Nhà thuốc
+                </a>
+            </div>
+            @* Nhom 2 - tai khoan: luon hien o moi be ngang *@
             <div class="ytv-dropdown-title">Tài khoản</div>
             <a href="javascript:void(0)" role="menuitem" onclick="showHoSoBenhNhan()">
                 <i class="fas fa-user-md" aria-hidden="true"></i> Hồ sơ bệnh nhân
             </a>
             <a href="/Home/ThongTinBenhNhan" role="menuitem">
                 <i class="fas fa-notes-medical" aria-hidden="true"></i> Lịch sử khám bệnh
-            </a>
-            <a href="javascript:void(0)" role="menuitem">
-                <i class="fas fa-question-circle" aria-hidden="true"></i> Trợ giúp & Hỗ trợ
             </a>
             <a href="/DangNhap/DangXuat" role="menuitem" class="ytv-dropdown-thoat">
                 <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Đăng xuất
