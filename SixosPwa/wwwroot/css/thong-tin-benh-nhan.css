@@ -539,3 +539,111 @@
 }
 
 
+
+
+/* ==========================================================================
+   ===== TRANG CHU - RESPONSIVE + DIEU HUONG (2026-08-22) =====
+   Chot: dien thoai <=767px doi bo cuc; TABLET/DESKTOP GIU Y NGUYEN.
+   Hamburger doi ruot thanh menu TAI KHOAN (5 muc cu lap y het than trang,
+   va ca 5 link deu 404). Khoi SIXOS GIU NGUYEN theo yeu cau.
+   ========================================================================== */
+
+/* --- menu tai khoan trong hamburger (moi be ngang) --- */
+.ytv-dropdown-title {
+    padding: 10px 16px 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+
+.ytv-dropdown a {
+    min-height: 48px;              /* dich cham chuan Android 48dp */
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ytv-dropdown a.ytv-dropdown-thoat,
+.ytv-dropdown a.ytv-dropdown-thoat i { color: #dc2626; }
+
+.ytv-header-menu { cursor: pointer; }
+.ytv-header-menu:focus-visible { outline: 3px solid #fff; outline-offset: 3px; border-radius: 8px; }
+
+/* Cham chi bao slide: vung bam 30x23 -> 30x25 cho dat WCAG 2.2 AA (24px).
+   Bootstrap dung box-sizing:content-box - thanh NHIN THAY chi cao 3px, phan con lai
+   la border trong suot. Chi noi border, TUYET DOI khong dat height/padding:
+   dat height o day lam chinh thanh trang phinh thanh khoi vuong to. */
+.ytv-slider .carousel-indicators [data-bs-target] {
+    border-top-width: 11px !important;
+    border-bottom-width: 11px !important;
+}
+
+/* nguoi dung tat hieu ung chuyen dong thi slider dung han */
+@media (prefers-reduced-motion: reduce) {
+    .ytv-slider .carousel-item { transition: none !important; }
+}
+
+/* ---------------------- CHI DIEN THOAI (<=767.98px) ---------------------- */
+@media (max-width: 767.98px) {
+    /* 5 loai co so: tu dai cuon ngang (khuat 2 muc) -> luoi 2 cot o to */
+    .ytv-sidebar {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        width: 100% !important;
+        overflow: visible !important;
+        padding: 14px 12px 6px !important;
+        border-bottom: 0 !important;
+    }
+
+    .ytv-sidebar .ytv-menu-item {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 88px !important;
+        padding: 10px 8px !important;
+        white-space: normal !important;
+        text-align: center;
+        font-size: 14px;
+        font-weight: 650;
+        background: #fff;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 14px;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, .05);
+    }
+
+    /* o dau tien trai het hang cho de nham */
+    .ytv-sidebar .ytv-menu-item:first-child {
+        grid-column: 1 / -1;
+        flex-direction: row !important;
+        min-height: 64px !important;
+    }
+
+    .ytv-sidebar .ytv-menu-item i { font-size: 26px; }
+
+    /* slider thoi lam nhan vat chinh */
+    .ytv-slider,
+    .ytv-slider .carousel-item,
+    .ytv-slider .para-card-wrapper,
+    .ytv-slider .para-card { height: 160px !important; min-height: 160px !important; }
+
+    /* bang HTML tho tu TinyMCE - khong responsive, an o be ngang nay */
+    .para-card-text { display: none !important; }
+    .para-card-title { font-size: 17px !important; }
+
+    .ytv-content { padding: 0 12px !important; }
+    .ytv-company-info { margin: 12px 0 4px !important; }
+
+    /* dich cham 48dp - CHI dien thoai, vi tablet/desktop phai giu y nguyen.
+       Chan trang khong dong: link chinh sach 16px nhung tam-den-tam dung 24px,
+       dat ngoai le khoang cach cua WCAG 2.2 AA (da do that). */
+    .para-card-btn { min-height: 48px; display: inline-flex; align-items: center; justify-content: center; }
+    .sixos-item { min-height: 48px; }
+
+    /* menu tai khoan tha rong cho de cham */
+    .ytv-dropdown { min-width: 232px; }
+}

@@ -15,23 +15,22 @@
         <h1>Dịch Vụ Đăng Ký Khám Bệnh Online</h1>
         <p>Tiện lợi - Nhanh chóng - Chính xác</p>
     </div>
-    <div class="ytv-header-menu" id="menuBtn" onclick="toggleMenu()">
-        <i class="fas fa-bars"></i>
-        <div class="ytv-dropdown" id="dropdownMenu">
-            <a href="/Home/DanhSachCoSo?type=benhvien">
-                <i class="fas fa-hospital bieu-tuong-benh-vien"></i> Bệnh viện
+    <div class="ytv-header-menu" id="menuBtn" onclick="toggleMenu()" role="button" tabindex="0"
+         aria-label="Mở menu tài khoản" aria-haspopup="true" aria-expanded="false" aria-controls="dropdownMenu">
+        <i class="fas fa-bars" aria-hidden="true"></i>
+        <div class="ytv-dropdown" id="dropdownMenu" role="menu" aria-label="Tài khoản">
+            <div class="ytv-dropdown-title">Tài khoản</div>
+            <a href="javascript:void(0)" role="menuitem" onclick="showHoSoBenhNhan()">
+                <i class="fas fa-user-md" aria-hidden="true"></i> Hồ sơ bệnh nhân
             </a>
-            <a href="/Home/DanhSachCoSo?type=pkdk">
-                <i class="fas fa-clinic-medical bieu-tuong-phong-kham"></i> Phòng khám đa khoa
+            <a href="/Home/ThongTinBenhNhan" role="menuitem">
+                <i class="fas fa-notes-medical" aria-hidden="true"></i> Lịch sử khám bệnh
             </a>
-            <a href="/Home/DanhSachCoSo?type=nhakhoa">
-                <i class="fas fa-tooth bieu-tuong-nha-khoa"></i> Nha khoa
+            <a href="javascript:void(0)" role="menuitem">
+                <i class="fas fa-question-circle" aria-hidden="true"></i> Trợ giúp & Hỗ trợ
             </a>
-            <a href="/Home/DanhSachCoSo?type=phongmach">
-                <i class="fas fa-stethoscope bieu-tuong-phong-mach"></i> Phòng mạch
-            </a>
-            <a href="/Home/DanhSachCoSo?type=nhathuoc">
-                <i class="fas fa-pills bieu-tuong-nha-thuoc"></i> Nhà thuốc
+            <a href="/DangNhap/DangXuat" role="menuitem" class="ytv-dropdown-thoat">
+                <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Đăng xuất
             </a>
         </div>
     </div>
@@ -63,7 +62,7 @@
     
     <div class="ytv-content">
         <!-- Bootstrap Carousel for Slider -->
-        <div id="mainSlider" class="carousel slide ytv-slider" data-bs-ride="carousel" data-bs-interval="3000">
+        <div id="mainSlider" class="carousel slide ytv-slider" aria-roledescription="carousel" aria-label="Cơ sở nổi bật">
             @{
                 var topCSKCB = ViewData["TopCSKCB"] as List<SixosPwa.Models.TopCSKCBQC> ?? new List<SixosPwa.Models.TopCSKCBQC>();
 
