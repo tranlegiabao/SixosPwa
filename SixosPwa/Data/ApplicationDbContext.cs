@@ -142,6 +142,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<DoiTacApi>().Property(e => e.KieuApi).HasMaxLength(20).IsRequired();
         modelBuilder.Entity<DoiTacApi>().Property(e => e.BaseUrl).HasMaxLength(255);
         modelBuilder.Entity<DoiTacApi>().Property(e => e.TrangChu).HasMaxLength(255);
+        modelBuilder.Entity<DoiTacApi>().Property(e => e.MaChiNhanh);
         modelBuilder.Entity<DoiTacApi>().HasIndex(e => e.MaCoSo).IsUnique();
 
         // Configure TaiKhoan_DoiTac — credential cua benh nhan tai tung co so (ADR 0005)

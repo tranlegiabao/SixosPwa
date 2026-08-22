@@ -18,6 +18,7 @@ public class UbGateway : IPartnerGateway
     private const string DuongDanDangKy = "/HeThong/HT_DangNhap/register";
     private const string DuongDanXacThuc = "/api/HT_DangNhap/XacThucMaXacNhan";
     private const string DuongDanDangNhap = "/HeThong/HT_DangNhap/login";
+    private const string DuongDanChonChiNhanh = "/HeThong/HT_DangNhap/select-branch";
 
     /// <summary>
     /// Nut benh nhan bam -> man tuong ung ben Ung Buou. Doi tac khac se co bang
@@ -164,37 +165,50 @@ public class UbGateway : IPartnerGateway
             dichCuoi = goc + man;
         }
 
-        // Tai khoan vua mo: dung ma xac nhan de doi tac vua bat DaXacThuc vua dat
-        // cookie trong cung mot lan POST (diem tua so 3 va so 4, ADR 0003).
+        var cacBuoc = new List<BuocBanGiao>();
+
+        // Buoc 1 — dat cookie. Tai khoan vua mo thi dung ma xac nhan (doi tac vua
+        // bat DaXacThuc vua dat cookie trong cung mot lan POST — diem tua so 3 va
+        // so 4, ADR 0003). Nhung lan sau thi dang nhap thuan, khong OTP; LoginAsync
+        // ben ho so chuoi thuan nen phai gui nguyen van mat khau (ADR 0005).
         if (!string.IsNullOrWhiteSpace(yeuCau.MaXacNhan))
         {
-            return new ThongTinBanGiao(
-                $"{goc}{DuongDanXacThuc}",
-                new Dictionary<string, string>
-                {
-                    ["cccd"] = yeuCau.Cccd,
-                    ["Email"] = yeuCau.Email ?? "",
-                    ["sdt"] = yeuCau.DienThoai,
-                    ["code"] = yeuCau.MaXacNhan
-                },
-                dichCuoi);
+            cacBuoc.Add(new BuocBanGiao($"{goc}{DuongDanXacThuc}", new Dictionary<string, string>
+            {
+                ["cccd"] = yeuCau.Cccd,
+                ["Email"] = yeuCau.Email ?? "",
+                ["sdt"] = yeuCau.DienThoai,
+                ["code"] = yeuCau.MaXacNhan
+            }));
         }
-
-        // Nhung lan sau: dang nhap thuan, khong OTP. LoginAsync ben doi tac so
-        // chuoi thuan nen phai gui nguyen van mat khau (ADR 0005).
-        if (!string.IsNullOrWhiteSpace(yeuCau.MatKhau))
+        else if (!string.IsNullOrWhiteSpace(yeuCau.MatKhau))
         {
-            return new ThongTinBanGiao(
-                $"{goc}{DuongDanDangNhap}",
-                new Dictionary<string, string>
-                {
-                    ["username"] = yeuCau.Cccd,
-                    ["password"] = yeuCau.MatKhau
-                },
-                dichCuoi);
+            cacBuoc.Add(new BuocBanGiao($"{goc}{DuongDanDangNhap}", new Dictionary<string, string>
+            {
+                ["username"] = yeuCau.Cccd,
+                ["password"] = yeuCau.MatKhau
+            }));
+        }
+        else
+        {
+            return null;
         }
 
-        return null;
+        // Buoc 2 — chon chi nhanh. Middleware cua doi tac doi claim IdDT truoc
+        // tien; thieu la da benh nhan ve man chon chi nhanh cua ho. Moi co so ben
+        // ta ung voi dung mot chi nhanh ben ho nen chon giup duoc.
+        if (cauHinh.MaChiNhanh is > 0)
+        {
+            cacBuoc.Add(new BuocBanGiao($"{goc}{DuongDanChonChiNhanh}", new Dictionary<string, string>
+            {
+                ["idDoiTac"] = cauHinh.MaChiNhanh.Value.ToString()
+            }));
+        }
+
+        // Cong con lai (chon HO SO benh nhan) co y KHONG lam giup: mot tai khoan
+        // co the mang nhieu ho so (cha me dang ky cho con), doan ho la dang ky
+        // kham nham nguoi.
+        return new ThongTinBanGiao(cacBuoc, dichCuoi);
     }
 
     private async Task<KetQuaThaoTac> GoiApiAsync(DoiTacApi cauHinh, string duongDan, object than,

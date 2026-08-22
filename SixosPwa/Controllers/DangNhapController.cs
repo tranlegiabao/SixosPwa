@@ -474,8 +474,7 @@ public class DangNhapController : Controller
         }
 
         await DoNguCanhRaViewBagAsync(maCoSo, null);
-        ViewBag.Action = thongTin.Action;
-        ViewBag.Truong = thongTin.Truong;
+        ViewBag.CacBuoc = thongTin.CacBuoc;
         ViewBag.TrangChu = thongTin.DichCuoi;
         return View();
     }

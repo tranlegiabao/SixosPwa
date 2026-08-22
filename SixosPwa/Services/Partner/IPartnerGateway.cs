@@ -64,8 +64,16 @@ public record KetQuaThaoTac(bool ThanhCong, string ThongBao);
 public record YeuCauBanGiao(string Cccd, string DienThoai, string? Email, string? MaXacNhan, string? MatKhau, string? YDinh = null);
 
 /// <summary>Mo ta form ma man Ban giao se POST sang he doi tac.</summary>
-/// <param name="DichCuoi">
-/// Noi benh nhan can den sau khi cookie da duoc dat — man tuong ung voi nut ho
-/// bam, khong phai lúc nao cung la trang chu cua doi tac.
+/// <summary>Mot lan POST sang he doi tac.</summary>
+public record BuocBanGiao(string Action, IReadOnlyDictionary<string, string> Truong);
+
+/// <param name="CacBuoc">
+/// Cac lan POST TUAN TU trong cung mot cua so. He doi tac cong don claim qua
+/// tung lan, nen dang nhap xong roi chon chi nhanh la du ba claim ma Middleware
+/// cua ho doi hoi.
 /// </param>
-public record ThongTinBanGiao(string Action, IReadOnlyDictionary<string, string> Truong, string DichCuoi);
+/// <param name="DichCuoi">
+/// Noi benh nhan can den sau khi cookie da du — man tuong ung voi nut ho bam,
+/// khong phai luc nao cung la trang chu cua doi tac.
+/// </param>
+public record ThongTinBanGiao(IReadOnlyList<BuocBanGiao> CacBuoc, string DichCuoi);

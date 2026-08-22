@@ -61,12 +61,18 @@
         - Iframe lien site bi chinh sach cookie ben thu ba chan (Safari chan han).
         Popup nhan Set-Cookie roi TU DIEU HUONG sang trang chu doi tac.
     *@
-    <form id="formBanGiao" method="post" action="@ViewBag.Action" target="cuaSoBanGiao">
-        @foreach (var truong in (IReadOnlyDictionary<string, string>)ViewBag.Truong)
-        {
-            <input type="hidden" name="@truong.Key" value="@truong.Value" />
-        }
-    </form>
+    @{
+        var cacBuoc = (IReadOnlyList<SixosPwa.Services.Partner.BuocBanGiao>)ViewBag.CacBuoc;
+    }
+    @for (var i = 0; i < cacBuoc.Count; i++)
+    {
+        <form id="buoc@(i)" method="post" action="@cacBuoc[i].Action" target="cuaSoBanGiao">
+            @foreach (var truong in cacBuoc[i].Truong)
+            {
+                <input type="hidden" name="@truong.Key" value="@truong.Value" />
+            }
+        </form>
+    }
 
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -135,32 +141,41 @@
             document.getElementById('khoiChanPopup').style.display = 'none';
 
             veTrangDem(cuaSo);
-            document.getElementById('formBanGiao').submit();
+            chayBuoc(cuaSo, 0);
+        }
 
-            setTimeout(function () {
-                // Benh nhan tu dong tab cua doi tac truoc khi xong: ho khong muon
-                // di tiep, nen dung day ho sang do nua.
-                if (cuaSo.closed) {
-                    roiManBanGiao();
-                    return;
-                }
+        // He doi tac cong don claim qua tung lan POST (dang nhap -> chon chi
+        // nhanh), nen phai POST TUAN TU vao cung mot cua so, cho lan truoc xong
+        // moi den lan sau. Khong doc duoc phan hoi (khac ten mien) nen doi bang
+        // thoi gian la cach duy nhat.
+        function chayBuoc(cuaSo, i) {
+            if (cuaSo.closed) {
+                // Benh nhan tu dong tab: ho khong muon di tiep nua.
+                roiManBanGiao();
+                return;
+            }
 
-                // Day popup sang trang chu doi tac: cookie vua duoc dat nen day la
-                // dieu huong top-level GET cung site => cookie duoc gui kem.
-                // Benh nhan o lai chinh tab do va dung tiep.
-                try {
-                    cuaSo.location.href = trangChu;
-                    cuaSo.focus();
-                } catch (loi) {
-                    // Khong day duoc (hiem): de cua so chinh di thay.
-                    window.location.href = trangChu;
-                    return;
-                }
+            const form = document.getElementById('buoc' + i);
 
-                // Tab goc roi khoi man ban giao. Dong tab doi tac la ve trang co
-                // so binh thuong, khong con vong xoay treo.
-                setTimeout(roiManBanGiao, CHO_ROI_MAN_MS);
-            }, CHO_DAT_COOKIE_MS);
+            if (form) {
+                form.submit();
+                setTimeout(function () { chayBuoc(cuaSo, i + 1); }, CHO_DAT_COOKIE_MS);
+                return;
+            }
+
+            // Het buoc: day popup sang dich cuoi. Cookie vua duoc dat nen day la
+            // dieu huong top-level GET cung site => cookie duoc gui kem.
+            try {
+                cuaSo.location.href = trangChu;
+                cuaSo.focus();
+            } catch (loi) {
+                window.location.href = trangChu;
+                return;
+            }
+
+            // Tab goc roi khoi man ban giao. Dong tab doi tac la ve trang co so
+            // binh thuong, khong con vong xoay treo.
+            setTimeout(roiManBanGiao, CHO_ROI_MAN_MS);
         }
 
         banGiao();

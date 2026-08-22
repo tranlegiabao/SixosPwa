@@ -24,6 +24,13 @@ public class DoiTacApi
     /// <summary>Trang chu web cua doi tac — dich den sau khi ban giao phien.</summary>
     public string? TrangChu { get; set; }
 
+    /// <summary>
+    /// Chi nhanh ben he doi tac ma co so nay ung voi (HT_DoiTac.Id ben Ung Buou).
+    /// Middleware cua ho doi claim IdDT; thieu la da benh nhan ve man chon chi
+    /// nhanh. Biet truoc thi man ban giao POST select-branch giup ho.
+    /// </summary>
+    public int? MaChiNhanh { get; set; }
+
     public int Active { get; set; } = 1;
 
     public DateTime NgayTao { get; set; } = DateTime.Now;
