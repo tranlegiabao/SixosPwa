@@ -65,14 +65,19 @@ GO
 CREATE OR ALTER PROCEDURE dbo.Admin_NDCSKCB_Get
     @MaCoSo NVARCHAR(10),
     @TenCoSo NVARCHAR(100),
-    @LoaiND NVARCHAR(20)
+    @LoaiND BIGINT
 AS
 BEGIN
     SET NOCOUNT ON;
 
+    DECLARE @ResolvedLoaiND NVARCHAR(20);
+    SELECT @ResolvedLoaiND = NULLIF(LTRIM(RTRIM(LoaiND)), N'')
+    FROM DMChuDe
+    WHERE ID = @LoaiND;
+
     SELECT TOP (1) NoiDung
     FROM ND_CSKCB
-    WHERE LoaiND = @LoaiND
+    WHERE LoaiND = @ResolvedLoaiND
       AND (
             (NULLIF(LTRIM(RTRIM(@MaCoSo)), N'') IS NOT NULL
              AND MaCoSo = NULLIF(LTRIM(RTRIM(@MaCoSo)), N''))
@@ -87,7 +92,7 @@ GO
 CREATE OR ALTER PROCEDURE dbo.Admin_NDCSKCB_Save
     @MaCoSo NVARCHAR(10),
     @TenCoSo NVARCHAR(100),
-    @LoaiND NVARCHAR(20),
+    @LoaiND BIGINT,
     @NoiDung NVARCHAR(MAX),
     @ResultCode INT OUTPUT,
     @ResultMessage NVARCHAR(4000) OUTPUT
@@ -98,7 +103,12 @@ BEGIN
     SET @ResultCode = 0;
     SET @ResultMessage = NULL;
 
-    IF @LoaiND IS NULL OR @LoaiND NOT IN (N'gioithieu', N'dichvu', N'doingu', N'trangthietbi', N'lienhe')
+    DECLARE @ResolvedLoaiND NVARCHAR(20);
+    SELECT @ResolvedLoaiND = NULLIF(LTRIM(RTRIM(LoaiND)), N'')
+    FROM DMChuDe
+    WHERE ID = @LoaiND;
+
+    IF @ResolvedLoaiND IS NULL
     BEGIN
         SET @ResultCode = 4;
         SET @ResultMessage = N'Chủ đề nội dung không hợp lệ.';
@@ -116,7 +126,7 @@ BEGIN
         IF @NormalizedNoiDung IS NULL
         BEGIN
             DELETE FROM ND_CSKCB
-            WHERE LoaiND = @LoaiND
+            WHERE LoaiND = @ResolvedLoaiND
               AND (
                     (@NormalizedMaCoSo IS NOT NULL AND MaCoSo = @NormalizedMaCoSo)
                  OR (@NormalizedMaCoSo IS NULL
@@ -128,7 +138,7 @@ BEGIN
         BEGIN
             SELECT TOP (1) @ExistingId = ID
             FROM ND_CSKCB WITH (UPDLOCK, HOLDLOCK)
-            WHERE LoaiND = @LoaiND
+            WHERE LoaiND = @ResolvedLoaiND
               AND (
                     (@NormalizedMaCoSo IS NOT NULL AND MaCoSo = @NormalizedMaCoSo)
                  OR (@NormalizedMaCoSo IS NULL
@@ -140,7 +150,7 @@ BEGIN
             IF @ExistingId IS NULL
             BEGIN
                 INSERT INTO ND_CSKCB (MaCoSo, TenCoSo, NoiDung, LoaiND)
-                VALUES (@NormalizedMaCoSo, @NormalizedTenCoSo, @NormalizedNoiDung, @LoaiND);
+                VALUES (@NormalizedMaCoSo, @NormalizedTenCoSo, @NormalizedNoiDung, @ResolvedLoaiND);
             END
             ELSE
             BEGIN
@@ -152,7 +162,7 @@ BEGIN
 
                 DELETE FROM ND_CSKCB
                 WHERE ID <> @ExistingId
-                  AND LoaiND = @LoaiND
+                  AND LoaiND = @ResolvedLoaiND
                   AND (
                         (@NormalizedMaCoSo IS NOT NULL AND MaCoSo = @NormalizedMaCoSo)
                      OR (@NormalizedMaCoSo IS NULL

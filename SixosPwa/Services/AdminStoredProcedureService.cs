@@ -74,25 +74,25 @@ public sealed class AdminStoredProcedureService
     public Task<AdminStoredProcedureResult> SaveNoiDungCskcbAsync(
         string? maCoSo,
         string? tenCoSo,
-        string loaiND,
+        long loaiNDId,
         string? noiDung) =>
         ExecuteAsync("dbo.Admin_NDCSKCB_Save", command =>
         {
             AddParameter(command, "@MaCoSo", DbType.String, maCoSo, 10);
             AddParameter(command, "@TenCoSo", DbType.String, tenCoSo, 100);
-            AddParameter(command, "@LoaiND", DbType.String, loaiND, 20);
+            AddParameter(command, "@LoaiND", DbType.Int64, loaiNDId);
             AddParameter(command, "@NoiDung", DbType.String, noiDung, size: -1);
         });
 
     public Task<string?> GetNoiDungCskcbAsync(
         string? maCoSo,
         string? tenCoSo,
-        string loaiND) =>
+        long loaiNDId) =>
         QueryStringAsync("dbo.Admin_NDCSKCB_Get", command =>
         {
             AddParameter(command, "@MaCoSo", DbType.String, maCoSo, 10);
             AddParameter(command, "@TenCoSo", DbType.String, tenCoSo, 100);
-            AddParameter(command, "@LoaiND", DbType.String, loaiND, 20);
+            AddParameter(command, "@LoaiND", DbType.Int64, loaiNDId);
         });
 
     private async Task<AdminStoredProcedureResult> ExecuteAsync(

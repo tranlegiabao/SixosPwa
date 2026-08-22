@@ -83,6 +83,9 @@
     .note-editor .note-statusbar {
         background-color: #f8fafc;
     }
+    .note-editor .note-editable {
+        color: #000000;
+    }
 </style>
 
 @section Scripts {
@@ -121,6 +124,27 @@
         } else {
             $('#summernote').val(content || '');
         }
+    }
+
+    function ensureDefaultBlackHtml(content) {
+        var html = (content || '').trim();
+        if (!html) return '';
+
+        var parsed = document.createElement('div');
+        parsed.innerHTML = html;
+        var firstElement = parsed.firstElementChild;
+        var firstStyle = firstElement ? (firstElement.getAttribute('style') || '') : '';
+        if (parsed.children.length === 1
+            && firstElement
+            && firstElement.tagName.toLowerCase() === 'div'
+            && /(^|;)\s*color\s*:/i.test(firstStyle)) {
+            return html;
+        }
+
+        var wrapper = document.createElement('div');
+        wrapper.style.color = '#000000';
+        wrapper.innerHTML = html;
+        return wrapper.outerHTML;
     }
 
     async function loadDashboardContent() {
@@ -296,6 +320,8 @@
                     if (typeof showToast === 'function') showToast('Vui lòng chọn cơ sở y tế và chủ đề.', 'warning');
                     return;
                 }
+                document.getElementById('summernote').value = ensureDefaultBlackHtml(
+                    $('#summernote').summernote('code'));
                 document.getElementById('contentFacilityId').value = facilityId;
                 document.getElementById('contentTopicId').value = topicId;
             });

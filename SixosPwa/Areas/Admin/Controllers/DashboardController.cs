@@ -39,7 +39,7 @@ public sealed class DashboardController : AdminControllerBase
             ? await _adminStoredProcedures.GetNoiDungCskcbAsync(
                 selectedFacility.MaCoSo,
                 selectedFacility.TenCoSo,
-                selectedTopic.LoaiND ?? string.Empty)
+                selectedTopic.ID)
             : null;
 
         var model = new DashboardViewModel
@@ -98,7 +98,7 @@ public sealed class DashboardController : AdminControllerBase
             .FirstOrDefaultAsync(x => x.Id == model.FacilityId);
         var topic = await _db.DMChuDes.AsNoTracking()
             .FirstOrDefaultAsync(x => x.ID == model.TopicId);
-        if (facility == null || topic == null || string.IsNullOrWhiteSpace(topic.LoaiND))
+        if (facility == null || topic == null)
         {
             Error("Cơ sở y tế hoặc chủ đề không hợp lệ.");
             return RedirectToAction(nameof(Index), redirectValues);
@@ -107,7 +107,7 @@ public sealed class DashboardController : AdminControllerBase
         var result = await _adminStoredProcedures.SaveNoiDungCskcbAsync(
             facility.MaCoSo,
             facility.TenCoSo,
-            topic.LoaiND,
+            topic.ID,
             model.NoiDung);
         if (!result.Succeeded)
         {
@@ -126,13 +126,13 @@ public sealed class DashboardController : AdminControllerBase
             .FirstOrDefaultAsync(x => x.Id == facilityId);
         var topic = await _db.DMChuDes.AsNoTracking()
             .FirstOrDefaultAsync(x => x.ID == topicId);
-        if (facility == null || topic == null || string.IsNullOrWhiteSpace(topic.LoaiND))
+        if (facility == null || topic == null)
             return NotFound();
 
         var noiDung = await _adminStoredProcedures.GetNoiDungCskcbAsync(
             facility.MaCoSo,
             facility.TenCoSo,
-            topic.LoaiND);
+            topic.ID);
         return Json(new { noiDung = noiDung ?? string.Empty });
     }
 
