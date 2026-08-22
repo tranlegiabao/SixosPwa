@@ -446,8 +446,9 @@
     }
 
     /* RESPONSIVE */
-    @@media (max-width: 992px) {
-        .ytv-header { flex-direction: column; gap: 15px; text-align: center; }
+    @media (max-width: 992px) {
+        .ytv-header { position: relative; flex-direction: column; gap: 15px; text-align: center; padding-top: 20px; }
+        .ytv-menu-btn { position: absolute; top: 25px; right: 20px; }
         .ytv-main { flex-direction: column; }
         .ytv-sidebar { width: 100%; border-right: none; border-bottom: 1px solid #e2e8f0; padding: 15px; }
         .ytv-grid { grid-template-columns: repeat(2, 1fr); }

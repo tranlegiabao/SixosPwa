@@ -600,7 +600,8 @@
         html, body, .container, main.container { height: auto !important; overflow: auto !important; display: block; }
         .ytv-main { flex: none; overflow: visible; display: flex; flex-direction: column; }
         .ytv-content { overflow: visible; padding: 15px; }
-        .ytv-header { flex-direction: column; gap: 15px; text-align: center; }
+        .ytv-header { position: relative; flex-direction: column; gap: 15px; text-align: center; padding-top: 20px; }
+        .ytv-header-menu { position: absolute; top: 15px; right: 20px; }
         .ytv-main { flex-direction: column; }
         .ytv-sidebar { width: 100%; border-right: none; border-bottom: 1px solid #e2e8f0; flex-direction: row; overflow-x: auto; padding: 10px 0; }
         .ytv-menu-item { flex-direction: column; padding: 10px 20px; white-space: nowrap; border-left: none; border-bottom: 3px solid transparent; gap: 5px; font-size: 14px; }
