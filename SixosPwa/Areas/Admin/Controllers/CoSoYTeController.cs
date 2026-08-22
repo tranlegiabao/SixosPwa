@@ -248,6 +248,24 @@ public sealed class CoSoYTeController : AdminControllerBase
             closeTime.ToString("HH:mm"));
     }
 
+    [HttpPost]
+    public async Task<IActionResult> UploadImage([FromForm] IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest("Không có file nào được tải lên.");
+        }
+
+        var url = await SaveImageAsync(file, "static/img_cs", "/static/img_cs", "file");
+        if (url == null)
+        {
+            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+            return BadRequest(string.Join("\n", errors));
+        }
+
+        return Json(new { url = url });
+    }
+
     private async Task<List<NDCSKCB>> FindNoiDungAsync(string? maCoSo, string? tenCoSo)
     {
         if (!string.IsNullOrWhiteSpace(maCoSo))
