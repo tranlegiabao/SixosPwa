@@ -25,8 +25,5 @@ public class NoApiGateway : IPartnerGateway
     public Task<KetQuaThaoTac> DatLaiMatKhauAsync(DoiTacApi cauHinh, string cccd, string dienThoai, string ma, string matKhauMoi, CancellationToken ct = default)
         => Task.FromResult(new KetQuaThaoTac(false, "Cơ sở này không cần liên kết tài khoản"));
 
-    public Task<long?> TimHoSoChinhChuAsync(DoiTacApi cauHinh, string cccd, string matKhau, CancellationToken ct = default)
-        => Task.FromResult<long?>(null);
-
     public ThongTinBanGiao? DungThongTinBanGiao(DoiTacApi cauHinh, YeuCauBanGiao yeuCau) => null;
 }

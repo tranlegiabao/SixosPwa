@@ -19,9 +19,6 @@ public class UbGateway : IPartnerGateway
     private const string DuongDanDangKy = "/HeThong/HT_DangNhap/register";
     private const string DuongDanXacThuc = "/api/HT_DangNhap/XacThucMaXacNhan";
     private const string DuongDanDangNhap = "/HeThong/HT_DangNhap/login";
-    private const string DuongDanChonChiNhanh = "/HeThong/HT_DangNhap/select-branch";
-    private const string DuongDanDanhSachHoSo = "/QuanLy/QL_HoSoBenhNhan/LayDanhSachHoSoBenhNhan";
-    private const string DuongDanChonHoSo = "/QuanLy/QL_HoSoBenhNhan/ThemIdXemThongTinBenhNhan";
 
     /// <summary>
     /// Nut benh nhan bam -> man tuong ung ben Ung Buou. Doi tac khac se co bang
@@ -153,81 +150,6 @@ public class UbGateway : IPartnerGateway
             new { Cccd = cccd, DienThoai = dienThoai, Otp = ma, MatKhauMoi = matKhauMoi, XacNhanMatKhau = matKhauMoi },
             "Đã liên kết tài khoản", "Mã xác thực không đúng hoặc đã hết hạn", ct);
 
-    /// <summary>
-    /// Tu dang nhap o TANG MAY CHU (co CCCD + mat khau) de hoi danh sach ho so,
-    /// roi lay ho so co SoCccd trung — tuc CHINH CHU. Khong tim thay thi tra
-    /// null va de doi tac hien man chon ho so nhu binh thuong.
-    ///
-    /// Phai dung CookieContainer rieng: cookie nay la cua MAY CHU ta, khong lien
-    /// quan gi toi cookie tren trinh duyet benh nhan.
-    /// </summary>
-    public async Task<long?> TimHoSoChinhChuAsync(DoiTacApi cauHinh, string cccd, string matKhau, CancellationToken ct = default)
-    {
-        if (string.IsNullOrWhiteSpace(cauHinh.TrangChu) || string.IsNullOrWhiteSpace(matKhau))
-        {
-            return null;
-        }
-
-        var goc = CatDauGach(cauHinh.TrangChu);
-
-        try
-        {
-            var tuiCookie = new CookieContainer();
-            using var handler = new HttpClientHandler { CookieContainer = tuiCookie, UseCookies = true };
-            using var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(20) };
-
-            using var thanDangNhap = new FormUrlEncodedContent(new Dictionary<string, string>
-            {
-                ["username"] = cccd,
-                ["password"] = matKhau
-            });
-
-            using var phanHoiDangNhap = await client.PostAsync($"{goc}{DuongDanDangNhap}", thanDangNhap, ct);
-            if (!phanHoiDangNhap.IsSuccessStatusCode)
-            {
-                _logger.LogInformation("Dang nhap tang may chu that bai, de doi tac tu hien man chon ho so");
-                return null;
-            }
-
-            using var thanDanhSach = new FormUrlEncodedContent(new Dictionary<string, string>
-            {
-                ["keyTimKiem"] = string.Empty,
-                ["timTatCa"] = "false"
-            });
-
-            using var phanHoi = await client.PostAsync($"{goc}{DuongDanDanhSachHoSo}", thanDanhSach, ct);
-            if (!phanHoi.IsSuccessStatusCode) return null;
-
-            var chuoi = await phanHoi.Content.ReadAsStringAsync(ct);
-            using var tep = JsonDocument.Parse(chuoi);
-
-            if (!tep.RootElement.TryGetProperty("data", out var danhSach)
-                || danhSach.ValueKind != JsonValueKind.Array)
-            {
-                return null;
-            }
-
-            foreach (var hoSo in danhSach.EnumerateArray())
-            {
-                var soCccd = hoSo.TryGetProperty("soCccd", out var c1) ? c1.GetString()
-                           : hoSo.TryGetProperty("SoCccd", out var c2) ? c2.GetString()
-                           : null;
-
-                if (!string.Equals(soCccd?.Trim(), cccd.Trim(), StringComparison.Ordinal)) continue;
-
-                if (hoSo.TryGetProperty("idBenhNhan", out var i1) && i1.TryGetInt64(out var id1)) return id1;
-                if (hoSo.TryGetProperty("IdBenhNhan", out var i2) && i2.TryGetInt64(out var id2)) return id2;
-            }
-
-            return null;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Khong tim duoc ho so chinh chu, de doi tac tu hien man chon");
-            return null;
-        }
-    }
-
     public ThongTinBanGiao? DungThongTinBanGiao(DoiTacApi cauHinh, YeuCauBanGiao yeuCau)
     {
         if (string.IsNullOrWhiteSpace(cauHinh.TrangChu)) return null;
@@ -272,28 +194,24 @@ public class UbGateway : IPartnerGateway
             return null;
         }
 
-        // Buoc 2 — chon chi nhanh. Middleware cua doi tac doi claim IdDT truoc
-        // tien; thieu la da benh nhan ve man chon chi nhanh cua ho. Moi co so ben
-        // ta ung voi dung mot chi nhanh ben ho nen chon giup duoc.
-        if (cauHinh.MaChiNhanh is > 0)
-        {
-            cacBuoc.Add(new BuocBanGiao($"{goc}{DuongDanChonChiNhanh}", new Dictionary<string, string>
-            {
-                ["idDoiTac"] = cauHinh.MaChiNhanh.Value.ToString()
-            }));
-        }
-
-        // Buoc 3 — chon ho so. CHI chon khi tim duoc ho so CHINH CHU (SoCccd trung
-        // CCCD vua dang nhap). Ho so nguoi than thi khong dam dong vao: doan ho la
-        // dang ky kham nham nguoi.
-        if (yeuCau.IdHoSo is > 0)
-        {
-            cacBuoc.Add(new BuocBanGiao($"{goc}{DuongDanChonHoSo}", new Dictionary<string, string>
-            {
-                ["idBenhNhan"] = yeuCau.IdHoSo.Value.ToString()
-            }));
-        }
-
+        // CHI MOT BUOC. Truoc day o day con hai buoc nua (chon chi nhanh, chon ho
+        // so) de benh nhan khoi phai qua hai man cua doi tac. Playwright cho thay
+        // chung KHONG THE chay, va con lam hong them:
+        //
+        //   Cookie DKOnline_auth cua ho la SameSite=Lax. Lax cho phep NHAN
+        //   Set-Cookie, nhung chi GUI cookie kem dieu huong top-level bang GET.
+        //   POST lien site khong mang cookie. Hau qua:
+        //     - select-branch: AddClaimsAsync doc User de cong don claim, ma User
+        //       rong => ghi de, LAM MAT claim IdTK vua cap o buoc dang nhap.
+        //     - chon ho so: doi xac thuc => bi da ve man dang nhap.
+        //   Mat IdTK con keo theo: man chon ho so cua ho doc IdTK de liet ke, nen
+        //   se hien danh sach RONG va benh nhan ket han.
+        //
+        // Vi vay chi dang nhap, roi de doi tac tu dan benh nhan qua hai man cua
+        // ho. Muon di thang toi dich thi phai co mot cua GET ben ho (xem ADR 0003).
+        //
+        // DichCuoi van giu nguyen y nghia: lan ban giao sau trong ngay, cookie cua
+        // ho da du claim nen dieu huong GET toi dich se vao thang, khong bi da.
         return new ThongTinBanGiao(cacBuoc, dichCuoi);
     }
 

@@ -243,13 +243,8 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
 
         var dienThoai = LayClaim(nguoiDung, ClaimTypes.MobilePhone) ?? taiKhoan.SDT;
 
-        // Chon giup ho so CHINH CHU (SoCccd trung CCCD dang nhap) de benh nhan
-        // khong phai qua them mot man cua doi tac. Khong tim thay thi de trong,
-        // ho so nguoi than van do ho tu chon.
-        var idHoSo = await coSo.Cua.TimHoSoChinhChuAsync(coSo.CauHinh, cccd, lienKet.MatKhau ?? string.Empty, ct);
-
         var thongTin = coSo.Cua.DungThongTinBanGiao(coSo.CauHinh,
-            new YeuCauBanGiao(cccd, dienThoai, taiKhoan.Email, lienKet.MaXacNhanTam, lienKet.MatKhau, yDinh, idHoSo));
+            new YeuCauBanGiao(cccd, dienThoai, taiKhoan.Email, lienKet.MaXacNhanTam, lienKet.MatKhau, yDinh));
 
         // Ma xac nhan chi dung duoc mot lan. Xoa ngay de lan ban giao sau di
         // duong dang nhap thuan, khong con OTP.

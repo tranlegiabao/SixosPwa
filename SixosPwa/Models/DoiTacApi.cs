@@ -26,8 +26,11 @@ public class DoiTacApi
 
     /// <summary>
     /// Chi nhanh ben he doi tac ma co so nay ung voi (HT_DoiTac.Id ben Ung Buou).
-    /// Middleware cua ho doi claim IdDT; thieu la da benh nhan ve man chon chi
-    /// nhanh. Biet truoc thi man ban giao POST select-branch giup ho.
+    ///
+    /// HIEN CHUA DUNG TOI. Da thu POST select-branch giup benh nhan nhung khong
+    /// chay duoc: cookie cua ho la SameSite=Lax nen POST lien site khong mang
+    /// cookie (xem ADR 0003). Giu lai vi neu sau nay ben ho mo mot cua GET thi
+    /// day chinh la tham so can gui.
     /// </summary>
     public int? MaChiNhanh { get; set; }
 
