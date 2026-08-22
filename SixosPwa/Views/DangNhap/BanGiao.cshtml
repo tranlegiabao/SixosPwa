@@ -73,10 +73,27 @@
         const trangChu = '@ViewBag.TrangChu';
         const tenCoSo = @Html.Raw(Json.Serialize(ViewBag.TenCoSo as string ?? ""));
 
+        // Cho quay ve khi ban giao xong. Man nay TUYET DOI khong duoc la ngo cut:
+        // benh nhan dong tab cua doi tac la quay lai day, thay vong xoay treo mai
+        // va khong biet phai lam gi (nguoi gia se ket han o day).
+        const duongVe = @Html.Raw(Json.Serialize(
+            string.IsNullOrWhiteSpace(ViewBag.SlugCoSo as string)
+                ? "/benh-nhan"
+                : $"/pk/{ViewBag.SlugCoSo}"));
+
         // Doi tac can chut thoi gian de xu ly POST va tra Set-Cookie ve popup.
         // Het khoang nay thi day popup sang trang chu — cung la de che not phan
         // JSON ma endpoint login cua ho tra ve.
         const CHO_DAT_COOKIE_MS = 1200;
+
+        // Cho them chut nua roi moi roi man nay, de popup kip nhan focus.
+        const CHO_ROI_MAN_MS = 900;
+
+        function roiManBanGiao() {
+            // replace chu khong phai href: de benh nhan bam Back khong quay lai
+            // day va lam ca quy trinh chay lai tu dau.
+            window.location.replace(duongVe);
+        }
 
         // Trang dem ve len popup NGAY khi vua mo, truoc khi POST. Neu khong,
         // benh nhan nhin thay man trang roi thay JSON tho cua doi tac.
@@ -121,16 +138,28 @@
             document.getElementById('formBanGiao').submit();
 
             setTimeout(function () {
+                // Benh nhan tu dong tab cua doi tac truoc khi xong: ho khong muon
+                // di tiep, nen dung day ho sang do nua.
+                if (cuaSo.closed) {
+                    roiManBanGiao();
+                    return;
+                }
+
                 // Day popup sang trang chu doi tac: cookie vua duoc dat nen day la
                 // dieu huong top-level GET cung site => cookie duoc gui kem.
-                // Benh nhan o lai chinh cua so nay va dung tiep.
+                // Benh nhan o lai chinh tab do va dung tiep.
                 try {
                     cuaSo.location.href = trangChu;
                     cuaSo.focus();
                 } catch (loi) {
                     // Khong day duoc (hiem): de cua so chinh di thay.
                     window.location.href = trangChu;
+                    return;
                 }
+
+                // Tab goc roi khoi man ban giao. Dong tab doi tac la ve trang co
+                // so binh thuong, khong con vong xoay treo.
+                setTimeout(roiManBanGiao, CHO_ROI_MAN_MS);
             }, CHO_DAT_COOKIE_MS);
         }
 
