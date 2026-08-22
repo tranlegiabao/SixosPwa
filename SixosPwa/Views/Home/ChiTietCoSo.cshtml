@@ -1,4 +1,4 @@
-﻿@{
+@{
     var tenCoSo = Uri.UnescapeDataString(ViewData["TenCoSo"]?.ToString() ?? "Bệnh Viện ĐHYD");
     var diaChi = Uri.UnescapeDataString(ViewData["DiaChi"]?.ToString() ?? "215 Hồng Bàng, Phường Chợ Lớn");
     var type = ViewData["Type"]?.ToString() ?? "benhvien";
@@ -745,45 +745,6 @@
     
 
     <div class="ytv-content">
-        <!-- Main Hospital Card -->
-        <div class="hospital-card">
-            <!--   <img src="@img" class="hospital-card-img" alt="@tenCoSo" /> -->
-            <div class="hospital-card-content">
-                <div class="verified-badge">
-                    <i class="fas fa-shield-check"></i> Đã xác minh
-                </div>
-                
-                <h1 class="hospital-title">@tenCoSo</h1>
-                
-                <div class="hospital-rating">
-                    <span class="stars"><i class="fas fa-star"></i></span>
-                    <span class="score">4.8/5</span>
-                    <span class="count">• 1.248 đánh giá</span>
-                </div>
-
-                <div class="hospital-info-grid">
-                    <div class="hospital-details">
-                        <div class="detail-item">
-                            <i class="fas fa-map-marker-alt"></i> 
-                            <span>@diaChi, TP. Hồ Chí Minh</span>
-                        </div>
-                        <div class="detail-item">
-                            <i class="far fa-clock"></i> 
-                            <span>@operatingHours.OpenTime - @operatingHours.CloseTime (@operatingHours.Days)</span>
-                        </div>
-                        <div class="detail-item">
-                            <i class="fas fa-phone-alt"></i> 
-                            <span>(028) 1234 5678</span>
-                        </div>
-                        <div class="detail-item">
-                            <i class="fas fa-globe"></i> 
-                            <a href="https://www.bvdhyd.vn" target="_blank">www.bvdhyd.vn</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Intro Sections (Tabs) -->
         <div class="intro-section active-tab" id="gioi-thieu">
             <div class="intro-content">
