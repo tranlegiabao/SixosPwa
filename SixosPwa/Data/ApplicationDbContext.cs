@@ -116,10 +116,12 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<DMCSKCB>().Property(e => e.DiaChi).HasMaxLength(255);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.LoaiCS).HasMaxLength(20);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.TGLamViec).HasMaxLength(50);
+        modelBuilder.Entity<DMCSKCB>().Property(e => e.NgayLamViec).HasMaxLength(50);
+        modelBuilder.Entity<DMCSKCB>().Property(e => e.GioMoCua).HasColumnType("time(0)");
+        modelBuilder.Entity<DMCSKCB>().Property(e => e.GioDongCua).HasColumnType("time(0)");
         modelBuilder.Entity<DMCSKCB>().Property(e => e.Img).HasMaxLength(500);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.SoToaNha).HasMaxLength(100);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.Tinh);
-        modelBuilder.Entity<DMCSKCB>().Property(e => e.Huyen);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.PhuongXa);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.QuangCao).HasColumnType("decimal(15,0)");
 

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SixosPwa.Data;
 using SixosPwa.Models;
+using SixosPwa.Security;
 using WebPush;
 
 namespace SixosPwa.Controllers;
@@ -104,12 +105,13 @@ public class HomeController : Controller
 
             if (matchedCS != null)
             {
+                ViewData["CoSoYTe"] = matchedCS;
                 ViewData["TenCoSo"] = matchedCS.TenCoSo;
                 ViewData["DiaChi"] = matchedCS.DiaChi ?? "Đang cập nhật";
                 ViewData["Type"] = matchedCS.LoaiCS ?? "benhvien";
                 ViewData["Img"] = matchedCS.Img ?? "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80";
                 ViewData["Logo"] = matchedCS.logo ?? logo ?? "https://tse1.mm.bing.net/th/id/OIP.JgUNpJPll-8BkzE3XN6LggHaHa?r=0&pid=Api&P=0&h=180";
-                ViewData["TGLamViec"] = matchedCS.TGLamViec;
+                ViewData["TGLamViec"] = GetOperatingHoursValue(matchedCS);
                 ViewData["NoiDungCskcb"] = await LoadNoiDungAsync(matchedCS);
                 return View();
             }
@@ -121,6 +123,21 @@ public class HomeController : Controller
         ViewData["Img"] = img ?? "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80";
         ViewData["Logo"] = logo ?? "https://tse1.mm.bing.net/th/id/OIP.JgUNpJPll-8BkzE3XN6LggHaHa?r=0&pid=Api&P=0&h=180";
         return View();
+    }
+
+    private static string? GetOperatingHoursValue(DMCSKCB coSo)
+    {
+        if (!string.IsNullOrWhiteSpace(coSo.NgayLamViec)
+            && coSo.GioMoCua.HasValue
+            && coSo.GioDongCua.HasValue)
+        {
+            return OperatingHours.Encode(
+                coSo.NgayLamViec,
+                coSo.GioMoCua.Value.ToString(@"hh\:mm"),
+                coSo.GioDongCua.Value.ToString(@"hh\:mm"));
+        }
+
+        return coSo.TGLamViec;
     }
 
     private async Task<IReadOnlyDictionary<string, string>> LoadNoiDungAsync(DMCSKCB coSo)
@@ -337,7 +354,7 @@ public class HomeController : Controller
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin")]
+    [Authorize(AuthenticationSchemes = AdminAuthentication.Scheme, Roles = "Admin")]
     public IActionResult GuiTinNhan()
     {
         var doiTacs = _db.DoiTacs.ToList();
@@ -345,7 +362,7 @@ public class HomeController : Controller
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(AuthenticationSchemes = AdminAuthentication.Scheme, Roles = "Admin")]
     public IActionResult LocDanhSachBN([FromBody] LocBNRequest model)
     {
         if (string.IsNullOrWhiteSpace(model.TenDT) || string.IsNullOrWhiteSpace(model.Password))
@@ -430,7 +447,7 @@ public class HomeController : Controller
     // Lấy danh sách tài khoản bệnh nhân thật từ DB (cho GuiTinNhan dùng)
     // -------------------------------------------------------------------------
     [HttpGet]
-    [Authorize(Roles = "Admin")]
+    [Authorize(AuthenticationSchemes = AdminAuthentication.Scheme, Roles = "Admin")]
     public async Task<IActionResult> DanhSachNguoiDung()
     {
         var danhSach = await _db.TaiKhoans
@@ -485,7 +502,7 @@ public class HomeController : Controller
     // Gửi tin nhắn hàng loạt – lưu DB + gửi Web Push tới từng thiết bị
     // -------------------------------------------------------------------------
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(AuthenticationSchemes = AdminAuthentication.Scheme, Roles = "Admin")]
     public async Task<IActionResult> GuiTinNhan([FromBody] SendSmsRequest model)
     {
         var nguoiGui = User.Identity?.Name;
@@ -698,7 +715,7 @@ public class HomeController : Controller
     // Lấy lịch sử trò chuyện (Admin <-> Bệnh nhân)
     // -------------------------------------------------------------------------
     [HttpGet]
-    [Authorize(Roles = "Admin")]
+    [Authorize(AuthenticationSchemes = AdminAuthentication.Scheme, Roles = "Admin")]
     public async Task<IActionResult> GetChatHistory(string sdtBenhNhan)
     {
         var adminId = User.Identity?.Name;

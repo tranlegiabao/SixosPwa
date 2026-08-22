@@ -62,6 +62,80 @@ BEGIN
 END;
 GO
 
+CREATE OR ALTER PROCEDURE dbo.Admin_QCKCB_Save
+    @MaCoSo NVARCHAR(10),
+    @TenCoSo NVARCHAR(100),
+    @NoiDung NVARCHAR(MAX),
+    @Img NVARCHAR(MAX),
+    @Enabled BIT,
+    @ResultCode INT OUTPUT,
+    @ResultMessage NVARCHAR(4000) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+    SET @ResultCode = 0;
+    SET @ResultMessage = NULL;
+
+    DECLARE @NormalizedMaCoSo NVARCHAR(10) = NULLIF(LTRIM(RTRIM(@MaCoSo)), N'');
+    DECLARE @NormalizedTenCoSo NVARCHAR(100) = NULLIF(LTRIM(RTRIM(@TenCoSo)), N'');
+    DECLARE @NormalizedNoiDung NVARCHAR(MAX) = NULLIF(LTRIM(RTRIM(@NoiDung)), N'');
+    DECLARE @NormalizedImg NVARCHAR(MAX) = NULLIF(LTRIM(RTRIM(@Img)), N'');
+    DECLARE @ExistingId BIGINT;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        SELECT TOP (1) @ExistingId = ID
+        FROM QC_KCB WITH (UPDLOCK, HOLDLOCK)
+        WHERE (@NormalizedMaCoSo IS NOT NULL AND MaCoSo = @NormalizedMaCoSo)
+           OR (@NormalizedMaCoSo IS NULL
+               AND (MaCoSo IS NULL OR MaCoSo = N'')
+               AND TenCoSo = @NormalizedTenCoSo)
+        ORDER BY ID;
+
+        IF ISNULL(@Enabled, 0) = 0
+           OR (@NormalizedNoiDung IS NULL AND @NormalizedImg IS NULL)
+        BEGIN
+            DELETE FROM QC_KCB
+            WHERE (@NormalizedMaCoSo IS NOT NULL AND MaCoSo = @NormalizedMaCoSo)
+               OR (@NormalizedMaCoSo IS NULL
+                   AND (MaCoSo IS NULL OR MaCoSo = N'')
+                   AND TenCoSo = @NormalizedTenCoSo);
+        END
+        ELSE IF @ExistingId IS NULL
+        BEGIN
+            INSERT INTO QC_KCB (MaCoSo, TenCoSo, NoiDung, Img)
+            VALUES (@NormalizedMaCoSo, @NormalizedTenCoSo, @NormalizedNoiDung, @NormalizedImg);
+        END
+        ELSE
+        BEGIN
+            UPDATE QC_KCB
+            SET MaCoSo = @NormalizedMaCoSo,
+                TenCoSo = @NormalizedTenCoSo,
+                NoiDung = @NormalizedNoiDung,
+                Img = @NormalizedImg
+            WHERE ID = @ExistingId;
+
+            DELETE FROM QC_KCB
+            WHERE ID <> @ExistingId
+              AND ((@NormalizedMaCoSo IS NOT NULL AND MaCoSo = @NormalizedMaCoSo)
+                   OR (@NormalizedMaCoSo IS NULL
+                       AND (MaCoSo IS NULL OR MaCoSo = N'')
+                       AND TenCoSo = @NormalizedTenCoSo));
+        END;
+
+        COMMIT TRANSACTION;
+        SET @ResultCode = 1;
+        SET @ResultMessage = N'OK';
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
+END;
+GO
+
 CREATE OR ALTER PROCEDURE dbo.Admin_NDCSKCB_Get
     @MaCoSo NVARCHAR(10),
     @TenCoSo NVARCHAR(100),
@@ -259,21 +333,18 @@ CREATE OR ALTER PROCEDURE dbo.Admin_CoSoYTe_Save
     @DiaChi NVARCHAR(255),
     @SoToaNha NVARCHAR(100),
     @Tinh INT,
-    @Huyen INT,
     @PhuongXa INT,
     @LoaiCS NVARCHAR(20),
     @TGLamViec NVARCHAR(50),
+    @NgayLamViec NVARCHAR(50),
+    @GioMoCua TIME(0),
+    @GioDongCua TIME(0),
     @XacMinh INT,
     @Img NVARCHAR(500),
     @Logo NVARCHAR(MAX),
     @QuangCao DECIMAL(15, 0),
-    @NoiDungQuangCao NVARCHAR(MAX),
-    @QuangCaoImg NVARCHAR(MAX),
-    @NoiDungGioiThieu NVARCHAR(MAX),
-    @NoiDungDichVu NVARCHAR(MAX),
-    @NoiDungDoiNgu NVARCHAR(MAX),
-    @NoiDungTrangThietBi NVARCHAR(MAX),
-    @NoiDungLienHe NVARCHAR(MAX),
+    @OldMaCoSo NVARCHAR(10),
+    @OldTenCoSo NVARCHAR(100),
     @ResultCode INT OUTPUT,
     @ResultMessage NVARCHAR(4000) OUTPUT
 AS
@@ -295,29 +366,17 @@ BEGIN
             RETURN;
         END;
 
-        DECLARE @OldMaCoSo NVARCHAR(10) = NULL;
-        DECLARE @OldTenCoSo NVARCHAR(100) = NULL;
-        DECLARE @GioiThieuId NVARCHAR(20) = CONVERT(NVARCHAR(20), (SELECT TOP (1) ID FROM DMChuDe WHERE LoaiND = N'gioithieu'));
-        DECLARE @DichVuId NVARCHAR(20) = CONVERT(NVARCHAR(20), (SELECT TOP (1) ID FROM DMChuDe WHERE LoaiND = N'dichvu'));
-        DECLARE @DoiNguId NVARCHAR(20) = CONVERT(NVARCHAR(20), (SELECT TOP (1) ID FROM DMChuDe WHERE LoaiND = N'doingu'));
-        DECLARE @TrangThietBiId NVARCHAR(20) = CONVERT(NVARCHAR(20), (SELECT TOP (1) ID FROM DMChuDe WHERE LoaiND = N'trangthietbi'));
-        DECLARE @LienHeId NVARCHAR(20) = CONVERT(NVARCHAR(20), (SELECT TOP (1) ID FROM DMChuDe WHERE LoaiND = N'lienhe'));
-
         IF @Id = 0
         BEGIN
             INSERT INTO DMCSKCB
-                (MaCoSo, TenCoSo, DiaChi, SoToaNha, Tinh, Huyen, PhuongXa, LoaiCS,
-                 TGLamViec, XacMinh, Img, logo, QuangCao)
+                (MaCoSo, TenCoSo, DiaChi, SoToaNha, Tinh, PhuongXa, LoaiCS,
+                 TGLamViec, NgayLamViec, GioMoCua, GioDongCua, XacMinh, Img, logo, QuangCao)
             VALUES
-                (@MaCoSo, @TenCoSo, @DiaChi, @SoToaNha, @Tinh, @Huyen, @PhuongXa, @LoaiCS,
-                 @TGLamViec, @XacMinh, @Img, @Logo, @QuangCao);
+                (@MaCoSo, @TenCoSo, @DiaChi, @SoToaNha, @Tinh, @PhuongXa, @LoaiCS,
+                 @TGLamViec, @NgayLamViec, @GioMoCua, @GioDongCua, @XacMinh, @Img, @Logo, @QuangCao);
         END
         ELSE
         BEGIN
-            SELECT @OldMaCoSo = MaCoSo, @OldTenCoSo = TenCoSo
-            FROM DMCSKCB WITH (UPDLOCK, HOLDLOCK)
-            WHERE ID = @Id;
-
             IF NOT EXISTS (SELECT 1 FROM DMCSKCB WHERE ID = @Id)
             BEGIN
                 SET @ResultCode = 3;
@@ -332,10 +391,12 @@ BEGIN
                 DiaChi = @DiaChi,
                 SoToaNha = @SoToaNha,
                 Tinh = @Tinh,
-                Huyen = @Huyen,
                 PhuongXa = @PhuongXa,
                 LoaiCS = @LoaiCS,
                 TGLamViec = @TGLamViec,
+                NgayLamViec = @NgayLamViec,
+                GioMoCua = @GioMoCua,
+                GioDongCua = @GioDongCua,
                 XacMinh = @XacMinh,
                 Img = @Img,
                 logo = @Logo,
@@ -343,39 +404,29 @@ BEGIN
             WHERE ID = @Id;
         END;
 
-        DELETE FROM ND_CSKCB
-        WHERE (@OldMaCoSo IS NOT NULL AND @OldMaCoSo <> N'' AND MaCoSo = @OldMaCoSo)
-           OR ((@OldMaCoSo IS NULL OR @OldMaCoSo = N'')
-               AND (MaCoSo IS NULL OR MaCoSo = N'')
-               AND TenCoSo = @OldTenCoSo);
+        IF (NULLIF(LTRIM(RTRIM(@OldMaCoSo)), N'') IS NOT NULL
+            OR NULLIF(LTRIM(RTRIM(@OldTenCoSo)), N'') IS NOT NULL)
+           AND (NULLIF(LTRIM(RTRIM(@OldMaCoSo)), N'') <> NULLIF(LTRIM(RTRIM(@MaCoSo)), N'')
+                OR ISNULL(@OldTenCoSo, N'') <> ISNULL(@TenCoSo, N''))
+        BEGIN
+            UPDATE ND_CSKCB
+            SET MaCoSo = @MaCoSo,
+                TenCoSo = @TenCoSo
+            WHERE (NULLIF(LTRIM(RTRIM(@OldMaCoSo)), N'') IS NOT NULL
+                   AND MaCoSo = NULLIF(LTRIM(RTRIM(@OldMaCoSo)), N''))
+               OR (NULLIF(LTRIM(RTRIM(@OldMaCoSo)), N'') IS NULL
+                   AND (MaCoSo IS NULL OR MaCoSo = N'')
+                   AND TenCoSo = NULLIF(LTRIM(RTRIM(@OldTenCoSo)), N''));
 
-        IF @GioiThieuId IS NOT NULL AND NULLIF(LTRIM(RTRIM(@NoiDungGioiThieu)), N'') IS NOT NULL
-            INSERT INTO ND_CSKCB (MaCoSo, TenCoSo, NoiDung, LoaiND)
-            VALUES (@MaCoSo, @TenCoSo, LTRIM(RTRIM(@NoiDungGioiThieu)), @GioiThieuId);
-        IF @DichVuId IS NOT NULL AND NULLIF(LTRIM(RTRIM(@NoiDungDichVu)), N'') IS NOT NULL
-            INSERT INTO ND_CSKCB (MaCoSo, TenCoSo, NoiDung, LoaiND)
-            VALUES (@MaCoSo, @TenCoSo, LTRIM(RTRIM(@NoiDungDichVu)), @DichVuId);
-        IF @DoiNguId IS NOT NULL AND NULLIF(LTRIM(RTRIM(@NoiDungDoiNgu)), N'') IS NOT NULL
-            INSERT INTO ND_CSKCB (MaCoSo, TenCoSo, NoiDung, LoaiND)
-            VALUES (@MaCoSo, @TenCoSo, LTRIM(RTRIM(@NoiDungDoiNgu)), @DoiNguId);
-        IF @TrangThietBiId IS NOT NULL AND NULLIF(LTRIM(RTRIM(@NoiDungTrangThietBi)), N'') IS NOT NULL
-            INSERT INTO ND_CSKCB (MaCoSo, TenCoSo, NoiDung, LoaiND)
-            VALUES (@MaCoSo, @TenCoSo, LTRIM(RTRIM(@NoiDungTrangThietBi)), @TrangThietBiId);
-        IF @LienHeId IS NOT NULL AND NULLIF(LTRIM(RTRIM(@NoiDungLienHe)), N'') IS NOT NULL
-            INSERT INTO ND_CSKCB (MaCoSo, TenCoSo, NoiDung, LoaiND)
-            VALUES (@MaCoSo, @TenCoSo, LTRIM(RTRIM(@NoiDungLienHe)), @LienHeId);
-
-        DELETE FROM QC_KCB
-        WHERE (@OldMaCoSo IS NOT NULL AND @OldMaCoSo <> N'' AND MaCoSo = @OldMaCoSo)
-           OR ((@OldMaCoSo IS NULL OR @OldMaCoSo = N'')
-               AND (MaCoSo IS NULL OR MaCoSo = N'')
-               AND TenCoSo = @OldTenCoSo);
-
-        IF NULLIF(LTRIM(RTRIM(@NoiDungQuangCao)), N'') IS NOT NULL
-           OR NULLIF(LTRIM(RTRIM(@QuangCaoImg)), N'') IS NOT NULL
-            INSERT INTO QC_KCB (MaCoSo, TenCoSo, NoiDung, Img)
-            VALUES (@MaCoSo, @TenCoSo, NULLIF(LTRIM(RTRIM(@NoiDungQuangCao)), N''),
-                    NULLIF(LTRIM(RTRIM(@QuangCaoImg)), N''));
+            UPDATE QC_KCB
+            SET MaCoSo = @MaCoSo,
+                TenCoSo = @TenCoSo
+            WHERE (NULLIF(LTRIM(RTRIM(@OldMaCoSo)), N'') IS NOT NULL
+                   AND MaCoSo = NULLIF(LTRIM(RTRIM(@OldMaCoSo)), N''))
+               OR (NULLIF(LTRIM(RTRIM(@OldMaCoSo)), N'') IS NULL
+                   AND (MaCoSo IS NULL OR MaCoSo = N'')
+                   AND TenCoSo = NULLIF(LTRIM(RTRIM(@OldTenCoSo)), N''));
+        END;
 
         COMMIT TRANSACTION;
         SET @ResultCode = 1;

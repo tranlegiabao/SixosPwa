@@ -1,0 +1,26 @@
+@model CoSoYTeEditViewModel
+
+<div class="col-12">
+    <div class="form-section-title">Nội dung trang tổng quan</div>
+    <p class="form-description">Chọn chủ đề rồi nhập nội dung HTML sẽ hiển thị trên trang tổng quan của cơ sở y tế.</p>
+    <input type="hidden" id="contentTopicId" name="TopicId" value="@Model.TopicId" />
+    <div class="row gx-4 gx-lg-5 gy-3 mb-4">
+        <div class="col-md-7">
+            <div class="d-flex align-items-center">
+                <label class="form-label mb-0 me-3 fw-bold text-nowrap text-secondary" style="min-width: 70px; font-size: 15px;">Chủ đề</label>
+                <select id="cboChuDe" class="form-select border-secondary-subtle" @(Model.ChuDeList.Count == 0 ? "disabled" : null)>
+                    <option value="">-- Chọn chủ đề --</option>
+                    @foreach (var item in Model.ChuDeList)
+                    {
+                        <option value="@item.ID" selected="@(Model.SelectedTopicId == item.ID ? "selected" : null)">@item.TenChuDe</option>
+                    }
+                </select>
+            </div>
+        </div>
+    </div>
+    @if (Model.Id == 0)
+    {
+        <div class="form-note mb-3"><span>i</span> Sau khi tạo cơ sở, nội dung sẽ được lưu theo chủ đề đã chọn.</div>
+    }
+    <textarea id="summernote" class="form-control" name="NoiDung">@Model.NoiDung</textarea>
+</div>

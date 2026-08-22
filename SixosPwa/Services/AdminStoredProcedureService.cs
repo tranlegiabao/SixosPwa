@@ -1,5 +1,6 @@
 using System.Data;
 using System.Data.Common;
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using SixosPwa.Areas.Admin.Models;
 using SixosPwa.Data;
@@ -45,7 +46,9 @@ public sealed class AdminStoredProcedureService
         });
 
     public Task<AdminStoredProcedureResult> SaveCoSoYTeAsync(
-        CoSoYTeEditViewModel model) =>
+        CoSoYTeEditViewModel model,
+        string? oldMaCoSo = null,
+        string? oldTenCoSo = null) =>
         ExecuteAsync("dbo.Admin_CoSoYTe_Save", command =>
         {
             AddParameter(command, "@Id", DbType.Int64, model.Id);
@@ -54,21 +57,33 @@ public sealed class AdminStoredProcedureService
             AddParameter(command, "@DiaChi", DbType.String, model.DiaChi, 255);
             AddParameter(command, "@SoToaNha", DbType.String, model.SoToaNha, 100);
             AddParameter(command, "@Tinh", DbType.Int32, model.Tinh);
-            AddParameter(command, "@Huyen", DbType.Int32, model.Huyen);
             AddParameter(command, "@PhuongXa", DbType.Int32, model.PhuongXa);
             AddParameter(command, "@LoaiCS", DbType.String, model.LoaiCS, 20);
             AddParameter(command, "@TGLamViec", DbType.String, model.TGLamViec, 50);
+            AddParameter(command, "@NgayLamViec", DbType.String, model.NgayLamViec, 50);
+            AddParameter(command, "@GioMoCua", DbType.Time, ParseTime(model.GioMoCua));
+            AddParameter(command, "@GioDongCua", DbType.Time, ParseTime(model.GioDongCua));
             AddParameter(command, "@XacMinh", DbType.Int32, model.XacMinh ? 1 : 0);
             AddParameter(command, "@Img", DbType.String, model.Img, 500);
             AddParameter(command, "@Logo", DbType.String, model.Logo, size: -1);
             AddParameter(command, "@QuangCao", DbType.Decimal, model.QuangCao, precision: 15, scale: 0);
-            AddParameter(command, "@NoiDungQuangCao", DbType.String, model.NoiDungQuangCao, size: -1);
-            AddParameter(command, "@QuangCaoImg", DbType.String, model.QuangCaoImg, size: -1);
-            AddParameter(command, "@NoiDungGioiThieu", DbType.String, model.NoiDungGioiThieu, size: -1);
-            AddParameter(command, "@NoiDungDichVu", DbType.String, model.NoiDungDichVu, size: -1);
-            AddParameter(command, "@NoiDungDoiNgu", DbType.String, model.NoiDungDoiNgu, size: -1);
-            AddParameter(command, "@NoiDungTrangThietBi", DbType.String, model.NoiDungTrangThietBi, size: -1);
-            AddParameter(command, "@NoiDungLienHe", DbType.String, model.NoiDungLienHe, size: -1);
+            AddParameter(command, "@OldMaCoSo", DbType.String, oldMaCoSo, 10);
+            AddParameter(command, "@OldTenCoSo", DbType.String, oldTenCoSo, 100);
+        });
+
+    public Task<AdminStoredProcedureResult> SaveQCKCBAsync(
+        string? maCoSo,
+        string? tenCoSo,
+        string? noiDung,
+        string? img,
+        bool enabled) =>
+        ExecuteAsync("dbo.Admin_QCKCB_Save", command =>
+        {
+            AddParameter(command, "@MaCoSo", DbType.String, maCoSo, 10);
+            AddParameter(command, "@TenCoSo", DbType.String, tenCoSo, 100);
+            AddParameter(command, "@NoiDung", DbType.String, noiDung, size: -1);
+            AddParameter(command, "@Img", DbType.String, img, size: -1);
+            AddParameter(command, "@Enabled", DbType.Boolean, enabled);
         });
 
     public Task<AdminStoredProcedureResult> SaveNoiDungCskcbAsync(
@@ -190,4 +205,9 @@ public sealed class AdminStoredProcedureService
         parameter.Value = value ?? DBNull.Value;
         command.Parameters.Add(parameter);
     }
+
+    private static TimeSpan? ParseTime(string? value) =>
+        TimeSpan.TryParseExact(value, new[] { "hh\\:mm", "h\\:mm" }, CultureInfo.InvariantCulture, out var result)
+            ? result
+            : null;
 }

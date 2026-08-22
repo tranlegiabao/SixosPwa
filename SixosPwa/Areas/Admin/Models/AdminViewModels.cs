@@ -131,8 +131,6 @@ public sealed class CoSoYTeEditViewModel
 
     public int? Tinh { get; set; }
 
-    public int? Huyen { get; set; }
-
     public int? PhuongXa { get; set; }
 
     [StringLength(20)]
@@ -160,6 +158,9 @@ public sealed class CoSoYTeEditViewModel
 
     public IFormFile? LogoFile { get; set; }
 
+    [StringLength(2000)]
+    public string? LogoUrlInput { get; set; }
+
     [Range(0, 999999999999999, ErrorMessage = "Sá»‘ tiá»n quáº£ng cÃ¡o khÃ´ng há»£p lá»‡.")]
     public decimal? QuangCao { get; set; }
 
@@ -169,6 +170,18 @@ public sealed class CoSoYTeEditViewModel
     public string? QuangCaoImg { get; set; }
 
     public IFormFile? QuangCaoImageFile { get; set; }
+
+    [StringLength(2000)]
+    public string? QuangCaoImgUrlInput { get; set; }
+
+    public IReadOnlyList<DMNhomCS> NhomCSList { get; set; } = Array.Empty<DMNhomCS>();
+    public IReadOnlyList<DMChuDe> ChuDeList { get; set; } = Array.Empty<DMChuDe>();
+    public IReadOnlyList<DMCSKCB> FacilityList { get; set; } = Array.Empty<DMCSKCB>();
+    public long? SelectedNhomCSId { get; set; }
+    public long? SelectedFacilityId { get; set; }
+    public long? SelectedTopicId { get; set; }
+    public long TopicId { get; set; }
+    public string? NoiDung { get; set; }
 
     public string? NoiDungGioiThieu { get; set; }
     public string? NoiDungDichVu { get; set; }

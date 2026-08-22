@@ -27,21 +27,14 @@ public class DangNhapController : Controller
     [HttpGet]
     public IActionResult Login(string? returnUrl = null)
     {
-        var adminReauth = AdminReauthentication.IsAdminReturnUrl(returnUrl) && Url.IsLocalUrl(returnUrl);
-
-        // Neu da dang nhap truoc do (Cookie truong ton hop le)
-        if (User.Identity?.IsAuthenticated == true && !adminReauth)
+        if (User.Identity?.IsAuthenticated == true)
         {
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
-            if (!string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
-            {
-                return RedirectToAction("ThongTinBenhNhan", "Home");
-            }
-            return RedirectToAction("Index", "Home");
+            return string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase)
+                ? Redirect("/Admin")
+                : RedirectToAction("ThongTinBenhNhan", "Home");
         }
 
-        ViewData["AdminReauth"] = adminReauth;
-        ViewData["ReturnUrl"] = adminReauth ? returnUrl : null;
         return View();
     }
 
@@ -109,8 +102,6 @@ public class DangNhapController : Controller
 
         var input = model.SoDienThoai.Trim();
         var otpInput = model.Otp.Trim();
-        var adminReauth = AdminReauthentication.IsAdminReturnUrl(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl);
-
         _cache.TryGetValue($"OTP_{input}", out string? cachedOtp);
 
         // Chap nhan neu dung ma trong cache hoac dung ma mac dinh "123456" hoac "1234" cho tien test
@@ -119,14 +110,22 @@ public class DangNhapController : Controller
             // Tìm tài khoản từ database theo SĐT hoặc Email
             var taiKhoan = await _taiKhoanService.DangNhapAsync(input, "");
             
+            if (taiKhoan != null
+                && string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "Tài khoản quản trị vui lòng đăng nhập tại khu vực Admin."
+                });
+            }
+
             string role = "BenhNhan";
             
             if (taiKhoan != null)
             {
                 // Chỉ duy trì hai vai trò công khai. Dữ liệu cũ User/DoiTac được quy về bệnh nhân.
-                role = string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase)
-                    ? "Admin"
-                    : "BenhNhan";
+                role = "BenhNhan";
             }
 
             var username = input;
@@ -178,41 +177,17 @@ public class DangNhapController : Controller
                 ExpiresUtc = DateTimeOffset.UtcNow.AddDays(365) // Het han sau 1 nam
             };
 
-            await HttpContext.SignOutAsync(AdminReauthentication.Scheme);
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 new ClaimsPrincipal(claimsIdentity),
                 authProperties);
-
-            if (adminReauth)
-            {
-                var adminIdentity = new ClaimsIdentity(claims, AdminReauthentication.Scheme);
-                await HttpContext.SignInAsync(
-                    AdminReauthentication.Scheme,
-                    new ClaimsPrincipal(adminIdentity),
-                    new AuthenticationProperties { IsPersistent = false });
-            }
 
             _cache.Remove($"OTP_{input}");
 
             // Lưu thông tin thiết bị đăng nhập vào database
             await LuuThietBiDangNhapAsync(username, model.DeviceId, model.DeviceName);
 
-            string redirectUrl;
-            if (adminReauth)
-            {
-                redirectUrl = model.ReturnUrl ?? Url.Action("Index", "Home");
-            }
-            else if (!string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
-            {
-                redirectUrl = Url.Action("ThongTinBenhNhan", "Home");
-            }
-            else
-            {
-                redirectUrl = Url.Action("Index", "Home");
-            }
-
-            return Json(new { success = true, redirectUrl });
+            return Json(new { success = true, redirectUrl = Url.Action("ThongTinBenhNhan", "Home") });
         }
 
         return Json(new { success = false, message = "Mã OTP không chính xác hoặc đã hết hạn!" });
@@ -227,7 +202,15 @@ public class DangNhapController : Controller
         }
 
         var sdt = model.SoDienThoai.Trim();
-        var adminReauth = AdminReauthentication.IsAdminReturnUrl(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl);
+        var taiKhoan = await _taiKhoanService.DangNhapAsync(sdt, "");
+        if (taiKhoan != null && string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+        {
+            return Json(new
+            {
+                success = false,
+                message = "Tài khoản quản trị vui lòng đăng nhập tại khu vực Admin."
+            });
+        }
 
         var claims = new List<Claim>
         {
@@ -245,25 +228,15 @@ public class DangNhapController : Controller
             ExpiresUtc = DateTimeOffset.UtcNow.AddDays(365)
         };
 
-        await HttpContext.SignOutAsync(AdminReauthentication.Scheme);
         await HttpContext.SignInAsync(
             CookieAuthenticationDefaults.AuthenticationScheme,
             new ClaimsPrincipal(claimsIdentity),
             authProperties);
 
-        if (adminReauth)
-        {
-            var adminIdentity = new ClaimsIdentity(claims, AdminReauthentication.Scheme);
-            await HttpContext.SignInAsync(
-                AdminReauthentication.Scheme,
-                new ClaimsPrincipal(adminIdentity),
-                new AuthenticationProperties { IsPersistent = false });
-        }
-
         // Lưu thông tin thiết bị đăng nhập vào database
         await LuuThietBiDangNhapAsync(sdt, model.DeviceId, model.DeviceName);
 
-        return Json(new { success = true, redirectUrl = adminReauth ? model.ReturnUrl : Url.Action("ThongTinBenhNhan", "Home") });
+        return Json(new { success = true, redirectUrl = Url.Action("ThongTinBenhNhan", "Home") });
     }
 
     private async Task LuuThietBiDangNhapAsync(string soDienThoai, string? deviceId, string? deviceName)
@@ -307,8 +280,8 @@ public class DangNhapController : Controller
     [HttpPost]
     public async Task<IActionResult> DangXuat()
     {
-        await HttpContext.SignOutAsync(AdminReauthentication.Scheme);
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        await HttpContext.SignOutAsync(AdminAuthentication.Scheme);
         return RedirectToAction(nameof(Login));
     }
 }
