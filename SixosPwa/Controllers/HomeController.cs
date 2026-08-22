@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SixosPwa.Data;
 using SixosPwa.Models;
+using SixosPwa.Security;
 using SixosPwa.Services.Partner;
 using WebPush;
 
@@ -102,14 +103,14 @@ public class HomeController : Controller
 
             if (matchedCS != null)
             {
-                if (!string.IsNullOrWhiteSpace(matchedCS.Slug))
-                {
-                    return RedirectPermanent($"/pk/{matchedCS.Slug}");
-                }
-
-                // Co so chua duoc dat slug: van hien duoc trang, chi la khong co
-                // URL co dinh. Quan tri vien dat slug trong man Admin/CoSoYTe.
-                await DoDuLieuCoSoAsync(matchedCS);
+                ViewData["CoSoYTe"] = matchedCS;
+                ViewData["TenCoSo"] = matchedCS.TenCoSo;
+                ViewData["DiaChi"] = matchedCS.DiaChi ?? "Đang cập nhật";
+                ViewData["Type"] = matchedCS.LoaiCS ?? "benhvien";
+                ViewData["Img"] = matchedCS.Img ?? AnhCoSoMacDinh;
+                ViewData["Logo"] = matchedCS.logo ?? logo ?? LogoCoSoMacDinh;
+                ViewData["TGLamViec"] = GetOperatingHoursValue(matchedCS);
+                ViewData["NoiDungCskcb"] = await LoadNoiDungAsync(matchedCS);
                 return View(nameof(ChiTietCoSo));
             }
         }
@@ -156,6 +157,21 @@ public class HomeController : Controller
         return View();
     }
 
+    private static string? GetOperatingHoursValue(DMCSKCB coSo)
+    {
+        if (!string.IsNullOrWhiteSpace(coSo.NgayLamViec)
+            && coSo.GioMoCua.HasValue
+            && coSo.GioDongCua.HasValue)
+        {
+            return OperatingHours.Encode(
+                coSo.NgayLamViec,
+                coSo.GioMoCua.Value.ToString(@"hh\:mm"),
+                coSo.GioDongCua.Value.ToString(@"hh\:mm"));
+        }
+
+        return coSo.TGLamViec;
+    }
+
     /// <summary>Man trong cho ba the chua noi du lieu.</summary>
     [HttpGet("/benh-nhan/sap-co")]
     public IActionResult SapCo(string? muc = null)
@@ -171,10 +187,10 @@ public class HomeController : Controller
         return View();
     }
 
-    /// <summary>Che bot so CCCD khi hien tren man: 0772•••••069.</summary>
+    /// <summary>Che bot so CCCD khi hien tren man: 0772â€¢â€¢â€¢â€¢â€¢069.</summary>
     private static string CheBotCccd(string? cccd)
     {
-        if (string.IsNullOrWhiteSpace(cccd)) return "—";
+        if (string.IsNullOrWhiteSpace(cccd)) return "â€”";
         if (cccd.Length <= 7) return cccd;
 
         return $"{cccd[..4]}{new string('\u2022', cccd.Length - 7)}{cccd[^3..]}";
@@ -185,7 +201,7 @@ public class HomeController : Controller
 
     /// <summary>
     /// Do du lieu mot co so ra ViewData cho trang chi tiet. MaCoSo va Slug la hai
-    /// thu hai nut "Dang ky kham" / "Dang nhap" phai mang theo — thieu chung thi
+    /// thu hai nut "Dang ky kham" / "Dang nhap" phai mang theo â€” thieu chung thi
     /// man dang nhap khong biet benh nhan dang o co so nao.
     /// </summary>
     private async Task DoDuLieuCoSoAsync(DMCSKCB coSo)
@@ -197,7 +213,7 @@ public class HomeController : Controller
         ViewData["Type"] = coSo.LoaiCS ?? "benhvien";
         ViewData["Img"] = coSo.Img ?? AnhCoSoMacDinh;
         ViewData["Logo"] = coSo.logo ?? LogoCoSoMacDinh;
-        ViewData["TGLamViec"] = coSo.TGLamViec;
+        ViewData["TGLamViec"] = GetOperatingHoursValue(coSo);
         ViewData["NoiDungCskcb"] = await LoadNoiDungAsync(coSo);
     }
 
@@ -213,14 +229,35 @@ public class HomeController : Controller
             query = query.Where(x => (x.MaCoSo == null || x.MaCoSo == "") && x.TenCoSo == coSo.TenCoSo);
         }
 
+        var topicById = (await _db.DMChuDes.AsNoTracking().ToListAsync())
+            .Where(x => !string.IsNullOrWhiteSpace(x.LoaiND))
+            .ToDictionary(x => x.ID.ToString(), x => x.LoaiND!, StringComparer.OrdinalIgnoreCase);
         var items = await query
-            .Where(x => NDCSKCB.AllowedLoaiND.Contains(x.LoaiND!))
             .OrderBy(x => x.Id)
             .ToListAsync();
 
         return items
+            .Select(x => new
+            {
+                Item = x,
+                LoaiND = ResolveLoaiND(x.LoaiND, topicById)
+            })
+            .Where(x => x.LoaiND != null
+                && NDCSKCB.AllowedLoaiND.Contains(x.LoaiND, StringComparer.OrdinalIgnoreCase))
             .GroupBy(x => x.LoaiND!, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(x => x.Key, x => x.First().NoiDung ?? "", StringComparer.OrdinalIgnoreCase);
+            .ToDictionary(x => x.Key, x => x.First().Item.NoiDung ?? "", StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static string? ResolveLoaiND(
+        string? storedLoaiND,
+        IReadOnlyDictionary<string, string> topicById)
+    {
+        var value = storedLoaiND?.Trim();
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        if (topicById.TryGetValue(value, out var loaiND)) return loaiND;
+
+        return NDCSKCB.AllowedLoaiND.FirstOrDefault(x =>
+            string.Equals(x, value, StringComparison.OrdinalIgnoreCase));
     }
 
     private static string RemoveAccentsAndSpaces(string text)
@@ -394,7 +431,7 @@ public class HomeController : Controller
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin")]
+    [Authorize(AuthenticationSchemes = AdminAuthentication.Scheme, Roles = "Admin")]
     public IActionResult GuiTinNhan()
     {
         var doiTacs = _db.DoiTacs.ToList();
@@ -402,7 +439,7 @@ public class HomeController : Controller
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(AuthenticationSchemes = AdminAuthentication.Scheme, Roles = "Admin")]
     public IActionResult LocDanhSachBN([FromBody] LocBNRequest model)
     {
         if (string.IsNullOrWhiteSpace(model.TenDT) || string.IsNullOrWhiteSpace(model.Password))
@@ -430,7 +467,7 @@ public class HomeController : Controller
 
             using var reader = cmd.ExecuteReader();
 
-            // Kiểm tra kết quả đầu tiên – có thể là lỗi xác thực
+            // Kiểm tra kết quả đầu tiên â€“ có thể là lỗi xác thực
             if (reader.FieldCount == 2 && reader.GetName(0) == "Success")
             {
                 if (reader.Read())
@@ -441,7 +478,7 @@ public class HomeController : Controller
                 }
             }
 
-            // Kết quả bình thường – danh sách bệnh nhân
+            // Kết quả bình thường â€“ danh sách bệnh nhân
             var list = new List<object>();
             while (reader.Read())
             {
@@ -487,7 +524,7 @@ public class HomeController : Controller
     // Lấy danh sách tài khoản bệnh nhân thật từ DB (cho GuiTinNhan dùng)
     // -------------------------------------------------------------------------
     [HttpGet]
-    [Authorize(Roles = "Admin")]
+    [Authorize(AuthenticationSchemes = AdminAuthentication.Scheme, Roles = "Admin")]
     public async Task<IActionResult> DanhSachNguoiDung()
     {
         var danhSach = await _db.TaiKhoans
@@ -539,10 +576,10 @@ public class HomeController : Controller
     }
 
     // -------------------------------------------------------------------------
-    // Gửi tin nhắn hàng loạt – lưu DB + gửi Web Push tới từng thiết bị
+    // Gửi tin nhắn hàng loạt â€“ lưu DB + gửi Web Push tới từng thiết bị
     // -------------------------------------------------------------------------
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(AuthenticationSchemes = AdminAuthentication.Scheme, Roles = "Admin")]
     public async Task<IActionResult> GuiTinNhan([FromBody] SendSmsRequest model)
     {
         var nguoiGui = User.Identity?.Name;
@@ -589,7 +626,7 @@ public class HomeController : Controller
                 var subscription = new PushSubscription(sub.Endpoint, sub.P256dh, sub.Auth);
                 var payload = System.Text.Json.JsonSerializer.Serialize(new
                 {
-                    title = "💬 Tin nhắn mới từ HisSoft",
+                    title = "ðŸ’¬ Tin nhắn mới từ HisSoft",
                     body = smsMessage,
                     icon = "/static/icon-192.png",
                     badge = "/static/icon-192.png",
@@ -602,7 +639,7 @@ public class HomeController : Controller
             catch (WebPushException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Gone
                                            || ex.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
-                // Subscription hết hạn – xoá khỏi DB
+                // Subscription hết hạn â€“ xoá khỏi DB
                 _db.PushDangKys.Remove(sub);
                 pushFail++;
             }
@@ -615,7 +652,7 @@ public class HomeController : Controller
 
         if (pushFail > 0) await _db.SaveChangesAsync(); // Lưu xoá subscription lỗi
 
-        _logger.LogInformation("Gửi {Total} thông báo: {Ok} push thành công, {Fail} lỗi", 
+        _logger.LogInformation("Gửi {Total} thông báo: {Ok} push thành công, {Fail} lỗi",
             danhSachNhan.Count, pushOk, pushFail);
 
         return Json(new
@@ -723,7 +760,7 @@ public class HomeController : Controller
                 var subscription = new PushSubscription(sub.Endpoint, sub.P256dh, sub.Auth);
                 var payload = System.Text.Json.JsonSerializer.Serialize(new
                 {
-                    title = "💬 Phản hồi từ " + nguoiGui,
+                    title = "ðŸ’¬ Phản hồi từ " + nguoiGui,
                     body = model.Message.Trim(),
                     icon = "/static/icon-192.png",
                     badge = "/static/icon-192.png",
@@ -755,7 +792,7 @@ public class HomeController : Controller
     // Lấy lịch sử trò chuyện (Admin <-> Bệnh nhân)
     // -------------------------------------------------------------------------
     [HttpGet]
-    [Authorize(Roles = "Admin")]
+    [Authorize(AuthenticationSchemes = AdminAuthentication.Scheme, Roles = "Admin")]
     public async Task<IActionResult> GetChatHistory(string sdtBenhNhan)
     {
         var adminId = User.Identity?.Name;
@@ -807,7 +844,7 @@ public class HomeController : Controller
     }
 }
 
-// ── Request models ─────────────────────────────────────────────────────────
+// â”€â”€ Request models â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 public class SendSmsRequest
 {
@@ -834,3 +871,5 @@ public class ReplyRequest
     public string NguoiNhan { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
 }
+
+

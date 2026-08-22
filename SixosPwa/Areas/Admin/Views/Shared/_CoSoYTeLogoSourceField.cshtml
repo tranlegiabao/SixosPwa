@@ -1,9 +1,15 @@
 @model CoSoYTeEditViewModel
+@{
+    var existingImage = Model.Logo?.Trim();
+}
 
-<div class="image-source-control" data-image-source>
+<div class="image-source-control" data-image-source data-existing-image="@existingImage">
     <button type="button" class="image-source-toggle" data-image-toggle aria-expanded="false" aria-label="Mở tùy chọn logo" title="Mở tùy chọn logo">
+        <span class="image-source-toggle-preview @(string.IsNullOrWhiteSpace(existingImage) ? "d-none" : string.Empty)" data-image-toggle-preview>
+            <img src="@existingImage" alt="Logo đã chọn" />
+        </span>
         <svg class="image-source-toggle-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="8.5" cy="9" r="1.5"></circle><path d="m4 17 5-5 3 3 2-2 6 6"></path></svg>
-        <span>Chọn logo</span>
+        <span data-image-toggle-label>@(string.IsNullOrWhiteSpace(existingImage) ? "Chọn logo" : "Đổi logo")</span>
     </button>
     <div class="image-source-panel d-none" data-image-panel>
         <div class="image-dropzone" data-image-dropzone>
@@ -14,10 +20,10 @@
         </div>
         <div class="image-url-divider"><span>HOẶC</span></div>
         <div class="image-url-row">
-            <input asp-for="Logo" class="form-control" type="text" placeholder="Dán đường dẫn logo" data-image-url />
+            <input asp-for="LogoUrlInput" class="form-control" type="text" placeholder="Dán đường dẫn logo" data-image-url autocomplete="off" />
             <button type="button" class="image-url-button" data-image-url-button>Tìm kiếm</button>
         </div>
-        <span asp-validation-for="Logo" class="text-danger field-error"></span>
+        <span asp-validation-for="LogoUrlInput" class="text-danger field-error"></span>
         <span asp-validation-for="LogoFile" class="text-danger field-error"></span>
         <img class="image-preview d-none" alt="Logo xem trước" data-image-preview />
     </div>

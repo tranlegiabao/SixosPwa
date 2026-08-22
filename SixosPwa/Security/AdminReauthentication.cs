@@ -1,9 +1,9 @@
 namespace SixosPwa.Security;
 
-public static class AdminReauthentication
+public static class AdminAuthentication
 {
-    public const string Scheme = "AdminReauthentication";
-    public const string CookieName = "SixosPwaAdminReauth";
+    public const string Scheme = "AdminAuthentication";
+    public const string CookieName = "SixosPwaAdminCookie";
 
     public static bool IsAdminReturnUrl(string? returnUrl)
     {

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SixosPwa.Models;
 
 namespace SixosPwa.Data;
@@ -65,6 +65,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<TaiKhoan>().Property(e => e.Role).HasMaxLength(50).IsRequired();
         modelBuilder.Entity<TaiKhoan>().Property(e => e.Email).HasMaxLength(50);
         modelBuilder.Entity<TaiKhoan>().Property(e => e.CCCD).HasMaxLength(20);
+        modelBuilder.Entity<TaiKhoan>().Property(e => e.MatKhau).HasMaxLength(255);
 
         // Configure ThongBao
         modelBuilder.Entity<ThongBao>().ToTable("ThongBao");
@@ -121,6 +122,9 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<DMCSKCB>().Property(e => e.DiaChi).HasMaxLength(255);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.LoaiCS).HasMaxLength(20);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.TGLamViec).HasMaxLength(50);
+        modelBuilder.Entity<DMCSKCB>().Property(e => e.NgayLamViec).HasMaxLength(50);
+        modelBuilder.Entity<DMCSKCB>().Property(e => e.GioMoCua).HasColumnType("time(0)");
+        modelBuilder.Entity<DMCSKCB>().Property(e => e.GioDongCua).HasColumnType("time(0)");
         modelBuilder.Entity<DMCSKCB>().Property(e => e.Img).HasMaxLength(500);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.SoToaNha).HasMaxLength(100);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.Tinh);

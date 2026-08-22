@@ -35,7 +35,7 @@ public class DangNhapController : Controller
     [HttpGet]
     public async Task<IActionResult> Login(string? returnUrl = null, string? coSo = null)
     {
-        var adminReauth = AdminReauthentication.IsAdminReturnUrl(returnUrl) && Url.IsLocalUrl(returnUrl);
+        var adminReauth = AdminAuthentication.IsAdminReturnUrl(returnUrl) && Url.IsLocalUrl(returnUrl);
 
         // ?coSo=slug den tu hai nut ben trang co so. Do ra ViewBag de man dang
         // nhap hien o "Ma CSKCB" khoa cung, va de JS gui kem khi goi OTP.
@@ -103,6 +103,28 @@ public class DangNhapController : Controller
             }
         }
 
+        // Kiểm tra tài khoản trong database
+        TaiKhoan? taiKhoan = null;
+        var term = input.ToLower();
+        if (term.Contains('@'))
+        {
+            taiKhoan = _dbContext.TaiKhoans.AsNoTracking().FirstOrDefault(tk => tk.Email != null && tk.Email.ToLower() == term);
+        }
+        else
+        {
+            taiKhoan = _dbContext.TaiKhoans.AsNoTracking().FirstOrDefault(tk => tk.SDT == term);
+        }
+
+        if (taiKhoan != null && (string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase) 
+                                 || string.Equals(taiKhoan.Role, "DoiTac", StringComparison.OrdinalIgnoreCase)))
+        {
+            return Json(new { 
+                success = true, 
+                isPassword = true,
+                message = "Vui lòng nhập mật khẩu của bạn để đăng nhập."
+            });
+        }
+
         // Ma OTP thu nghiem (hoac sinh ngau nhien 6 chu so)
         var otpCode = "123456";
 
@@ -143,17 +165,41 @@ public class DangNhapController : Controller
 
         var input = model.SoDienThoai.Trim();
         var otpInput = model.Otp.Trim();
-        var adminReauth = AdminReauthentication.IsAdminReturnUrl(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl);
+        var adminReauth = AdminAuthentication.IsAdminReturnUrl(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl);
 
-        _cache.TryGetValue($"OTP_{input}", out string? cachedOtp);
+        // Tìm tài khoản từ database theo SĐT hoặc Email trước để kiểm tra role
+        var taiKhoan = await _taiKhoanService.DangNhapAsync(input, "");
 
-        // Chap nhan neu dung ma trong cache hoac dung ma mac dinh "123456" hoac "1234" cho tien test
-        if (otpInput == "123456" || otpInput == "1234" || (cachedOtp != null && cachedOtp == otpInput))
+        if (taiKhoan != null && (string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase) 
+                                 || string.Equals(taiKhoan.Role, "DoiTac", StringComparison.OrdinalIgnoreCase)))
         {
-            // Tìm tài khoản từ database theo SĐT hoặc Email
-            var taiKhoan = await _taiKhoanService.DangNhapAsync(input, "");
-            
-            string role = "BenhNhan";
+            // Kiểm tra mật khẩu trong database
+            if (string.IsNullOrEmpty(taiKhoan.MatKhau) || !string.Equals(taiKhoan.MatKhau, otpInput, StringComparison.Ordinal))
+            {
+                return Json(new { success = false, message = "Mật khẩu không chính xác!" });
+            }
+        }
+        else
+        {
+            // Kiểm tra mã OTP
+            _cache.TryGetValue($"OTP_{input}", out string? cachedOtp);
+            if (otpInput != "123456" && otpInput != "1234" && (cachedOtp == null || cachedOtp != otpInput))
+            {
+                return Json(new { success = false, message = "Mã xác thực không chính xác hoặc đã hết hạn!" });
+            }
+        }
+
+        if (taiKhoan != null
+            && string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+        {
+            return Json(new
+            {
+                success = false,
+                message = "Tài khoản quản trị vui lòng đăng nhập tại khu vực Admin."
+            });
+        }
+        
+        string role = "BenhNhan";
             
             if (taiKhoan != null)
             {
@@ -223,7 +269,7 @@ public class DangNhapController : Controller
                 ExpiresUtc = DateTimeOffset.UtcNow.AddDays(365) // Het han sau 1 nam
             };
 
-            await HttpContext.SignOutAsync(AdminReauthentication.Scheme);
+            await HttpContext.SignOutAsync(AdminAuthentication.Scheme);
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 new ClaimsPrincipal(claimsIdentity),
@@ -231,9 +277,9 @@ public class DangNhapController : Controller
 
             if (adminReauth)
             {
-                var adminIdentity = new ClaimsIdentity(claims, AdminReauthentication.Scheme);
+                var adminIdentity = new ClaimsIdentity(claims, AdminAuthentication.Scheme);
                 await HttpContext.SignInAsync(
-                    AdminReauthentication.Scheme,
+                    AdminAuthentication.Scheme,
                     new ClaimsPrincipal(adminIdentity),
                     new AuthenticationProperties { IsPersistent = false });
             }
@@ -250,9 +296,6 @@ public class DangNhapController : Controller
                 : await ChonDichDenAsync(model.MaCoSo, model.Cccd, input, model.ReturnUrl);
 
             return Json(new { success = true, redirectUrl });
-        }
-
-        return Json(new { success = false, message = "Mã OTP không chính xác hoặc đã hết hạn!" });
     }
 
     [HttpPost]
@@ -264,7 +307,16 @@ public class DangNhapController : Controller
         }
 
         var sdt = model.SoDienThoai.Trim();
-        var adminReauth = AdminReauthentication.IsAdminReturnUrl(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl);
+        var taiKhoan = await _taiKhoanService.DangNhapAsync(sdt, "");
+        if (taiKhoan != null && string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+        {
+            return Json(new
+            {
+                success = false,
+                message = "Tài khoản quản trị vui lòng đăng nhập tại khu vực Admin."
+            });
+        }
+        var adminReauth = AdminAuthentication.IsAdminReturnUrl(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl);
 
         var claims = new List<Claim>
         {
@@ -291,7 +343,7 @@ public class DangNhapController : Controller
             ExpiresUtc = DateTimeOffset.UtcNow.AddDays(365)
         };
 
-        await HttpContext.SignOutAsync(AdminReauthentication.Scheme);
+        await HttpContext.SignOutAsync(AdminAuthentication.Scheme);
         await HttpContext.SignInAsync(
             CookieAuthenticationDefaults.AuthenticationScheme,
             new ClaimsPrincipal(claimsIdentity),
@@ -299,9 +351,9 @@ public class DangNhapController : Controller
 
         if (adminReauth)
         {
-            var adminIdentity = new ClaimsIdentity(claims, AdminReauthentication.Scheme);
+            var adminIdentity = new ClaimsIdentity(claims, AdminAuthentication.Scheme);
             await HttpContext.SignInAsync(
-                AdminReauthentication.Scheme,
+                AdminAuthentication.Scheme,
                 new ClaimsPrincipal(adminIdentity),
                 new AuthenticationProperties { IsPersistent = false });
         }
@@ -651,7 +703,7 @@ public class DangNhapController : Controller
                 .Select(x => x.Slug)
                 .FirstOrDefaultAsync();
 
-        await HttpContext.SignOutAsync(AdminReauthentication.Scheme);
+        await HttpContext.SignOutAsync(AdminAuthentication.Scheme);
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
         if (!string.IsNullOrWhiteSpace(slug))

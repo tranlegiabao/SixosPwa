@@ -1,13 +1,8 @@
 @model CoSoYTeEditViewModel
 @{ ViewData["Title"] = "Thêm cơ sở y tế"; }
 
-<div class="page-header-row">
-    <div><div class="page-kicker">CƠ SỞ Y TẾ</div><h1 class="page-heading">Thêm cơ sở</h1><p class="page-description">Tạo địa điểm mới để hiển thị trên ứng dụng.</p></div>
-    <a asp-action="Index" class="back-link">← Quay lại danh sách</a>
-</div>
-
-<div class="admin-panel form-panel">
-    <form asp-action="Create" method="post" enctype="multipart/form-data" class="admin-form">
+<div class="admin-panel form-panel facility-form-panel">
+    <form asp-action="Create" method="post" enctype="multipart/form-data" class="admin-form" id="coSoYTeForm">
         <div asp-validation-summary="ModelOnly" class="text-danger validation-summary"></div>
 
         <div class="form-section-title">Thông tin cơ sở</div>
@@ -22,21 +17,35 @@
 
         <div class="form-section-title">Hình ảnh hiển thị</div>
         <div class="row g-3">
-            <div class="col-lg-6"><label class="form-label">Ảnh cơ sở</label>@await Html.PartialAsync("_CoSoYTeImageSourceField", Model)</div>
             <div class="col-lg-6"><label class="form-label">Logo cơ sở</label>@await Html.PartialAsync("_CoSoYTeLogoSourceField", Model)</div>
         </div>
 
         <div class="form-section-title">Quảng cáo và hiển thị</div>
-        <div class="row g-3">
-            <div class="col-md-6"><label asp-for="QuangCao" class="form-label">Số tiền đã trả cho quảng cáo (VNĐ)</label><div class="input-group"><input asp-for="QuangCao" class="form-control" type="number" min="0" step="1000" inputmode="numeric" placeholder="Nhập số tiền đã thanh toán" /><span class="input-group-text">VNĐ</span></div><span asp-validation-for="QuangCao" class="text-danger field-error"></span></div>
-            <div class="col-md-6 d-flex align-items-end"><div class="form-check form-switch"><input asp-for="XacMinh" class="form-check-input" /><label asp-for="XacMinh" class="form-check-label">Đã xác minh và cho phép hiển thị</label></div></div>
+        <div class="media-ad-row">
+            <div class="ad-amount-stack">
+                <div class="ad-amount-cell">
+                    <label asp-for="QuangCao" class="form-label">Số tiền đã trả cho quảng cáo (VNĐ)</label>
+                    <div class="input-group"><input asp-for="QuangCao" class="form-control" type="number" min="0" step="1000" inputmode="numeric" placeholder="Nhập số tiền" data-advertising-amount /><span class="input-group-text">VNĐ</span></div>
+                    <span asp-validation-for="QuangCao" class="text-danger field-error"></span>
+                </div>
+                <div class="advertising-details @(Model.QuangCao.GetValueOrDefault() > 0 ? string.Empty : "d-none")" data-advertising-details>
+                    <label class="form-label">Ảnh quảng cáo</label>
+                    @await Html.PartialAsync("_QuangCaoImageSourceField", Model)
+                    <div class="form-note"><span>i</span> Số tiền quảng cáo cao hơn sẽ được ưu tiên hiển thị trước.</div>
+                </div>
+            </div>
+            <div class="ad-content-cell @(Model.QuangCao.GetValueOrDefault() > 0 ? string.Empty : "d-none")" data-advertising-content>
+                <label asp-for="NoiDungQuangCao" class="form-label">Nội dung quảng cáo</label>
+                <textarea asp-for="NoiDungQuangCao" id="advertisingContentEditor" class="form-control" rows="5" placeholder="Nhập nội dung quảng cáo"></textarea>
+                <span asp-validation-for="NoiDungQuangCao" class="text-danger field-error"></span>
+            </div>
         </div>
-        <div class="form-note"><span>i</span> Số tiền quảng cáo cao hơn sẽ được ưu tiên hiển thị trước.</div>
+        <div class="form-check form-switch mt-3"><input asp-for="XacMinh" class="form-check-input" /><label asp-for="XacMinh" class="form-check-label">Đã xác minh và cho phép hiển thị</label></div>
 
-        @await Html.PartialAsync("_NoiDungCskcbFields", Model)
+        @await Html.PartialAsync("_CoSoYTeDashboardContentFields", Model)
 
         <div class="form-actions"><a asp-action="Index" class="btn admin-btn-secondary">Hủy</a><button type="submit" class="btn admin-btn-primary">Lưu cơ sở</button></div>
     </form>
 </div>
 
-@section Scripts { <script src="~/js/admin-co-so-y-te.js" asp-append-version="true"></script><script src="~/js/admin-co-so-y-te-address.js" asp-append-version="true"></script><partial name="_ValidationScriptsPartial" /> }
+@section Scripts { <script src="~/dist/libs/tinymce/tinymce.min.js"></script><script src="~/js/admin-co-so-y-te.js" asp-append-version="true"></script><script src="~/js/admin-co-so-y-te-address.js" asp-append-version="true"></script><script src="~/js/admin-co-so-y-te-content.js" asp-append-version="true"></script><partial name="_ValidationScriptsPartial" /> }

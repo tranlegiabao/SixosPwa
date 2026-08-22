@@ -1,0 +1,127 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "Đăng nhập Admin";
+    var returnUrl = ViewData["ReturnUrl"]?.ToString() ?? "/Admin";
+}
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Đăng nhập Admin - Y TẾ VIỆT</title>
+    <partial name="_PwaHead" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/show-toast.css" asp-append-version="true" />
+    <script src="~/js/show-toast.js" asp-append-version="true"></script>
+    <style>
+        .admin-login-badge { color: #1d4ed8; font-size: .78rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+        .admin-login-note { color: #64748b; font-size: .9rem; line-height: 1.5; }
+        .step-2 { display: none; }
+    </style>
+</head>
+<body class="page-center">
+    <main class="auth">
+        <div class="auth__brand">
+            <img src="~/static/icon-192.png" alt="Y TẾ VIỆT" width="72" height="72" />
+            <div class="admin-login-badge">Khu vực quản trị</div>
+            <h1>Y TẾ VIỆT</h1>
+            <p>Đăng nhập riêng dành cho tài khoản Admin</p>
+        </div>
+
+        <div class="card auth__card">
+            <div class="card-body">
+                <form id="formStep1" onsubmit="event.preventDefault(); guiOtp();">
+                    <div class="mb-3">
+                        <label class="form-label" for="soDienThoai">Số điện thoại hoặc Email Admin</label>
+                        <input type="text" class="form-control form-control-lg" id="soDienThoai" autocomplete="username" maxlength="100" required />
+                        <div class="form-text admin-login-note">Tài khoản bệnh nhân không thể đăng nhập vào khu vực này.</div>
+                    </div>
+                    <button type="submit" id="btnGuiOtp" class="btn btn-primary w-100 py-2 fw-bold">Tiếp tục</button>
+                </form>
+
+                <form id="formStep2" class="step-2" onsubmit="event.preventDefault(); xacNhanOtp();">
+                    <div class="mb-3 text-center">
+                        <label class="form-label d-block text-start" for="maOtp">Nhập mật khẩu Admin</label>
+                        <input type="password" class="form-control form-control-lg" id="maOtp" placeholder="Nhập mật khẩu của bạn" autocomplete="current-password" required />
+                        <span class="text-muted small">Tài khoản: <strong id="lblSoDienThoai"></strong></span>
+                    </div>
+                    <button type="submit" id="btnXacNhan" class="btn btn-success w-100 py-2 fw-bold mb-2">Đăng nhập Admin</button>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" onclick="quayLaiStep1()">← Đổi tài khoản</button>
+                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" onclick="guiOtp()">Gửi lại mã xác thực</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const returnUrl = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(returnUrl));
+        let currentAccount = '';
+
+        function notify(message, type) {
+            if (typeof showToast === 'function') showToast(message, type);
+        }
+
+        async function guiOtp() {
+            const input = document.getElementById('soDienThoai').value.trim();
+            if (!input) return notify('Vui lòng nhập số điện thoại hoặc email Admin.', 'warning');
+            const button = document.getElementById('btnGuiOtp');
+            button.disabled = true;
+            try {
+                const response = await fetch('/Admin/DangNhap/GuiOtp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ soDienThoai: input })
+                });
+                const data = await response.json();
+                if (!data.success) return notify(data.message, 'error');
+                currentAccount = input;
+                document.getElementById('lblSoDienThoai').textContent = input;
+                document.getElementById('formStep1').style.display = 'none';
+                document.getElementById('formStep2').style.display = 'block';
+                if (data.isPassword) {
+                    document.getElementById('maOtp').value = '';
+                    notify(data.message || 'Vui lòng nhập mật khẩu Admin.', 'info');
+                } else {
+                    document.getElementById('maOtp').value = data.otpDemo || '';
+                    notify('Mật khẩu thử nghiệm của bạn là: ' + (data.otpDemo || ''), 'success');
+                }
+                document.getElementById('maOtp').focus();
+            } catch {
+                notify('Lỗi kết nối máy chủ.', 'error');
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        async function xacNhanOtp() {
+            const otp = document.getElementById('maOtp').value.trim();
+            if (!otp) return notify('Vui lòng nhập mật khẩu.', 'warning');
+            const button = document.getElementById('btnXacNhan');
+            button.disabled = true;
+            try {
+                const response = await fetch('/Admin/DangNhap/XacNhanOtp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ soDienThoai: currentAccount, otp, returnUrl })
+                });
+                const data = await response.json();
+                if (!data.success) return notify(data.message, 'error');
+                window.location.href = data.redirectUrl;
+            } catch {
+                notify('Lỗi xác thực mật khẩu Admin.', 'error');
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        function quayLaiStep1() {
+            document.getElementById('formStep2').style.display = 'none';
+            document.getElementById('formStep1').style.display = 'block';
+            document.getElementById('soDienThoai').focus();
+        }
+    </script>
+</body>
+</html>

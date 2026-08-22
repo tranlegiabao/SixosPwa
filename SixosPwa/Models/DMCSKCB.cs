@@ -12,6 +12,9 @@ public class DMCSKCB
     public string? DiaChi { get; set; }
     public string? LoaiCS { get; set; }
     public string? TGLamViec { get; set; }
+    public string? NgayLamViec { get; set; }
+    public TimeSpan? GioMoCua { get; set; }
+    public TimeSpan? GioDongCua { get; set; }
     public int? XacMinh { get; set; }
     public string? Img { get; set; }
     public decimal? QuangCao { get; set; }

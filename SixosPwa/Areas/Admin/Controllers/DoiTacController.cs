@@ -3,14 +3,22 @@ using Microsoft.EntityFrameworkCore;
 using SixosPwa.Areas.Admin.Models;
 using SixosPwa.Data;
 using SixosPwa.Models;
+using SixosPwa.Services;
 
 namespace SixosPwa.Areas.Admin.Controllers;
 
 public sealed class DoiTacController : AdminControllerBase
 {
     private readonly ApplicationDbContext _db;
+    private readonly AdminStoredProcedureService _adminStoredProcedures;
 
-    public DoiTacController(ApplicationDbContext db) => _db = db;
+    public DoiTacController(
+        ApplicationDbContext db,
+        AdminStoredProcedureService adminStoredProcedures)
+    {
+        _db = db;
+        _adminStoredProcedures = adminStoredProcedures;
+    }
 
     public async Task<IActionResult> Index(string? q, int page = 1)
     {
@@ -54,8 +62,13 @@ public sealed class DoiTacController : AdminControllerBase
 
         if (!ModelState.IsValid) return View(model);
 
-        _db.DoiTacs.Add(ToEntity(model));
-        await _db.SaveChangesAsync();
+        var result = await _adminStoredProcedures.SaveDoiTacAsync(model, updatePassword: true);
+        if (!result.Succeeded)
+        {
+            ModelState.AddModelError(nameof(model.MaDT), result.Message ?? "Không thể thêm đối tác.");
+            return View(model);
+        }
+
         Success("Đã thêm đối tác.");
         return RedirectToAction(nameof(Index));
     }
@@ -73,7 +86,7 @@ public sealed class DoiTacController : AdminControllerBase
     public async Task<IActionResult> Edit(DoiTacEditViewModel model)
     {
         Normalize(model);
-        var entity = await _db.DoiTacs.FirstOrDefaultAsync(x => x.Id == model.Id);
+        var entity = await _db.DoiTacs.AsNoTracking().FirstOrDefaultAsync(x => x.Id == model.Id);
         if (entity == null) return NotFound();
 
         if (ModelState.IsValid && await _db.DoiTacs.AnyAsync(x => x.Id != model.Id && x.MaDT == model.MaDT))
@@ -81,15 +94,16 @@ public sealed class DoiTacController : AdminControllerBase
 
         if (!ModelState.IsValid) return View(model);
 
-        entity.MaDT = model.MaDT;
-        entity.TenDT = model.TenDT;
-        entity.DiaChi = model.DiaChi;
-        entity.SDT = model.SDT;
-        entity.Email = model.Email;
-        entity.BrandName = model.BrandName;
-        if (!string.IsNullOrWhiteSpace(model.Password))
-            entity.Password = model.Password;
-        await _db.SaveChangesAsync();
+        var result = await _adminStoredProcedures.SaveDoiTacAsync(
+            model,
+            updatePassword: !string.IsNullOrWhiteSpace(model.Password));
+        if (!result.Succeeded)
+        {
+            if (result.Code == 3) return NotFound();
+            ModelState.AddModelError(string.Empty, result.Message ?? "Không thể cập nhật đối tác.");
+            return View(model);
+        }
+
         Success("Đã cập nhật thông tin đối tác.");
         return RedirectToAction(nameof(Index));
     }
@@ -104,17 +118,6 @@ public sealed class DoiTacController : AdminControllerBase
         model.BrandName = model.BrandName?.Trim();
         model.Password = model.Password?.Trim();
     }
-
-    private static DoiTac ToEntity(DoiTacEditViewModel model) => new()
-    {
-        MaDT = model.MaDT,
-        TenDT = model.TenDT,
-        DiaChi = model.DiaChi,
-        SDT = model.SDT,
-        Email = model.Email,
-        BrandName = model.BrandName,
-        Password = model.Password
-    };
 
     private static DoiTacEditViewModel ToViewModel(DoiTac entity) => new()
     {
