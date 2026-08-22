@@ -453,7 +453,7 @@
         .ytv-sidebar { width: 100%; border-right: none; border-bottom: 1px solid #e2e8f0; padding: 15px; }
         .ytv-grid { grid-template-columns: repeat(2, 1fr); }
         .ytv-footer-top { flex-direction: column; gap: 20px; align-items: center; text-align: center; }
-        .ytv-policies-col { justify-content: center; }
+        .ytv-policies-col { justify-content: center; width: 100%; }
     @@media (max-width: 576px) {
         .ytv-grid { grid-template-columns: 1fr; }
         .ytv-sidebar { padding: 10px; }
@@ -537,7 +537,7 @@
             </div>
         </div>
         
-        <div class="ytv-policies-col w-100 w-lg-auto mt-2 mt-lg-0">
+        <div class="ytv-policies-col">
             <!-- Mobile 2x2 grid -->
             <div class="row text-center m-0 d-flex d-md-none w-100" style="row-gap: 8px;">
                 <div class="col-6 p-0"><a href="#" onclick="showPolicy('baomat')" class="text-dark text-decoration-none">Chính sách bảo mật</a></div>
