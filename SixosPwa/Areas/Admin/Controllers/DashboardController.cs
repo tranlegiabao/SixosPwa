@@ -1,3 +1,4 @@
+using Ganss.Xss;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,13 +12,24 @@ public sealed class DashboardController : AdminControllerBase
 {
     private readonly ApplicationDbContext _db;
     private readonly AdminStoredProcedureService _adminStoredProcedures;
+    private readonly IWebHostEnvironment _environment;
+
+    private const string ContentImageFolder = "static/img_nd";
+    private const long MaxContentImageSize = 5 * 1024 * 1024;
+    private static readonly HashSet<string> AllowedContentImageExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".jpg", ".jpeg", ".png", ".webp", ".gif"
+    };
+    private static readonly HtmlSanitizer HtmlFilter = CreateHtmlFilter();
 
     public DashboardController(
         ApplicationDbContext db,
-        AdminStoredProcedureService adminStoredProcedures)
+        AdminStoredProcedureService adminStoredProcedures,
+        IWebHostEnvironment environment)
     {
         _db = db;
         _adminStoredProcedures = adminStoredProcedures;
+        _environment = environment;
     }
 
     public async Task<IActionResult> Index(long? facilityId = null, long? topicId = null)
@@ -108,7 +120,7 @@ public sealed class DashboardController : AdminControllerBase
             facility.MaCoSo,
             facility.TenCoSo,
             topic.ID,
-            model.NoiDung);
+            SanitizeHtml(model.NoiDung));
         if (!result.Succeeded)
         {
             Error(result.Message ?? "Không thể lưu nội dung.");
@@ -134,6 +146,63 @@ public sealed class DashboardController : AdminControllerBase
             facility.TenCoSo,
             topic.ID);
         return Json(new { noiDung = noiDung ?? string.Empty });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UploadImage(IFormFile? file)
+    {
+        if (file == null || file.Length == 0)
+            return Json(new { error = "Chưa chọn ảnh." });
+
+        if (file.Length > MaxContentImageSize)
+            return Json(new { error = "Ảnh phải nhỏ hơn 5 MB." });
+
+        var extension = Path.GetExtension(file.FileName);
+        if (string.IsNullOrWhiteSpace(extension) || !AllowedContentImageExtensions.Contains(extension))
+            return Json(new { error = "Chỉ hỗ trợ ảnh JPG, PNG, WEBP hoặc GIF." });
+
+        var directory = Path.Combine(
+            _environment.WebRootPath,
+            ContentImageFolder.Replace('/', Path.DirectorySeparatorChar));
+        Directory.CreateDirectory(directory);
+
+        var fileName = $"{Guid.NewGuid():N}{extension.ToLowerInvariant()}";
+        var path = Path.Combine(directory, fileName);
+        await using var stream = new FileStream(path, FileMode.CreateNew);
+        await file.CopyToAsync(stream);
+
+        return Json(new { location = $"/{ContentImageFolder}/{fileName}" });
+    }
+
+    private static HtmlSanitizer CreateHtmlFilter()
+    {
+        var filter = new HtmlSanitizer();
+        filter.AllowedTags.Clear();
+        foreach (var tag in new[]
+                 { "p", "br", "b", "strong", "i", "em", "u", "s", "sub", "sup", "ul", "ol", "li",
+                   "h1", "h2", "h3", "h4", "blockquote", "hr", "table", "thead", "tbody", "tfoot",
+                   "tr", "th", "td", "img", "a", "span", "div" })
+            filter.AllowedTags.Add(tag);
+
+        filter.AllowedAttributes.Clear();
+        foreach (var attribute in new[]
+                 { "style", "class", "src", "alt", "href", "title", "width", "height", "colspan",
+                   "rowspan", "target", "rel" })
+            filter.AllowedAttributes.Add(attribute);
+
+        filter.AllowedSchemes.Clear();
+        filter.AllowedSchemes.Add("http");
+        filter.AllowedSchemes.Add("https");
+        filter.AllowedSchemes.Add("mailto");
+        return filter;
+    }
+
+    private static string? SanitizeHtml(string? html)
+    {
+        if (string.IsNullOrWhiteSpace(html)) return null;
+        var sanitized = HtmlFilter.Sanitize(html).Trim();
+        return string.IsNullOrWhiteSpace(sanitized) ? null : sanitized;
     }
 
     [AllowAnonymous]

@@ -15,10 +15,10 @@
 
 <div class="card shadow-sm border-0 rounded-3 w-100 h-100" style="border: 1px solid #e2e8f0 !important; background: #ffffff;">
     <div class="card-body p-4 p-lg-5">
-        <form asp-action="SaveContent" method="post" id="dashboardContentForm">
-            @Html.AntiForgeryToken()
-            <input type="hidden" id="contentFacilityId" name="FacilityId" value="@Model.SelectedFacilityId" />
-            <input type="hidden" id="contentTopicId" name="TopicId" value="@Model.SelectedTopicId" />
+    @* Nam sua 2026-08-22: truoc day nut "Luu" khong nam trong form nao va khong co
+       action POST -> noi dung soan xong bay mat. Boc form + antiforgery. *@
+    <form id="frmNoiDungCoSo" asp-area="Admin" asp-controller="Dashboard" asp-action="SaveContent" method="post">
+        @Html.AntiForgeryToken()
         <div class="row gx-4 gx-lg-5 mb-4">
             <div class="col-md-5">
                 <div class="d-flex align-items-center mb-4">
@@ -27,18 +27,18 @@
                         <option value="">-- Chọn nhóm --</option>
                         @foreach (var item in Model.NhomCSList)
                         {
-                            <option value="@item.ID" data-loaics="@item.LoaiCS" selected="@(Model.SelectedNhomCSId == item.ID ? "selected" : null)">@item.TenLoaiCS</option>
+                            <option value="@item.ID" data-loaics="@item.LoaiCS">@item.TenLoaiCS</option>
                         }
                     </select>
                 </div>
                 
                 <div class="d-flex align-items-center mb-0">
                     <label class="form-label mb-0 me-3 fw-bold text-nowrap text-secondary" style="min-width: 130px; font-size: 15px;">PK từ nhóm KH</label>
-                    <select id="cboPhongKham" class="form-select border-secondary-subtle" disabled onchange="window.onPhongKhamChange && window.onPhongKhamChange()">
+                    <select id="cboPhongKham" name="FacilityId" class="form-select border-secondary-subtle" disabled onchange="window.onPhongKhamChange && window.onPhongKhamChange()">
                         <option value="">-- Chọn phòng khám --</option>
                         @foreach (var item in Model.FacilityList)
                         {
-                            <option value="@item.Id" data-loaics="@item.LoaiCS" selected="@(Model.SelectedFacilityId == item.Id ? "selected" : null)">@item.TenCoSo</option>
+                            <option value="@item.Id" data-loaics="@item.LoaiCS">@item.TenCoSo</option>
                         }
                     </select>
                 </div>
@@ -47,154 +47,105 @@
             <div class="col-md-7">
                 <div class="d-flex align-items-center">
                     <label class="form-label mb-0 me-3 fw-bold text-nowrap text-secondary" style="min-width: 70px; font-size: 15px;">Chủ đề</label>
-                    <select id="cboChuDe" class="form-select me-3 border-secondary-subtle" disabled>
+                    <select id="cboChuDe" name="TopicId" class="form-select me-3 border-secondary-subtle" disabled onchange="window.napNoiDung && window.napNoiDung()">
                         <option value="">-- Chọn chủ đề --</option>
                         @foreach (var item in Model.ChuDeList)
                         {
-                            <option value="@item.ID" selected="@(Model.SelectedTopicId == item.ID ? "selected" : null)">@item.TenChuDe</option>
+                            <option value="@item.ID">@item.TenChuDe</option>
                         }
                     </select>
-                    <button type="submit" id="saveDashboardContent" class="btn btn-primary px-4 fw-bold shadow-sm">Lưu</button>
+                    <button type="submit" class="btn btn-primary px-4 fw-bold shadow-sm">Lưu</button>
                 </div>
             </div>
         </div>
         
         <div class="row">
             <div class="col-12 textarea-container">
-                <textarea id="summernote" class="form-control" name="NoiDung">@Model.NoiDung</textarea>
+                <textarea id="tinyNoiDung" class="form-control" name="NoiDung"></textarea>
             </div>
         </div>
-        </form>
+    </form>
     </div>
 </div>
 
-<style>
-    /* Customize Summernote to look cleaner */
-    .note-editor.note-frame {
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-    .note-editor .note-toolbar {
-        background-color: #f8fafc;
-        border-bottom: 1px solid #cbd5e1;
-        padding: 8px 15px;
-    }
-    .note-editor .note-statusbar {
-        background-color: #f8fafc;
-    }
-    .note-editor .note-editable {
-        color: #000000;
-    }
-</style>
-
 @section Scripts {
-<!-- Include jQuery if not already included in layout -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<!-- Summernote Lite -->
-<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+@* Nam sua 2026-08-22: bo jQuery CDN (layout da nap o _AdminLayout.cshtml:99 - nap lai
+   lam mat binding cua TomSelect) va bo Summernote CDN. Doi sang TinyMCE SELF-HOST vi
+   app chay noi bo, khong duoc phu thuoc CDN. Thu vien chep tu TTTBSixOs (v6.4.2). *@
+<script src="~/dist/libs/tinymce/tinymce.min.js"></script>
 
 <script>
-    var dashboardContentUrl = '@Url.Action("GetContent", "Dashboard", new { area = "Admin" })';
-    var initialNhomId = '@Model.SelectedNhomCSId';
-    var initialFacilityId = '@Model.SelectedFacilityId';
-    var initialTopicId = '@Model.SelectedTopicId';
+    var SELECTED_FACILITY_ID = '@(Model.SelectedFacilityId?.ToString() ?? "")';
+    var SELECTED_TOPIC_ID = '@(Model.SelectedTopicId?.ToString() ?? "")';
 
-    $(document).ready(function() {
-        $('#summernote').summernote({
-            tabsize: 2,
-            height: 450,
-            toolbar: [
-                ['para', ['ul', 'ol', 'paragraph']],
-                ['style', ['bold', 'underline', 'italic']],
-                ['fontsize', ['fontsize']],
-                ['color', ['color']],
-                ['history', ['undo', 'redo']],
-                ['height', ['height']],
-                ['table', ['table']],
-                ['insert', ['link', 'picture', 'video']]
-            ],
-            fontSizes: ['8', '9', '10', '11', '12', '14', '16', '18', '24', '36', '48', '64'],
-            callbacks: {
-                onImageUpload: function(files) {
-                    for(let i=0; i < files.length; i++) {
-                        let data = new FormData();
-                        data.append("file", files[i]);
-                        $.ajax({
-                            url: '/Admin/CoSoYTe/UploadImage',
-                            cache: false,
-                            contentType: false,
-                            processData: false,
-                            data: data,
-                            type: "post",
-                            success: function(response) {
-                                $('#summernote').summernote('insertImage', response.url);
-                            },
-                            error: function(jqXHR, textStatus, errorThrown) {
-                                alert("Lỗi upload ảnh: " + (jqXHR.responseText || errorThrown));
-                            }
-                        });
-                    }
-                }
-            }
-        });
+    // Khuon init bam theo TTTBSixOs/Views/Home/ThemThongBao.cshtml:24-49.
+    // Khac biet: TTTB KHONG co upload anh, phan images_upload_handler la viet moi.
+    tinymce.init({
+        selector: '#tinyNoiDung',
+        height: 450,
+        menubar: false,
+        branding: false,
+        promotion: false,
+        license_key: 'gpl',
+        // Khong dat language: 'vi' - ban chep tu TTTB KHONG co thu muc langs/,
+        // dat vao se 404 va TinyMCE nem canh bao. Giao dien giu tieng Anh.
+        plugins: 'advlist autolink lists link image table code',
+        toolbar: 'undo redo | bold italic underline | bullist numlist | ' +
+                 'alignleft aligncenter alignright | table image link | ' +
+                 'forecolor backcolor removeformat | code',
+        // Chan dan anh base64 - se lam phinh cot NoiDung (nvarchar(max)) va
+        // vuot ValueLengthLimit (~4 MB) cua model binder khi POST.
+        paste_data_images: false,
+        automatic_uploads: true,
+        // init la BAT DONG BO: neu khoiPhucLuaChon() chay truoc khi editor san sang
+        // thi tinymce.get() tra null va noi dung cu khong duoc nap. Goi lai o day.
+        init_instance_callback: function () {
+            if (window.napNoiDung) window.napNoiDung();
+        },
+        images_upload_handler: function (blobInfo) {
+            return new Promise(function (resolve, reject) {
+                var form = new FormData();
+                form.append('file', blobInfo.blob(), blobInfo.filename());
+                var token = document.querySelector('#frmNoiDungCoSo input[name="__RequestVerificationToken"]');
+                if (token) form.append('__RequestVerificationToken', token.value);
+
+                fetch('@Url.Action("UploadImage", "Dashboard", new { area = "Admin" })', {
+                    method: 'POST',
+                    body: form
+                })
+                .then(function (res) { return res.json(); })
+                .then(function (json) {
+                    // TinyMCE doi khoa "location". Loi thi tra khoa "error".
+                    if (json && json.location) { resolve(json.location); }
+                    else { reject({ message: (json && json.error) || 'Tải ảnh thất bại.', remove: true }); }
+                })
+                .catch(function () { reject({ message: 'Không kết nối được máy chủ.', remove: true }); });
+            });
+        }
     });
 
-    function setDashboardContent(content) {
-        if ($('#summernote').next('.note-editor').length) {
-            $('#summernote').summernote('code', content || '');
-        } else {
-            $('#summernote').val(content || '');
-        }
-    }
+    // BAT BUOC: khong triggerSave thi textarea van rong -> luu ra chuoi trong.
+    document.getElementById('frmNoiDungCoSo').addEventListener('submit', function () {
+        tinymce.triggerSave();
+    });
 
-    function ensureDefaultBlackHtml(content) {
-        var html = (content || '').trim();
-        if (!html) return '';
+    // Nap lai noi dung da luu vao editor khi doi phong kham / chu de.
+    window.napNoiDung = function () {
+        var pk = document.getElementById('cboPhongKham');
+        var cd = document.getElementById('cboChuDe');
+        var ed = tinymce.get('tinyNoiDung');
+        if (!pk || !cd || !ed) return;
+        if (!pk.value || !cd.value) { ed.setContent(''); return; }
 
-        var parsed = document.createElement('div');
-        parsed.innerHTML = html;
-        var firstElement = parsed.firstElementChild;
-        var firstStyle = firstElement ? (firstElement.getAttribute('style') || '') : '';
-        if (parsed.children.length === 1
-            && firstElement
-            && firstElement.tagName.toLowerCase() === 'div'
-            && /(^|;)\s*color\s*:/i.test(firstStyle)) {
-            return html;
-        }
-
-        var wrapper = document.createElement('div');
-        wrapper.style.color = '#000000';
-        wrapper.innerHTML = html;
-        return wrapper.outerHTML;
-    }
-
-    async function loadDashboardContent() {
-        var facilityId = document.getElementById("cboPhongKham")?.value;
-        var topicId = document.getElementById("cboChuDe")?.value;
-        var facilityHidden = document.getElementById("contentFacilityId");
-        var topicHidden = document.getElementById("contentTopicId");
-        if (facilityHidden) facilityHidden.value = facilityId || "";
-        if (topicHidden) topicHidden.value = topicId || "";
-
-        if (!facilityId || !topicId) {
-            setDashboardContent('');
-            return;
-        }
-
-        try {
-            var response = await fetch(dashboardContentUrl + '?facilityId=' + encodeURIComponent(facilityId) + '&topicId=' + encodeURIComponent(topicId), {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        fetch('@Url.Action("GetContent", "Dashboard", new { area = "Admin" })'
+              + '?facilityId=' + encodeURIComponent(pk.value)
+              + '&topicId=' + encodeURIComponent(cd.value))
+            .then(function (res) { return res.ok ? res.json() : { noiDung: '' }; })
+            .then(function (json) { ed.setContent((json && json.noiDung) || ''); })
+            .catch(function () {
+                if (window.showToast) showToast('Không tải được nội dung đã lưu.', 'danger');
             });
-            if (!response.ok) throw new Error('Không tải được nội dung.');
-            var data = await response.json();
-            setDashboardContent(data.noiDung || '');
-        } catch (error) {
-            setDashboardContent('');
-            if (typeof showToast === 'function') showToast(error.message, 'error');
-        }
-    }
+    };
 
     var originalPKOptions = [];
 
@@ -261,7 +212,6 @@
             var newOptions = [placeholderOption].concat(matched);
             updateSelectUI(cboPhongKham, newOptions, false);
         }
-        loadDashboardContent();
     };
 
     function updateSelectUI(selectEl, options, isDisabled) {
@@ -316,42 +266,57 @@
                 }
             }
         }
-        loadDashboardContent();
+        // Nam sua 2026-08-22: doi phong kham thi nap lai noi dung tuong ung.
+        if (window.napNoiDung) window.napNoiDung();
     };
 
-    document.addEventListener("DOMContentLoaded", function() {
+    // Nam sua 2026-08-22: sau khi Luu (POST-redirect-GET) phai chon lai dung
+    // phong kham / chu de cu, neu khong admin phai chon lai tu dau moi lan luu.
+    // Phai chay SAU updatePKDropdown vi ham do reset selectEl.value = "".
+    function khoiPhucLuaChon() {
+        if (!SELECTED_FACILITY_ID) return;
+
         var cboNhomKH = document.getElementById("cboNhomKH");
         var cboPhongKham = document.getElementById("cboPhongKham");
         var cboChuDe = document.getElementById("cboChuDe");
-        if (cboNhomKH && initialNhomId) cboNhomKH.value = initialNhomId;
-        window.updatePKDropdown();
-        if (cboPhongKham && initialFacilityId) {
-            cboPhongKham.value = initialFacilityId;
-            window.onPhongKhamChange();
-        }
-        if (cboChuDe && initialTopicId) cboChuDe.value = initialTopicId;
-        if (cboChuDe) cboChuDe.addEventListener('change', loadDashboardContent);
-        loadDashboardContent();
+        if (!cboNhomKH || !cboPhongKham || !cboChuDe) return;
 
-        var form = document.getElementById('dashboardContentForm');
-        if (form) {
-            form.addEventListener('submit', function(event) {
-                var facilityId = document.getElementById('cboPhongKham')?.value;
-                var topicId = document.getElementById('cboChuDe')?.value;
-                if (!facilityId || !topicId) {
-                    event.preventDefault();
-                    if (typeof showToast === 'function') showToast('Vui lòng chọn cơ sở y tế và chủ đề.', 'warning');
-                    return;
+        // Tim nhom KH chua phong kham nay (dua vao ban sao goc truoc khi bi loc).
+        var pkGoc = originalPKOptions.filter(function (o) { return o.value === SELECTED_FACILITY_ID; })[0];
+        if (pkGoc && pkGoc.loaiCS) {
+            for (var i = 0; i < cboNhomKH.options.length; i++) {
+                var ls = cboNhomKH.options[i].getAttribute("data-loaics");
+                if (ls && ls.trim().toLowerCase() === pkGoc.loaiCS.trim().toLowerCase()) {
+                    cboNhomKH.selectedIndex = i;
+                    if (cboNhomKH.tomselect) cboNhomKH.tomselect.setValue(cboNhomKH.value, true);
+                    break;
                 }
-                document.getElementById('summernote').value = ensureDefaultBlackHtml(
-                    $('#summernote').summernote('code'));
-                document.getElementById('contentFacilityId').value = facilityId;
-                document.getElementById('contentTopicId').value = topicId;
-            });
+            }
+            window.updatePKDropdown();
         }
-    });
-    if (document.readyState === "complete" || document.readyState === "interactive") {
+
+        cboPhongKham.value = SELECTED_FACILITY_ID;
+        if (cboPhongKham.tomselect) cboPhongKham.tomselect.setValue(SELECTED_FACILITY_ID, true);
+
+        cboChuDe.disabled = false;
+        if (cboChuDe.tomselect) cboChuDe.tomselect.enable();
+        if (SELECTED_TOPIC_ID) {
+            cboChuDe.value = SELECTED_TOPIC_ID;
+            if (cboChuDe.tomselect) cboChuDe.tomselect.setValue(SELECTED_TOPIC_ID, true);
+        }
+
+        if (window.napNoiDung) window.napNoiDung();
+    }
+
+    function khoiTaoManHinh() {
         window.updatePKDropdown();
+        khoiPhucLuaChon();
+    }
+
+    document.addEventListener("DOMContentLoaded", khoiTaoManHinh);
+    if (document.readyState === "complete" || document.readyState === "interactive") {
+        khoiTaoManHinh();
     }
 </script>
 }
+

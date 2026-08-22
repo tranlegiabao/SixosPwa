@@ -4,6 +4,10 @@ public class DMCSKCB
 {
     public long Id { get; set; }
     public string? MaCoSo { get; set; }
+
+    /// <summary>Doan chu quan tri vien dat tay, lam nen URL co dinh /pk/{Slug}.
+    /// KHONG tu sinh tu ten, nen doi ten co so khong gay URL.</summary>
+    public string? Slug { get; set; }
     public string? TenCoSo { get; set; }
     public string? DiaChi { get; set; }
     public string? LoaiCS { get; set; }
