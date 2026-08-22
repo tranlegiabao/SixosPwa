@@ -70,14 +70,11 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @ResolvedLoaiND NVARCHAR(20);
-    SELECT @ResolvedLoaiND = NULLIF(LTRIM(RTRIM(LoaiND)), N'')
-    FROM DMChuDe
-    WHERE ID = @LoaiND;
+    DECLARE @StoredLoaiND NVARCHAR(20) = NULLIF(CONVERT(NVARCHAR(20), @LoaiND), N'');
 
     SELECT TOP (1) NoiDung
     FROM ND_CSKCB
-    WHERE LoaiND = @ResolvedLoaiND
+    WHERE LoaiND = @StoredLoaiND
       AND (
             (NULLIF(LTRIM(RTRIM(@MaCoSo)), N'') IS NOT NULL
              AND MaCoSo = NULLIF(LTRIM(RTRIM(@MaCoSo)), N''))
@@ -103,12 +100,9 @@ BEGIN
     SET @ResultCode = 0;
     SET @ResultMessage = NULL;
 
-    DECLARE @ResolvedLoaiND NVARCHAR(20);
-    SELECT @ResolvedLoaiND = NULLIF(LTRIM(RTRIM(LoaiND)), N'')
-    FROM DMChuDe
-    WHERE ID = @LoaiND;
+    DECLARE @StoredLoaiND NVARCHAR(20) = NULLIF(CONVERT(NVARCHAR(20), @LoaiND), N'');
 
-    IF @ResolvedLoaiND IS NULL
+    IF @LoaiND IS NULL OR @LoaiND <= 0
     BEGIN
         SET @ResultCode = 4;
         SET @ResultMessage = N'Chủ đề nội dung không hợp lệ.';
@@ -126,7 +120,7 @@ BEGIN
         IF @NormalizedNoiDung IS NULL
         BEGIN
             DELETE FROM ND_CSKCB
-            WHERE LoaiND = @ResolvedLoaiND
+            WHERE LoaiND = @StoredLoaiND
               AND (
                     (@NormalizedMaCoSo IS NOT NULL AND MaCoSo = @NormalizedMaCoSo)
                  OR (@NormalizedMaCoSo IS NULL
@@ -138,7 +132,7 @@ BEGIN
         BEGIN
             SELECT TOP (1) @ExistingId = ID
             FROM ND_CSKCB WITH (UPDLOCK, HOLDLOCK)
-            WHERE LoaiND = @ResolvedLoaiND
+            WHERE LoaiND = @StoredLoaiND
               AND (
                     (@NormalizedMaCoSo IS NOT NULL AND MaCoSo = @NormalizedMaCoSo)
                  OR (@NormalizedMaCoSo IS NULL
@@ -150,7 +144,7 @@ BEGIN
             IF @ExistingId IS NULL
             BEGIN
                 INSERT INTO ND_CSKCB (MaCoSo, TenCoSo, NoiDung, LoaiND)
-                VALUES (@NormalizedMaCoSo, @NormalizedTenCoSo, @NormalizedNoiDung, @ResolvedLoaiND);
+                VALUES (@NormalizedMaCoSo, @NormalizedTenCoSo, @NormalizedNoiDung, @StoredLoaiND);
             END
             ELSE
             BEGIN
@@ -162,7 +156,7 @@ BEGIN
 
                 DELETE FROM ND_CSKCB
                 WHERE ID <> @ExistingId
-                  AND LoaiND = @ResolvedLoaiND
+                  AND LoaiND = @StoredLoaiND
                   AND (
                         (@NormalizedMaCoSo IS NOT NULL AND MaCoSo = @NormalizedMaCoSo)
                      OR (@NormalizedMaCoSo IS NULL
@@ -303,6 +297,11 @@ BEGIN
 
         DECLARE @OldMaCoSo NVARCHAR(10) = NULL;
         DECLARE @OldTenCoSo NVARCHAR(100) = NULL;
+        DECLARE @GioiThieuId NVARCHAR(20) = CONVERT(NVARCHAR(20), (SELECT TOP (1) ID FROM DMChuDe WHERE LoaiND = N'gioithieu'));
+        DECLARE @DichVuId NVARCHAR(20) = CONVERT(NVARCHAR(20), (SELECT TOP (1) ID FROM DMChuDe WHERE LoaiND = N'dichvu'));
+        DECLARE @DoiNguId NVARCHAR(20) = CONVERT(NVARCHAR(20), (SELECT TOP (1) ID FROM DMChuDe WHERE LoaiND = N'doingu'));
+        DECLARE @TrangThietBiId NVARCHAR(20) = CONVERT(NVARCHAR(20), (SELECT TOP (1) ID FROM DMChuDe WHERE LoaiND = N'trangthietbi'));
+        DECLARE @LienHeId NVARCHAR(20) = CONVERT(NVARCHAR(20), (SELECT TOP (1) ID FROM DMChuDe WHERE LoaiND = N'lienhe'));
 
         IF @Id = 0
         BEGIN
@@ -350,21 +349,21 @@ BEGIN
                AND (MaCoSo IS NULL OR MaCoSo = N'')
                AND TenCoSo = @OldTenCoSo);
 
-        IF NULLIF(LTRIM(RTRIM(@NoiDungGioiThieu)), N'') IS NOT NULL
+        IF @GioiThieuId IS NOT NULL AND NULLIF(LTRIM(RTRIM(@NoiDungGioiThieu)), N'') IS NOT NULL
             INSERT INTO ND_CSKCB (MaCoSo, TenCoSo, NoiDung, LoaiND)
-            VALUES (@MaCoSo, @TenCoSo, LTRIM(RTRIM(@NoiDungGioiThieu)), N'gioithieu');
-        IF NULLIF(LTRIM(RTRIM(@NoiDungDichVu)), N'') IS NOT NULL
+            VALUES (@MaCoSo, @TenCoSo, LTRIM(RTRIM(@NoiDungGioiThieu)), @GioiThieuId);
+        IF @DichVuId IS NOT NULL AND NULLIF(LTRIM(RTRIM(@NoiDungDichVu)), N'') IS NOT NULL
             INSERT INTO ND_CSKCB (MaCoSo, TenCoSo, NoiDung, LoaiND)
-            VALUES (@MaCoSo, @TenCoSo, LTRIM(RTRIM(@NoiDungDichVu)), N'dichvu');
-        IF NULLIF(LTRIM(RTRIM(@NoiDungDoiNgu)), N'') IS NOT NULL
+            VALUES (@MaCoSo, @TenCoSo, LTRIM(RTRIM(@NoiDungDichVu)), @DichVuId);
+        IF @DoiNguId IS NOT NULL AND NULLIF(LTRIM(RTRIM(@NoiDungDoiNgu)), N'') IS NOT NULL
             INSERT INTO ND_CSKCB (MaCoSo, TenCoSo, NoiDung, LoaiND)
-            VALUES (@MaCoSo, @TenCoSo, LTRIM(RTRIM(@NoiDungDoiNgu)), N'doingu');
-        IF NULLIF(LTRIM(RTRIM(@NoiDungTrangThietBi)), N'') IS NOT NULL
+            VALUES (@MaCoSo, @TenCoSo, LTRIM(RTRIM(@NoiDungDoiNgu)), @DoiNguId);
+        IF @TrangThietBiId IS NOT NULL AND NULLIF(LTRIM(RTRIM(@NoiDungTrangThietBi)), N'') IS NOT NULL
             INSERT INTO ND_CSKCB (MaCoSo, TenCoSo, NoiDung, LoaiND)
-            VALUES (@MaCoSo, @TenCoSo, LTRIM(RTRIM(@NoiDungTrangThietBi)), N'trangthietbi');
-        IF NULLIF(LTRIM(RTRIM(@NoiDungLienHe)), N'') IS NOT NULL
+            VALUES (@MaCoSo, @TenCoSo, LTRIM(RTRIM(@NoiDungTrangThietBi)), @TrangThietBiId);
+        IF @LienHeId IS NOT NULL AND NULLIF(LTRIM(RTRIM(@NoiDungLienHe)), N'') IS NOT NULL
             INSERT INTO ND_CSKCB (MaCoSo, TenCoSo, NoiDung, LoaiND)
-            VALUES (@MaCoSo, @TenCoSo, LTRIM(RTRIM(@NoiDungLienHe)), N'lienhe');
+            VALUES (@MaCoSo, @TenCoSo, LTRIM(RTRIM(@NoiDungLienHe)), @LienHeId);
 
         DELETE FROM QC_KCB
         WHERE (@OldMaCoSo IS NOT NULL AND @OldMaCoSo <> N'' AND MaCoSo = @OldMaCoSo)

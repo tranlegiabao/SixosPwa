@@ -98,7 +98,8 @@ public sealed class CoSoYTeController : AdminControllerBase
         if (entity == null) return NotFound();
         var noiDung = await FindNoiDungAsync(entity.MaCoSo, entity.TenCoSo);
         var quangCao = await FindQuangCaoAsync(entity.MaCoSo, entity.TenCoSo);
-        return View(ToViewModel(entity, noiDung, quangCao));
+        var topicById = await LoadTopicByIdAsync();
+        return View(ToViewModel(entity, noiDung, quangCao, topicById));
     }
 
     [HttpPost]
@@ -262,6 +263,11 @@ public sealed class CoSoYTeController : AdminControllerBase
             .ToListAsync();
     }
 
+    private async Task<IReadOnlyDictionary<string, string>> LoadTopicByIdAsync() =>
+        (await _db.DMChuDes.AsNoTracking().ToListAsync())
+            .Where(x => !string.IsNullOrWhiteSpace(x.LoaiND))
+            .ToDictionary(x => x.ID.ToString(), x => x.LoaiND!, StringComparer.OrdinalIgnoreCase);
+
     private async Task<List<QCKCB>> FindQuangCaoAsync(string? maCoSo, string? tenCoSo)
     {
         if (!string.IsNullOrWhiteSpace(maCoSo))
@@ -279,7 +285,8 @@ public sealed class CoSoYTeController : AdminControllerBase
     private static CoSoYTeEditViewModel ToViewModel(
         DMCSKCB entity,
         IReadOnlyCollection<NDCSKCB> noiDung,
-        IReadOnlyCollection<QCKCB> quangCao)
+        IReadOnlyCollection<QCKCB> quangCao,
+        IReadOnlyDictionary<string, string> topicById)
     {
         OperatingHours.TryParse(entity.TGLamViec, out var operatingHours);
 
@@ -304,14 +311,24 @@ public sealed class CoSoYTeController : AdminControllerBase
             QuangCao = entity.QuangCao,
             NoiDungQuangCao = quangCao.FirstOrDefault()?.NoiDung,
             QuangCaoImg = quangCao.FirstOrDefault()?.Img,
-            NoiDungGioiThieu = GetNoiDung(noiDung, NDCSKCB.GioiThieu),
-            NoiDungDichVu = GetNoiDung(noiDung, NDCSKCB.DichVu),
-            NoiDungDoiNgu = GetNoiDung(noiDung, NDCSKCB.DoiNgu),
-            NoiDungTrangThietBi = GetNoiDung(noiDung, NDCSKCB.TrangThietBi),
-            NoiDungLienHe = GetNoiDung(noiDung, NDCSKCB.LienHe)
+            NoiDungGioiThieu = GetNoiDung(noiDung, NDCSKCB.GioiThieu, topicById),
+            NoiDungDichVu = GetNoiDung(noiDung, NDCSKCB.DichVu, topicById),
+            NoiDungDoiNgu = GetNoiDung(noiDung, NDCSKCB.DoiNgu, topicById),
+            NoiDungTrangThietBi = GetNoiDung(noiDung, NDCSKCB.TrangThietBi, topicById),
+            NoiDungLienHe = GetNoiDung(noiDung, NDCSKCB.LienHe, topicById)
         };
     }
 
-    private static string? GetNoiDung(IEnumerable<NDCSKCB> noiDung, string loaiND) =>
-        noiDung.FirstOrDefault(x => x.LoaiND == loaiND)?.NoiDung;
+    private static string? GetNoiDung(
+        IEnumerable<NDCSKCB> noiDung,
+        string loaiND,
+        IReadOnlyDictionary<string, string> topicById)
+    {
+        var item = noiDung.FirstOrDefault(x =>
+            string.Equals(x.LoaiND, loaiND, StringComparison.OrdinalIgnoreCase)
+            || (x.LoaiND != null
+                && topicById.TryGetValue(x.LoaiND.Trim(), out var resolvedLoaiND)
+                && string.Equals(resolvedLoaiND, loaiND, StringComparison.OrdinalIgnoreCase)));
+        return item?.NoiDung;
+    }
 }
