@@ -1,7 +1,7 @@
     /* Hide layout parts */
     .app-nav, .bottom-nav, .app-foot { display: none !important; }
-    html, body { height: 100vh; overflow: hidden !important; margin: 0; padding: 0 !important; background-color: #f0f4f8; font-family: 'Inter', sans-serif; display: flex; flex-direction: column; }
-    .container, main.container { max-width: 100% !important; padding: 0 !important; margin: 0 !important; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+    html, body { height: 100dvh; overflow: hidden !important; margin: 0; padding: 0 !important; background-color: #f0f4f8; font-family: 'Inter', sans-serif; display: flex; flex-direction: column; }
+    .container, main.container { max-width: 100% !important; padding: 0 !important; margin: 0 !important; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
 
     /* Layout Variables */
     :root {
@@ -290,6 +290,7 @@
         text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.9);
     }
     .para-card-text {
+        color: #fff;
         font-size: 16px;
         line-height: 1.6;
         margin-bottom: 25px;
@@ -299,6 +300,10 @@
         -webkit-line-clamp: 4;
         -webkit-box-orient: vertical;
         overflow: hidden;
+    }
+    .para-card-text > [style*="#000"],
+    .para-card-text > [style*="rgb(0, 0, 0)"] {
+        color: #fff !important;
     }
     .para-card-btn {
         background-color: var(--ytv-accent, #ffb703);
@@ -597,7 +602,11 @@
 
     /* RESPONSIVE */
     @media (max-width: 992px) {
-        .ytv-header { flex-direction: column; gap: 15px; text-align: center; }
+        html, body, .container, main.container { height: auto !important; overflow: auto !important; display: block; }
+        .ytv-main { flex: none; overflow: visible; display: flex; flex-direction: column; }
+        .ytv-content { overflow: visible; padding: 15px; }
+        .ytv-header { position: relative; flex-direction: column; gap: 15px; text-align: center; padding-top: 20px; }
+        .ytv-header-menu { position: absolute; top: 15px; right: 20px; }
         .ytv-main { flex-direction: column; }
         .ytv-sidebar { width: 100%; border-right: none; border-bottom: 1px solid #e2e8f0; flex-direction: row; overflow-x: auto; padding: 10px 0; }
         .ytv-menu-item { flex-direction: column; padding: 10px 20px; white-space: nowrap; border-left: none; border-bottom: 3px solid transparent; gap: 5px; font-size: 14px; }
@@ -605,22 +614,41 @@
         .ytv-footer-top { flex-direction: column; gap: 20px; align-items: center; text-align: center; }
         .ytv-contact-row { justify-content: center; }
         .ytv-policies-col { justify-content: center; }
-        .ytv-slider { min-height: 160px; }
-        .carousel-item { min-height: 160px; }
+        .ytv-slider { min-height: 200px; }
+        .carousel-item { min-height: 200px; }
         .ytv-company-info {
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            flex-basis: 100%;
+            flex: 0 0 auto;
             margin: 0;
             padding: 14px 18px;
         }
     }
 
     @media (max-width: 576px) {
+        html, body, .container, main.container { height: auto !important; overflow: auto !important; display: block; }
+        .ytv-main { flex: none; overflow: visible; }
+        .ytv-content { overflow: visible; }
         .ytv-company-info {
             grid-template-columns: 1fr;
             gap: 12px;
         }
         .ytv-company-name { min-height: 70px; }
+        
+        /* Bắt buộc chia 2 cột cho các link chính sách ở footer bằng CSS */
+        .ytv-footer-right {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            width: 100%;
+        }
+        .ytv-footer-right a {
+            text-align: center;
+        }
+        
+        /* Đảo ngược thứ tự footer trên mobile: đưa policies lên trên, thông tin liên hệ xuống dưới */
+        .ytv-footer {
+            flex-direction: column-reverse !important;
+        }
     }
 /* Decorative Backgrounds for Company Info Cards */
 .ytv-company-info > div {

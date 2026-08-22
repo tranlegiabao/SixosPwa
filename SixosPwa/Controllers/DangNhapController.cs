@@ -35,7 +35,7 @@ public class DangNhapController : Controller
     [HttpGet]
     public async Task<IActionResult> Login(string? returnUrl = null, string? coSo = null)
     {
-        var adminReauth = AdminReauthentication.IsAdminReturnUrl(returnUrl) && Url.IsLocalUrl(returnUrl);
+        var adminReauth = AdminAuthentication.IsAdminReturnUrl(returnUrl) && Url.IsLocalUrl(returnUrl);
 
         // ?coSo=slug den tu hai nut ben trang co so. Do ra ViewBag de man dang
         // nhap hien o "Ma CSKCB" khoa cung, va de JS gui kem khi goi OTP.
@@ -143,7 +143,7 @@ public class DangNhapController : Controller
 
         var input = model.SoDienThoai.Trim();
         var otpInput = model.Otp.Trim();
-        var adminReauth = AdminReauthentication.IsAdminReturnUrl(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl);
+        var adminReauth = AdminAuthentication.IsAdminReturnUrl(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl);
 
         _cache.TryGetValue($"OTP_{input}", out string? cachedOtp);
 
@@ -152,6 +152,16 @@ public class DangNhapController : Controller
         {
             // Tìm tài khoản từ database theo SĐT hoặc Email
             var taiKhoan = await _taiKhoanService.DangNhapAsync(input, "");
+
+            if (taiKhoan != null
+                && string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "Tài khoản quản trị vui lòng đăng nhập tại khu vực Admin."
+                });
+            }
             
             string role = "BenhNhan";
             
@@ -223,7 +233,7 @@ public class DangNhapController : Controller
                 ExpiresUtc = DateTimeOffset.UtcNow.AddDays(365) // Het han sau 1 nam
             };
 
-            await HttpContext.SignOutAsync(AdminReauthentication.Scheme);
+            await HttpContext.SignOutAsync(AdminAuthentication.Scheme);
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 new ClaimsPrincipal(claimsIdentity),
@@ -231,9 +241,9 @@ public class DangNhapController : Controller
 
             if (adminReauth)
             {
-                var adminIdentity = new ClaimsIdentity(claims, AdminReauthentication.Scheme);
+                var adminIdentity = new ClaimsIdentity(claims, AdminAuthentication.Scheme);
                 await HttpContext.SignInAsync(
-                    AdminReauthentication.Scheme,
+                    AdminAuthentication.Scheme,
                     new ClaimsPrincipal(adminIdentity),
                     new AuthenticationProperties { IsPersistent = false });
             }
@@ -264,7 +274,16 @@ public class DangNhapController : Controller
         }
 
         var sdt = model.SoDienThoai.Trim();
-        var adminReauth = AdminReauthentication.IsAdminReturnUrl(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl);
+        var taiKhoan = await _taiKhoanService.DangNhapAsync(sdt, "");
+        if (taiKhoan != null && string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+        {
+            return Json(new
+            {
+                success = false,
+                message = "Tài khoản quản trị vui lòng đăng nhập tại khu vực Admin."
+            });
+        }
+        var adminReauth = AdminAuthentication.IsAdminReturnUrl(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl);
 
         var claims = new List<Claim>
         {
@@ -291,7 +310,7 @@ public class DangNhapController : Controller
             ExpiresUtc = DateTimeOffset.UtcNow.AddDays(365)
         };
 
-        await HttpContext.SignOutAsync(AdminReauthentication.Scheme);
+        await HttpContext.SignOutAsync(AdminAuthentication.Scheme);
         await HttpContext.SignInAsync(
             CookieAuthenticationDefaults.AuthenticationScheme,
             new ClaimsPrincipal(claimsIdentity),
@@ -299,9 +318,9 @@ public class DangNhapController : Controller
 
         if (adminReauth)
         {
-            var adminIdentity = new ClaimsIdentity(claims, AdminReauthentication.Scheme);
+            var adminIdentity = new ClaimsIdentity(claims, AdminAuthentication.Scheme);
             await HttpContext.SignInAsync(
-                AdminReauthentication.Scheme,
+                AdminAuthentication.Scheme,
                 new ClaimsPrincipal(adminIdentity),
                 new AuthenticationProperties { IsPersistent = false });
         }
@@ -651,7 +670,7 @@ public class DangNhapController : Controller
                 .Select(x => x.Slug)
                 .FirstOrDefaultAsync();
 
-        await HttpContext.SignOutAsync(AdminReauthentication.Scheme);
+        await HttpContext.SignOutAsync(AdminAuthentication.Scheme);
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
         if (!string.IsNullOrWhiteSpace(slug))

@@ -22,24 +22,18 @@ public sealed class DashboardViewModel
     public IReadOnlyList<DMNhomCS> NhomCSList { get; init; } = Array.Empty<DMNhomCS>();
     public IReadOnlyList<DMChuDe> ChuDeList { get; init; } = Array.Empty<DMChuDe>();
     public IReadOnlyList<DMCSKCB> FacilityList { get; init; } = Array.Empty<DMCSKCB>();
-
-    // Nam sua 2026-08-22: giu lai lua chon phong kham / chu de sau khi Luu,
-    // de POST-redirect-GET khong lam admin phai chon lai tu dau.
+    public long? SelectedNhomCSId { get; init; }
     public long? SelectedFacilityId { get; init; }
     public long? SelectedTopicId { get; init; }
+    public string? NoiDung { get; init; }
 }
 
-/// <summary>
-/// Nam sua 2026-08-22: du lieu form soan noi dung co so o man /Admin.
-/// </summary>
 public sealed class DashboardContentEditViewModel
 {
-    [Required(ErrorMessage = "Chưa chọn phòng khám.")]
-    [Range(1, long.MaxValue, ErrorMessage = "Chưa chọn phòng khám.")]
+    [Range(1, long.MaxValue, ErrorMessage = "Vui lòng chọn cơ sở y tế.")]
     public long FacilityId { get; set; }
 
-    [Required(ErrorMessage = "Chưa chọn chủ đề.")]
-    [Range(1, long.MaxValue, ErrorMessage = "Chưa chọn chủ đề.")]
+    [Range(1, long.MaxValue, ErrorMessage = "Vui lòng chọn chủ đề.")]
     public long TopicId { get; set; }
 
     public string? NoiDung { get; set; }
@@ -60,11 +54,11 @@ public sealed class TaiKhoanEditViewModel
 {
     public long Id { get; set; }
 
-    [Required(ErrorMessage = "Vui lÃ²ng nháº­p sá»‘ Ä‘iá»‡n thoáº¡i.")]
-    [StringLength(20, ErrorMessage = "Sá»‘ Ä‘iá»‡n thoáº¡i khÃ´ng há»£p lá»‡.")]
+    [Required(ErrorMessage = "Vui lòng nhập số điện thoại.")]
+    [StringLength(20, ErrorMessage = "Số điện thoại không hợp lệ.")]
     public string SDT { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Vui lÃ²ng chá»n vai trÃ².")]
+    [Required(ErrorMessage = "Vui lòng chọn vai trò.")]
     public string Role { get; set; } = "BenhNhan";
 }
 
@@ -82,12 +76,12 @@ public sealed class DoiTacEditViewModel
 {
     public long Id { get; set; }
 
-    [Required(ErrorMessage = "Vui lÃ²ng nháº­p mÃ£ Ä‘á»‘i tÃ¡c.")]
-    [StringLength(20, ErrorMessage = "MÃ£ Ä‘á»‘i tÃ¡c tá»‘i Ä‘a 20 kÃ½ tá»±.")]
+    [Required(ErrorMessage = "Vui lòng nhập mã đối tác.")]
+    [StringLength(20, ErrorMessage = "Mã đối tác tối đa 20 ký tự.")]
     public string MaDT { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Vui lÃ²ng nháº­p tÃªn Ä‘á»‘i tÃ¡c.")]
-    [StringLength(100, ErrorMessage = "TÃªn Ä‘á»‘i tÃ¡c tá»‘i Ä‘a 100 kÃ½ tá»±.")]
+    [Required(ErrorMessage = "Vui lòng nhập tên đối tác.")]
+    [StringLength(100, ErrorMessage = "Tên đối tác tối đa 100 ký tự.")]
     public string TenDT { get; set; } = string.Empty;
 
     [StringLength(255)]
@@ -96,14 +90,14 @@ public sealed class DoiTacEditViewModel
     [StringLength(20)]
     public string? SDT { get; set; }
 
-    [EmailAddress(ErrorMessage = "Email khÃ´ng há»£p lá»‡.")]
+    [EmailAddress(ErrorMessage = "Email không hợp lệ.")]
     [StringLength(100)]
     public string? Email { get; set; }
 
     [StringLength(100)]
     public string? BrandName { get; set; }
 
-    [StringLength(255, ErrorMessage = "Máº­t kháº©u Ä‘á»‘i tÃ¡c tá»‘i Ä‘a 255 kÃ½ tá»±.")]
+    [StringLength(255, ErrorMessage = "Mật khẩu đối tác tối đa 255 ký tự.")]
     public string? Password { get; set; }
 }
 
@@ -122,20 +116,16 @@ public sealed class CoSoYTeEditViewModel
 {
     public long Id { get; set; }
 
-    [StringLength(10, ErrorMessage = "MÃ£ cÆ¡ sá»Ÿ tá»‘i Ä‘a 10 kÃ½ tá»±.")]
+    [StringLength(10, ErrorMessage = "Mã cơ sở tối đa 10 ký tự.")]
     public string? MaCoSo { get; set; }
 
-    /// <summary>
-    /// Doan chu lam nen URL co dinh /pk/{Slug}. Quan tri vien dat tay, KHONG tu
-    /// sinh tu ten, de doi ten co so khong lam gay URL da phat cho doi tac.
-    /// </summary>
     [StringLength(100, ErrorMessage = "Đường dẫn tối đa 100 ký tự.")]
     [RegularExpression("^[a-z0-9]+(-[a-z0-9]+)*$",
         ErrorMessage = "Đường dẫn chỉ gồm chữ thường không dấu, số và dấu gạch ngang.")]
     public string? Slug { get; set; }
 
-    [Required(ErrorMessage = "Vui lÃ²ng nháº­p tÃªn cÆ¡ sá»Ÿ.")]
-    [StringLength(100, ErrorMessage = "TÃªn cÆ¡ sá»Ÿ tá»‘i Ä‘a 100 kÃ½ tá»±.")]
+    [Required(ErrorMessage = "Vui lòng nhập tên cơ sở.")]
+    [StringLength(100, ErrorMessage = "Tên cơ sở tối đa 100 ký tự.")]
     public string? TenCoSo { get; set; }
 
     [StringLength(255)]
@@ -173,7 +163,10 @@ public sealed class CoSoYTeEditViewModel
 
     public IFormFile? LogoFile { get; set; }
 
-    [Range(0, 999999999999999, ErrorMessage = "Sá»‘ tiá»n quáº£ng cÃ¡o khÃ´ng há»£p lá»‡.")]
+    [StringLength(2000)]
+    public string? LogoUrlInput { get; set; }
+
+    [Range(0, 999999999999999, ErrorMessage = "Số tiền quảng cáo không hợp lệ.")]
     public decimal? QuangCao { get; set; }
 
     public string? NoiDungQuangCao { get; set; }
@@ -182,6 +175,18 @@ public sealed class CoSoYTeEditViewModel
     public string? QuangCaoImg { get; set; }
 
     public IFormFile? QuangCaoImageFile { get; set; }
+
+    [StringLength(2000)]
+    public string? QuangCaoImgUrlInput { get; set; }
+
+    public IReadOnlyList<DMNhomCS> NhomCSList { get; set; } = Array.Empty<DMNhomCS>();
+    public IReadOnlyList<DMChuDe> ChuDeList { get; set; } = Array.Empty<DMChuDe>();
+    public IReadOnlyList<DMCSKCB> FacilityList { get; set; } = Array.Empty<DMCSKCB>();
+    public long? SelectedNhomCSId { get; set; }
+    public long? SelectedFacilityId { get; set; }
+    public long? SelectedTopicId { get; set; }
+    public long TopicId { get; set; }
+    public string? NoiDung { get; set; }
 
     public string? NoiDungGioiThieu { get; set; }
     public string? NoiDungDichVu { get; set; }
