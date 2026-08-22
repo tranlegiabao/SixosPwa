@@ -1,7 +1,7 @@
     /* Hide layout parts */
     .app-nav, .bottom-nav, .app-foot { display: none !important; }
-    html, body { height: 100vh; overflow: hidden !important; margin: 0; padding: 0 !important; background-color: #f0f4f8; font-family: 'Inter', sans-serif; display: flex; flex-direction: column; }
-    .container, main.container { max-width: 100% !important; padding: 0 !important; margin: 0 !important; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+    html, body { height: 100dvh; overflow: hidden !important; margin: 0; padding: 0 !important; background-color: #f0f4f8; font-family: 'Inter', sans-serif; display: flex; flex-direction: column; }
+    .container, main.container { max-width: 100% !important; padding: 0 !important; margin: 0 !important; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
 
     /* Layout Variables */
     :root {
@@ -597,6 +597,9 @@
 
     /* RESPONSIVE */
     @media (max-width: 992px) {
+        html, body, .container, main.container { height: auto !important; overflow: auto !important; display: block; }
+        .ytv-main { flex: none; overflow: visible; display: flex; flex-direction: column; }
+        .ytv-content { overflow: visible; padding: 15px; }
         .ytv-header { flex-direction: column; gap: 15px; text-align: center; }
         .ytv-main { flex-direction: column; }
         .ytv-sidebar { width: 100%; border-right: none; border-bottom: 1px solid #e2e8f0; flex-direction: row; overflow-x: auto; padding: 10px 0; }
@@ -605,17 +608,20 @@
         .ytv-footer-top { flex-direction: column; gap: 20px; align-items: center; text-align: center; }
         .ytv-contact-row { justify-content: center; }
         .ytv-policies-col { justify-content: center; }
-        .ytv-slider { min-height: 160px; }
-        .carousel-item { min-height: 160px; }
+        .ytv-slider { min-height: 200px; }
+        .carousel-item { min-height: 200px; }
         .ytv-company-info {
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            flex-basis: 100%;
+            flex: 0 0 auto;
             margin: 0;
             padding: 14px 18px;
         }
     }
 
     @media (max-width: 576px) {
+        html, body, .container, main.container { height: auto !important; overflow: auto !important; display: block; }
+        .ytv-main { flex: none; overflow: visible; }
+        .ytv-content { overflow: visible; }
         .ytv-company-info {
             grid-template-columns: 1fr;
             gap: 12px;
