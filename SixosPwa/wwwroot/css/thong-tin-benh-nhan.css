@@ -571,34 +571,13 @@
 .ytv-header-menu { cursor: pointer; }
 .ytv-header-menu:focus-visible { outline: 3px solid #fff; outline-offset: 3px; border-radius: 8px; }
 
-/* nut dung/chay cua slider */
-.ytv-slider-dung {
-    position: absolute;
-    right: 10px;
-    bottom: 10px;
-    z-index: 12;
-    width: 48px;
-    height: 48px;
-    border: 0;
-    border-radius: 50%;
-    background: rgba(15, 23, 42, .55);
-    color: #fff;
-    font-size: 15px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.ytv-slider-dung:hover { background: rgba(15, 23, 42, .75); }
-.ytv-slider-dung:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
-
-/* cham chi bao slide: 30x23 -> dat chuan 24px */
+/* Cham chi bao slide: vung bam 30x23 -> 30x25 cho dat WCAG 2.2 AA (24px).
+   Bootstrap dung box-sizing:content-box - thanh NHIN THAY chi cao 3px, phan con lai
+   la border trong suot. Chi noi border, TUYET DOI khong dat height/padding:
+   dat height o day lam chinh thanh trang phinh thanh khoi vuong to. */
 .ytv-slider .carousel-indicators [data-bs-target] {
-    height: 24px !important;
-    background-clip: content-box;
-    padding: 10px 0 !important;
-    border-top-width: 10px !important;
-    border-bottom-width: 10px !important;
+    border-top-width: 11px !important;
+    border-bottom-width: 11px !important;
 }
 
 /* nguoi dung tat hieu ung chuyen dong thi slider dung han */

@@ -7,35 +7,21 @@
 
     // Auto-close menu when mouse leaves menu area
     document.addEventListener("DOMContentLoaded", function() {
-        // Slider: nguoi dung phai dung duoc, va ton trong prefers-reduced-motion
+        // Slider: nhip 7s (cu 3s - khong kip doc het ten co so), dung khi re chuot
+        // hoac khi ban phim di vao; dung han neu nguoi dung bat prefers-reduced-motion.
+        // KHONG dat nut Tam dung tren man - user chot bo, xem PROGRESS.md muc 2.
         var mainSlider = document.getElementById('mainSlider');
         if (mainSlider && typeof bootstrap !== 'undefined') {
             var itHieuUng = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
             var slider = new bootstrap.Carousel(mainSlider, {
-                interval: itHieuUng ? false : 5000,
-                ride: itHieuUng ? false : 'carousel',
+                interval: itHieuUng ? false : 7000,
                 pause: 'hover'
             });
-
-            var dangChay = !itHieuUng;
-            var nut = document.createElement('button');
-            nut.type = 'button';
-            nut.className = 'ytv-slider-dung';
-            function veNut() {
-                nut.innerHTML = dangChay
-                    ? '<i class="fas fa-pause" aria-hidden="true"></i>'
-                    : '<i class="fas fa-play" aria-hidden="true"></i>';
-                nut.setAttribute('aria-label', dangChay ? 'Tạm dừng trình chiếu' : 'Chạy trình chiếu');
-            }
-            veNut();
-            nut.addEventListener('click', function () {
-                dangChay = !dangChay;
-                if (dangChay) { slider.cycle(); } else { slider.pause(); }
-                veNut();
-            });
-            mainSlider.appendChild(nut);
-
-            // dung khi ban phim di vao slider
+            // Bootstrap 5.1: constructor KHONG tu chay - viec do la cua data-api khi thay
+            // data-bs-ride tren the. Da bo thuoc tinh do (de JS quyet dinh theo
+            // prefers-reduced-motion) nen phai goi cycle() tuong minh, khong co dong nay
+            // la slider dung im. Da can that.
+            if (!itHieuUng) { slider.cycle(); }
             mainSlider.addEventListener('focusin', function () { slider.pause(); });
         }
 
