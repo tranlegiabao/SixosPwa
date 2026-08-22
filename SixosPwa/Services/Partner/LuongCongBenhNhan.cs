@@ -77,6 +77,19 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
             return "/benh-nhan";
         }
 
+        // Da lien ket va da biet mat khau thi KHONG hoi doi tac nua: ta biet thua
+        // la benh nhan co tai khoan ben do. Vua do mot lan goi mang moi lan dang
+        // nhap, vua khong chet theo khi API doi tac sap.
+        var taiKhoanDaCo = await TimTaiKhoanAsync(cccd, ct);
+        if (taiKhoanDaCo is not null)
+        {
+            var lienKetDaCo = await TimLienKetAsync(taiKhoanDaCo.Id, maCoSo, ct);
+            if (lienKetDaCo is not null && !string.IsNullOrWhiteSpace(lienKetDaCo.MatKhau))
+            {
+                return "/DangNhap/BanGiao" + thamSo;
+            }
+        }
+
         var tinhTrang = await coSo.Cua.TinhTrangTaiKhoanAsync(coSo.CauHinh, cccd, ct);
 
         // Khong hoi duoc doi tac thi khong doan bua: dua ve trang noi bo, man do
@@ -93,18 +106,8 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
             return "/DangNhap/DangKy" + thamSo;
         }
 
-        // Da co tai khoan ben doi tac. Biet mat khau thi ban giao thang; chua biet
-        // thi qua man Lien ket dung MOT lan (V9).
-        var taiKhoan = await TimTaiKhoanAsync(cccd, ct);
-        if (taiKhoan is not null)
-        {
-            var lienKet = await TimLienKetAsync(taiKhoan.Id, maCoSo, ct);
-            if (lienKet is not null && !string.IsNullOrWhiteSpace(lienKet.MatKhau))
-            {
-                return "/DangNhap/BanGiao" + thamSo;
-            }
-        }
-
+        // Doi tac bao da co tai khoan, ma o tren ta chua tim thay lien ket nao
+        // => benh nhan phai qua man Lien ket dung MOT lan (V9).
         return "/DangNhap/LienKet" + thamSo;
     }
 
