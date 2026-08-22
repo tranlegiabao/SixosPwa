@@ -498,108 +498,6 @@
         }
     }
 
-    /* FOOTER */
-    .ytv-footer {
-        flex-shrink: 0;
-        background: #e0f2fe; /* xanh nhạt */
-        color: #334155;
-        padding: 20px 30px 10px 30px;
-        display: flex;
-        flex-direction: column;
-        border-top: 4px solid var(--ytv-primary);
-        z-index: 1000;
-    }
-    .ytv-footer-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 20px;
-        flex-wrap: wrap;
-        gap: 20px;
-    }
-    .ytv-support-col {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-    .ytv-support-phones {
-        font-size: 16px;
-        font-weight: 500;
-    }
-    .ytv-support-contacts {
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        flex-wrap: wrap;
-    }
-    .ytv-email-link {
-        color: var(--ytv-primary);
-        font-weight: 600;
-        text-decoration: none;
-    }
-    .ytv-policy-body {
-        font-size: 15px;
-        line-height: 1.6;
-        color: #334155;
-    }
-    .ytv-support-phones span {
-        color: var(--ytv-primary);
-        font-weight: 700;
-        font-size: 18px;
-    }
-    .ytv-contact-row {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-size: 15px;
-    }
-    .ytv-social-btn-light {
-        width: 36px;
-        height: 36px;
-        background: white;
-        border: 1px solid #bae6fd;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
-        color: var(--ytv-primary);
-        text-decoration: none;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    }
-    .ytv-social-btn-light:hover {
-        background: var(--ytv-primary);
-        color: white;
-        transform: translateY(-2px);
-    }
-    .ytv-policies-col {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-        font-weight: 500;
-        margin-top: 5px;
-    }
-    .ytv-policies-col a {
-        color: #0f172a;
-        text-decoration: none;
-        transition: color 0.2s;
-    }
-    .ytv-policies-col a:hover {
-        color: var(--ytv-primary);
-    }
-    .ytv-policies-col .separator {
-        color: #94a3b8;
-    }
-    .ytv-footer-bottom {
-        text-align: center;
-        font-size: 14px;
-        color: #64748b;
-        border-top: 1px solid #bae6fd;
-        padding-top: 15px;
-    }
-
     /* RESPONSIVE */
     @media (max-width: 992px) {
         html, body, .container, main.container { height: auto !important; overflow: auto !important; display: block; }
@@ -611,9 +509,7 @@
         .ytv-sidebar { width: 100%; border-right: none; border-bottom: 1px solid #e2e8f0; flex-direction: row; overflow-x: auto; padding: 10px 0; }
         .ytv-menu-item { flex-direction: column; padding: 10px 20px; white-space: nowrap; border-left: none; border-bottom: 3px solid transparent; gap: 5px; font-size: 14px; }
         .ytv-menu-item.active, .ytv-menu-item:hover { border-bottom-color: var(--ytv-secondary); }
-        .ytv-footer-top { flex-direction: column; gap: 20px; align-items: center; text-align: center; }
         .ytv-contact-row { justify-content: center; }
-        .ytv-policies-col { justify-content: center; }
         .ytv-slider { min-height: 200px; }
         .carousel-item { min-height: 200px; }
         .ytv-company-info {
@@ -633,22 +529,6 @@
             gap: 12px;
         }
         .ytv-company-name { min-height: 70px; }
-        
-        /* Bắt buộc chia 2 cột cho các link chính sách ở footer bằng CSS */
-        .ytv-footer-right {
-            display: grid !important;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            width: 100%;
-        }
-        .ytv-footer-right a {
-            text-align: center;
-        }
-        
-        /* Đảo ngược thứ tự footer trên mobile: đưa policies lên trên, thông tin liên hệ xuống dưới */
-        .ytv-footer {
-            flex-direction: column-reverse !important;
-        }
     }
 /* Decorative Backgrounds for Company Info Cards */
 .ytv-company-info > div {
