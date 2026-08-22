@@ -339,8 +339,22 @@
     }
     .intro-content { flex: 1; max-width: 600px; }
     .intro-title { display: flex; align-items: center; gap: 10px; font-size: 24px; font-weight: 700; color: #38bdf8; margin-bottom: 20px; }
-    .intro-content p { color: rgba(255, 255, 255, 0.9); line-height: 1.8; font-size: 17px; margin-bottom: 16px; }
-    .intro-content .nd-cskcb-text { color: rgba(255, 255, 255, 0.9); line-height: 1.8; font-size: 17px; white-space: pre-line; }
+    /* Nam sua 2026-08-22: mau chu von la trang (rgba(255,255,255,.9)) nhung body
+       lai la nen TRANG (#ffffff !important, dong 22) -> chu trang tren nen trang,
+       ca doan gioi thieu mac dinh lan noi dung admin soan deu VO HINH. */
+    .intro-content p { color: #334155; line-height: 1.8; font-size: 17px; margin-bottom: 16px; }
+
+    /* Nam sua 2026-08-22: bo "white-space: pre-line" - voi HTML that tu trinh soan
+       thao no nhan doi khoang trang giua cac the block. */
+    .intro-content .nd-cskcb-text { color: #0f172a; line-height: 1.8; font-size: 17px; }
+    /* Khung noi dung chi rong 600px (.intro-content) nen anh/bang phai tu co lai. */
+    .intro-content .nd-cskcb-text img { max-width: 100%; height: auto; }
+    .intro-content .nd-cskcb-text table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+    .intro-content .nd-cskcb-text td,
+    .intro-content .nd-cskcb-text th { border: 1px solid #cbd5e1; padding: 6px 10px; }
+    .intro-content .nd-cskcb-text ul,
+    .intro-content .nd-cskcb-text ol { padding-left: 24px; margin-bottom: 16px; }
+    .intro-content .nd-cskcb-text a { color: #1d4ed8; text-decoration: underline; }
     .intro-image { width: 320px; height: auto; opacity: 0.85; border-radius: 12px; }
 
 
@@ -767,7 +781,7 @@
                 }
                 else
                 {
-                    <div class="nd-cskcb-text">@noiDungGioiThieu</div>
+                    <div class="nd-cskcb-text">@Html.Raw(noiDungGioiThieu)</div>
                 }
             </div>
             <!-- <img src="https://img.freepik.com/free-vector/hospital-building-concept-illustration_114360-8440.jpg?w=800" alt="Hospital Illustration" class="intro-image" /> -->
@@ -785,7 +799,7 @@
                 }
                 else
                 {
-                    <div class="nd-cskcb-text">@noiDungDichVu</div>
+                    <div class="nd-cskcb-text">@Html.Raw(noiDungDichVu)</div>
                 }
             </div>
         </div>
@@ -802,7 +816,7 @@
                 }
                 else
                 {
-                    <div class="nd-cskcb-text">@noiDungDoiNgu</div>
+                    <div class="nd-cskcb-text">@Html.Raw(noiDungDoiNgu)</div>
                 }
             </div>
         </div>
@@ -819,7 +833,7 @@
                 }
                 else
                 {
-                    <div class="nd-cskcb-text">@noiDungTrangThietBi</div>
+                    <div class="nd-cskcb-text">@Html.Raw(noiDungTrangThietBi)</div>
                 }
             </div>
         </div>
@@ -836,7 +850,7 @@
                 }
                 else
                 {
-                    <div class="nd-cskcb-text">@noiDungLienHe</div>
+                    <div class="nd-cskcb-text">@Html.Raw(noiDungLienHe)</div>
                 }
             </div>
         </div>
