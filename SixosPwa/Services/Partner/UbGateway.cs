@@ -19,6 +19,18 @@ public class UbGateway : IPartnerGateway
     private const string DuongDanXacThuc = "/api/HT_DangNhap/XacThucMaXacNhan";
     private const string DuongDanDangNhap = "/HeThong/HT_DangNhap/login";
 
+    /// <summary>
+    /// Nut benh nhan bam -> man tuong ung ben Ung Buou. Doi tac khac se co bang
+    /// cua rieng ho trong ban cai cua ho; man hinh khong phai biet gi ve day.
+    /// </summary>
+    private static readonly IReadOnlyDictionary<string, string> ManTheoYDinh =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["dat-goi-kham"] = "/QuanLy/QL_DangKyTheoGoi",
+            ["lich-su-hen"] = "/QuanLy/QL_DangKyLichOnline_LichSuKhamBenh",
+            ["ho-so-kham"] = "/QuanLy/QL_LichSuKhamBenh"
+        };
+
     // 1 = Zalo, 2 = Email, 3 = SMS — khop switch trong RegisterAsync cua doi tac.
     private const int KenhEmail = 2;
     private const int KenhSms = 3;
@@ -143,6 +155,15 @@ public class UbGateway : IPartnerGateway
 
         var goc = CatDauGach(cauHinh.TrangChu);
 
+        // Dich cuoi theo dung nut benh nhan da bam. Khong nhan ra y dinh thi ve
+        // trang chu — an toan hon la doan bua.
+        var dichCuoi = goc;
+        if (!string.IsNullOrWhiteSpace(yeuCau.YDinh)
+            && ManTheoYDinh.TryGetValue(yeuCau.YDinh, out var man))
+        {
+            dichCuoi = goc + man;
+        }
+
         // Tai khoan vua mo: dung ma xac nhan de doi tac vua bat DaXacThuc vua dat
         // cookie trong cung mot lan POST (diem tua so 3 va so 4, ADR 0003).
         if (!string.IsNullOrWhiteSpace(yeuCau.MaXacNhan))
@@ -156,7 +177,7 @@ public class UbGateway : IPartnerGateway
                     ["sdt"] = yeuCau.DienThoai,
                     ["code"] = yeuCau.MaXacNhan
                 },
-                goc);
+                dichCuoi);
         }
 
         // Nhung lan sau: dang nhap thuan, khong OTP. LoginAsync ben doi tac so
@@ -170,7 +191,7 @@ public class UbGateway : IPartnerGateway
                     ["username"] = yeuCau.Cccd,
                     ["password"] = yeuCau.MatKhau
                 },
-                goc);
+                dichCuoi);
         }
 
         return null;

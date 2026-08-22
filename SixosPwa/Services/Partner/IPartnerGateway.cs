@@ -57,7 +57,15 @@ public record KetQuaMoTaiKhoan(bool ThanhCong, string ThongBao, string? MaXacNha
 
 public record KetQuaThaoTac(bool ThanhCong, string ThongBao);
 
-public record YeuCauBanGiao(string Cccd, string DienThoai, string? Email, string? MaXacNhan, string? MatKhau);
+/// <param name="YDinh">
+/// Benh nhan bam nut gi de toi day: "dat-goi-kham", "lich-su-hen",
+/// "ho-so-kham"... Moi doi tac tu biet man tuong ung cua minh nam o dau.
+/// </param>
+public record YeuCauBanGiao(string Cccd, string DienThoai, string? Email, string? MaXacNhan, string? MatKhau, string? YDinh = null);
 
 /// <summary>Mo ta form ma man Ban giao se POST sang he doi tac.</summary>
-public record ThongTinBanGiao(string Action, IReadOnlyDictionary<string, string> Truong, string TrangChu);
+/// <param name="DichCuoi">
+/// Noi benh nhan can den sau khi cookie da duoc dat — man tuong ung voi nut ho
+/// bam, khong phai lúc nao cung la trang chu cua doi tac.
+/// </param>
+public record ThongTinBanGiao(string Action, IReadOnlyDictionary<string, string> Truong, string DichCuoi);

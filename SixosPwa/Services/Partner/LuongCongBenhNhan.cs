@@ -16,7 +16,7 @@ public interface ILuongCongBenhNhan
     Task<string> ChonDichDenAsync(string maCoSo, string cccd, string dinhDanh, string? returnUrl, CancellationToken ct = default);
 
     /// <summary>Tao ho so noi bo + mo tai khoan ben doi tac (neu co).</summary>
-    Task<KetQuaBuoc> MoTaiKhoanAsync(string maCoSo, string cccd, string dinhDanh, string hoTen, string matKhau, CancellationToken ct = default);
+    Task<KetQuaBuoc> MoTaiKhoanAsync(string maCoSo, string cccd, string dinhDanh, string hoTen, string matKhau, string? returnUrl = null, CancellationToken ct = default);
 
     /// <summary>Buoc 1 cua man Lien ket: xin doi tac gui ma xac thuc.</summary>
     Task<KetQuaThaoTac> GuiMaLienKetAsync(string maCoSo, string cccd, string dienThoai, CancellationToken ct = default);
@@ -28,7 +28,7 @@ public interface ILuongCongBenhNhan
     Task<KetQuaThaoTac> DoiMatKhauAsync(string maCoSo, ClaimsPrincipal nguoiDung, string matKhauMoi, CancellationToken ct = default);
 
     /// <summary>Dung du lieu cho form ban giao. Null neu chua du dieu kien.</summary>
-    Task<ThongTinBanGiao?> DungThongTinBanGiaoAsync(string maCoSo, ClaimsPrincipal nguoiDung, CancellationToken ct = default);
+    Task<ThongTinBanGiao?> DungThongTinBanGiaoAsync(string maCoSo, ClaimsPrincipal nguoiDung, string? yDinh = null, CancellationToken ct = default);
 }
 
 /// <summary>Ket qua mot buoc co dich den ke tiep.</summary>
@@ -115,7 +115,7 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
     //  Man Dang ky
     // ------------------------------------------------------------------
 
-    public async Task<KetQuaBuoc> MoTaiKhoanAsync(string maCoSo, string cccd, string dinhDanh, string hoTen, string matKhau, CancellationToken ct = default)
+    public async Task<KetQuaBuoc> MoTaiKhoanAsync(string maCoSo, string cccd, string dinhDanh, string hoTen, string matKhau, string? returnUrl = null, CancellationToken ct = default)
     {
         var taiKhoan = await TaoHoSoNoiBoAsync(maCoSo, cccd, dinhDanh, hoTen, ct);
         var coSo = await _cuaFactory.LayAsync(maCoSo, ct);
@@ -142,7 +142,7 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
         // nhin thay no. Cat lai de man Ban giao POST kem (diem tua #2, ADR 0003).
         await LuuLienKetAsync(taiKhoan.Id, maCoSo, matKhau, ketQua.MaXacNhan, ct);
 
-        return new KetQuaBuoc(true, ketQua.ThongBao, $"/DangNhap/BanGiao?coSo={Uri.EscapeDataString(maCoSo)}");
+        return new KetQuaBuoc(true, ketQua.ThongBao, ThemDichCuoi($"/DangNhap/BanGiao?coSo={Uri.EscapeDataString(maCoSo)}", returnUrl));
     }
 
     // ------------------------------------------------------------------
@@ -227,7 +227,7 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
     //  Man Ban giao
     // ------------------------------------------------------------------
 
-    public async Task<ThongTinBanGiao?> DungThongTinBanGiaoAsync(string maCoSo, ClaimsPrincipal nguoiDung, CancellationToken ct = default)
+    public async Task<ThongTinBanGiao?> DungThongTinBanGiaoAsync(string maCoSo, ClaimsPrincipal nguoiDung, string? yDinh = null, CancellationToken ct = default)
     {
         var cccd = LayClaim(nguoiDung, ClaimCccd);
         if (string.IsNullOrWhiteSpace(cccd)) return null;
@@ -244,7 +244,7 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
         var dienThoai = LayClaim(nguoiDung, ClaimTypes.MobilePhone) ?? taiKhoan.SDT;
 
         var thongTin = coSo.Cua.DungThongTinBanGiao(coSo.CauHinh,
-            new YeuCauBanGiao(cccd, dienThoai, taiKhoan.Email, lienKet.MaXacNhanTam, lienKet.MatKhau));
+            new YeuCauBanGiao(cccd, dienThoai, taiKhoan.Email, lienKet.MaXacNhanTam, lienKet.MatKhau, yDinh));
 
         // Ma xac nhan chi dung duoc mot lan. Xoa ngay de lan ban giao sau di
         // duong dang nhap thuan, khong con OTP.
@@ -340,6 +340,12 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
 
         await TaoHoSoNoiBoAsync(maCoSo, cccd, dinhDanh, string.Empty, ct);
     }
+
+    /// <summary>Gan y dinh (returnUrl) vao duong dan Ban giao neu co.</summary>
+    private static string ThemDichCuoi(string duongDan, string? returnUrl)
+        => string.IsNullOrWhiteSpace(returnUrl)
+            ? duongDan
+            : $"{duongDan}&returnUrl={Uri.EscapeDataString(returnUrl)}";
 
     private static string? LayClaim(ClaimsPrincipal nguoiDung, string ten)
         => nguoiDung.FindFirst(ten)?.Value;

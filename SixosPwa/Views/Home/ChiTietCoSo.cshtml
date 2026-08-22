@@ -734,7 +734,7 @@
             var slugCoSo = ViewData["Slug"] as string;
             var thamSoCoSo = string.IsNullOrWhiteSpace(slugCoSo)
                 ? string.Empty
-                : $"coSo={Uri.EscapeDataString(slugCoSo)}&amp;";
+                : $"coSo={Uri.EscapeDataString(slugCoSo)}&";   // Razor tu ma hoa thanh &amp; — viet san &amp; o day la bi ma hoa hai lan
         }
         <div class="hospital-actions">
             <a href="/DangNhap/Login?@(thamSoCoSo)returnUrl=%2Fdat-goi-kham" class="btn-outline" style="background-color: #1d4ed8; color:aliceblue">

@@ -355,7 +355,7 @@ public class DangNhapController : Controller
         }
 
         var ketQua = await _luong.MoTaiKhoanAsync(
-            maCoSo, cccd, dinhDanh ?? string.Empty, model.HoTen.Trim(), model.MatKhau);
+            maCoSo, cccd, dinhDanh ?? string.Empty, model.HoTen.Trim(), model.MatKhau, model.ReturnUrl);
 
         if (!ketQua.ThanhCong)
         {
@@ -456,12 +456,15 @@ public class DangNhapController : Controller
     /// </summary>
     [HttpGet]
     [Authorize]
-    public async Task<IActionResult> BanGiao(string coSo)
+    public async Task<IActionResult> BanGiao(string coSo, string? returnUrl = null)
     {
         var maCoSo = LayMaCoSoPhien(coSo);
         if (maCoSo is null) return RedirectToAction(nameof(Login));
 
-        var thongTin = await _luong.DungThongTinBanGiaoAsync(maCoSo, User);
+        // returnUrl la y dinh cua nut benh nhan da bam ("/dat-goi-kham"...).
+        // Doi tac se tu dich sang man tuong ung ben ho.
+        var yDinh = returnUrl?.Trim('/');
+        var thongTin = await _luong.DungThongTinBanGiaoAsync(maCoSo, User, yDinh);
 
         if (thongTin is null)
         {
@@ -473,7 +476,7 @@ public class DangNhapController : Controller
         await DoNguCanhRaViewBagAsync(maCoSo, null);
         ViewBag.Action = thongTin.Action;
         ViewBag.Truong = thongTin.Truong;
-        ViewBag.TrangChu = thongTin.TrangChu;
+        ViewBag.TrangChu = thongTin.DichCuoi;
         return View();
     }
 
@@ -697,6 +700,9 @@ public class TaoTaiKhoanRequest
     // Khong nhan MaCoSo / Cccd / DinhDanh: chung duoc lay tu claim cua phien.
     public string HoTen { get; set; } = string.Empty;
     public string MatKhau { get; set; } = string.Empty;
+
+    /// <summary>Y dinh cua nut benh nhan da bam luc dau ("/dat-goi-kham"...).</summary>
+    public string? ReturnUrl { get; set; }
 }
 
 public class GuiMaLienKetRequest
