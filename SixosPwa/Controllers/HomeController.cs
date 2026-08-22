@@ -103,14 +103,14 @@ public class HomeController : Controller
 
             if (matchedCS != null)
             {
-                if (!string.IsNullOrWhiteSpace(matchedCS.Slug))
-                {
-                    return RedirectPermanent($"/pk/{matchedCS.Slug}");
-                }
-
-                // Co so chua duoc dat slug: van hien duoc trang, chi la khong co
-                // URL co dinh. Quan tri vien dat slug trong man Admin/CoSoYTe.
-                await DoDuLieuCoSoAsync(matchedCS);
+                ViewData["CoSoYTe"] = matchedCS;
+                ViewData["TenCoSo"] = matchedCS.TenCoSo;
+                ViewData["DiaChi"] = matchedCS.DiaChi ?? "Đang cập nhật";
+                ViewData["Type"] = matchedCS.LoaiCS ?? "benhvien";
+                ViewData["Img"] = matchedCS.Img ?? AnhCoSoMacDinh;
+                ViewData["Logo"] = matchedCS.logo ?? logo ?? LogoCoSoMacDinh;
+                ViewData["TGLamViec"] = GetOperatingHoursValue(matchedCS);
+                ViewData["NoiDungCskcb"] = await LoadNoiDungAsync(matchedCS);
                 return View(nameof(ChiTietCoSo));
             }
         }

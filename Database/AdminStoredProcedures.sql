@@ -145,10 +145,16 @@ BEGIN
     SET NOCOUNT ON;
 
     DECLARE @StoredLoaiND NVARCHAR(20) = NULLIF(CONVERT(NVARCHAR(20), @LoaiND), N'');
+    DECLARE @LegacyLoaiND NVARCHAR(20) = (
+        SELECT NULLIF(LTRIM(RTRIM(LoaiND)), N'')
+        FROM DMChuDe
+        WHERE ID = @LoaiND
+    );
 
     SELECT TOP (1) NoiDung
     FROM ND_CSKCB
-    WHERE LoaiND = @StoredLoaiND
+    WHERE (LoaiND = @StoredLoaiND
+        OR (@LegacyLoaiND IS NOT NULL AND LoaiND = @LegacyLoaiND))
       AND (
             (NULLIF(LTRIM(RTRIM(@MaCoSo)), N'') IS NOT NULL
              AND MaCoSo = NULLIF(LTRIM(RTRIM(@MaCoSo)), N''))
@@ -175,6 +181,11 @@ BEGIN
     SET @ResultMessage = NULL;
 
     DECLARE @StoredLoaiND NVARCHAR(20) = NULLIF(CONVERT(NVARCHAR(20), @LoaiND), N'');
+    DECLARE @LegacyLoaiND NVARCHAR(20) = (
+        SELECT NULLIF(LTRIM(RTRIM(LoaiND)), N'')
+        FROM DMChuDe
+        WHERE ID = @LoaiND
+    );
 
     IF @LoaiND IS NULL OR @LoaiND <= 0
     BEGIN
@@ -194,7 +205,8 @@ BEGIN
         IF @NormalizedNoiDung IS NULL
         BEGIN
             DELETE FROM ND_CSKCB
-            WHERE LoaiND = @StoredLoaiND
+            WHERE (LoaiND = @StoredLoaiND
+                OR (@LegacyLoaiND IS NOT NULL AND LoaiND = @LegacyLoaiND))
               AND (
                     (@NormalizedMaCoSo IS NOT NULL AND MaCoSo = @NormalizedMaCoSo)
                  OR (@NormalizedMaCoSo IS NULL
@@ -206,7 +218,8 @@ BEGIN
         BEGIN
             SELECT TOP (1) @ExistingId = ID
             FROM ND_CSKCB WITH (UPDLOCK, HOLDLOCK)
-            WHERE LoaiND = @StoredLoaiND
+            WHERE (LoaiND = @StoredLoaiND
+                OR (@LegacyLoaiND IS NOT NULL AND LoaiND = @LegacyLoaiND))
               AND (
                     (@NormalizedMaCoSo IS NOT NULL AND MaCoSo = @NormalizedMaCoSo)
                  OR (@NormalizedMaCoSo IS NULL
@@ -225,12 +238,14 @@ BEGIN
                 UPDATE ND_CSKCB
                 SET MaCoSo = @NormalizedMaCoSo,
                     TenCoSo = @NormalizedTenCoSo,
-                    NoiDung = @NormalizedNoiDung
+                    NoiDung = @NormalizedNoiDung,
+                    LoaiND = @StoredLoaiND
                 WHERE ID = @ExistingId;
 
                 DELETE FROM ND_CSKCB
                 WHERE ID <> @ExistingId
-                  AND LoaiND = @StoredLoaiND
+                  AND (LoaiND = @StoredLoaiND
+                      OR (@LegacyLoaiND IS NOT NULL AND LoaiND = @LegacyLoaiND))
                   AND (
                         (@NormalizedMaCoSo IS NOT NULL AND MaCoSo = @NormalizedMaCoSo)
                      OR (@NormalizedMaCoSo IS NULL
