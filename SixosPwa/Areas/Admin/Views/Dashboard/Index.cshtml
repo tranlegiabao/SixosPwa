@@ -15,6 +15,10 @@
 
 <div class="card shadow-sm border-0 rounded-3 w-100 h-100" style="border: 1px solid #e2e8f0 !important; background: #ffffff;">
     <div class="card-body p-4 p-lg-5">
+        <form asp-action="SaveContent" method="post" id="dashboardContentForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="contentFacilityId" name="FacilityId" value="@Model.SelectedFacilityId" />
+            <input type="hidden" id="contentTopicId" name="TopicId" value="@Model.SelectedTopicId" />
         <div class="row gx-4 gx-lg-5 mb-4">
             <div class="col-md-5">
                 <div class="d-flex align-items-center mb-4">
@@ -23,7 +27,7 @@
                         <option value="">-- Chọn nhóm --</option>
                         @foreach (var item in Model.NhomCSList)
                         {
-                            <option value="@item.ID" data-loaics="@item.LoaiCS">@item.TenLoaiCS</option>
+                            <option value="@item.ID" data-loaics="@item.LoaiCS" selected="@(Model.SelectedNhomCSId == item.ID ? "selected" : null)">@item.TenLoaiCS</option>
                         }
                     </select>
                 </div>
@@ -34,7 +38,7 @@
                         <option value="">-- Chọn phòng khám --</option>
                         @foreach (var item in Model.FacilityList)
                         {
-                            <option value="@item.Id" data-loaics="@item.LoaiCS">@item.TenCoSo</option>
+                            <option value="@item.Id" data-loaics="@item.LoaiCS" selected="@(Model.SelectedFacilityId == item.Id ? "selected" : null)">@item.TenCoSo</option>
                         }
                     </select>
                 </div>
@@ -47,25 +51,151 @@
                         <option value="">-- Chọn chủ đề --</option>
                         @foreach (var item in Model.ChuDeList)
                         {
-                            <option value="@item.ID">@item.TenChuDe</option>
+                            <option value="@item.ID" selected="@(Model.SelectedTopicId == item.ID ? "selected" : null)">@item.TenChuDe</option>
                         }
                     </select>
-                    <button class="btn btn-primary px-4 fw-bold shadow-sm">Lưu</button>
+                    <button type="submit" id="saveDashboardContent" class="btn btn-primary px-4 fw-bold shadow-sm">Lưu</button>
                 </div>
             </div>
         </div>
         
         <div class="row">
             <div class="col-12 textarea-container">
-                <label class="form-label fw-bold text-secondary mb-2" style="font-size: 15px;">Text Area (Kích thước khớp với trang hiển thị)</label>
-                <textarea class="form-control border-secondary-subtle" rows="15" style="resize: none; background: #f8fafc; font-family: 'Inter', system-ui, sans-serif; font-size: 17px; line-height: 1.8; padding: 32px 24px; border-radius: 20px;"></textarea>
+                <textarea id="summernote" class="form-control" name="NoiDung">@Model.NoiDung</textarea>
             </div>
         </div>
+        </form>
     </div>
 </div>
 
+<style>
+    /* Customize Summernote to look cleaner */
+    .note-editor.note-frame {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .note-editor .note-toolbar {
+        background-color: #f8fafc;
+        border-bottom: 1px solid #cbd5e1;
+        padding: 8px 15px;
+    }
+    .note-editor .note-statusbar {
+        background-color: #f8fafc;
+    }
+    .note-editor .note-editable {
+        color: #000000;
+    }
+</style>
+
 @section Scripts {
+<!-- Include jQuery if not already included in layout -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Summernote Lite -->
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+
 <script>
+    var dashboardContentUrl = '@Url.Action("GetContent", "Dashboard", new { area = "Admin" })';
+    var initialNhomId = '@Model.SelectedNhomCSId';
+    var initialFacilityId = '@Model.SelectedFacilityId';
+    var initialTopicId = '@Model.SelectedTopicId';
+
+    $(document).ready(function() {
+        $('#summernote').summernote({
+            tabsize: 2,
+            height: 450,
+            toolbar: [
+                ['para', ['ul', 'ol', 'paragraph']],
+                ['style', ['bold', 'underline', 'italic']],
+                ['fontsize', ['fontsize']],
+                ['color', ['color']],
+                ['history', ['undo', 'redo']],
+                ['height', ['height']],
+                ['table', ['table']],
+                ['insert', ['link', 'picture', 'video']]
+            ],
+            fontSizes: ['8', '9', '10', '11', '12', '14', '16', '18', '24', '36', '48', '64'],
+            callbacks: {
+                onImageUpload: function(files) {
+                    for(let i=0; i < files.length; i++) {
+                        let data = new FormData();
+                        data.append("file", files[i]);
+                        $.ajax({
+                            url: '/Admin/CoSoYTe/UploadImage',
+                            cache: false,
+                            contentType: false,
+                            processData: false,
+                            data: data,
+                            type: "post",
+                            success: function(response) {
+                                $('#summernote').summernote('insertImage', response.url);
+                            },
+                            error: function(jqXHR, textStatus, errorThrown) {
+                                alert("Lỗi upload ảnh: " + (jqXHR.responseText || errorThrown));
+                            }
+                        });
+                    }
+                }
+            }
+        });
+    });
+
+    function setDashboardContent(content) {
+        if ($('#summernote').next('.note-editor').length) {
+            $('#summernote').summernote('code', content || '');
+        } else {
+            $('#summernote').val(content || '');
+        }
+    }
+
+    function ensureDefaultBlackHtml(content) {
+        var html = (content || '').trim();
+        if (!html) return '';
+
+        var parsed = document.createElement('div');
+        parsed.innerHTML = html;
+        var firstElement = parsed.firstElementChild;
+        var firstStyle = firstElement ? (firstElement.getAttribute('style') || '') : '';
+        if (parsed.children.length === 1
+            && firstElement
+            && firstElement.tagName.toLowerCase() === 'div'
+            && /(^|;)\s*color\s*:/i.test(firstStyle)) {
+            return html;
+        }
+
+        var wrapper = document.createElement('div');
+        wrapper.style.color = '#000000';
+        wrapper.innerHTML = html;
+        return wrapper.outerHTML;
+    }
+
+    async function loadDashboardContent() {
+        var facilityId = document.getElementById("cboPhongKham")?.value;
+        var topicId = document.getElementById("cboChuDe")?.value;
+        var facilityHidden = document.getElementById("contentFacilityId");
+        var topicHidden = document.getElementById("contentTopicId");
+        if (facilityHidden) facilityHidden.value = facilityId || "";
+        if (topicHidden) topicHidden.value = topicId || "";
+
+        if (!facilityId || !topicId) {
+            setDashboardContent('');
+            return;
+        }
+
+        try {
+            var response = await fetch(dashboardContentUrl + '?facilityId=' + encodeURIComponent(facilityId) + '&topicId=' + encodeURIComponent(topicId), {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (!response.ok) throw new Error('Không tải được nội dung.');
+            var data = await response.json();
+            setDashboardContent(data.noiDung || '');
+        } catch (error) {
+            setDashboardContent('');
+            if (typeof showToast === 'function') showToast(error.message, 'error');
+        }
+    }
+
     var originalPKOptions = [];
 
     function backupOptions() {
@@ -131,6 +261,7 @@
             var newOptions = [placeholderOption].concat(matched);
             updateSelectUI(cboPhongKham, newOptions, false);
         }
+        loadDashboardContent();
     };
 
     function updateSelectUI(selectEl, options, isDisabled) {
@@ -185,10 +316,39 @@
                 }
             }
         }
+        loadDashboardContent();
     };
 
     document.addEventListener("DOMContentLoaded", function() {
+        var cboNhomKH = document.getElementById("cboNhomKH");
+        var cboPhongKham = document.getElementById("cboPhongKham");
+        var cboChuDe = document.getElementById("cboChuDe");
+        if (cboNhomKH && initialNhomId) cboNhomKH.value = initialNhomId;
         window.updatePKDropdown();
+        if (cboPhongKham && initialFacilityId) {
+            cboPhongKham.value = initialFacilityId;
+            window.onPhongKhamChange();
+        }
+        if (cboChuDe && initialTopicId) cboChuDe.value = initialTopicId;
+        if (cboChuDe) cboChuDe.addEventListener('change', loadDashboardContent);
+        loadDashboardContent();
+
+        var form = document.getElementById('dashboardContentForm');
+        if (form) {
+            form.addEventListener('submit', function(event) {
+                var facilityId = document.getElementById('cboPhongKham')?.value;
+                var topicId = document.getElementById('cboChuDe')?.value;
+                if (!facilityId || !topicId) {
+                    event.preventDefault();
+                    if (typeof showToast === 'function') showToast('Vui lòng chọn cơ sở y tế và chủ đề.', 'warning');
+                    return;
+                }
+                document.getElementById('summernote').value = ensureDefaultBlackHtml(
+                    $('#summernote').summernote('code'));
+                document.getElementById('contentFacilityId').value = facilityId;
+                document.getElementById('contentTopicId').value = topicId;
+            });
+        }
     });
     if (document.readyState === "complete" || document.readyState === "interactive") {
         window.updatePKDropdown();

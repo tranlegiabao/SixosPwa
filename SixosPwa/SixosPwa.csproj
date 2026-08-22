@@ -11,4 +11,11 @@
     <PackageReference Include="WebPush" Version="1.0.11" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\Database\AdminStoredProcedures.sql"
+          Link="Database\AdminStoredProcedures.sql"
+          CopyToOutputDirectory="PreserveNewest"
+          CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

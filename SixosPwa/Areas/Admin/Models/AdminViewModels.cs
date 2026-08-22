@@ -22,6 +22,21 @@ public sealed class DashboardViewModel
     public IReadOnlyList<DMNhomCS> NhomCSList { get; init; } = Array.Empty<DMNhomCS>();
     public IReadOnlyList<DMChuDe> ChuDeList { get; init; } = Array.Empty<DMChuDe>();
     public IReadOnlyList<DMCSKCB> FacilityList { get; init; } = Array.Empty<DMCSKCB>();
+    public long? SelectedNhomCSId { get; init; }
+    public long? SelectedFacilityId { get; init; }
+    public long? SelectedTopicId { get; init; }
+    public string? NoiDung { get; init; }
+}
+
+public sealed class DashboardContentEditViewModel
+{
+    [Range(1, long.MaxValue, ErrorMessage = "Vui lòng chọn cơ sở y tế.")]
+    public long FacilityId { get; set; }
+
+    [Range(1, long.MaxValue, ErrorMessage = "Vui lòng chọn chủ đề.")]
+    public long TopicId { get; set; }
+
+    public string? NoiDung { get; set; }
 }
 
 public sealed class TaiKhoanListViewModel

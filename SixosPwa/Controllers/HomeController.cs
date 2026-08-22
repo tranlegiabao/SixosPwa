@@ -135,14 +135,35 @@ public class HomeController : Controller
             query = query.Where(x => (x.MaCoSo == null || x.MaCoSo == "") && x.TenCoSo == coSo.TenCoSo);
         }
 
+        var topicById = (await _db.DMChuDes.AsNoTracking().ToListAsync())
+            .Where(x => !string.IsNullOrWhiteSpace(x.LoaiND))
+            .ToDictionary(x => x.ID.ToString(), x => x.LoaiND!, StringComparer.OrdinalIgnoreCase);
         var items = await query
-            .Where(x => NDCSKCB.AllowedLoaiND.Contains(x.LoaiND!))
             .OrderBy(x => x.Id)
             .ToListAsync();
 
         return items
+            .Select(x => new
+            {
+                Item = x,
+                LoaiND = ResolveLoaiND(x.LoaiND, topicById)
+            })
+            .Where(x => x.LoaiND != null
+                && NDCSKCB.AllowedLoaiND.Contains(x.LoaiND, StringComparer.OrdinalIgnoreCase))
             .GroupBy(x => x.LoaiND!, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(x => x.Key, x => x.First().NoiDung ?? "", StringComparer.OrdinalIgnoreCase);
+            .ToDictionary(x => x.Key, x => x.First().Item.NoiDung ?? "", StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static string? ResolveLoaiND(
+        string? storedLoaiND,
+        IReadOnlyDictionary<string, string> topicById)
+    {
+        var value = storedLoaiND?.Trim();
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        if (topicById.TryGetValue(value, out var loaiND)) return loaiND;
+
+        return NDCSKCB.AllowedLoaiND.FirstOrDefault(x =>
+            string.Equals(x, value, StringComparison.OrdinalIgnoreCase));
     }
 
     private static string RemoveAccentsAndSpaces(string text)

@@ -1,4 +1,4 @@
-﻿@{
+@{
     var tenCoSo = Uri.UnescapeDataString(ViewData["TenCoSo"]?.ToString() ?? "Bệnh Viện ĐHYD");
     var diaChi = Uri.UnescapeDataString(ViewData["DiaChi"]?.ToString() ?? "215 Hồng Bàng, Phường Chợ Lớn");
     var type = ViewData["Type"]?.ToString() ?? "benhvien";
@@ -39,14 +39,14 @@
         color: white; padding: 12px 30px;
         display: flex; align-items: center; justify-content: space-between;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; box-sizing: border-box;
+        position: fixed; top: 0; left: 0; width: 100%; z-index: 1100; box-sizing: border-box;
     }
-    .ytv-logo-area { display: flex; align-items: center; gap: 15px; text-decoration: none; color: #0f172a; }
+    .ytv-logo-area { display: flex; align-items: center; gap: 15px; text-decoration: none; color: #ffffff; }
     .ytv-logo-text { font-family: 'Times New Roman', serif; font-size: 26px; font-weight: 900; line-height: 1.1; }
     .ytv-header-title { text-align: center; flex-grow: 1; }
-    .ytv-header-title h1 { margin: 0; font-size: 20px; font-weight: 700; color: #0f172a; }
-    .ytv-header-title p { margin: 4px 0 0; font-size: 14px; opacity: 0.9; color: #0f172a; }
-    .ytv-header-menu { font-size: 24px; cursor: pointer; color: #0f172a; position: relative; }
+    .ytv-header-title h1 { margin: 0; font-size: 20px; font-weight: 700; color: #ffffff; }
+    .ytv-header-title p { margin: 4px 0 0; font-size: 14px; opacity: 0.9; color: #ffffff; }
+    .ytv-header-menu { font-size: 24px; cursor: pointer; color: #ffffff; position: relative; }
     
     .ytv-dropdown { display: none; position: absolute; top: 100%; right: 0; background: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); min-width: 240px; z-index: 9999; animation: fadeDown 0.2s ease; margin-top: 15px; }
     .ytv-dropdown.open { display: block; }
@@ -64,11 +64,50 @@
 
     /* Sidebar */
     .ytv-sidebar {
-        width: 250px; flex-shrink: 0; background: white;
-        border-right: 1px solid #e2e8f0;
-        display: flex; flex-direction: column; padding: 24px 0 16px 0;
-        position: fixed; top: 74px; left: 0; bottom: 110px; overflow-y: auto; z-index: 100;
+    width: 250px;
+    flex-shrink: 0;
+    background: white;
+    border-right: 1px solid #e2e8f0;
+
+    display: flex;
+    flex-direction: column;
+
+    padding: 24px 0 0;
+
+    position: fixed;
+    top: 74px;
+    left: 0;
+
+    bottom: 65px; /* đổi 110 -> khoảng chiều cao footer */
+
+    overflow: hidden;
+    z-index: 100;
+}
+
+    .sidebar-scroll-area {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
     }
+    .sidebar-scroll-area::-webkit-scrollbar {
+        width: 5px;
+    }
+    .sidebar-scroll-area::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .sidebar-scroll-area::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+    }
+    .sidebar-scroll-area::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+    .operating-hours-box {
+        flex-shrink: 0;
+        margin-bottom: 0;
+    }
+
     .ytv-sidebar::-webkit-scrollbar {
         width: 5px;
     }
@@ -86,6 +125,7 @@
         text-align: left;
         margin-bottom: 24px;
         padding: 0 16px;
+        flex: 0 0 auto;
     }
     .sidebar-logo {
         width: 100px;
@@ -204,7 +244,7 @@
         background: #f8fafc;
         border-radius: 16px;
         padding: 16px;
-        margin: 12px 16px;
+        margin: 12px 16px 0;
         border: 1px solid #e2e8f0;
         box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
     }
@@ -268,7 +308,7 @@
         }
     }
 
-    .hospital-actions { padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; }
+    .hospital-actions { padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; flex: 0 0 auto; }
     .btn-primary { background: #1d4ed8; color: #0f172a; padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; border: none; cursor: pointer; transition: background 0.2s; flex: 1; }
     .btn-primary:hover { background: #1e40af; color: #0f172a; }
     .btn-outline {
@@ -337,10 +377,11 @@
     .intro-section.active-tab {
         display: flex !important;
     }
-    .intro-content { flex: 1; max-width: 600px; }
+    .intro-content { flex: 1; width: 100%; max-width: 100%; }
     .intro-title { display: flex; align-items: center; gap: 10px; font-size: 24px; font-weight: 700; color: #38bdf8; margin-bottom: 20px; }
-    .intro-content p { color: rgba(255, 255, 255, 0.9); line-height: 1.8; font-size: 17px; margin-bottom: 16px; }
-    .intro-content .nd-cskcb-text { color: rgba(255, 255, 255, 0.9); line-height: 1.8; font-size: 17px; white-space: pre-line; }
+    .intro-content p { color: #334155; line-height: 1.8; font-size: 17px; margin-bottom: 16px; }
+    .intro-content .nd-cskcb-text { color: #000000; line-height: 1.8; font-size: 17px; width: 100%; max-width: 100%; overflow-x: auto; }
+    .intro-content .nd-cskcb-text img { max-width: 100%; height: auto; }
     .intro-image { width: 320px; height: auto; opacity: 0.85; border-radius: 12px; }
 
 
@@ -404,9 +445,16 @@
         .ytv-main { flex-direction: column; padding-left: 0; }
         .ytv-sidebar { 
             position: relative; top: 0; left: 0; height: auto; z-index: 1; width: 100%; 
-            flex-direction: row; overflow-x: auto; padding: 10px 16px; 
+            flex-direction: column; overflow: hidden; padding: 10px 16px;
             border-right: none; border-bottom: 1px solid #e2e8f0; 
-            align-items: center; gap: 12px;
+            align-items: stretch; gap: 0;
+        }
+        .sidebar-scroll-area {
+            display: block;
+            flex: 1 1 auto;
+            min-height: auto;
+            overflow-x: hidden;
+            overflow-y: auto;
         }
         .ytv-menu-item { 
             margin: 0 !important; 
@@ -619,16 +667,17 @@
 
     /* Stats Footer (Second Footer) */
     .stats-footer-bar {
-        background: #ffffff;
-        border-top: 1.5px solid #e2e8f0;
+        background: transparent !important;
+        border: none !important;
         position: fixed;
-        bottom: 50px; /* Right above the contact footer */
-        left: 0;
-        width: 100%;
+        bottom: 50px;
+        left: 250px;
+        width: calc(100% - 250px);
         z-index: 999;
-        padding: 6px 30px; /* Minimized vertical padding */
+        padding: 6px 30px;
         box-sizing: border-box;
-        box-shadow: 0 -3px 10px rgba(0, 0, 0, 0.03);
+        box-shadow: none !important;
+        pointer-events: none;
     }
     .stats-footer-bar .stats-grid {
         display: grid;
@@ -711,6 +760,7 @@
         <div class="sidebar-logo-container">
             <img src="@logo" alt="Logo" class="sidebar-logo" />
         </div>
+        <div class="sidebar-scroll-area">
         <a class="ytv-menu-item active" onclick="showTab('gioi-thieu', this)" href="#gioi-thieu">
             <i class="fas fa-info-circle"></i> Giới thiệu
         </a>
@@ -727,6 +777,7 @@
             <i class="fas fa-headset"></i> Liên hệ
         </a>
         
+        </div>
         <div class="hospital-actions">
             <a href="/DangNhap/Login" class="btn-outline" style="background-color: #1d4ed8; color:aliceblue">
                 <i class="fas fa-sign-in-alt" style="color: aliceblue"></i> Đăng ký khám
@@ -745,59 +796,15 @@
     
 
     <div class="ytv-content">
-        <!-- Main Hospital Card -->
-        <div class="hospital-card">
-            <!--   <img src="@img" class="hospital-card-img" alt="@tenCoSo" /> -->
-            <div class="hospital-card-content">
-                <div class="verified-badge">
-                    <i class="fas fa-shield-check"></i> Đã xác minh
-                </div>
-                
-                <h1 class="hospital-title">@tenCoSo</h1>
-                
-                <div class="hospital-rating">
-                    <span class="stars"><i class="fas fa-star"></i></span>
-                    <span class="score">4.8/5</span>
-                    <span class="count">• 1.248 đánh giá</span>
-                </div>
-
-                <div class="hospital-info-grid">
-                    <div class="hospital-details">
-                        <div class="detail-item">
-                            <i class="fas fa-map-marker-alt"></i> 
-                            <span>@diaChi, TP. Hồ Chí Minh</span>
-                        </div>
-                        <div class="detail-item">
-                            <i class="far fa-clock"></i> 
-                            <span>@operatingHours.OpenTime - @operatingHours.CloseTime (@operatingHours.Days)</span>
-                        </div>
-                        <div class="detail-item">
-                            <i class="fas fa-phone-alt"></i> 
-                            <span>(028) 1234 5678</span>
-                        </div>
-                        <div class="detail-item">
-                            <i class="fas fa-globe"></i> 
-                            <a href="https://www.bvdhyd.vn" target="_blank">www.bvdhyd.vn</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Intro Sections (Tabs) -->
         <div class="intro-section active-tab" id="gioi-thieu">
             <div class="intro-content">
                 <div class="intro-title">
                     <i class="fas fa-info-circle"></i> Giới thiệu
                 </div>
-                @if (string.IsNullOrWhiteSpace(noiDungGioiThieu))
+                @if (!string.IsNullOrWhiteSpace(noiDungGioiThieu))
                 {
-                    <p>@tenCoSo là một trong những cơ sở y tế uy tín hàng đầu tại khu vực. Được thành lập từ nhiều năm qua, chúng tôi luôn cam kết mang lại dịch vụ chăm sóc sức khỏe chất lượng cao nhất cho người dân.</p>
-                    <p>Với đội ngũ bác sĩ chuyên khoa giỏi, trang thiết bị hiện đại và quy trình khám bệnh chuyên nghiệp, chúng tôi tự hào là địa chỉ tin cậy cho hàng triệu <strong>bệnh nhân</strong>.</p>
-                }
-                else
-                {
-                    <div class="nd-cskcb-text">@noiDungGioiThieu</div>
+                    <div class="nd-cskcb-text">@Html.Raw(noiDungGioiThieu)</div>
                 }
             </div>
             <!-- <img src="https://img.freepik.com/free-vector/hospital-building-concept-illustration_114360-8440.jpg?w=800" alt="Hospital Illustration" class="intro-image" /> -->
@@ -808,14 +815,9 @@
                 <div class="intro-title">
                     <i class="fas fa-stethoscope"></i> Dịch vụ khám chữa bệnh
                 </div>
-                @if (string.IsNullOrWhiteSpace(noiDungDichVu))
+                @if (!string.IsNullOrWhiteSpace(noiDungDichVu))
                 {
-                    <p>@tenCoSo cung cấp đa dạng các gói dịch vụ khám sức khỏe toàn diện và điều trị chuyên sâu. Chúng tôi tiếp nhận khám bảo hiểm y tế và khám dịch vụ theo yêu cầu với quy trình nhanh gọn, tối ưu thời gian chờ đợi.</p>
-                    <p>Các chuyên khoa mũi nhọn bao gồm: Nội tổng quát, Ngoại sản, Nhi khoa, Tai Mũi Họng, Răng Hàm Mặt và hỗ trợ tầm soát ung thư sớm bằng công nghệ tiên tiến nhất.</p>
-                }
-                else
-                {
-                    <div class="nd-cskcb-text">@noiDungDichVu</div>
+                    <div class="nd-cskcb-text">@Html.Raw(noiDungDichVu)</div>
                 }
             </div>
         </div>
@@ -825,14 +827,9 @@
                 <div class="intro-title">
                     <i class="fas fa-user-md"></i> Đội ngũ bác sĩ chuyên khoa
                 </div>
-                @if (string.IsNullOrWhiteSpace(noiDungDoiNgu))
+                @if (!string.IsNullOrWhiteSpace(noiDungDoiNgu))
                 {
-                    <p>Chúng tôi tự hào quy tụ đội ngũ phó giáo sư, tiến sĩ, thạc sĩ và bác sĩ chuyên khoa cấp I, cấp II giàu kinh nghiệm tại Việt Nam. Các bác sĩ tại @tenCoSo luôn tận tâm, chu đáo, không ngừng nâng cao tay nghề chuyên môn.</p>
-                    <p>Nhiều chuyên gia y tế tại đây đã có thời gian tu nghiệp và giảng dạy tại các bệnh viện lớn trong và ngoài nước, cam kết đưa ra chẩn đoán chính xác và phác đồ điều trị tối ưu.</p>
-                }
-                else
-                {
-                    <div class="nd-cskcb-text">@noiDungDoiNgu</div>
+                    <div class="nd-cskcb-text">@Html.Raw(noiDungDoiNgu)</div>
                 }
             </div>
         </div>
@@ -842,14 +839,9 @@
                 <div class="intro-title">
                     <i class="fas fa-tools"></i> Trang thiết bị hiện đại
                 </div>
-                @if (string.IsNullOrWhiteSpace(noiDungTrangThietBi))
+                @if (!string.IsNullOrWhiteSpace(noiDungTrangThietBi))
                 {
-                    <p>Để phục vụ công tác chẩn đoán hình ảnh và xét nghiệm chuẩn xác, @tenCoSo liên tục đầu tư hệ thống máy móc nhập khẩu đồng bộ từ các tập đoàn y tế hàng đầu thế giới (GE, Siemens, Philips).</p>
-                    <p>Hệ thống bao gồm máy chụp MRI công nghệ cao, máy cắt lớp vi tính CT đa dãy, hệ thống nội soi tiêu hóa không đau NBI, máy siêu âm màu 4D thế hệ mới và phòng xét nghiệm tự động đạt chuẩn quốc tế.</p>
-                }
-                else
-                {
-                    <div class="nd-cskcb-text">@noiDungTrangThietBi</div>
+                    <div class="nd-cskcb-text">@Html.Raw(noiDungTrangThietBi)</div>
                 }
             </div>
         </div>
@@ -859,14 +851,9 @@
                 <div class="intro-title">
                     <i class="fas fa-headset"></i> Chăm sóc & Hỗ trợ khách hàng
                 </div>
-                @if (string.IsNullOrWhiteSpace(noiDungLienHe))
+                @if (!string.IsNullOrWhiteSpace(noiDungLienHe))
                 {
-                    <p>Tại @tenCoSo, sự hài lòng và trải nghiệm thoải mái của bệnh nhân là ưu tiên số một. Bộ phận chăm sóc khách hàng luôn sẵn sàng tiếp đón, hướng dẫn thủ tục hành chính, giải đáp thắc mắc và hỗ trợ đặt lịch hẹn trực tuyến.</p>
-                    <p>Chúng tôi cung cấp đường dây nóng hỗ trợ khẩn cấp 24/7, dịch vụ tư vấn y tế từ xa, chăm sóc sau điều trị và tiếp thu ý kiến phản hồi để không ngừng cải thiện chất lượng dịch vụ phục vụ nhân dân.</p>
-                }
-                else
-                {
-                    <div class="nd-cskcb-text">@noiDungLienHe</div>
+                    <div class="nd-cskcb-text">@Html.Raw(noiDungLienHe)</div>
                 }
             </div>
         </div>

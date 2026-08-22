@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.StaticFiles;
@@ -18,6 +19,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 // Add Services
 builder.Services.AddScoped<ITaiKhoanService, DbTaiKhoanService>();
+builder.Services.AddScoped<AdminStoredProcedureService>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -151,6 +153,18 @@ using (var scope = app.Services.CreateScope())
         ");
 
         db.Database.ExecuteSqlRaw(@"
+            IF OBJECT_ID('ND_CSKCB', 'U') IS NOT NULL
+               AND OBJECT_ID('DMChuDe', 'U') IS NOT NULL
+            BEGIN
+                UPDATE nd
+                SET LoaiND = CONVERT(NVARCHAR(20), cd.ID)
+                FROM ND_CSKCB nd
+                INNER JOIN DMChuDe cd ON cd.LoaiND = nd.LoaiND
+                WHERE TRY_CONVERT(BIGINT, nd.LoaiND) IS NULL
+            END
+        ");
+
+        db.Database.ExecuteSqlRaw(@"
             IF OBJECT_ID('DMCSKCB', 'U') IS NOT NULL
                 AND COL_LENGTH('DMCSKCB', 'Huyen') IS NULL
             BEGIN
@@ -188,6 +202,29 @@ using (var scope = app.Services.CreateScope())
                 ('BN-2026-8892', 5, '2024-11-20', '2025-12-10', 2, N'Đã khỏi');
             END
         ");
+        var storedProcedureScriptPath = Path.Combine(
+            app.Environment.ContentRootPath,
+            "Database",
+            "AdminStoredProcedures.sql");
+        if (!File.Exists(storedProcedureScriptPath))
+        {
+            storedProcedureScriptPath = Path.Combine(
+                AppContext.BaseDirectory,
+                "Database",
+                "AdminStoredProcedures.sql");
+        }
+
+        if (File.Exists(storedProcedureScriptPath))
+        {
+            var storedProcedureScript = File.ReadAllText(storedProcedureScriptPath);
+            var batches = Regex.Split(
+                storedProcedureScript,
+                @"^\s*GO\s*$",
+                RegexOptions.Multiline | RegexOptions.IgnoreCase);
+
+            foreach (var batch in batches.Where(batch => !string.IsNullOrWhiteSpace(batch)))
+                db.Database.ExecuteSqlRaw(batch);
+        }
     }
     catch (Exception ex)
     {
