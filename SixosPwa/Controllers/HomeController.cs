@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using SixosPwa.Data;
 using SixosPwa.Models;
 using SixosPwa.Security;
+using SixosPwa.Services.Partner;
 using WebPush;
 
 namespace SixosPwa.Controllers;
@@ -23,38 +24,15 @@ public class HomeController : Controller
         _config = config;
     }
 
-    public async Task<IActionResult> Index(long? phongKhamId)
-    {
-        var userName = User.Identity?.Name ?? "Khách hàng";
-        ViewData["UserName"] = userName;
-        ViewData["UserRole"] = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "BenhNhan";
-        ViewData["PhongKhamId"] = phongKhamId;
-        
-        // Lấy danh sách thông báo
-        var thongBaos = await _db.ThongBaos
-            .Where(t => t.NguoiNhan == userName)
-            .OrderByDescending(t => t.ThoiGian)
-            .Take(10)
-            .ToListAsync();
-            
-        ViewData["UnreadCount"] = thongBaos.Count(t => !t.DaDoc);
-        ViewData["ThongBaos"] = thongBaos;
-        
-        // Lấy thông tin phòng khám nếu có
-        if (phongKhamId.HasValue)
-        {
-            var phongKham = await _db.PhongKhams.FirstOrDefaultAsync(p => p.Id == phongKhamId.Value);
-            ViewData["TenPhongKham"] = phongKham?.TenPhongKham ?? "Phòng khám";
-        }
-        
-        return View();
-    }
+    // Action Index (trang benh nhan cu) da duoc go bo ngay 2026-08-22 theo yeu cau
+    // cua user: luong do khong dung nua, thay bang /benh-nhan. Lay lai neu can:
+    //   git show 224341a -- SixosPwa/Views/Home/Index.cshtml
 
     public IActionResult TimBacSi(long phongKhamId)
     {
         ViewData["PhongKhamId"] = phongKhamId;
         var phongKham = _db.PhongKhams.FirstOrDefault(p => p.Id == phongKhamId);
-        ViewData["TenPhongKham"] = phongKham?.TenPhongKham ?? "Phòng khám";
+        ViewData["TenPhongKham"] = phongKham?.TenPhongKham ?? "PhÃ²ng khÃ¡m";
         return View();
     }
 
@@ -62,7 +40,7 @@ public class HomeController : Controller
     {
         ViewData["PhongKhamId"] = phongKhamId;
         var phongKham = _db.PhongKhams.FirstOrDefault(p => p.Id == phongKhamId);
-        ViewData["TenPhongKham"] = phongKham?.TenPhongKham ?? "Phòng khám";
+        ViewData["TenPhongKham"] = phongKham?.TenPhongKham ?? "PhÃ²ng khÃ¡m";
         return View();
     }
 
@@ -70,15 +48,15 @@ public class HomeController : Controller
     [AllowAnonymous]
     public async Task<IActionResult> DanhSachCoSo(string type)
     {
-        // Danh mục tương ứng
-        string title = "Cơ sở y tế";
+        // Danh má»¥c tÆ°Æ¡ng á»©ng
+        string title = "CÆ¡ sá»Ÿ y táº¿";
         switch (type)
         {
-            case "benhvien": title = "Bệnh viện"; break;
-            case "pkdk": title = "Phòng khám đa khoa"; break;
+            case "benhvien": title = "Bá»‡nh viá»‡n"; break;
+            case "pkdk": title = "PhÃ²ng khÃ¡m Ä‘a khoa"; break;
             case "nhakhoa": title = "Nha khoa"; break;
-            case "phongmach": title = "Phòng mạch"; break;
-            case "nhathuoc": title = "Nhà thuốc"; break;
+            case "phongmach": title = "PhÃ²ng máº¡ch"; break;
+            case "nhathuoc": title = "NhÃ  thuá»‘c"; break;
         }
         ViewData["Title"] = title;
         ViewData["Type"] = type;
@@ -91,37 +69,87 @@ public class HomeController : Controller
         return View(dsCoso);
     }
 
+    /// <summary>
+    /// URL co dinh cua tung co so. Slug do quan tri vien dat tay (DMCSKCB.Slug),
+    /// KHONG sinh tu ten, nen doi ten co so khong lam gay URL da phat cho doi tac.
+    /// </summary>
+    [HttpGet("/pk/{slug}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ChiTietCoSo(string slug)
+    {
+        var coSo = await _db.DMCSKCBs.FirstOrDefaultAsync(x => x.Slug == slug);
+
+        if (coSo == null) return NotFound();
+
+        await DoDuLieuCoSoAsync(coSo);
+        return View();
+    }
+
+    /// <summary>
+    /// URL cu khop co so bang cach bo dau ten. Giu lai va chuyen huong 301 sang
+    /// /pk/{slug} de moi duong link da phat di khong chet.
+    /// </summary>
     [HttpGet("/Home/DangKyOnline/{ten?}")]
     [AllowAnonymous]
-    public async Task<IActionResult> ChiTietCoSo(string? ten, string? diaChi, string? type, string? img, string? logo)
+    public async Task<IActionResult> ChiTietCoSoTheoTen(string? ten, string? diaChi, string? type, string? img, string? logo)
     {
         if (!string.IsNullOrEmpty(ten))
         {
             var cleanTen = RemoveAccentsAndSpaces(ten);
             var allCS = await _db.DMCSKCBs.ToListAsync();
-            var matchedCS = allCS.FirstOrDefault(x => 
+            var matchedCS = allCS.FirstOrDefault(x =>
                 RemoveAccentsAndSpaces(x.TenCoSo ?? "").Equals(cleanTen, StringComparison.OrdinalIgnoreCase) ||
                 (x.TenCoSo ?? "").Equals(ten, StringComparison.OrdinalIgnoreCase));
 
             if (matchedCS != null)
             {
-                ViewData["CoSoYTe"] = matchedCS;
-                ViewData["TenCoSo"] = matchedCS.TenCoSo;
-                ViewData["DiaChi"] = matchedCS.DiaChi ?? "Đang cập nhật";
-                ViewData["Type"] = matchedCS.LoaiCS ?? "benhvien";
-                ViewData["Img"] = matchedCS.Img ?? "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80";
-                ViewData["Logo"] = matchedCS.logo ?? logo ?? "https://tse1.mm.bing.net/th/id/OIP.JgUNpJPll-8BkzE3XN6LggHaHa?r=0&pid=Api&P=0&h=180";
-                ViewData["TGLamViec"] = GetOperatingHoursValue(matchedCS);
-                ViewData["NoiDungCskcb"] = await LoadNoiDungAsync(matchedCS);
-                return View();
+                if (!string.IsNullOrWhiteSpace(matchedCS.Slug))
+                {
+                    return RedirectPermanent($"/pk/{matchedCS.Slug}");
+                }
+
+                // Co so chua duoc dat slug: van hien duoc trang, chi la khong co
+                // URL co dinh. Quan tri vien dat slug trong man Admin/CoSoYTe.
+                await DoDuLieuCoSoAsync(matchedCS);
+                return View(nameof(ChiTietCoSo));
             }
         }
 
-        ViewData["TenCoSo"] = ten ?? "Cơ sở y tế";
-        ViewData["DiaChi"] = diaChi ?? "Đang cập nhật";
+        ViewData["TenCoSo"] = ten ?? "CÆ¡ sá»Ÿ y táº¿";
+        ViewData["DiaChi"] = diaChi ?? "Äang cáº­p nháº­t";
         ViewData["Type"] = type ?? "benhvien";
-        ViewData["Img"] = img ?? "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80";
-        ViewData["Logo"] = logo ?? "https://tse1.mm.bing.net/th/id/OIP.JgUNpJPll-8BkzE3XN6LggHaHa?r=0&pid=Api&P=0&h=180";
+        ViewData["Img"] = img ?? AnhCoSoMacDinh;
+        ViewData["Logo"] = logo ?? LogoCoSoMacDinh;
+        return View(nameof(ChiTietCoSo));
+    }
+
+    /// <summary>
+    /// Trang chu cua benh nhan tai co so KHONG co API rieng. Dot 2026-08 moi chi
+    /// dung giao dien: ba the dich vu deu dan toi man "Dang cap nhat".
+    /// </summary>
+    [HttpGet("/benh-nhan")]
+    public async Task<IActionResult> TrangBenhNhan(string? loi = null)
+    {
+        var cccd = User.FindFirst(LuongCongBenhNhan.ClaimCccd)?.Value;
+        var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
+        var dinhDanh = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? string.Empty;
+
+        var coSo = string.IsNullOrWhiteSpace(maCoSo)
+            ? null
+            : await _db.DMCSKCBs.AsNoTracking().FirstOrDefaultAsync(x => x.MaCoSo == maCoSo);
+
+        var benhNhan = string.IsNullOrWhiteSpace(dinhDanh)
+            ? null
+            : await _db.BenhNhans.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.SDT == dinhDanh || x.Email == dinhDanh);
+
+        ViewBag.MaCoSo = maCoSo;
+        ViewBag.TenCoSo = coSo?.TenCoSo ?? "CÆ¡ sá»Ÿ khÃ¡m chá»¯a bá»‡nh";
+        ViewBag.TenBenhNhan = benhNhan?.TenBN ?? dinhDanh;
+        ViewBag.DienThoai = User.FindFirst(System.Security.Claims.ClaimTypes.MobilePhone)?.Value ?? benhNhan?.SDT;
+        ViewBag.CccdCheBot = CheBotCccd(cccd);
+        ViewBag.CoLoiKetNoi = loi == "khong-ket-noi-duoc";
+
         return View();
     }
 
@@ -138,6 +166,51 @@ public class HomeController : Controller
         }
 
         return coSo.TGLamViec;
+    }
+
+    /// <summary>Man trong cho ba the chua noi du lieu.</summary>
+    [HttpGet("/benh-nhan/sap-co")]
+    public IActionResult SapCo(string? muc = null)
+    {
+        (ViewBag.TenMuc, ViewBag.BieuTuong) = muc switch
+        {
+            "dat-goi-kham" => ("ÄÄƒng kÃ½ khÃ¡m theo gÃ³i", "â–¤"),
+            "lich-su-hen" => ("Lá»‹ch sá»­ háº¹n khÃ¡m", "â—·"),
+            "ho-so-kham" => ("Tra cá»©u há»“ sÆ¡ khÃ¡m bá»‡nh", "â—«"),
+            _ => ("Chá»©c nÄƒng", "â—Œ")
+        };
+
+        return View();
+    }
+
+    /// <summary>Che bot so CCCD khi hien tren man: 0772â€¢â€¢â€¢â€¢â€¢069.</summary>
+    private static string CheBotCccd(string? cccd)
+    {
+        if (string.IsNullOrWhiteSpace(cccd)) return "â€”";
+        if (cccd.Length <= 7) return cccd;
+
+        return $"{cccd[..4]}{new string('\u2022', cccd.Length - 7)}{cccd[^3..]}";
+    }
+
+    private const string AnhCoSoMacDinh = "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80";
+    private const string LogoCoSoMacDinh = "https://tse1.mm.bing.net/th/id/OIP.JgUNpJPll-8BkzE3XN6LggHaHa?r=0&pid=Api&P=0&h=180";
+
+    /// <summary>
+    /// Do du lieu mot co so ra ViewData cho trang chi tiet. MaCoSo va Slug la hai
+    /// thu hai nut "Dang ky kham" / "Dang nhap" phai mang theo â€” thieu chung thi
+    /// man dang nhap khong biet benh nhan dang o co so nao.
+    /// </summary>
+    private async Task DoDuLieuCoSoAsync(DMCSKCB coSo)
+    {
+        ViewData["MaCoSo"] = coSo.MaCoSo;
+        ViewData["Slug"] = coSo.Slug;
+        ViewData["TenCoSo"] = coSo.TenCoSo;
+        ViewData["DiaChi"] = coSo.DiaChi ?? "Äang cáº­p nháº­t";
+        ViewData["Type"] = coSo.LoaiCS ?? "benhvien";
+        ViewData["Img"] = coSo.Img ?? AnhCoSoMacDinh;
+        ViewData["Logo"] = coSo.logo ?? LogoCoSoMacDinh;
+        ViewData["TGLamViec"] = GetOperatingHoursValue(coSo);
+        ViewData["NoiDungCskcb"] = await LoadNoiDungAsync(coSo);
     }
 
     private async Task<IReadOnlyDictionary<string, string>> LoadNoiDungAsync(DMCSKCB coSo)
@@ -199,7 +272,7 @@ public class HomeController : Controller
         }
         string cleanText = sb.ToString().Normalize(System.Text.NormalizationForm.FormC);
         
-        cleanText = cleanText.Replace("đ", "d").Replace("Đ", "D");
+        cleanText = cleanText.Replace("Ä‘", "d").Replace("Ä", "D");
         
         var finalSb = new System.Text.StringBuilder();
         foreach (char c in cleanText)
@@ -253,7 +326,7 @@ public class HomeController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Lỗi khi gọi stored procedure Top_CSKCB_QC");
+            _logger.LogError(ex, "Lá»—i khi gá»i stored procedure Top_CSKCB_QC");
         }
 
         ViewData["TopCSKCB"] = topCSKCBList;
@@ -267,11 +340,11 @@ public class HomeController : Controller
         ViewData["UserName"] = sdt;
         ViewData["UserRole"] = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "BenhNhan";
 
-        // Lấy thông tin bệnh nhân
+        // Láº¥y thÃ´ng tin bá»‡nh nhÃ¢n
         var benhNhan = await _db.BenhNhans
             .FirstOrDefaultAsync(b => b.SDT == sdt);
 
-        // Nếu chưa có bệnh nhân, tạo mới tự động
+        // Náº¿u chÆ°a cÃ³ bá»‡nh nhÃ¢n, táº¡o má»›i tá»± Ä‘á»™ng
         if (benhNhan == null)
         {
             benhNhan = new BenhNhan
@@ -279,8 +352,8 @@ public class HomeController : Controller
                 MaBN = $"BN-{DateTime.Now:yyyyMMdd}-{new Random().Next(1000, 9999)}",
                 MaDT = "DT001",
                 SDT = sdt,
-                TenBN = $"Bệnh nhân {sdt.Substring(sdt.Length - 4)}",
-                DiaChi = "Chưa cập nhật",
+                TenBN = $"Bá»‡nh nhÃ¢n {sdt.Substring(sdt.Length - 4)}",
+                DiaChi = "ChÆ°a cáº­p nháº­t",
                 Email = ""
             };
             _db.BenhNhans.Add(benhNhan);
@@ -292,17 +365,17 @@ public class HomeController : Controller
         ViewData["DiaChi"] = benhNhan.DiaChi ?? "";
         ViewData["Email"] = benhNhan.Email ?? "";
 
-        // Lấy danh sách phòng khám đã khám
+        // Láº¥y danh sÃ¡ch phÃ²ng khÃ¡m Ä‘Ã£ khÃ¡m
         var lichSuKham = await _db.LichSuKhams
             .Include(ls => ls.PhongKham)
             .Where(ls => ls.MaBN == benhNhan.MaBN)
             .OrderByDescending(ls => ls.NgayKhamGanNhat)
             .ToListAsync();
 
-        // Nếu chưa có lịch sử khám, tạo dữ liệu mẫu
+        // Náº¿u chÆ°a cÃ³ lá»‹ch sá»­ khÃ¡m, táº¡o dá»¯ liá»‡u máº«u
         if (lichSuKham.Count == 0)
         {
-            // Đảm bảo có ít nhất phòng khám PKDK Bảo Minh
+            // Äáº£m báº£o cÃ³ Ã­t nháº¥t phÃ²ng khÃ¡m PKDK Báº£o Minh
             var phongKhamBaoMinh = await _db.PhongKhams.FirstOrDefaultAsync(p => p.MaPhongKham == "PKDK-BM");
             if (phongKhamBaoMinh != null)
             {
@@ -315,11 +388,11 @@ public class HomeController : Controller
                         NgayKhamDau = DateTime.Now.AddMonths(-6),
                         NgayKhamGanNhat = DateTime.Now.AddDays(-5),
                         SoLanKham = 8,
-                        TrangThai = "Đang theo dõi định kỳ"
+                        TrangThai = "Äang theo dÃµi Ä‘á»‹nh ká»³"
                     }
                 };
 
-                // Thêm phòng khám khác nếu có
+                // ThÃªm phÃ²ng khÃ¡m khÃ¡c náº¿u cÃ³
                 var phongKhamKhac = await _db.PhongKhams
                     .Where(p => p.MaPhongKham != "PKDK-BM")
                     .Take(2)
@@ -334,14 +407,14 @@ public class HomeController : Controller
                         NgayKhamDau = DateTime.Now.AddMonths(-4),
                         NgayKhamGanNhat = DateTime.Now.AddMonths(-1),
                         SoLanKham = new Random().Next(2, 6),
-                        TrangThai = "Ổn định"
+                        TrangThai = "á»”n Ä‘á»‹nh"
                     });
                 }
 
                 _db.LichSuKhams.AddRange(lichSuMoi);
                 await _db.SaveChangesAsync();
 
-                // Load lại dữ liệu
+                // Load láº¡i dá»¯ liá»‡u
                 lichSuKham = await _db.LichSuKhams
                     .Include(ls => ls.PhongKham)
                     .Where(ls => ls.MaBN == benhNhan.MaBN)
@@ -366,7 +439,7 @@ public class HomeController : Controller
     public IActionResult LocDanhSachBN([FromBody] LocBNRequest model)
     {
         if (string.IsNullOrWhiteSpace(model.TenDT) || string.IsNullOrWhiteSpace(model.Password))
-            return Json(new { success = false, message = "Vui lòng nhập đủ thông tin đối tác và mật khẩu." });
+            return Json(new { success = false, message = "Vui lÃ²ng nháº­p Ä‘á»§ thÃ´ng tin Ä‘á»‘i tÃ¡c vÃ  máº­t kháº©u." });
 
         try
         {
@@ -390,7 +463,7 @@ public class HomeController : Controller
 
             using var reader = cmd.ExecuteReader();
 
-            // Kiểm tra kết quả đầu tiên – có thể là lỗi xác thực
+            // Kiá»ƒm tra káº¿t quáº£ Ä‘áº§u tiÃªn â€“ cÃ³ thá»ƒ lÃ  lá»—i xÃ¡c thá»±c
             if (reader.FieldCount == 2 && reader.GetName(0) == "Success")
             {
                 if (reader.Read())
@@ -401,7 +474,7 @@ public class HomeController : Controller
                 }
             }
 
-            // Kết quả bình thường – danh sách bệnh nhân
+            // Káº¿t quáº£ bÃ¬nh thÆ°á»ng â€“ danh sÃ¡ch bá»‡nh nhÃ¢n
             var list = new List<object>();
             while (reader.Read())
             {
@@ -421,8 +494,8 @@ public class HomeController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Lỗi khi gọi stored procedure LocDanhSachBN");
-            return Json(new { success = false, message = "Lỗi hệ thống: " + ex.Message });
+            _logger.LogError(ex, "Lá»—i khi gá»i stored procedure LocDanhSachBN");
+            return Json(new { success = false, message = "Lá»—i há»‡ thá»‘ng: " + ex.Message });
         }
     }
 
@@ -433,7 +506,7 @@ public class HomeController : Controller
     }
 
     // -------------------------------------------------------------------------
-    // Trả về VAPID Public Key để client đăng ký push subscription
+    // Tráº£ vá» VAPID Public Key Ä‘á»ƒ client Ä‘Äƒng kÃ½ push subscription
     // -------------------------------------------------------------------------
     [HttpGet]
     [AllowAnonymous]
@@ -444,7 +517,7 @@ public class HomeController : Controller
     }
 
     // -------------------------------------------------------------------------
-    // Lấy danh sách tài khoản bệnh nhân thật từ DB (cho GuiTinNhan dùng)
+    // Láº¥y danh sÃ¡ch tÃ i khoáº£n bá»‡nh nhÃ¢n tháº­t tá»« DB (cho GuiTinNhan dÃ¹ng)
     // -------------------------------------------------------------------------
     [HttpGet]
     [Authorize(AuthenticationSchemes = AdminAuthentication.Scheme, Roles = "Admin")]
@@ -458,7 +531,7 @@ public class HomeController : Controller
     }
 
     // -------------------------------------------------------------------------
-    // Nhận và lưu push subscription của thiết bị vào DB
+    // Nháº­n vÃ  lÆ°u push subscription cá»§a thiáº¿t bá»‹ vÃ o DB
     // -------------------------------------------------------------------------
     [HttpPost]
     public async Task<IActionResult> DangKyPush([FromBody] PushSubscriptionRequest model)
@@ -467,13 +540,13 @@ public class HomeController : Controller
         if (string.IsNullOrEmpty(sdt) || string.IsNullOrEmpty(model.Endpoint))
             return Json(new { success = false });
 
-        // Kiểm tra đã có endpoint này chưa (tránh lưu trùng)
+        // Kiá»ƒm tra Ä‘Ã£ cÃ³ endpoint nÃ y chÆ°a (trÃ¡nh lÆ°u trÃ¹ng)
         var existing = await _db.PushDangKys
             .FirstOrDefaultAsync(p => p.Endpoint == model.Endpoint);
 
         if (existing != null)
         {
-            // Cập nhật SDT nếu đã có (thiết bị đổi tài khoản)
+            // Cáº­p nháº­t SDT náº¿u Ä‘Ã£ cÃ³ (thiáº¿t bá»‹ Ä‘á»•i tÃ i khoáº£n)
             existing.SDT = sdt;
             existing.P256dh = model.P256dh ?? "";
             existing.Auth = model.Auth ?? "";
@@ -494,12 +567,12 @@ public class HomeController : Controller
         }
 
         await _db.SaveChangesAsync();
-        _logger.LogInformation("Đăng ký push thành công cho {SDT}", sdt);
+        _logger.LogInformation("ÄÄƒng kÃ½ push thÃ nh cÃ´ng cho {SDT}", sdt);
         return Json(new { success = true });
     }
 
     // -------------------------------------------------------------------------
-    // Gửi tin nhắn hàng loạt – lưu DB + gửi Web Push tới từng thiết bị
+    // Gá»­i tin nháº¯n hÃ ng loáº¡t â€“ lÆ°u DB + gá»­i Web Push tá»›i tá»«ng thiáº¿t bá»‹
     // -------------------------------------------------------------------------
     [HttpPost]
     [Authorize(AuthenticationSchemes = AdminAuthentication.Scheme, Roles = "Admin")]
@@ -507,17 +580,17 @@ public class HomeController : Controller
     {
         var nguoiGui = User.Identity?.Name;
         if (string.IsNullOrEmpty(nguoiGui))
-            return Json(new { success = false, message = "Không tìm thấy thông tin đăng nhập!" });
+            return Json(new { success = false, message = "KhÃ´ng tÃ¬m tháº¥y thÃ´ng tin Ä‘Äƒng nháº­p!" });
 
-        var smsMessage = string.IsNullOrWhiteSpace(model.Message) ? "test api gửi tin nhắn" : model.Message.Trim();
+        var smsMessage = string.IsNullOrWhiteSpace(model.Message) ? "test api gá»­i tin nháº¯n" : model.Message.Trim();
         var danhSachNhan = model.DanhSachNguoiNhan ?? new List<string>();
 
         if (danhSachNhan.Count == 0)
-            return Json(new { success = false, message = "Vui lòng chọn ít nhất 1 bệnh nhân!" });
+            return Json(new { success = false, message = "Vui lÃ²ng chá»n Ã­t nháº¥t 1 bá»‡nh nhÃ¢n!" });
 
         var now = DateTime.Now;
 
-        // 1) Lưu ThongBao vào DB
+        // 1) LÆ°u ThongBao vÃ o DB
         var thongBaos = danhSachNhan.Select(sdt => new ThongBao
         {
             NoiDung = smsMessage,
@@ -529,7 +602,7 @@ public class HomeController : Controller
         await _db.ThongBaos.AddRangeAsync(thongBaos);
         await _db.SaveChangesAsync();
 
-        // 2) Gửi Web Push tới tất cả thiết bị đã đăng ký của từng bệnh nhân
+        // 2) Gá»­i Web Push tá»›i táº¥t cáº£ thiáº¿t bá»‹ Ä‘Ã£ Ä‘Äƒng kÃ½ cá»§a tá»«ng bá»‡nh nhÃ¢n
         var vapidPublicKey = _config["Vapid:PublicKey"] ?? "";
         var vapidPrivateKey = _config["Vapid:PrivateKey"] ?? "";
         var vapidSubject = _config["Vapid:Subject"] ?? "mailto:admin@hissoft.vn";
@@ -549,7 +622,7 @@ public class HomeController : Controller
                 var subscription = new PushSubscription(sub.Endpoint, sub.P256dh, sub.Auth);
                 var payload = System.Text.Json.JsonSerializer.Serialize(new
                 {
-                    title = "💬 Tin nhắn mới từ HisSoft",
+                    title = "ðŸ’¬ Tin nháº¯n má»›i tá»« HisSoft",
                     body = smsMessage,
                     icon = "/static/icon-192.png",
                     badge = "/static/icon-192.png",
@@ -562,33 +635,33 @@ public class HomeController : Controller
             catch (WebPushException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Gone
                                            || ex.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
-                // Subscription hết hạn – xoá khỏi DB
+                // Subscription háº¿t háº¡n â€“ xoÃ¡ khá»i DB
                 _db.PushDangKys.Remove(sub);
                 pushFail++;
             }
             catch (Exception ex)
             {
-                _logger.LogWarning("Lỗi gửi push cho {SDT}: {Message}", sub.SDT, ex.Message);
+                _logger.LogWarning("Lá»—i gá»­i push cho {SDT}: {Message}", sub.SDT, ex.Message);
                 pushFail++;
             }
         }
 
-        if (pushFail > 0) await _db.SaveChangesAsync(); // Lưu xoá subscription lỗi
+        if (pushFail > 0) await _db.SaveChangesAsync(); // LÆ°u xoÃ¡ subscription lá»—i
 
-        _logger.LogInformation("Gửi {Total} thông báo: {Ok} push thành công, {Fail} lỗi", 
+        _logger.LogInformation("Gá»­i {Total} thÃ´ng bÃ¡o: {Ok} push thÃ nh cÃ´ng, {Fail} lá»—i", 
             danhSachNhan.Count, pushOk, pushFail);
 
         return Json(new
         {
             success = true,
-            message = $"Đã gửi thành công tin nhắn tới {danhSachNhan.Count} bệnh nhân!",
+            message = $"ÄÃ£ gá»­i thÃ nh cÃ´ng tin nháº¯n tá»›i {danhSachNhan.Count} bá»‡nh nhÃ¢n!",
             pushOk,
             pushFail
         });
     }
 
     // -------------------------------------------------------------------------
-    // Lấy danh sách thông báo chưa đọc của tài khoản hiện tại
+    // Láº¥y danh sÃ¡ch thÃ´ng bÃ¡o chÆ°a Ä‘á»c cá»§a tÃ i khoáº£n hiá»‡n táº¡i
     // -------------------------------------------------------------------------
     [HttpGet]
     public async Task<IActionResult> LayThongBao()
@@ -616,7 +689,7 @@ public class HomeController : Controller
     }
 
     // -------------------------------------------------------------------------
-    // Đánh dấu tất cả thông báo của user là đã đọc
+    // ÄÃ¡nh dáº¥u táº¥t cáº£ thÃ´ng bÃ¡o cá»§a user lÃ  Ä‘Ã£ Ä‘á»c
     // -------------------------------------------------------------------------
     [HttpPost]
     public async Task<IActionResult> DanhDauDaDoc()
@@ -635,21 +708,21 @@ public class HomeController : Controller
     }
 
     // -------------------------------------------------------------------------
-    // Gửi tin nhắn trả lời (Patient -> Admin/DoiTac, hoặc ngược lại)
+    // Gá»­i tin nháº¯n tráº£ lá»i (Patient -> Admin/DoiTac, hoáº·c ngÆ°á»£c láº¡i)
     // -------------------------------------------------------------------------
     [HttpPost]
     public async Task<IActionResult> TraLoiTinNhan([FromBody] ReplyRequest model)
     {
         var nguoiGui = User.Identity?.Name;
         if (string.IsNullOrEmpty(nguoiGui))
-            return Json(new { success = false, message = "Vui lòng đăng nhập lại." });
+            return Json(new { success = false, message = "Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i." });
 
         if (string.IsNullOrWhiteSpace(model.Message) || string.IsNullOrWhiteSpace(model.NguoiNhan))
-            return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
+            return Json(new { success = false, message = "Dá»¯ liá»‡u khÃ´ng há»£p lá»‡." });
 
         var now = DateTime.Now;
 
-        // Lưu vào DB
+        // LÆ°u vÃ o DB
         var msg = new ThongBao
         {
             NoiDung = model.Message.Trim(),
@@ -661,7 +734,7 @@ public class HomeController : Controller
         await _db.ThongBaos.AddAsync(msg);
         await _db.SaveChangesAsync();
 
-        // Gửi Push (Tái sử dụng logic gửi)
+        // Gá»­i Push (TÃ¡i sá»­ dá»¥ng logic gá»­i)
         var vapidPublicKey = _config["Vapid:PublicKey"] ?? "";
         var vapidPrivateKey = _config["Vapid:PrivateKey"] ?? "";
         var vapidSubject = _config["Vapid:Subject"] ?? "mailto:admin@hissoft.vn";
@@ -683,7 +756,7 @@ public class HomeController : Controller
                 var subscription = new PushSubscription(sub.Endpoint, sub.P256dh, sub.Auth);
                 var payload = System.Text.Json.JsonSerializer.Serialize(new
                 {
-                    title = "💬 Phản hồi từ " + nguoiGui,
+                    title = "ðŸ’¬ Pháº£n há»“i tá»« " + nguoiGui,
                     body = model.Message.Trim(),
                     icon = "/static/icon-192.png",
                     badge = "/static/icon-192.png",
@@ -694,13 +767,13 @@ public class HomeController : Controller
             }
             catch (Exception ex)
             {
-                _logger.LogWarning("Lỗi gửi push cho {SDT}: {Message}", sub.SDT, ex.Message);
+                _logger.LogWarning("Lá»—i gá»­i push cho {SDT}: {Message}", sub.SDT, ex.Message);
             }
         }
 
         return Json(new { 
             success = true, 
-            message = "Đã gửi phản hồi thành công.",
+            message = "ÄÃ£ gá»­i pháº£n há»“i thÃ nh cÃ´ng.",
             data = new {
                 id = msg.Id,
                 noiDung = msg.NoiDung,
@@ -712,7 +785,7 @@ public class HomeController : Controller
     }
 
     // -------------------------------------------------------------------------
-    // Lấy lịch sử trò chuyện (Admin <-> Bệnh nhân)
+    // Láº¥y lá»‹ch sá»­ trÃ² chuyá»‡n (Admin <-> Bá»‡nh nhÃ¢n)
     // -------------------------------------------------------------------------
     [HttpGet]
     [Authorize(AuthenticationSchemes = AdminAuthentication.Scheme, Roles = "Admin")]
@@ -720,7 +793,7 @@ public class HomeController : Controller
     {
         var adminId = User.Identity?.Name;
         if (string.IsNullOrEmpty(adminId) || string.IsNullOrEmpty(sdtBenhNhan))
-            return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
+            return Json(new { success = false, message = "Dá»¯ liá»‡u khÃ´ng há»£p lá»‡." });
 
         var messages = await _db.ThongBaos
             .Where(t => (t.NguoiGui == adminId && t.NguoiNhan == sdtBenhNhan) || 
@@ -740,7 +813,7 @@ public class HomeController : Controller
     }
 
     // -------------------------------------------------------------------------
-    // Lấy toàn bộ lịch sử tin nhắn giữa người dùng hiện tại và một đối tác/bệnh nhân
+    // Láº¥y toÃ n bá»™ lá»‹ch sá»­ tin nháº¯n giá»¯a ngÆ°á»i dÃ¹ng hiá»‡n táº¡i vÃ  má»™t Ä‘á»‘i tÃ¡c/bá»‡nh nhÃ¢n
     // -------------------------------------------------------------------------
     [HttpGet]
     public async Task<IActionResult> LayLichSuTinNhan([FromQuery] string doiTac)
@@ -767,7 +840,7 @@ public class HomeController : Controller
     }
 }
 
-// ── Request models ─────────────────────────────────────────────────────────
+// â”€â”€ Request models â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 public class SendSmsRequest
 {
@@ -794,3 +867,5 @@ public class ReplyRequest
     public string NguoiNhan { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
 }
+
+

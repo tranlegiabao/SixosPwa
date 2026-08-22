@@ -1,6 +1,6 @@
 @{
-    var tenCoSo = Uri.UnescapeDataString(ViewData["TenCoSo"]?.ToString() ?? "Bệnh Viện ĐHYD");
-    var diaChi = Uri.UnescapeDataString(ViewData["DiaChi"]?.ToString() ?? "215 Hồng Bàng, Phường Chợ Lớn");
+    var tenCoSo = Uri.UnescapeDataString(ViewData["TenCoSo"]?.ToString() ?? "Bá»‡nh Viá»‡n ÄHYD");
+    var diaChi = Uri.UnescapeDataString(ViewData["DiaChi"]?.ToString() ?? "215 Há»“ng BÃ ng, PhÆ°á»ng Chá»£ Lá»›n");
     var type = ViewData["Type"]?.ToString() ?? "benhvien";
     var img = Uri.UnescapeDataString(ViewData["Img"]?.ToString() ?? "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80");
     var logo = Uri.UnescapeDataString(ViewData["Logo"]?.ToString() ?? "https://tse1.mm.bing.net/th/id/OIP.JgUNpJPll-8BkzE3XN6LggHaHa?r=0&pid=Api&P=0&h=180");
@@ -93,7 +93,7 @@
     top: 74px;
     left: 0;
 
-    bottom: 65px; /* đổi 110 -> khoảng chiều cao footer */
+    bottom: 65px; /* Ä‘á»•i 110 -> khoáº£ng chiá»u cao footer */
 
     overflow: hidden;
     z-index: 100;
@@ -394,9 +394,22 @@
     }
     .intro-content { flex: 1; width: 100%; max-width: 100%; }
     .intro-title { display: flex; align-items: center; gap: 10px; font-size: 24px; font-weight: 700; color: #38bdf8; margin-bottom: 20px; }
+    /* Nam sua 2026-08-22: mau chu von la trang (rgba(255,255,255,.9)) nhung body
+       lai la nen TRANG (#ffffff !important, dong 22) -> chu trang tren nen trang,
+       ca doan gioi thieu mac dinh lan noi dung admin soan deu VO HINH. */
     .intro-content p { color: #334155; line-height: 1.8; font-size: 17px; margin-bottom: 16px; }
-    .intro-content .nd-cskcb-text { color: #000000; line-height: 1.8; font-size: 17px; width: 100%; max-width: 100%; overflow-x: auto; }
+
+    /* Nam sua 2026-08-22: bo "white-space: pre-line" - voi HTML that tu trinh soan
+       thao no nhan doi khoang trang giua cac the block. */
+    .intro-content .nd-cskcb-text { color: #0f172a; line-height: 1.8; font-size: 17px; }
+    /* Khung noi dung chi rong 600px (.intro-content) nen anh/bang phai tu co lai. */
     .intro-content .nd-cskcb-text img { max-width: 100%; height: auto; }
+    .intro-content .nd-cskcb-text table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+    .intro-content .nd-cskcb-text td,
+    .intro-content .nd-cskcb-text th { border: 1px solid #cbd5e1; padding: 6px 10px; }
+    .intro-content .nd-cskcb-text ul,
+    .intro-content .nd-cskcb-text ol { padding-left: 24px; margin-bottom: 16px; }
+    .intro-content .nd-cskcb-text a { color: #1d4ed8; text-decoration: underline; }
     .intro-image { width: 320px; height: auto; opacity: 0.85; border-radius: 12px; }
 
 
@@ -623,7 +636,7 @@
 
     /* FOOTER */
     .ytv-footer {
-        background: #e0f2fe; /* xanh nhạt */
+        background: #e0f2fe; /* xanh nháº¡t */
         color: #334155;
         padding: 12px 30px;
         display: flex;
@@ -1074,7 +1087,7 @@
 <div class="ytv-header">
     <a href="/Home/ThongTinBenhNhan" class="ytv-logo-area">
         <img src="/static/icon-512.png" alt="Logo" style="height: 50px; width: 50px; object-fit: cover; background: white; border-radius: 50%; padding: 0;" />
-        <div class="ytv-logo-text">Y TẾ<br>VIỆT</div>
+        <div class="ytv-logo-text">Y Táº¾<br>VIá»†T</div>
     </a>
     <div class="ytv-header-title">
         <h1>@tenCoSo</h1>
@@ -1083,11 +1096,11 @@
     <div class="ytv-header-menu" id="menuBtn" onclick="toggleMenu()">
         <i class="fas fa-bars"></i>
         <div class="ytv-dropdown" id="dropdownMenu">
-            <a href="/Home/DanhSachCoSo?type=benhvien"><i class="fas fa-hospital"></i> Bệnh viện</a>
-            <a href="/Home/DanhSachCoSo?type=pkdk"><i class="fas fa-clinic-medical"></i> Phòng khám đa khoa</a>
+            <a href="/Home/DanhSachCoSo?type=benhvien"><i class="fas fa-hospital"></i> Bá»‡nh viá»‡n</a>
+            <a href="/Home/DanhSachCoSo?type=pkdk"><i class="fas fa-clinic-medical"></i> PhÃ²ng khÃ¡m Ä‘a khoa</a>
             <a href="/Home/DanhSachCoSo?type=nhakhoa"><i class="fas fa-tooth"></i> Nha khoa</a>
-            <a href="/Home/DanhSachCoSo?type=phongmach"><i class="fas fa-stethoscope"></i> Phòng mạch</a>
-            <a href="/Home/DanhSachCoSo?type=nhathuoc"><i class="fas fa-pills"></i> Nhà thuốc</a>
+            <a href="/Home/DanhSachCoSo?type=phongmach"><i class="fas fa-stethoscope"></i> PhÃ²ng máº¡ch</a>
+            <a href="/Home/DanhSachCoSo?type=nhathuoc"><i class="fas fa-pills"></i> NhÃ  thuá»‘c</a>
         </div>
     </div>
 </div>
@@ -1099,35 +1112,43 @@
         </div>
         <div class="sidebar-scroll-area">
         <a class="ytv-menu-item active" onclick="showTab('gioi-thieu', this)" href="#gioi-thieu">
-            <i class="fas fa-info-circle"></i> Giới thiệu
+            <i class="fas fa-info-circle"></i> Giá»›i thiá»‡u
         </a>
         <a class="ytv-menu-item" onclick="showTab('dich-vu', this)" href="#dich-vu">
-            <i class="fas fa-stethoscope"></i> Dịch vụ
+            <i class="fas fa-stethoscope"></i> Dá»‹ch vá»¥
         </a>
         <a class="ytv-menu-item" onclick="showTab('doi-ngu', this)" href="#doi-ngu">
-            <i class="fas fa-user-md"></i> Đội ngũ y bác sĩ
+            <i class="fas fa-user-md"></i> Äá»™i ngÅ© y bÃ¡c sÄ©
         </a>
         <a class="ytv-menu-item" onclick="showTab('trang-thiet-bi', this)" href="#trang-thiet-bi">
-            <i class="fas fa-tools"></i> Các trang thiết bị
+            <i class="fas fa-tools"></i> CÃ¡c trang thiáº¿t bá»‹
         </a>
         <a class="ytv-menu-item" onclick="showTab('lien-he', this)" href="#lien-he">
-            <i class="fas fa-headset"></i> Liên hệ
+            <i class="fas fa-headset"></i> LiÃªn há»‡
         </a>
         
-        </div>
+        @{
+            // Hai nut di chung MOT cong dang nhap, chi khac cho ha canh
+            // (returnUrl). Ca hai phai mang theo slug co so â€” thieu no thi man
+            // dang nhap khong biet benh nhan dang o co so nao.
+            var slugCoSo = ViewData["Slug"] as string;
+            var thamSoCoSo = string.IsNullOrWhiteSpace(slugCoSo)
+                ? string.Empty
+                : $"coSo={Uri.EscapeDataString(slugCoSo)}&";   // Razor tu ma hoa thanh &amp; â€” viet san &amp; o day la bi ma hoa hai lan
+        }
         <div class="hospital-actions">
-            <a href="/DangNhap/Login" class="btn-outline" style="background-color: #1d4ed8; color:aliceblue">
-                <i class="fas fa-sign-in-alt" style="color: aliceblue"></i> Đăng ký khám
+            <a href="/DangNhap/Login?@(thamSoCoSo)returnUrl=%2Fdat-goi-kham" class="btn-outline" style="background-color: #1d4ed8; color:aliceblue">
+                <i class="fas fa-sign-in-alt" style="color: aliceblue"></i> ÄÄƒng kÃ½ khÃ¡m
             </a>
-            <a href="javascript:void(0)" onclick="openLoginModal()" class="btn-outline">
-                <i class="fas fa-sign-in-alt"></i> Đăng nhập
+            <a href="/DangNhap/Login?@(thamSoCoSo)returnUrl=%2F" class="btn-outline">
+                <i class="fas fa-sign-in-alt"></i> ÄÄƒng nháº­p
             </a>
         </div>
         <div class="operating-hours-box">
-            <div class="oh-header"><i class="far fa-clock"></i> Giờ hoạt động</div>
+            <div class="oh-header"><i class="far fa-clock"></i> Giá» hoáº¡t Ä‘á»™ng</div>
             <div class="oh-days">@operatingHours.Days</div>
             <div class="oh-time">@operatingHours.OpenTime - @operatingHours.CloseTime</div>
-            <div class="oh-status"><span class="status-dot"></span> Đang mở cửa</div>
+            <div class="oh-status"><span class="status-dot"></span> Äang má»Ÿ cá»­a</div>
         </div>
     </div>
     
@@ -1137,9 +1158,14 @@
         <div class="intro-section active-tab" id="gioi-thieu">
             <div class="intro-content">
                 <div class="intro-title">
-                    <i class="fas fa-info-circle"></i> Giới thiệu
+                    <i class="fas fa-info-circle"></i> Giá»›i thiá»‡u
                 </div>
                 @if (!string.IsNullOrWhiteSpace(noiDungGioiThieu))
+                {
+                    <p>@tenCoSo lÃ  má»™t trong nhá»¯ng cÆ¡ sá»Ÿ y táº¿ uy tÃ­n hÃ ng Ä‘áº§u táº¡i khu vá»±c. ÄÆ°á»£c thÃ nh láº­p tá»« nhiá»u nÄƒm qua, chÃºng tÃ´i luÃ´n cam káº¿t mang láº¡i dá»‹ch vá»¥ chÄƒm sÃ³c sá»©c khá»e cháº¥t lÆ°á»£ng cao nháº¥t cho ngÆ°á»i dÃ¢n.</p>
+                    <p>Vá»›i Ä‘á»™i ngÅ© bÃ¡c sÄ© chuyÃªn khoa giá»i, trang thiáº¿t bá»‹ hiá»‡n Ä‘áº¡i vÃ  quy trÃ¬nh khÃ¡m bá»‡nh chuyÃªn nghiá»‡p, chÃºng tÃ´i tá»± hÃ o lÃ  Ä‘á»‹a chá»‰ tin cáº­y cho hÃ ng triá»‡u <strong>bá»‡nh nhÃ¢n</strong>.</p>
+                }
+                else
                 {
                     <div class="nd-cskcb-text">@Html.Raw(noiDungGioiThieu)</div>
                 }
@@ -1150,9 +1176,14 @@
         <div class="intro-section" id="dich-vu">
             <div class="intro-content">
                 <div class="intro-title">
-                    <i class="fas fa-stethoscope"></i> Dịch vụ khám chữa bệnh
+                    <i class="fas fa-stethoscope"></i> Dá»‹ch vá»¥ khÃ¡m chá»¯a bá»‡nh
                 </div>
                 @if (!string.IsNullOrWhiteSpace(noiDungDichVu))
+                {
+                    <p>@tenCoSo cung cáº¥p Ä‘a dáº¡ng cÃ¡c gÃ³i dá»‹ch vá»¥ khÃ¡m sá»©c khá»e toÃ n diá»‡n vÃ  Ä‘iá»u trá»‹ chuyÃªn sÃ¢u. ChÃºng tÃ´i tiáº¿p nháº­n khÃ¡m báº£o hiá»ƒm y táº¿ vÃ  khÃ¡m dá»‹ch vá»¥ theo yÃªu cáº§u vá»›i quy trÃ¬nh nhanh gá»n, tá»‘i Æ°u thá»i gian chá» Ä‘á»£i.</p>
+                    <p>CÃ¡c chuyÃªn khoa mÅ©i nhá»n bao gá»“m: Ná»™i tá»•ng quÃ¡t, Ngoáº¡i sáº£n, Nhi khoa, Tai MÅ©i Há»ng, RÄƒng HÃ m Máº·t vÃ  há»— trá»£ táº§m soÃ¡t ung thÆ° sá»›m báº±ng cÃ´ng nghá»‡ tiÃªn tiáº¿n nháº¥t.</p>
+                }
+                else
                 {
                     <div class="nd-cskcb-text">@Html.Raw(noiDungDichVu)</div>
                 }
@@ -1162,9 +1193,14 @@
         <div class="intro-section" id="doi-ngu">
             <div class="intro-content">
                 <div class="intro-title">
-                    <i class="fas fa-user-md"></i> Đội ngũ bác sĩ chuyên khoa
+                    <i class="fas fa-user-md"></i> Äá»™i ngÅ© bÃ¡c sÄ© chuyÃªn khoa
                 </div>
                 @if (!string.IsNullOrWhiteSpace(noiDungDoiNgu))
+                {
+                    <p>ChÃºng tÃ´i tá»± hÃ o quy tá»¥ Ä‘á»™i ngÅ© phÃ³ giÃ¡o sÆ°, tiáº¿n sÄ©, tháº¡c sÄ© vÃ  bÃ¡c sÄ© chuyÃªn khoa cáº¥p I, cáº¥p II giÃ u kinh nghiá»‡m táº¡i Viá»‡t Nam. CÃ¡c bÃ¡c sÄ© táº¡i @tenCoSo luÃ´n táº­n tÃ¢m, chu Ä‘Ã¡o, khÃ´ng ngá»«ng nÃ¢ng cao tay nghá» chuyÃªn mÃ´n.</p>
+                    <p>Nhiá»u chuyÃªn gia y táº¿ táº¡i Ä‘Ã¢y Ä‘Ã£ cÃ³ thá»i gian tu nghiá»‡p vÃ  giáº£ng dáº¡y táº¡i cÃ¡c bá»‡nh viá»‡n lá»›n trong vÃ  ngoÃ i nÆ°á»›c, cam káº¿t Ä‘Æ°a ra cháº©n Ä‘oÃ¡n chÃ­nh xÃ¡c vÃ  phÃ¡c Ä‘á»“ Ä‘iá»u trá»‹ tá»‘i Æ°u.</p>
+                }
+                else
                 {
                     <div class="nd-cskcb-text">@Html.Raw(noiDungDoiNgu)</div>
                 }
@@ -1174,9 +1210,14 @@
         <div class="intro-section" id="trang-thiet-bi">
             <div class="intro-content">
                 <div class="intro-title">
-                    <i class="fas fa-tools"></i> Trang thiết bị hiện đại
+                    <i class="fas fa-tools"></i> Trang thiáº¿t bá»‹ hiá»‡n Ä‘áº¡i
                 </div>
                 @if (!string.IsNullOrWhiteSpace(noiDungTrangThietBi))
+                {
+                    <p>Äá»ƒ phá»¥c vá»¥ cÃ´ng tÃ¡c cháº©n Ä‘oÃ¡n hÃ¬nh áº£nh vÃ  xÃ©t nghiá»‡m chuáº©n xÃ¡c, @tenCoSo liÃªn tá»¥c Ä‘áº§u tÆ° há»‡ thá»‘ng mÃ¡y mÃ³c nháº­p kháº©u Ä‘á»“ng bá»™ tá»« cÃ¡c táº­p Ä‘oÃ n y táº¿ hÃ ng Ä‘áº§u tháº¿ giá»›i (GE, Siemens, Philips).</p>
+                    <p>Há»‡ thá»‘ng bao gá»“m mÃ¡y chá»¥p MRI cÃ´ng nghá»‡ cao, mÃ¡y cáº¯t lá»›p vi tÃ­nh CT Ä‘a dÃ£y, há»‡ thá»‘ng ná»™i soi tiÃªu hÃ³a khÃ´ng Ä‘au NBI, mÃ¡y siÃªu Ã¢m mÃ u 4D tháº¿ há»‡ má»›i vÃ  phÃ²ng xÃ©t nghiá»‡m tá»± Ä‘á»™ng Ä‘áº¡t chuáº©n quá»‘c táº¿.</p>
+                }
+                else
                 {
                     <div class="nd-cskcb-text">@Html.Raw(noiDungTrangThietBi)</div>
                 }
@@ -1186,9 +1227,14 @@
         <div class="intro-section" id="lien-he">
             <div class="intro-content">
                 <div class="intro-title">
-                    <i class="fas fa-headset"></i> Chăm sóc & Hỗ trợ khách hàng
+                    <i class="fas fa-headset"></i> ChÄƒm sÃ³c & Há»— trá»£ khÃ¡ch hÃ ng
                 </div>
                 @if (!string.IsNullOrWhiteSpace(noiDungLienHe))
+                {
+                    <p>Táº¡i @tenCoSo, sá»± hÃ i lÃ²ng vÃ  tráº£i nghiá»‡m thoáº£i mÃ¡i cá»§a bá»‡nh nhÃ¢n lÃ  Æ°u tiÃªn sá»‘ má»™t. Bá»™ pháº­n chÄƒm sÃ³c khÃ¡ch hÃ ng luÃ´n sáºµn sÃ ng tiáº¿p Ä‘Ã³n, hÆ°á»›ng dáº«n thá»§ tá»¥c hÃ nh chÃ­nh, giáº£i Ä‘Ã¡p tháº¯c máº¯c vÃ  há»— trá»£ Ä‘áº·t lá»‹ch háº¹n trá»±c tuyáº¿n.</p>
+                    <p>ChÃºng tÃ´i cung cáº¥p Ä‘Æ°á»ng dÃ¢y nÃ³ng há»— trá»£ kháº©n cáº¥p 24/7, dá»‹ch vá»¥ tÆ° váº¥n y táº¿ tá»« xa, chÄƒm sÃ³c sau Ä‘iá»u trá»‹ vÃ  tiáº¿p thu Ã½ kiáº¿n pháº£n há»“i Ä‘á»ƒ khÃ´ng ngá»«ng cáº£i thiá»‡n cháº¥t lÆ°á»£ng dá»‹ch vá»¥ phá»¥c vá»¥ nhÃ¢n dÃ¢n.</p>
+                }
+                else
                 {
                     <div class="nd-cskcb-text">@Html.Raw(noiDungLienHe)</div>
                 }
@@ -1199,238 +1245,12 @@
     </div>
 </div>
 
-<!-- Login Modal -->
-<div class="ytv-modal-overlay" id="loginModal">
-    <div class="ytv-modal-content">
-        <button class="ytv-modal-close" onclick="closeLoginModal()">&times;</button>
-        
-        <!-- Step 1: Phone Input -->
-        <div class="login-step active" id="stepPhone">
-            <h2 class="login-title">Đăng nhập</h2>
-            <p class="login-desc">Vui lòng nhập số điện thoại của bạn để đăng nhập hoặc tạo tài khoản mới.</p>
-            
-            <div class="input-group">
-                <i class="fas fa-phone-alt"></i>
-                <input type="tel" id="phoneNumber" class="ytv-input" placeholder="Nhập số điện thoại..." autocomplete="off">
-            </div>
-            
-            <button class="btn-submit" onclick="sendOTP()">Gửi mã OTP</button>
-        </div>
-        
-        <!-- Step 2: OTP Input -->
-        <div class="login-step" id="stepOTP">
-            <h2 class="login-title">Xác thực OTP</h2>
-            <p class="login-desc">Mã xác thực gồm 4 số đã được gửi đến số <br><strong id="displayPhone" style="color:#0f172a; font-size: 16px;"></strong></p>
-            
-            <div class="otp-inputs" id="otpContainer">
-                <input type="text" class="otp-input" maxlength="1" onkeyup="moveToNext(this, event)">
-                <input type="text" class="otp-input" maxlength="1" onkeyup="moveToNext(this, event)">
-                <input type="text" class="otp-input" maxlength="1" onkeyup="moveToNext(this, event)">
-                <input type="text" class="otp-input" maxlength="1" onkeyup="moveToNext(this, event)">
-            </div>
-            
-            <button class="btn-submit" onclick="verifyOTP()">Xác nhận</button>
-            <div class="resend-text">
-                Chưa nhận được mã? <a class="resend-link" onclick="sendOTP()">Gửi lại</a>
-            </div>
-        </div>
-        <!-- Partner Cards Section -->
-        <style>
-            .sixos-section {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                gap: 24px;
-                margin-top: 20px;
-                font-family: 'Inter', sans-serif;
-            }
-            .sixos-card {
-                background: white;
-                border-radius: 20px;
-                padding: 32px 24px;
-                box-shadow: 0 10px 40px -10px rgba(0,0,0,0.05);
-                border: 1px solid #f1f5f9;
-                display: flex;
-                flex-direction: column;
-                position: relative;
-            }
-            .sixos-card.primary {
-                border-left: 6px solid #2563eb;
-                text-align: center;
-                align-items: center;
-            }
-            .sixos-logo-box {
-                width: 70px;
-                height: 70px;
-                background: #eff6ff;
-                border-radius: 16px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                margin-bottom: 20px;
-                color: #2563eb;
-                font-size: 32px;
-            }
-            .sixos-title {
-                font-size: 24px;
-                font-weight: 800;
-                color: #1e40af;
-                margin-bottom: 0px;
-                letter-spacing: 1px;
-            }
-            .sixos-subtitle {
-                font-size: 16px;
-                font-weight: 700;
-                color: #0f172a;
-                margin-bottom: 16px;
-                line-height: 1.4;
-            }
-            .sixos-desc {
-                font-size: 14px;
-                color: #64748b;
-                line-height: 1.6;
-            }
-            
-            .sixos-card-header {
-                display: flex;
-                align-items: center;
-                gap: 16px;
-                margin-bottom: 24px;
-                padding-bottom: 20px;
-                border-bottom: 1px solid #f1f5f9;
-            }
-            .sixos-icon {
-                width: 48px;
-                height: 48px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 20px;
-            }
-            .sixos-icon.blue { background: #eff6ff; color: #2563eb; }
-            .sixos-icon.green { background: #f0fdf4; color: #16a34a; }
-            
-            .sixos-header-title {
-                font-size: 18px;
-                font-weight: 700;
-                color: #0f172a;
-            }
-            
-            .sixos-list {
-                display: flex;
-                flex-direction: column;
-                gap: 20px;
-            }
-            .sixos-item {
-                display: flex;
-                align-items: flex-start;
-                gap: 16px;
-                text-decoration: none;
-                padding: 12px;
-                border-radius: 12px;
-                transition: background 0.2s;
-                margin: -12px;
-            }
-            .sixos-item:hover {
-                background: #f8fafc;
-            }
-            .sixos-item-icon {
-                width: 36px;
-                height: 36px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background: #f1f5f9;
-                color: #3b82f6;
-                flex-shrink: 0;
-            }
-            .sixos-item-icon.green-bg { background: #dcfce7; color: #16a34a; }
-            
-            .sixos-item-content { flex: 1; }
-            .sixos-item-title {
-                font-size: 15px;
-                font-weight: 700;
-                color: #1e293b;
-                margin-bottom: 0px;
-            }
-            .sixos-item-desc {
-                font-size: 13px;
-                color: #64748b;
-                line-height: 1.5;
-            }
-            .sixos-item-arrow {
-                color: #cbd5e1;
-                font-size: 14px;
-                margin-top: 10px;
-            }
-            .sixos-item:hover .sixos-item-arrow { color: #3b82f6; transform: translateX(2px); transition: all 0.2s; }
-        </style>
-
-        <div class="sixos-section">
-            <!-- Card 1 -->
-            <div class="sixos-card primary">
-                <div class="sixos-logo-box">
-                    <i class="fab fa-connectdevelop"></i>
-                </div>
-                <div class="sixos-title">SIXOS</div>
-                <div class="sixos-subtitle">Công Ty Công Nghệ và<br>Giải Pháp Phần Mềm Vũ Phong</div>
-            </div>
-
-            <!-- Card 2 -->
-            <div class="sixos-card">
-                <div class="sixos-card-header">
-                    <div class="sixos-icon blue"><i class="fas fa-laptop-code"></i></div>
-                    <div class="sixos-header-title">Dịch vụ phần mềm</div>
-                </div>
-                <div class="sixos-list">
-                    <a href="javascript:void(0)" class="sixos-item">
-                        <div class="sixos-item-icon"><i class="fas fa-cog"></i></div>
-                        <div class="sixos-item-content">
-                            <div class="sixos-item-title">Phần mềm lập trình theo yêu cầu</div>
-                            <div class="sixos-item-desc">Giải pháp phù hợp với nhu cầu và đặc thù của doanh nghiệp.</div>
-                        </div>
-                        <div class="sixos-item-arrow"><i class="fas fa-chevron-right"></i></div>
-                    </a>
-                    <a href="javascript:void(0)" class="sixos-item">
-                        <div class="sixos-item-icon"><i class="fas fa-cloud"></i></div>
-                        <div class="sixos-item-content">
-                            <div class="sixos-item-title">Cho thuê theo yêu cầu</div>
-                            <div class="sixos-item-desc">Linh hoạt, tiết kiệm chi phí, hỗ trợ nhanh chóng.</div>
-                        </div>
-                        <div class="sixos-item-arrow"><i class="fas fa-chevron-right"></i></div>
-                    </a>
-                </div>
-            </div>
-
-            <!-- Card 3 -->
-            <div class="sixos-card">
-                <div class="sixos-card-header">
-                    <div class="sixos-icon green"><i class="fas fa-shield-alt"></i></div>
-                    <div class="sixos-header-title">Hạ tầng & bảo mật</div>
-                </div>
-                <div class="sixos-list">
-                    <a href="javascript:void(0)" class="sixos-item">
-                        <div class="sixos-item-icon green-bg"><i class="fas fa-server"></i></div>
-                        <div class="sixos-item-content">
-                            <div class="sixos-item-title">Server dự phòng</div>
-                            <div class="sixos-item-desc">Hệ thống dự phòng ổn định, sẵn sàng 24/7.</div>
-                        </div>
-                        <div class="sixos-item-arrow"><i class="fas fa-chevron-right"></i></div>
-                    </a>
-                    <a href="javascript:void(0)" class="sixos-item">
-                        <div class="sixos-item-icon green-bg"><i class="fas fa-cloud-upload-alt"></i></div>
-                        <div class="sixos-item-content">
-                            <div class="sixos-item-title">Sao lưu dữ liệu</div>
-                            <div class="sixos-item-desc">Đảm bảo an toàn dữ liệu, khôi phục nhanh chóng.</div>
-                        </div>
-                        <div class="sixos-item-arrow"><i class="fas fa-chevron-right"></i></div>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+@* Man dang nhap noi trang da duoc go bo (2026-08-22).
+   Truoc day day la BAN SAO THU HAI cua /DangNhap/Login: sua mot cho quen
+   cho kia la chuyen som muon. Gio ca hai nut deu di ve cung mot cong.
+   Khoi gioi thieu SIXOS truoc kia bi chon ben trong modal nay (nen thuc te
+   khong ai nhin thay) cung di theo. Can lay lai: git show HEAD~1 -- 
+   SixosPwa/Views/Home/ChiTietCoSo.cshtml *@
 
 <div class="stats-footer-bar">
     <div class="stats-grid">
@@ -1438,32 +1258,32 @@
             <div class="stat-icon blue"><i class="fas fa-headset"></i></div>
             <div class="stat-info">
                 <div class="value">24/7</div>
-                <div class="title">Hỗ trợ</div>
-                <div class="desc">Luôn sẵn sàng</div>
+                <div class="title">Há»— trá»£</div>
+                <div class="desc">LuÃ´n sáºµn sÃ ng</div>
             </div>
         </div>
         <div class="stat-card">
             <div class="stat-icon green"><i class="far fa-star"></i></div>
             <div class="stat-info">
                 <div class="value">4.8/5</div>
-                <div class="title">Đánh giá</div>
-                <div class="desc">Từ 1.248 khách hàng</div>
+                <div class="title">ÄÃ¡nh giÃ¡</div>
+                <div class="desc">Tá»« 1.248 khÃ¡ch hÃ ng</div>
             </div>
         </div>
         <div class="stat-card">
             <div class="stat-icon purple"><i class="fas fa-user-friends"></i></div>
             <div class="stat-info">
                 <div class="value">50+</div>
-                <div class="title">Bác sĩ</div>
-                <div class="desc">Giàu kinh nghiệm</div>
+                <div class="title">BÃ¡c sÄ©</div>
+                <div class="desc">GiÃ u kinh nghiá»‡m</div>
             </div>
         </div>
         <div class="stat-card">
             <div class="stat-icon orange"><i class="fas fa-briefcase-medical"></i></div>
             <div class="stat-info">
                 <div class="value">20+</div>
-                <div class="title">Dịch vụ</div>
-                <div class="desc">Đa dạng chuyên khoa</div>
+                <div class="title">Dá»‹ch vá»¥</div>
+                <div class="desc">Äa dáº¡ng chuyÃªn khoa</div>
             </div>
         </div>
     </div>
@@ -1476,20 +1296,20 @@
         <div style="font-size: 14px; color: #334155;"><i class="fas fa-globe me-2 text-secondary"></i><a href="https://sixossoft.com" target="_blank" rel="noopener noreferrer" class="text-primary text-decoration-none">sixossoft.com</a></div>
     </div>
     <div class="ytv-footer-right d-flex flex-wrap justify-content-center align-items-center" style="font-size: 14px; row-gap: 8px;">
-        <a href="javascript:void(0)" onclick="showPolicy('baomat')" class="text-dark text-decoration-none hover-primary">Chính sách bảo mật</a>
+        <a href="javascript:void(0)" onclick="showPolicy('baomat')" class="text-dark text-decoration-none hover-primary">ChÃ­nh sÃ¡ch báº£o máº­t</a>
         <span class="mx-2 text-muted d-none d-sm-inline">|</span>
-        <a href="javascript:void(0)" onclick="showPolicy('dieukhoan')" class="text-dark text-decoration-none hover-primary">Điều khoản sử dụng</a>
+        <a href="javascript:void(0)" onclick="showPolicy('dieukhoan')" class="text-dark text-decoration-none hover-primary">Äiá»u khoáº£n sá»­ dá»¥ng</a>
         <span class="mx-2 text-muted d-none d-sm-inline">|</span>
-        <a href="javascript:void(0)" onclick="showPolicy('khieunai')" class="text-dark text-decoration-none hover-primary">Giải quyết khiếu nại</a>
+        <a href="javascript:void(0)" onclick="showPolicy('khieunai')" class="text-dark text-decoration-none hover-primary">Giáº£i quyáº¿t khiáº¿u náº¡i</a>
         <span class="mx-2 text-muted d-none d-sm-inline">|</span>
-        <a href="javascript:void(0)" onclick="showPolicy('baohanh')" class="text-dark text-decoration-none hover-primary">Chính sách bảo hành</a>
+        <a href="javascript:void(0)" onclick="showPolicy('baohanh')" class="text-dark text-decoration-none hover-primary">ChÃ­nh sÃ¡ch báº£o hÃ nh</a>
     </div>
 </div>
 
-<!-- Floating Action Button (Đăng ký khám) 
+<!-- Floating Action Button (ÄÄƒng kÃ½ khÃ¡m) 
 <a href="/DangNhap/Login" class="fab-btn">
     <i class="far fa-calendar-plus"></i>
-    <span class="fab-text">ĐĂNG<br>KÝ<br>KHÁM</span>
+    <span class="fab-text">ÄÄ‚NG<br>KÃ<br>KHÃM</span>
 </a> -->
 
 <script>
@@ -1530,99 +1350,10 @@
                 }
             }
         }
-        var modal = document.getElementById('loginModal');
-        if (event.target == modal) {
-            closeLoginModal();
-        }
     }
 
-    // Login Modal Functions
-    function openLoginModal() {
-        document.getElementById('loginModal').classList.add('show');
-        document.getElementById('stepPhone').classList.add('active');
-        document.getElementById('stepOTP').classList.remove('active');
-        document.getElementById('phoneNumber').value = '';
-        document.querySelectorAll('.otp-input').forEach(inp => inp.value = '');
-        setTimeout(() => document.getElementById('phoneNumber').focus(), 100);
-    }
-
-    function closeLoginModal() {
-        document.getElementById('loginModal').classList.remove('show');
-    }
-
-    async function sendOTP() {
-        var phone = document.getElementById('phoneNumber').value;
-        if(phone.length < 9) {
-            showToast("Vui lòng nhập số điện thoại hợp lệ (từ 9 số trở lên)!", 'warning');
-            return;
-        }
-
-        try {
-            const response = await fetch('/DangNhap/GuiOtp', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ soDienThoai: phone })
-            });
-            const data = await response.json();
-            if (!data.success) {
-                showToast(data.message, 'error');
-                return;
-            }
-        } catch (err) {
-            console.error(err);
-        }
-
-        document.getElementById('displayPhone').innerText = phone;
-        document.getElementById('stepPhone').classList.remove('active');
-        document.getElementById('stepOTP').classList.add('active');
-        
-        setTimeout(() => {
-            document.querySelectorAll('.otp-input').forEach(inp => inp.value = '');
-            document.querySelector('.otp-input').focus();
-        }, 100);
-    }
-
-    function moveToNext(elem, event) {
-        if (event.key === 'Backspace') {
-            if (elem.previousElementSibling) {
-                elem.previousElementSibling.focus();
-            }
-        } else {
-            if (!/^\d*$/.test(elem.value)) {
-                elem.value = "";
-                return;
-            }
-            if (elem.value.length === 1 && elem.nextElementSibling) {
-                elem.nextElementSibling.focus();
-            }
-        }
-    }
-
-    async function verifyOTP() {
-        var otp = Array.from(document.querySelectorAll('.otp-input')).map(inp => inp.value).join('');
-        if(otp.length === 4) {
-            var phone = document.getElementById('phoneNumber').value;
-            try {
-                const response = await fetch('/DangNhap/XacNhanOtp', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ soDienThoai: phone, otp: otp })
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    closeLoginModal();
-                    window.location.href = data.redirectUrl;
-                } else {
-                    showToast(data.message, 'error');
-                }
-            } catch (err) {
-                showToast('Lỗi xác thực OTP!', 'error');
-            }
-        } else {
-            showToast("Vui lòng nhập đầy đủ 4 số mã OTP!", 'warning');
-        }
-    }
 </script>
+
+
 
 

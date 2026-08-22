@@ -9,6 +9,7 @@
         <div class="row g-3">
             <div class="col-md-4"><label asp-for="MaCoSo" class="form-label">Mã cơ sở</label><input asp-for="MaCoSo" class="form-control" autocomplete="off" /><span asp-validation-for="MaCoSo" class="text-danger field-error"></span></div>
             <div class="col-md-8"><label asp-for="TenCoSo" class="form-label">Tên cơ sở <span>*</span></label><input asp-for="TenCoSo" class="form-control" /><span asp-validation-for="TenCoSo" class="text-danger field-error"></span></div>
+            <div class="col-md-12"><label asp-for="Slug" class="form-label">Đường dẫn cố định</label><div class="input-group"><span class="input-group-text">/pk/</span><input asp-for="Slug" class="form-control" autocomplete="off" placeholder="benh-vien-ung-buou" /></div><div class="form-text">Địa chỉ cố định của cơ sở, dùng để in tờ rơi hoặc mã QR. Đặt một lần rồi giữ nguyên — đổi sẽ làm hỏng mọi đường link đã phát đi.</div><span asp-validation-for="Slug" class="text-danger field-error"></span></div>
             <div class="col-md-4"><label asp-for="LoaiCS" class="form-label">Loại hình</label><select asp-for="LoaiCS" class="form-select"><option value="">Chưa phân loại</option><option value="benhvien">Bệnh viện</option><option value="pkdk">Phòng khám</option><option value="nhakhoa">Nha khoa</option><option value="phongmach">Phòng mạch</option><option value="nhathuoc">Nhà thuốc</option></select></div>
             @await Html.PartialAsync("_CoSoYTeOperatingHoursFields", Model)
             @await Html.PartialAsync("_CoSoYTeAddressFields", Model)
