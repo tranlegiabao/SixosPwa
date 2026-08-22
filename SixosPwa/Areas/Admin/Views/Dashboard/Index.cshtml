@@ -112,9 +112,32 @@
                 ['color', ['color']],
                 ['history', ['undo', 'redo']],
                 ['height', ['height']],
-                ['table', ['table']]
+                ['table', ['table']],
+                ['insert', ['link', 'picture', 'video']]
             ],
-            fontSizes: ['8', '9', '10', '11', '12', '14', '16', '18', '24', '36', '48', '64']
+            fontSizes: ['8', '9', '10', '11', '12', '14', '16', '18', '24', '36', '48', '64'],
+            callbacks: {
+                onImageUpload: function(files) {
+                    for(let i=0; i < files.length; i++) {
+                        let data = new FormData();
+                        data.append("file", files[i]);
+                        $.ajax({
+                            url: '/Admin/CoSoYTe/UploadImage',
+                            cache: false,
+                            contentType: false,
+                            processData: false,
+                            data: data,
+                            type: "post",
+                            success: function(response) {
+                                $('#summernote').summernote('insertImage', response.url);
+                            },
+                            error: function(jqXHR, textStatus, errorThrown) {
+                                alert("Lỗi upload ảnh: " + (jqXHR.responseText || errorThrown));
+                            }
+                        });
+                    }
+                }
+            }
         });
     });
 
