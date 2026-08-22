@@ -219,34 +219,4 @@ body {
     background: #9ca3af;
 }
 
-@media (max-width: 576px) {
-    /* Ép hi?n th? 2 c?t cho các link chính sách ? chân trang */
-    .ytv-footer-right, .ytv-policies-col {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-        width: 100%;
-        text-align: center;
-    }
-    .ytv-footer-right a, .ytv-policies-col a {
-        text-align: center;
-        width: 100%;
-    }
-}
-
-
-@media (max-width: 767.98px) {
-    /* Ð?o ngu?c th? t? footer trên mobile cho DanhSachCoSo */
-    .ytv-footer {
-        flex-direction: column-reverse !important;
-    }
-}
-
-
-@media (max-width: 767.98px) {
-    /* Ð?o ngu?c th? t? footer top trên mobile cho DanhSachCoSo */
-    .ytv-footer-top {
-        flex-direction: column-reverse !important;
-    }
-}
 
