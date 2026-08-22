@@ -243,8 +243,13 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
 
         var dienThoai = LayClaim(nguoiDung, ClaimTypes.MobilePhone) ?? taiKhoan.SDT;
 
+        // Chon giup ho so CHINH CHU (SoCccd trung CCCD dang nhap) de benh nhan
+        // khong phai qua them mot man cua doi tac. Khong tim thay thi de trong,
+        // ho so nguoi than van do ho tu chon.
+        var idHoSo = await coSo.Cua.TimHoSoChinhChuAsync(coSo.CauHinh, cccd, lienKet.MatKhau ?? string.Empty, ct);
+
         var thongTin = coSo.Cua.DungThongTinBanGiao(coSo.CauHinh,
-            new YeuCauBanGiao(cccd, dienThoai, taiKhoan.Email, lienKet.MaXacNhanTam, lienKet.MatKhau, yDinh));
+            new YeuCauBanGiao(cccd, dienThoai, taiKhoan.Email, lienKet.MaXacNhanTam, lienKet.MatKhau, yDinh, idHoSo));
 
         // Ma xac nhan chi dung duoc mot lan. Xoa ngay de lan ban giao sau di
         // duong dang nhap thuan, khong con OTP.
@@ -264,8 +269,40 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
     private Task<TaiKhoan?> TimTaiKhoanAsync(string cccd, CancellationToken ct)
         => _db.TaiKhoans.FirstOrDefaultAsync(x => x.CCCD == cccd, ct);
 
-    private Task<TaiKhoanDoiTac?> TimLienKetAsync(long idTaiKhoan, string maCoSo, CancellationToken ct)
-        => _db.TaiKhoanDoiTacs.FirstOrDefaultAsync(x => x.IdTaiKhoan == idTaiKhoan && x.MaCoSo == maCoSo, ct);
+    /// <summary>
+    /// Lien ket cua benh nhan tai mot co so. Neu co so nay chua co, tim sang cac
+    /// co so KHAC CUNG MOT HE DOI TAC (cung TrangChu): ben ho chi co MOT tai
+    /// khoan dung chung cho moi chi nhanh, nen bat lien ket lai tung chi nhanh la
+    /// bat lam mot viec vo ich.
+    /// </summary>
+    private async Task<TaiKhoanDoiTac?> TimLienKetAsync(long idTaiKhoan, string maCoSo, CancellationToken ct)
+    {
+        var lienKet = await _db.TaiKhoanDoiTacs
+            .FirstOrDefaultAsync(x => x.IdTaiKhoan == idTaiKhoan && x.MaCoSo == maCoSo, ct);
+
+        if (lienKet is not null) return lienKet;
+
+        var trangChu = await _db.DoiTacApis
+            .AsNoTracking()
+            .Where(x => x.MaCoSo == maCoSo)
+            .Select(x => x.TrangChu)
+            .FirstOrDefaultAsync(ct);
+
+        if (string.IsNullOrWhiteSpace(trangChu)) return null;
+
+        var maCoSoAnhEm = await _db.DoiTacApis
+            .AsNoTracking()
+            .Where(x => x.TrangChu == trangChu && x.MaCoSo != maCoSo)
+            .Select(x => x.MaCoSo)
+            .ToListAsync(ct);
+
+        if (maCoSoAnhEm.Count == 0) return null;
+
+        return await _db.TaiKhoanDoiTacs
+            .FirstOrDefaultAsync(x => x.IdTaiKhoan == idTaiKhoan
+                                   && maCoSoAnhEm.Contains(x.MaCoSo)
+                                   && x.MatKhau != null, ct);
+    }
 
     private async Task LuuLienKetAsync(long idTaiKhoan, string maCoSo, string matKhau, string? maXacNhan, CancellationToken ct)
     {

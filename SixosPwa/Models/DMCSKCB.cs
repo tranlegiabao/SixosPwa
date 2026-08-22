@@ -17,7 +17,6 @@ public class DMCSKCB
     public decimal? QuangCao { get; set; }
     public string? SoToaNha { get; set; }
     public int? Tinh { get; set; }
-    public int? Huyen { get; set; }
     public int? PhuongXa { get; set; }
     public string? logo { get; set; }
     public string? TenTM { get; set; }

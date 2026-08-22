@@ -159,13 +159,9 @@ using (var scope = app.Services.CreateScope())
             END
         ");
 
-        db.Database.ExecuteSqlRaw(@"
-            IF OBJECT_ID('DMCSKCB', 'U') IS NOT NULL
-                AND COL_LENGTH('DMCSKCB', 'Huyen') IS NULL
-            BEGIN
-                ALTER TABLE DMCSKCB ADD Huyen INT NULL
-            END
-        ");
+        // Cot DMCSKCB.Huyen da duoc go bo khoi DB (quyet dinh cua Hieu, 22/08).
+        // Doan tu them lai cot truoc day o day da bi xoa — de lai thi moi lan
+        // khoi dong app se dung len mot cot ma ben kia vua co y bo di.
         db.Database.ExecuteSqlRaw(@"
             IF OBJECT_ID('DMCSKCB', 'U') IS NOT NULL
             BEGIN

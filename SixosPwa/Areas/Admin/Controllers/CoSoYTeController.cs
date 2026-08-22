@@ -127,7 +127,6 @@ public sealed class CoSoYTeController : AdminControllerBase
         entity.DiaChi = model.DiaChi;
         entity.SoToaNha = model.SoToaNha;
         entity.Tinh = model.Tinh;
-        entity.Huyen = model.Huyen;
         entity.PhuongXa = model.PhuongXa;
         entity.LoaiCS = model.LoaiCS;
         entity.TGLamViec = model.TGLamViec;
@@ -260,7 +259,6 @@ public sealed class CoSoYTeController : AdminControllerBase
         DiaChi = model.DiaChi,
         SoToaNha = model.SoToaNha,
         Tinh = model.Tinh,
-        Huyen = model.Huyen,
         PhuongXa = model.PhuongXa,
         LoaiCS = model.LoaiCS,
         TGLamViec = model.TGLamViec,
@@ -394,7 +392,6 @@ public sealed class CoSoYTeController : AdminControllerBase
             DiaChi = entity.DiaChi,
             SoToaNha = entity.SoToaNha,
             Tinh = entity.Tinh,
-            Huyen = entity.Huyen,
             PhuongXa = entity.PhuongXa,
             LoaiCS = entity.LoaiCS,
             TGLamViec = entity.TGLamViec,

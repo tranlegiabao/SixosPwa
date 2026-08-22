@@ -22,6 +22,27 @@ public sealed class DashboardViewModel
     public IReadOnlyList<DMNhomCS> NhomCSList { get; init; } = Array.Empty<DMNhomCS>();
     public IReadOnlyList<DMChuDe> ChuDeList { get; init; } = Array.Empty<DMChuDe>();
     public IReadOnlyList<DMCSKCB> FacilityList { get; init; } = Array.Empty<DMCSKCB>();
+
+    // Nam sua 2026-08-22: giu lai lua chon phong kham / chu de sau khi Luu,
+    // de POST-redirect-GET khong lam admin phai chon lai tu dau.
+    public long? SelectedFacilityId { get; init; }
+    public long? SelectedTopicId { get; init; }
+}
+
+/// <summary>
+/// Nam sua 2026-08-22: du lieu form soan noi dung co so o man /Admin.
+/// </summary>
+public sealed class DashboardContentEditViewModel
+{
+    [Required(ErrorMessage = "Chưa chọn phòng khám.")]
+    [Range(1, long.MaxValue, ErrorMessage = "Chưa chọn phòng khám.")]
+    public long FacilityId { get; set; }
+
+    [Required(ErrorMessage = "Chưa chọn chủ đề.")]
+    [Range(1, long.MaxValue, ErrorMessage = "Chưa chọn chủ đề.")]
+    public long TopicId { get; set; }
+
+    public string? NoiDung { get; set; }
 }
 
 public sealed class TaiKhoanListViewModel
@@ -124,8 +145,6 @@ public sealed class CoSoYTeEditViewModel
     public string? SoToaNha { get; set; }
 
     public int? Tinh { get; set; }
-
-    public int? Huyen { get; set; }
 
     public int? PhuongXa { get; set; }
 

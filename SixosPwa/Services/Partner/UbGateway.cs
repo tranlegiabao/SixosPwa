@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using SixosPwa.Models;
@@ -19,6 +20,8 @@ public class UbGateway : IPartnerGateway
     private const string DuongDanXacThuc = "/api/HT_DangNhap/XacThucMaXacNhan";
     private const string DuongDanDangNhap = "/HeThong/HT_DangNhap/login";
     private const string DuongDanChonChiNhanh = "/HeThong/HT_DangNhap/select-branch";
+    private const string DuongDanDanhSachHoSo = "/QuanLy/QL_HoSoBenhNhan/LayDanhSachHoSoBenhNhan";
+    private const string DuongDanChonHoSo = "/QuanLy/QL_HoSoBenhNhan/ThemIdXemThongTinBenhNhan";
 
     /// <summary>
     /// Nut benh nhan bam -> man tuong ung ben Ung Buou. Doi tac khac se co bang
@@ -150,6 +153,81 @@ public class UbGateway : IPartnerGateway
             new { Cccd = cccd, DienThoai = dienThoai, Otp = ma, MatKhauMoi = matKhauMoi, XacNhanMatKhau = matKhauMoi },
             "Đã liên kết tài khoản", "Mã xác thực không đúng hoặc đã hết hạn", ct);
 
+    /// <summary>
+    /// Tu dang nhap o TANG MAY CHU (co CCCD + mat khau) de hoi danh sach ho so,
+    /// roi lay ho so co SoCccd trung — tuc CHINH CHU. Khong tim thay thi tra
+    /// null va de doi tac hien man chon ho so nhu binh thuong.
+    ///
+    /// Phai dung CookieContainer rieng: cookie nay la cua MAY CHU ta, khong lien
+    /// quan gi toi cookie tren trinh duyet benh nhan.
+    /// </summary>
+    public async Task<long?> TimHoSoChinhChuAsync(DoiTacApi cauHinh, string cccd, string matKhau, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(cauHinh.TrangChu) || string.IsNullOrWhiteSpace(matKhau))
+        {
+            return null;
+        }
+
+        var goc = CatDauGach(cauHinh.TrangChu);
+
+        try
+        {
+            var tuiCookie = new CookieContainer();
+            using var handler = new HttpClientHandler { CookieContainer = tuiCookie, UseCookies = true };
+            using var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(20) };
+
+            using var thanDangNhap = new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["username"] = cccd,
+                ["password"] = matKhau
+            });
+
+            using var phanHoiDangNhap = await client.PostAsync($"{goc}{DuongDanDangNhap}", thanDangNhap, ct);
+            if (!phanHoiDangNhap.IsSuccessStatusCode)
+            {
+                _logger.LogInformation("Dang nhap tang may chu that bai, de doi tac tu hien man chon ho so");
+                return null;
+            }
+
+            using var thanDanhSach = new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["keyTimKiem"] = string.Empty,
+                ["timTatCa"] = "false"
+            });
+
+            using var phanHoi = await client.PostAsync($"{goc}{DuongDanDanhSachHoSo}", thanDanhSach, ct);
+            if (!phanHoi.IsSuccessStatusCode) return null;
+
+            var chuoi = await phanHoi.Content.ReadAsStringAsync(ct);
+            using var tep = JsonDocument.Parse(chuoi);
+
+            if (!tep.RootElement.TryGetProperty("data", out var danhSach)
+                || danhSach.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+
+            foreach (var hoSo in danhSach.EnumerateArray())
+            {
+                var soCccd = hoSo.TryGetProperty("soCccd", out var c1) ? c1.GetString()
+                           : hoSo.TryGetProperty("SoCccd", out var c2) ? c2.GetString()
+                           : null;
+
+                if (!string.Equals(soCccd?.Trim(), cccd.Trim(), StringComparison.Ordinal)) continue;
+
+                if (hoSo.TryGetProperty("idBenhNhan", out var i1) && i1.TryGetInt64(out var id1)) return id1;
+                if (hoSo.TryGetProperty("IdBenhNhan", out var i2) && i2.TryGetInt64(out var id2)) return id2;
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Khong tim duoc ho so chinh chu, de doi tac tu hien man chon");
+            return null;
+        }
+    }
+
     public ThongTinBanGiao? DungThongTinBanGiao(DoiTacApi cauHinh, YeuCauBanGiao yeuCau)
     {
         if (string.IsNullOrWhiteSpace(cauHinh.TrangChu)) return null;
@@ -205,9 +283,17 @@ public class UbGateway : IPartnerGateway
             }));
         }
 
-        // Cong con lai (chon HO SO benh nhan) co y KHONG lam giup: mot tai khoan
-        // co the mang nhieu ho so (cha me dang ky cho con), doan ho la dang ky
-        // kham nham nguoi.
+        // Buoc 3 — chon ho so. CHI chon khi tim duoc ho so CHINH CHU (SoCccd trung
+        // CCCD vua dang nhap). Ho so nguoi than thi khong dam dong vao: doan ho la
+        // dang ky kham nham nguoi.
+        if (yeuCau.IdHoSo is > 0)
+        {
+            cacBuoc.Add(new BuocBanGiao($"{goc}{DuongDanChonHoSo}", new Dictionary<string, string>
+            {
+                ["idBenhNhan"] = yeuCau.IdHoSo.Value.ToString()
+            }));
+        }
+
         return new ThongTinBanGiao(cacBuoc, dichCuoi);
     }
 

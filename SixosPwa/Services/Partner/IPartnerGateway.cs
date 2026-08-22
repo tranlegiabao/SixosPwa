@@ -32,6 +32,12 @@ public interface IPartnerGateway
     Task<KetQuaThaoTac> DatLaiMatKhauAsync(DoiTacApi cauHinh, string cccd, string dienThoai, string ma, string matKhauMoi, CancellationToken ct = default);
 
     /// <summary>
+    /// Id ho so ben doi tac ung voi CHINH CHU so CCCD nay. Null neu khong tim
+    /// thay hoac khong tra duoc — luc do de doi tac tu hien man chon ho so.
+    /// </summary>
+    Task<long?> TimHoSoChinhChuAsync(DoiTacApi cauHinh, string cccd, string matKhau, CancellationToken ct = default);
+
+    /// <summary>
     /// Dung du lieu cho form ban giao. KHONG goi HTTP o day: cookie phai duoc dat
     /// tren TRINH DUYET benh nhan, nen buoc cuoi bat buoc la form POST top-level
     /// trong popup. Xem ADR 0003.
@@ -61,7 +67,11 @@ public record KetQuaThaoTac(bool ThanhCong, string ThongBao);
 /// Benh nhan bam nut gi de toi day: "dat-goi-kham", "lich-su-hen",
 /// "ho-so-kham"... Moi doi tac tu biet man tuong ung cua minh nam o dau.
 /// </param>
-public record YeuCauBanGiao(string Cccd, string DienThoai, string? Email, string? MaXacNhan, string? MatKhau, string? YDinh = null);
+/// <param name="IdHoSo">
+/// Ho so chinh chu ben doi tac. Co thi ban giao chon giup, khong thi de ho tu
+/// chon — mot tai khoan co the mang ho so cua ca nha.
+/// </param>
+public record YeuCauBanGiao(string Cccd, string DienThoai, string? Email, string? MaXacNhan, string? MatKhau, string? YDinh = null, long? IdHoSo = null);
 
 /// <summary>Mo ta form ma man Ban giao se POST sang he doi tac.</summary>
 /// <summary>Mot lan POST sang he doi tac.</summary>

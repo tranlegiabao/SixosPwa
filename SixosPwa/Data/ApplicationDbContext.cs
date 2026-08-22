@@ -124,7 +124,6 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<DMCSKCB>().Property(e => e.Img).HasMaxLength(500);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.SoToaNha).HasMaxLength(100);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.Tinh);
-        modelBuilder.Entity<DMCSKCB>().Property(e => e.Huyen);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.PhuongXa);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.QuangCao).HasColumnType("decimal(15,0)");
 
