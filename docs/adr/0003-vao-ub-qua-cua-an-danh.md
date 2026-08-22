@@ -28,3 +28,34 @@ Hệ quả kỹ thuật kèm theo: `app.UseCors` của UB dùng `AllowAnyOrigin(
 `AllowAnyOrigin` không đi cùng `AllowCredentials` ⇒ **không thể** đặt cookie bằng `fetch`. Bước đặt
 cookie bắt buộc phải là **form POST top-level trong cửa sổ popup** do cú bấm của bệnh nhân mở ra.
 Iframe ẩn cũng không dùng được vì SameSite chặn.
+
+## Đính chính 2026-08-22 — chỉ bàn giao được MỘT bước
+
+Bản đầu của ADR này nói cookie là Lax nên "điều hướng liên site vẫn gửi cookie".
+Đúng một nửa, và nửa thiếu làm hỏng cả một hướng thiết kế.
+
+**Lax gửi cookie với `GET` top-level, KHÔNG gửi với `POST` liên site.**
+
+Hệ quả đo được bằng Playwright (theo dõi popup từng 400ms):
+
+```
+ 800ms  → /HT_DangNhap/login          nhận cookie ✅
+1600ms  → /HT_DangNhap/select-branch  POST không mang cookie
+3200ms  → /HT_DangNhap/login?ReturnUrl=…ThemIdXemThongTinBenhNhan   ❌ bị đá về
+```
+
+Nên chuỗi POST nhiều bước để cấp đủ 3 claim là **không khả thi**, và bước 2 còn
+gây hại: `AddClaimsAsync` đọc `User` để *cộng dồn* claim, `User` rỗng thì nó
+**ghi đè và làm mất `IdTK`** vừa cấp — kéo theo màn chọn hồ sơ của UB hiện danh
+sách rỗng.
+
+**Quyết định:** chỉ POST `login`, rồi để UB tự dẫn bệnh nhân qua hai màn của họ
+(chọn chi nhánh → chọn hồ sơ). Bệnh nhân thấy thêm hai màn mang thương hiệu UB
+trước khi tới đích — đây là cái giá đã biết và chấp nhận.
+
+**Điều kiện để đi thẳng tới đích:** phải có một cửa **GET** bên UB (GET top-level
+*có* mang cookie). Đó chính là phương án SSO mà vòng grill số 4 đã chọn rồi bị
+đảo ở vòng 9 — nếu sau này mở lại thì đây là lý do kỹ thuật, không phải sở thích.
+
+Cột `DM_DoiTacApi.MaChiNhanh` giữ lại dù chưa dùng: có cửa GET thì nó chính là
+tham số cần gửi.
