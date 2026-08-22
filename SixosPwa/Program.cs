@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using SixosPwa.Data;
 using SixosPwa.Security;
 using SixosPwa.Services;
+using SixosPwa.Services.Partner;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +19,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Add Services
 builder.Services.AddScoped<ITaiKhoanService, DbTaiKhoanService>();
 builder.Services.AddScoped<AdminStoredProcedureService>();
+
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<IPartnerGateway, NoApiGateway>();
+builder.Services.AddScoped<IPartnerGateway, UbGateway>();
+builder.Services.AddScoped<IPartnerGatewayFactory, PartnerGatewayFactory>();
+builder.Services.AddScoped<ILuongCongBenhNhan, LuongCongBenhNhan>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
