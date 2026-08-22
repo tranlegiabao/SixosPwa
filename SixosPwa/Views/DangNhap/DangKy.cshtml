@@ -54,14 +54,20 @@
                         <div class="form-text">Ghi đúng như trên thẻ căn cước.</div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label" for="matKhau">Mật khẩu <span class="text-danger">*</span></label>
-                        <input type="password" class="form-control form-control-lg" id="matKhau"
-                               autocomplete="new-password" minlength="6" maxlength="50" required />
-                        <div class="form-text">
-                            Tối thiểu 6 ký tự. Dùng để vào trang của cơ sở những lần sau.
+                    @if (ViewBag.CoBanGiao != true)
+                    {
+                        @* Chi co so NOI BO moi hoi mat khau. Co so co API rieng thi
+                           may chu sinh mat khau ngau nhien cho tai khoan ben ho va tu
+                           cat lai — benh nhan khong bao gio phai go no. *@
+                        <div class="mb-3">
+                            <label class="form-label" for="matKhau">Mật khẩu <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control form-control-lg" id="matKhau"
+                                   autocomplete="new-password" minlength="6" maxlength="50" required />
+                            <div class="form-text">
+                                Tối thiểu 6 ký tự. Dùng để vào những lần sau.
+                            </div>
                         </div>
-                    </div>
+                    }
 
                     <button type="submit" id="btnTao" class="btn btn-primary w-100 py-2 fw-bold">
                         Tạo tài khoản
@@ -80,13 +86,15 @@
     <script>
         async function taoTaiKhoan() {
             const hoTen = document.getElementById('hoTen').value.trim();
-            const matKhau = document.getElementById('matKhau').value;
+            const oMatKhau = document.getElementById('matKhau');
+            const matKhau = oMatKhau ? oMatKhau.value : '';
 
             if (!hoTen) {
                 showToast('Vui lòng nhập họ và tên!', 400);
                 return;
             }
-            if (matKhau.length < 6) {
+            // Khong co o mat khau = co so co API, mat khau dat bang CCCD o may chu.
+            if (oMatKhau && matKhau.length < 6) {
                 showToast('Mật khẩu phải có ít nhất 6 ký tự!', 400);
                 return;
             }
