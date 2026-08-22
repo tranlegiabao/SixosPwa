@@ -1,7 +1,0 @@
-﻿                </div>
-                <div class="sixos-title">SIXOS</div>
-                <div class="sixos-subtitle">CÃ´ng Ty CÃ´ng Nghá»‡ vÃ <br>Giáº£i PhÃ¡p Pháº§n Má»m</div>
-            </div>
-
-            <!-- Card 2 (Combined Services) -->
-            <div class="sixos-card">

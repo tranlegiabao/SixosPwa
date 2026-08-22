@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SixosPwa.Security;
 
 namespace SixosPwa.Areas.Admin.Controllers;
 
 [Area("Admin")]
-[Authorize(Roles = "Admin")]
+[Authorize(AuthenticationSchemes = AdminAuthentication.Scheme, Roles = "Admin")]
 public abstract class AdminControllerBase : Controller
 {
     protected static readonly string[] AllowedRoles = { "Admin", "BenhNhan" };

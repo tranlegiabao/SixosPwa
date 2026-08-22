@@ -1,10 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
-
-    // =========================================================
-    // 1. XỬ LÝ ẢNH
-    // =========================================================
     document.querySelectorAll('[data-image-source]').forEach(function (sourceControl) {
-
         const toggle = sourceControl.querySelector('[data-image-toggle]');
         const panel = sourceControl.querySelector('[data-image-panel]');
         const dropzone = sourceControl.querySelector('[data-image-dropzone]');
@@ -12,20 +7,35 @@ document.addEventListener('DOMContentLoaded', function () {
         const urlInput = sourceControl.querySelector('[data-image-url]');
         const urlButton = sourceControl.querySelector('[data-image-url-button]');
         const preview = sourceControl.querySelector('[data-image-preview]');
-
-        if (!toggle || !panel || !dropzone || !fileInput || !urlInput || !preview) {
-            return;
-        }
-
+        const compactPreview = sourceControl.querySelector('[data-image-toggle-preview]');
+        const compactPreviewImage = compactPreview?.querySelector('img');
+        const toggleLabel = sourceControl.querySelector('[data-image-toggle-label]');
+        const existingImage = sourceControl.dataset.existingImage?.trim() || '';
         let previewObjectUrl = null;
 
-        const showPreview = (value) => {
+        if (!toggle || !panel || !dropzone || !fileInput || !urlInput || !preview) return;
 
+        const releaseObjectUrl = function () {
             if (previewObjectUrl) {
                 URL.revokeObjectURL(previewObjectUrl);
                 previewObjectUrl = null;
             }
+        };
 
+        const setCompactPreview = function (value) {
+            if (!compactPreview || !compactPreviewImage) return;
+            if (!value) {
+                compactPreview.classList.add('d-none');
+                compactPreviewImage.removeAttribute('src');
+                return;
+            }
+
+            compactPreviewImage.src = value;
+            compactPreview.classList.remove('d-none');
+            if (toggleLabel) toggleLabel.textContent = 'Đổi ảnh';
+        };
+
+        const setPreview = function (value) {
             if (!value) {
                 preview.removeAttribute('src');
                 preview.classList.add('d-none');
@@ -36,117 +46,98 @@ document.addEventListener('DOMContentLoaded', function () {
             preview.classList.remove('d-none');
         };
 
+        const collapse = function () {
+            panel.classList.add('d-none');
+            toggle.setAttribute('aria-expanded', 'false');
+        };
+
         toggle.addEventListener('click', function () {
-
             const isHidden = panel.classList.toggle('d-none');
-
-            toggle.setAttribute(
-                'aria-expanded',
-                String(!isHidden)
-            );
+            toggle.setAttribute('aria-expanded', String(!isHidden));
+            if (!isHidden) setPreview(urlInput.value.trim() || existingImage);
         });
 
-        // Hiển thị ảnh URL hiện tại nếu có
-        if (urlInput.value.trim()) {
-            showPreview(urlInput.value.trim());
+        if (existingImage) {
+            setCompactPreview(existingImage);
+            setPreview(existingImage);
         }
 
-        // Chọn file
         fileInput.addEventListener('change', function () {
-
             const file = fileInput.files?.[0];
-
-            if (file) {
-
-                previewObjectUrl = URL.createObjectURL(file);
-
-                preview.src = previewObjectUrl;
-                preview.classList.remove('d-none');
-
+            if (!file) {
+                setPreview(urlInput.value.trim() || existingImage);
                 return;
             }
 
-            showPreview(urlInput.value.trim());
+            releaseObjectUrl();
+            previewObjectUrl = URL.createObjectURL(file);
+            setPreview(previewObjectUrl);
+            setCompactPreview(previewObjectUrl);
+            collapse();
         });
 
-        // Drag file
         ['dragenter', 'dragover'].forEach(function (eventName) {
-
             dropzone.addEventListener(eventName, function (event) {
-
                 event.preventDefault();
-
                 dropzone.classList.add('is-dragging');
             });
         });
 
         ['dragleave', 'drop'].forEach(function (eventName) {
-
             dropzone.addEventListener(eventName, function (event) {
-
                 event.preventDefault();
-
                 dropzone.classList.remove('is-dragging');
             });
         });
 
-        // Drop file
         dropzone.addEventListener('drop', function (event) {
-
             const files = event.dataTransfer?.files;
-
-            if (!files?.length) {
-                return;
-            }
+            if (!files?.length) return;
 
             try {
-
                 const dataTransfer = new DataTransfer();
-
-                Array.from(files).forEach(function (file) {
-                    dataTransfer.items.add(file);
-                });
-
+                dataTransfer.items.add(files[0]);
                 fileInput.files = dataTransfer.files;
-
-                fileInput.dispatchEvent(
-                    new Event('change', {
-                        bubbles: true
-                    })
-                );
-
-            } catch (error) {
-
-                console.error(
-                    'Không thể gán file từ drag/drop:',
-                    error
-                );
+                fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+            } catch {
+                if (typeof showToast === 'function') showToast('Không thể chọn ảnh kéo thả.', 'error');
             }
         });
 
-        // Button xem URL
         urlButton?.addEventListener('click', function () {
-
-            // Nếu đang chọn file thì ưu tiên file
-            if (fileInput.files?.length) {
-                return;
-            }
-
-            showPreview(
-                urlInput.value.trim()
-            );
+            if (fileInput.files?.length) return;
+            const value = urlInput.value.trim();
+            setPreview(value || existingImage);
+            setCompactPreview(value || existingImage);
+            if (value) collapse();
         });
 
-        // Nhập URL
         urlInput.addEventListener('input', function () {
+            if (fileInput.files?.length) return;
+            const value = urlInput.value.trim();
+            setPreview(value || existingImage);
+            if (value) setCompactPreview(value);
+        });
 
-            if (!fileInput.files?.length) {
-
-                showPreview(
-                    urlInput.value.trim()
-                );
-            }
+        preview.addEventListener('error', function () {
+            preview.classList.add('d-none');
+            if (typeof showToast === 'function') showToast('Không thể tải ảnh đã chọn.', 'error');
         });
     });
-});
 
+    const amountInput = document.querySelector('[data-advertising-amount]');
+    const advertisingDetails = document.querySelector('[data-advertising-details]');
+    const advertisingContent = document.querySelector('[data-advertising-content]');
+    if (amountInput && advertisingDetails && advertisingContent) {
+        const updateAdvertisingVisibility = function () {
+            const amount = Number.parseFloat(amountInput.value || '0');
+            const isEnabled = Number.isFinite(amount) && amount > 0;
+            advertisingDetails.classList.toggle('d-none', !isEnabled);
+            advertisingContent.classList.toggle('d-none', !isEnabled);
+        };
+
+        amountInput.addEventListener('input', updateAdvertisingVisibility);
+        amountInput.addEventListener('change', updateAdvertisingVisibility);
+        updateAdvertisingVisibility();
+    }
+});

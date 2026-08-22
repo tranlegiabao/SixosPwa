@@ -2,15 +2,22 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SixosPwa.Areas.Admin.Models;
 using SixosPwa.Data;
-using SixosPwa.Models;
+using SixosPwa.Services;
 
 namespace SixosPwa.Areas.Admin.Controllers;
 
 public sealed class TaiKhoanController : AdminControllerBase
 {
     private readonly ApplicationDbContext _db;
+    private readonly AdminStoredProcedureService _adminStoredProcedures;
 
-    public TaiKhoanController(ApplicationDbContext db) => _db = db;
+    public TaiKhoanController(
+        ApplicationDbContext db,
+        AdminStoredProcedureService adminStoredProcedures)
+    {
+        _db = db;
+        _adminStoredProcedures = adminStoredProcedures;
+    }
 
     public async Task<IActionResult> Index(string? q, string? role, int page = 1)
     {
@@ -65,8 +72,13 @@ public sealed class TaiKhoanController : AdminControllerBase
 
         if (!ModelState.IsValid) return View(model);
 
-        _db.TaiKhoans.Add(new TaiKhoan { SDT = model.SDT, Role = model.Role });
-        await _db.SaveChangesAsync();
+        var result = await _adminStoredProcedures.SaveTaiKhoanAsync(0, model.SDT, model.Role);
+        if (!result.Succeeded)
+        {
+            ModelState.AddModelError(nameof(model.SDT), result.Message ?? "Không thể tạo tài khoản.");
+            return View(model);
+        }
+
         Success("Đã tạo tài khoản mới.");
         return RedirectToAction(nameof(Index));
     }
@@ -87,7 +99,7 @@ public sealed class TaiKhoanController : AdminControllerBase
         model.Role = NormalizeRole(model.Role.Trim());
         ValidateRole(model.Role);
 
-        var entity = await _db.TaiKhoans.FirstOrDefaultAsync(x => x.Id == model.Id);
+        var entity = await _db.TaiKhoans.AsNoTracking().FirstOrDefaultAsync(x => x.Id == model.Id);
         if (entity == null) return NotFound();
 
         var currentPhone = User.Identity?.Name;
@@ -100,8 +112,17 @@ public sealed class TaiKhoanController : AdminControllerBase
 
         if (!ModelState.IsValid) return View(model);
 
-        entity.Role = NormalizeRole(model.Role);
-        await _db.SaveChangesAsync();
+        var result = await _adminStoredProcedures.SaveTaiKhoanAsync(
+            model.Id,
+            entity.SDT,
+            NormalizeRole(model.Role));
+        if (!result.Succeeded)
+        {
+            if (result.Code == 3) return NotFound();
+            ModelState.AddModelError(string.Empty, result.Message ?? "Không thể cập nhật tài khoản.");
+            return View(model);
+        }
+
         Success("Đã cập nhật vai trò tài khoản.");
         return RedirectToAction(nameof(Index));
     }
