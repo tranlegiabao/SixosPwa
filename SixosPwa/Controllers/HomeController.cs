@@ -32,7 +32,7 @@ public class HomeController : Controller
     {
         ViewData["PhongKhamId"] = phongKhamId;
         var phongKham = _db.PhongKhams.FirstOrDefault(p => p.Id == phongKhamId);
-        ViewData["TenPhongKham"] = phongKham?.TenPhongKham ?? "PhÃ²ng khÃ¡m";
+        ViewData["TenPhongKham"] = phongKham?.TenPhongKham ?? "Phòng khám";
         return View();
     }
 
@@ -40,7 +40,7 @@ public class HomeController : Controller
     {
         ViewData["PhongKhamId"] = phongKhamId;
         var phongKham = _db.PhongKhams.FirstOrDefault(p => p.Id == phongKhamId);
-        ViewData["TenPhongKham"] = phongKham?.TenPhongKham ?? "PhÃ²ng khÃ¡m";
+        ViewData["TenPhongKham"] = phongKham?.TenPhongKham ?? "Phòng khám";
         return View();
     }
 
@@ -48,15 +48,15 @@ public class HomeController : Controller
     [AllowAnonymous]
     public async Task<IActionResult> DanhSachCoSo(string type)
     {
-        // Danh má»¥c tÆ°Æ¡ng á»©ng
-        string title = "CÆ¡ sá»Ÿ y táº¿";
+        // Danh mục tương ứng
+        string title = "Cơ sở y tế";
         switch (type)
         {
-            case "benhvien": title = "Bá»‡nh viá»‡n"; break;
-            case "pkdk": title = "PhÃ²ng khÃ¡m Ä‘a khoa"; break;
+            case "benhvien": title = "Bệnh viện"; break;
+            case "pkdk": title = "Phòng khám đa khoa"; break;
             case "nhakhoa": title = "Nha khoa"; break;
-            case "phongmach": title = "PhÃ²ng máº¡ch"; break;
-            case "nhathuoc": title = "NhÃ  thuá»‘c"; break;
+            case "phongmach": title = "Phòng mạch"; break;
+            case "nhathuoc": title = "Nhà thuốc"; break;
         }
         ViewData["Title"] = title;
         ViewData["Type"] = type;
@@ -115,8 +115,8 @@ public class HomeController : Controller
             }
         }
 
-        ViewData["TenCoSo"] = ten ?? "CÆ¡ sá»Ÿ y táº¿";
-        ViewData["DiaChi"] = diaChi ?? "Äang cáº­p nháº­t";
+        ViewData["TenCoSo"] = ten ?? "Cơ sở y tế";
+        ViewData["DiaChi"] = diaChi ?? "Đang cập nhật";
         ViewData["Type"] = type ?? "benhvien";
         ViewData["Img"] = img ?? AnhCoSoMacDinh;
         ViewData["Logo"] = logo ?? LogoCoSoMacDinh;
@@ -144,7 +144,7 @@ public class HomeController : Controller
                 .FirstOrDefaultAsync(x => x.SDT == dinhDanh || x.Email == dinhDanh);
 
         ViewBag.MaCoSo = maCoSo;
-        ViewBag.TenCoSo = coSo?.TenCoSo ?? "CÆ¡ sá»Ÿ khÃ¡m chá»¯a bá»‡nh";
+        ViewBag.TenCoSo = coSo?.TenCoSo ?? "Cơ sở khám chữa bệnh";
         ViewBag.TenBenhNhan = benhNhan?.TenBN ?? dinhDanh;
         ViewBag.DienThoai = User.FindFirst(System.Security.Claims.ClaimTypes.MobilePhone)?.Value ?? benhNhan?.SDT;
         ViewBag.CccdCheBot = CheBotCccd(cccd);
@@ -174,10 +174,10 @@ public class HomeController : Controller
     {
         (ViewBag.TenMuc, ViewBag.BieuTuong) = muc switch
         {
-            "dat-goi-kham" => ("ÄÄƒng kÃ½ khÃ¡m theo gÃ³i", "â–¤"),
-            "lich-su-hen" => ("Lá»‹ch sá»­ háº¹n khÃ¡m", "â—·"),
-            "ho-so-kham" => ("Tra cá»©u há»“ sÆ¡ khÃ¡m bá»‡nh", "â—«"),
-            _ => ("Chá»©c nÄƒng", "â—Œ")
+            "dat-goi-kham" => ("Đăng ký khám theo gói", "▤"),
+            "lich-su-hen" => ("Lịch sử hẹn khám", "◷"),
+            "ho-so-kham" => ("Tra cứu hồ sơ khám bệnh", "◫"),
+            _ => ("Chức năng", "◌")
         };
 
         return View();
@@ -205,7 +205,7 @@ public class HomeController : Controller
         ViewData["MaCoSo"] = coSo.MaCoSo;
         ViewData["Slug"] = coSo.Slug;
         ViewData["TenCoSo"] = coSo.TenCoSo;
-        ViewData["DiaChi"] = coSo.DiaChi ?? "Äang cáº­p nháº­t";
+        ViewData["DiaChi"] = coSo.DiaChi ?? "Đang cập nhật";
         ViewData["Type"] = coSo.LoaiCS ?? "benhvien";
         ViewData["Img"] = coSo.Img ?? AnhCoSoMacDinh;
         ViewData["Logo"] = coSo.logo ?? LogoCoSoMacDinh;
@@ -272,7 +272,7 @@ public class HomeController : Controller
         }
         string cleanText = sb.ToString().Normalize(System.Text.NormalizationForm.FormC);
         
-        cleanText = cleanText.Replace("Ä‘", "d").Replace("Ä", "D");
+        cleanText = cleanText.Replace("đ", "d").Replace("Đ", "D");
         
         var finalSb = new System.Text.StringBuilder();
         foreach (char c in cleanText)
@@ -326,7 +326,7 @@ public class HomeController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Lá»—i khi gá»i stored procedure Top_CSKCB_QC");
+            _logger.LogError(ex, "Lỗi khi gọi stored procedure Top_CSKCB_QC");
         }
 
         ViewData["TopCSKCB"] = topCSKCBList;
@@ -340,11 +340,11 @@ public class HomeController : Controller
         ViewData["UserName"] = sdt;
         ViewData["UserRole"] = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "BenhNhan";
 
-        // Láº¥y thÃ´ng tin bá»‡nh nhÃ¢n
+        // Lấy thông tin bệnh nhân
         var benhNhan = await _db.BenhNhans
             .FirstOrDefaultAsync(b => b.SDT == sdt);
 
-        // Náº¿u chÆ°a cÃ³ bá»‡nh nhÃ¢n, táº¡o má»›i tá»± Ä‘á»™ng
+        // Nếu chưa có bệnh nhân, tạo mới tự động
         if (benhNhan == null)
         {
             benhNhan = new BenhNhan
@@ -352,8 +352,8 @@ public class HomeController : Controller
                 MaBN = $"BN-{DateTime.Now:yyyyMMdd}-{new Random().Next(1000, 9999)}",
                 MaDT = "DT001",
                 SDT = sdt,
-                TenBN = $"Bá»‡nh nhÃ¢n {sdt.Substring(sdt.Length - 4)}",
-                DiaChi = "ChÆ°a cáº­p nháº­t",
+                TenBN = $"Bệnh nhân {sdt.Substring(sdt.Length - 4)}",
+                DiaChi = "Chưa cập nhật",
                 Email = ""
             };
             _db.BenhNhans.Add(benhNhan);
@@ -365,17 +365,17 @@ public class HomeController : Controller
         ViewData["DiaChi"] = benhNhan.DiaChi ?? "";
         ViewData["Email"] = benhNhan.Email ?? "";
 
-        // Láº¥y danh sÃ¡ch phÃ²ng khÃ¡m Ä‘Ã£ khÃ¡m
+        // Lấy danh sách phòng khám đã khám
         var lichSuKham = await _db.LichSuKhams
             .Include(ls => ls.PhongKham)
             .Where(ls => ls.MaBN == benhNhan.MaBN)
             .OrderByDescending(ls => ls.NgayKhamGanNhat)
             .ToListAsync();
 
-        // Náº¿u chÆ°a cÃ³ lá»‹ch sá»­ khÃ¡m, táº¡o dá»¯ liá»‡u máº«u
+        // Nếu chưa có lịch sử khám, tạo dữ liệu mẫu
         if (lichSuKham.Count == 0)
         {
-            // Äáº£m báº£o cÃ³ Ã­t nháº¥t phÃ²ng khÃ¡m PKDK Báº£o Minh
+            // Đảm bảo có ít nhất phòng khám PKDK Bảo Minh
             var phongKhamBaoMinh = await _db.PhongKhams.FirstOrDefaultAsync(p => p.MaPhongKham == "PKDK-BM");
             if (phongKhamBaoMinh != null)
             {
@@ -388,11 +388,11 @@ public class HomeController : Controller
                         NgayKhamDau = DateTime.Now.AddMonths(-6),
                         NgayKhamGanNhat = DateTime.Now.AddDays(-5),
                         SoLanKham = 8,
-                        TrangThai = "Äang theo dÃµi Ä‘á»‹nh ká»³"
+                        TrangThai = "Đang theo dõi định kỳ"
                     }
                 };
 
-                // ThÃªm phÃ²ng khÃ¡m khÃ¡c náº¿u cÃ³
+                // Thêm phòng khám khác nếu có
                 var phongKhamKhac = await _db.PhongKhams
                     .Where(p => p.MaPhongKham != "PKDK-BM")
                     .Take(2)
@@ -407,14 +407,14 @@ public class HomeController : Controller
                         NgayKhamDau = DateTime.Now.AddMonths(-4),
                         NgayKhamGanNhat = DateTime.Now.AddMonths(-1),
                         SoLanKham = new Random().Next(2, 6),
-                        TrangThai = "á»”n Ä‘á»‹nh"
+                        TrangThai = "Ổn định"
                     });
                 }
 
                 _db.LichSuKhams.AddRange(lichSuMoi);
                 await _db.SaveChangesAsync();
 
-                // Load láº¡i dá»¯ liá»‡u
+                // Load lại dữ liệu
                 lichSuKham = await _db.LichSuKhams
                     .Include(ls => ls.PhongKham)
                     .Where(ls => ls.MaBN == benhNhan.MaBN)
@@ -439,7 +439,7 @@ public class HomeController : Controller
     public IActionResult LocDanhSachBN([FromBody] LocBNRequest model)
     {
         if (string.IsNullOrWhiteSpace(model.TenDT) || string.IsNullOrWhiteSpace(model.Password))
-            return Json(new { success = false, message = "Vui lÃ²ng nháº­p Ä‘á»§ thÃ´ng tin Ä‘á»‘i tÃ¡c vÃ  máº­t kháº©u." });
+            return Json(new { success = false, message = "Vui lòng nhập đủ thông tin đối tác và mật khẩu." });
 
         try
         {
@@ -463,7 +463,7 @@ public class HomeController : Controller
 
             using var reader = cmd.ExecuteReader();
 
-            // Kiá»ƒm tra káº¿t quáº£ Ä‘áº§u tiÃªn â€“ cÃ³ thá»ƒ lÃ  lá»—i xÃ¡c thá»±c
+            // Kiểm tra kết quả đầu tiên â€“ có thể là lỗi xác thực
             if (reader.FieldCount == 2 && reader.GetName(0) == "Success")
             {
                 if (reader.Read())
@@ -474,7 +474,7 @@ public class HomeController : Controller
                 }
             }
 
-            // Káº¿t quáº£ bÃ¬nh thÆ°á»ng â€“ danh sÃ¡ch bá»‡nh nhÃ¢n
+            // Kết quả bình thường â€“ danh sách bệnh nhân
             var list = new List<object>();
             while (reader.Read())
             {
@@ -494,8 +494,8 @@ public class HomeController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Lá»—i khi gá»i stored procedure LocDanhSachBN");
-            return Json(new { success = false, message = "Lá»—i há»‡ thá»‘ng: " + ex.Message });
+            _logger.LogError(ex, "Lỗi khi gọi stored procedure LocDanhSachBN");
+            return Json(new { success = false, message = "Lỗi hệ thống: " + ex.Message });
         }
     }
 
@@ -506,7 +506,7 @@ public class HomeController : Controller
     }
 
     // -------------------------------------------------------------------------
-    // Tráº£ vá» VAPID Public Key Ä‘á»ƒ client Ä‘Äƒng kÃ½ push subscription
+    // Trả về VAPID Public Key để client đăng ký push subscription
     // -------------------------------------------------------------------------
     [HttpGet]
     [AllowAnonymous]
@@ -517,7 +517,7 @@ public class HomeController : Controller
     }
 
     // -------------------------------------------------------------------------
-    // Láº¥y danh sÃ¡ch tÃ i khoáº£n bá»‡nh nhÃ¢n tháº­t tá»« DB (cho GuiTinNhan dÃ¹ng)
+    // Lấy danh sách tài khoản bệnh nhân thật từ DB (cho GuiTinNhan dùng)
     // -------------------------------------------------------------------------
     [HttpGet]
     [Authorize(AuthenticationSchemes = AdminAuthentication.Scheme, Roles = "Admin")]
@@ -531,7 +531,7 @@ public class HomeController : Controller
     }
 
     // -------------------------------------------------------------------------
-    // Nháº­n vÃ  lÆ°u push subscription cá»§a thiáº¿t bá»‹ vÃ o DB
+    // Nhận và lưu push subscription của thiết bị vào DB
     // -------------------------------------------------------------------------
     [HttpPost]
     public async Task<IActionResult> DangKyPush([FromBody] PushSubscriptionRequest model)
@@ -540,13 +540,13 @@ public class HomeController : Controller
         if (string.IsNullOrEmpty(sdt) || string.IsNullOrEmpty(model.Endpoint))
             return Json(new { success = false });
 
-        // Kiá»ƒm tra Ä‘Ã£ cÃ³ endpoint nÃ y chÆ°a (trÃ¡nh lÆ°u trÃ¹ng)
+        // Kiểm tra đã có endpoint này chưa (tránh lưu trùng)
         var existing = await _db.PushDangKys
             .FirstOrDefaultAsync(p => p.Endpoint == model.Endpoint);
 
         if (existing != null)
         {
-            // Cáº­p nháº­t SDT náº¿u Ä‘Ã£ cÃ³ (thiáº¿t bá»‹ Ä‘á»•i tÃ i khoáº£n)
+            // Cập nhật SDT nếu đã có (thiết bị đổi tài khoản)
             existing.SDT = sdt;
             existing.P256dh = model.P256dh ?? "";
             existing.Auth = model.Auth ?? "";
@@ -567,12 +567,12 @@ public class HomeController : Controller
         }
 
         await _db.SaveChangesAsync();
-        _logger.LogInformation("ÄÄƒng kÃ½ push thÃ nh cÃ´ng cho {SDT}", sdt);
+        _logger.LogInformation("Đăng ký push thành công cho {SDT}", sdt);
         return Json(new { success = true });
     }
 
     // -------------------------------------------------------------------------
-    // Gá»­i tin nháº¯n hÃ ng loáº¡t â€“ lÆ°u DB + gá»­i Web Push tá»›i tá»«ng thiáº¿t bá»‹
+    // Gửi tin nhắn hàng loạt â€“ lưu DB + gửi Web Push tới từng thiết bị
     // -------------------------------------------------------------------------
     [HttpPost]
     [Authorize(AuthenticationSchemes = AdminAuthentication.Scheme, Roles = "Admin")]
@@ -580,17 +580,17 @@ public class HomeController : Controller
     {
         var nguoiGui = User.Identity?.Name;
         if (string.IsNullOrEmpty(nguoiGui))
-            return Json(new { success = false, message = "KhÃ´ng tÃ¬m tháº¥y thÃ´ng tin Ä‘Äƒng nháº­p!" });
+            return Json(new { success = false, message = "Không tìm thấy thông tin đăng nhập!" });
 
-        var smsMessage = string.IsNullOrWhiteSpace(model.Message) ? "test api gá»­i tin nháº¯n" : model.Message.Trim();
+        var smsMessage = string.IsNullOrWhiteSpace(model.Message) ? "test api gửi tin nhắn" : model.Message.Trim();
         var danhSachNhan = model.DanhSachNguoiNhan ?? new List<string>();
 
         if (danhSachNhan.Count == 0)
-            return Json(new { success = false, message = "Vui lÃ²ng chá»n Ã­t nháº¥t 1 bá»‡nh nhÃ¢n!" });
+            return Json(new { success = false, message = "Vui lòng chọn ít nhất 1 bệnh nhân!" });
 
         var now = DateTime.Now;
 
-        // 1) LÆ°u ThongBao vÃ o DB
+        // 1) Lưu ThongBao vào DB
         var thongBaos = danhSachNhan.Select(sdt => new ThongBao
         {
             NoiDung = smsMessage,
@@ -602,7 +602,7 @@ public class HomeController : Controller
         await _db.ThongBaos.AddRangeAsync(thongBaos);
         await _db.SaveChangesAsync();
 
-        // 2) Gá»­i Web Push tá»›i táº¥t cáº£ thiáº¿t bá»‹ Ä‘Ã£ Ä‘Äƒng kÃ½ cá»§a tá»«ng bá»‡nh nhÃ¢n
+        // 2) Gửi Web Push tới tất cả thiết bị đã đăng ký của từng bệnh nhân
         var vapidPublicKey = _config["Vapid:PublicKey"] ?? "";
         var vapidPrivateKey = _config["Vapid:PrivateKey"] ?? "";
         var vapidSubject = _config["Vapid:Subject"] ?? "mailto:admin@hissoft.vn";
@@ -622,7 +622,7 @@ public class HomeController : Controller
                 var subscription = new PushSubscription(sub.Endpoint, sub.P256dh, sub.Auth);
                 var payload = System.Text.Json.JsonSerializer.Serialize(new
                 {
-                    title = "ðŸ’¬ Tin nháº¯n má»›i tá»« HisSoft",
+                    title = "ðŸ’¬ Tin nhắn mới từ HisSoft",
                     body = smsMessage,
                     icon = "/static/icon-192.png",
                     badge = "/static/icon-192.png",
@@ -635,33 +635,33 @@ public class HomeController : Controller
             catch (WebPushException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Gone
                                            || ex.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
-                // Subscription háº¿t háº¡n â€“ xoÃ¡ khá»i DB
+                // Subscription hết hạn â€“ xoá khỏi DB
                 _db.PushDangKys.Remove(sub);
                 pushFail++;
             }
             catch (Exception ex)
             {
-                _logger.LogWarning("Lá»—i gá»­i push cho {SDT}: {Message}", sub.SDT, ex.Message);
+                _logger.LogWarning("Lỗi gửi push cho {SDT}: {Message}", sub.SDT, ex.Message);
                 pushFail++;
             }
         }
 
-        if (pushFail > 0) await _db.SaveChangesAsync(); // LÆ°u xoÃ¡ subscription lá»—i
+        if (pushFail > 0) await _db.SaveChangesAsync(); // Lưu xoá subscription lỗi
 
-        _logger.LogInformation("Gá»­i {Total} thÃ´ng bÃ¡o: {Ok} push thÃ nh cÃ´ng, {Fail} lá»—i", 
+        _logger.LogInformation("Gửi {Total} thông báo: {Ok} push thành công, {Fail} lỗi",
             danhSachNhan.Count, pushOk, pushFail);
 
         return Json(new
         {
             success = true,
-            message = $"ÄÃ£ gá»­i thÃ nh cÃ´ng tin nháº¯n tá»›i {danhSachNhan.Count} bá»‡nh nhÃ¢n!",
+            message = $"Đã gửi thành công tin nhắn tới {danhSachNhan.Count} bệnh nhân!",
             pushOk,
             pushFail
         });
     }
 
     // -------------------------------------------------------------------------
-    // Láº¥y danh sÃ¡ch thÃ´ng bÃ¡o chÆ°a Ä‘á»c cá»§a tÃ i khoáº£n hiá»‡n táº¡i
+    // Lấy danh sách thông báo chưa đọc của tài khoản hiện tại
     // -------------------------------------------------------------------------
     [HttpGet]
     public async Task<IActionResult> LayThongBao()
@@ -689,7 +689,7 @@ public class HomeController : Controller
     }
 
     // -------------------------------------------------------------------------
-    // ÄÃ¡nh dáº¥u táº¥t cáº£ thÃ´ng bÃ¡o cá»§a user lÃ  Ä‘Ã£ Ä‘á»c
+    // Đánh dấu tất cả thông báo của user là đã đọc
     // -------------------------------------------------------------------------
     [HttpPost]
     public async Task<IActionResult> DanhDauDaDoc()
@@ -708,21 +708,21 @@ public class HomeController : Controller
     }
 
     // -------------------------------------------------------------------------
-    // Gá»­i tin nháº¯n tráº£ lá»i (Patient -> Admin/DoiTac, hoáº·c ngÆ°á»£c láº¡i)
+    // Gửi tin nhắn trả lời (Patient -> Admin/DoiTac, hoặc ngược lại)
     // -------------------------------------------------------------------------
     [HttpPost]
     public async Task<IActionResult> TraLoiTinNhan([FromBody] ReplyRequest model)
     {
         var nguoiGui = User.Identity?.Name;
         if (string.IsNullOrEmpty(nguoiGui))
-            return Json(new { success = false, message = "Vui lÃ²ng Ä‘Äƒng nháº­p láº¡i." });
+            return Json(new { success = false, message = "Vui lòng đăng nhập lại." });
 
         if (string.IsNullOrWhiteSpace(model.Message) || string.IsNullOrWhiteSpace(model.NguoiNhan))
-            return Json(new { success = false, message = "Dá»¯ liá»‡u khÃ´ng há»£p lá»‡." });
+            return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
 
         var now = DateTime.Now;
 
-        // LÆ°u vÃ o DB
+        // Lưu vào DB
         var msg = new ThongBao
         {
             NoiDung = model.Message.Trim(),
@@ -734,7 +734,7 @@ public class HomeController : Controller
         await _db.ThongBaos.AddAsync(msg);
         await _db.SaveChangesAsync();
 
-        // Gá»­i Push (TÃ¡i sá»­ dá»¥ng logic gá»­i)
+        // Gửi Push (Tái sử dụng logic gửi)
         var vapidPublicKey = _config["Vapid:PublicKey"] ?? "";
         var vapidPrivateKey = _config["Vapid:PrivateKey"] ?? "";
         var vapidSubject = _config["Vapid:Subject"] ?? "mailto:admin@hissoft.vn";
@@ -756,7 +756,7 @@ public class HomeController : Controller
                 var subscription = new PushSubscription(sub.Endpoint, sub.P256dh, sub.Auth);
                 var payload = System.Text.Json.JsonSerializer.Serialize(new
                 {
-                    title = "ðŸ’¬ Pháº£n há»“i tá»« " + nguoiGui,
+                    title = "ðŸ’¬ Phản hồi từ " + nguoiGui,
                     body = model.Message.Trim(),
                     icon = "/static/icon-192.png",
                     badge = "/static/icon-192.png",
@@ -767,13 +767,13 @@ public class HomeController : Controller
             }
             catch (Exception ex)
             {
-                _logger.LogWarning("Lá»—i gá»­i push cho {SDT}: {Message}", sub.SDT, ex.Message);
+                _logger.LogWarning("Lỗi gửi push cho {SDT}: {Message}", sub.SDT, ex.Message);
             }
         }
 
         return Json(new { 
             success = true, 
-            message = "ÄÃ£ gá»­i pháº£n há»“i thÃ nh cÃ´ng.",
+            message = "Đã gửi phản hồi thành công.",
             data = new {
                 id = msg.Id,
                 noiDung = msg.NoiDung,
@@ -785,7 +785,7 @@ public class HomeController : Controller
     }
 
     // -------------------------------------------------------------------------
-    // Láº¥y lá»‹ch sá»­ trÃ² chuyá»‡n (Admin <-> Bá»‡nh nhÃ¢n)
+    // Lấy lịch sử trò chuyện (Admin <-> Bệnh nhân)
     // -------------------------------------------------------------------------
     [HttpGet]
     [Authorize(AuthenticationSchemes = AdminAuthentication.Scheme, Roles = "Admin")]
@@ -793,7 +793,7 @@ public class HomeController : Controller
     {
         var adminId = User.Identity?.Name;
         if (string.IsNullOrEmpty(adminId) || string.IsNullOrEmpty(sdtBenhNhan))
-            return Json(new { success = false, message = "Dá»¯ liá»‡u khÃ´ng há»£p lá»‡." });
+            return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
 
         var messages = await _db.ThongBaos
             .Where(t => (t.NguoiGui == adminId && t.NguoiNhan == sdtBenhNhan) || 
@@ -813,7 +813,7 @@ public class HomeController : Controller
     }
 
     // -------------------------------------------------------------------------
-    // Láº¥y toÃ n bá»™ lá»‹ch sá»­ tin nháº¯n giá»¯a ngÆ°á»i dÃ¹ng hiá»‡n táº¡i vÃ  má»™t Ä‘á»‘i tÃ¡c/bá»‡nh nhÃ¢n
+    // Lấy toàn bộ lịch sử tin nhắn giữa người dùng hiện tại và một đối tác/bệnh nhân
     // -------------------------------------------------------------------------
     [HttpGet]
     public async Task<IActionResult> LayLichSuTinNhan([FromQuery] string doiTac)

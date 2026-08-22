@@ -1,6 +1,6 @@
 @{
-    var tenCoSo = Uri.UnescapeDataString(ViewData["TenCoSo"]?.ToString() ?? "Bá»‡nh Viá»‡n ÄHYD");
-    var diaChi = Uri.UnescapeDataString(ViewData["DiaChi"]?.ToString() ?? "215 Há»“ng BÃ ng, PhÆ°á»ng Chá»£ Lá»›n");
+    var tenCoSo = Uri.UnescapeDataString(ViewData["TenCoSo"]?.ToString() ?? "Bệnh Viện ĐHYD");
+    var diaChi = Uri.UnescapeDataString(ViewData["DiaChi"]?.ToString() ?? "215 Hồng Bàng, Phường Chợ Lớn");
     var type = ViewData["Type"]?.ToString() ?? "benhvien";
     var img = Uri.UnescapeDataString(ViewData["Img"]?.ToString() ?? "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80");
     var logo = Uri.UnescapeDataString(ViewData["Logo"]?.ToString() ?? "https://tse1.mm.bing.net/th/id/OIP.JgUNpJPll-8BkzE3XN6LggHaHa?r=0&pid=Api&P=0&h=180");
@@ -93,7 +93,7 @@
     top: 74px;
     left: 0;
 
-    bottom: 65px; /* Ä‘á»•i 110 -> khoáº£ng chiá»u cao footer */
+    bottom: 65px; /* đổi 110 -> khoảng chiều cao footer */
 
     overflow: hidden;
     z-index: 100;
@@ -636,7 +636,7 @@
 
     /* FOOTER */
     .ytv-footer {
-        background: #e0f2fe; /* xanh nháº¡t */
+        background: #e0f2fe; /* xanh nhạt */
         color: #334155;
         padding: 12px 30px;
         display: flex;
@@ -1087,7 +1087,7 @@
 <div class="ytv-header">
     <a href="/Home/ThongTinBenhNhan" class="ytv-logo-area">
         <img src="/static/icon-512.png" alt="Logo" style="height: 50px; width: 50px; object-fit: cover; background: white; border-radius: 50%; padding: 0;" />
-        <div class="ytv-logo-text">Y Táº¾<br>VIá»†T</div>
+        <div class="ytv-logo-text">Y TẾ<br>VIỆT</div>
     </a>
     <div class="ytv-header-title">
         <h1>@tenCoSo</h1>
@@ -1096,11 +1096,11 @@
     <div class="ytv-header-menu" id="menuBtn" onclick="toggleMenu()">
         <i class="fas fa-bars"></i>
         <div class="ytv-dropdown" id="dropdownMenu">
-            <a href="/Home/DanhSachCoSo?type=benhvien"><i class="fas fa-hospital"></i> Bá»‡nh viá»‡n</a>
-            <a href="/Home/DanhSachCoSo?type=pkdk"><i class="fas fa-clinic-medical"></i> PhÃ²ng khÃ¡m Ä‘a khoa</a>
+            <a href="/Home/DanhSachCoSo?type=benhvien"><i class="fas fa-hospital"></i> Bệnh viện</a>
+            <a href="/Home/DanhSachCoSo?type=pkdk"><i class="fas fa-clinic-medical"></i> Phòng khám đa khoa</a>
             <a href="/Home/DanhSachCoSo?type=nhakhoa"><i class="fas fa-tooth"></i> Nha khoa</a>
-            <a href="/Home/DanhSachCoSo?type=phongmach"><i class="fas fa-stethoscope"></i> PhÃ²ng máº¡ch</a>
-            <a href="/Home/DanhSachCoSo?type=nhathuoc"><i class="fas fa-pills"></i> NhÃ  thuá»‘c</a>
+            <a href="/Home/DanhSachCoSo?type=phongmach"><i class="fas fa-stethoscope"></i> Phòng mạch</a>
+            <a href="/Home/DanhSachCoSo?type=nhathuoc"><i class="fas fa-pills"></i> Nhà thuốc</a>
         </div>
     </div>
 </div>
@@ -1112,19 +1112,19 @@
         </div>
         <div class="sidebar-scroll-area">
         <a class="ytv-menu-item active" onclick="showTab('gioi-thieu', this)" href="#gioi-thieu">
-            <i class="fas fa-info-circle"></i> Giá»›i thiá»‡u
+            <i class="fas fa-info-circle"></i> Giới thiệu
         </a>
         <a class="ytv-menu-item" onclick="showTab('dich-vu', this)" href="#dich-vu">
-            <i class="fas fa-stethoscope"></i> Dá»‹ch vá»¥
+            <i class="fas fa-stethoscope"></i> Dịch vụ
         </a>
         <a class="ytv-menu-item" onclick="showTab('doi-ngu', this)" href="#doi-ngu">
-            <i class="fas fa-user-md"></i> Äá»™i ngÅ© y bÃ¡c sÄ©
+            <i class="fas fa-user-md"></i> Đội ngũ y bác sĩ
         </a>
         <a class="ytv-menu-item" onclick="showTab('trang-thiet-bi', this)" href="#trang-thiet-bi">
-            <i class="fas fa-tools"></i> CÃ¡c trang thiáº¿t bá»‹
+            <i class="fas fa-tools"></i> Các trang thiết bị
         </a>
         <a class="ytv-menu-item" onclick="showTab('lien-he', this)" href="#lien-he">
-            <i class="fas fa-headset"></i> LiÃªn há»‡
+            <i class="fas fa-headset"></i> Liên hệ
         </a>
         
         @{
@@ -1138,17 +1138,17 @@
         }
         <div class="hospital-actions">
             <a href="/DangNhap/Login?@(thamSoCoSo)returnUrl=%2Fdat-goi-kham" class="btn-outline" style="background-color: #1d4ed8; color:aliceblue">
-                <i class="fas fa-sign-in-alt" style="color: aliceblue"></i> ÄÄƒng kÃ½ khÃ¡m
+                <i class="fas fa-sign-in-alt" style="color: aliceblue"></i> Đăng ký khám
             </a>
             <a href="/DangNhap/Login?@(thamSoCoSo)returnUrl=%2F" class="btn-outline">
-                <i class="fas fa-sign-in-alt"></i> ÄÄƒng nháº­p
+                <i class="fas fa-sign-in-alt"></i> Đăng nhập
             </a>
         </div>
         <div class="operating-hours-box">
-            <div class="oh-header"><i class="far fa-clock"></i> Giá» hoáº¡t Ä‘á»™ng</div>
+            <div class="oh-header"><i class="far fa-clock"></i> Giờ hoạt động</div>
             <div class="oh-days">@operatingHours.Days</div>
             <div class="oh-time">@operatingHours.OpenTime - @operatingHours.CloseTime</div>
-            <div class="oh-status"><span class="status-dot"></span> Äang má»Ÿ cá»­a</div>
+            <div class="oh-status"><span class="status-dot"></span> Đang mở cửa</div>
         </div>
     </div>
     
@@ -1158,12 +1158,12 @@
         <div class="intro-section active-tab" id="gioi-thieu">
             <div class="intro-content">
                 <div class="intro-title">
-                    <i class="fas fa-info-circle"></i> Giá»›i thiá»‡u
+                    <i class="fas fa-info-circle"></i> Giới thiệu
                 </div>
                 @if (!string.IsNullOrWhiteSpace(noiDungGioiThieu))
                 {
-                    <p>@tenCoSo lÃ  má»™t trong nhá»¯ng cÆ¡ sá»Ÿ y táº¿ uy tÃ­n hÃ ng Ä‘áº§u táº¡i khu vá»±c. ÄÆ°á»£c thÃ nh láº­p tá»« nhiá»u nÄƒm qua, chÃºng tÃ´i luÃ´n cam káº¿t mang láº¡i dá»‹ch vá»¥ chÄƒm sÃ³c sá»©c khá»e cháº¥t lÆ°á»£ng cao nháº¥t cho ngÆ°á»i dÃ¢n.</p>
-                    <p>Vá»›i Ä‘á»™i ngÅ© bÃ¡c sÄ© chuyÃªn khoa giá»i, trang thiáº¿t bá»‹ hiá»‡n Ä‘áº¡i vÃ  quy trÃ¬nh khÃ¡m bá»‡nh chuyÃªn nghiá»‡p, chÃºng tÃ´i tá»± hÃ o lÃ  Ä‘á»‹a chá»‰ tin cáº­y cho hÃ ng triá»‡u <strong>bá»‡nh nhÃ¢n</strong>.</p>
+                    <p>@tenCoSo là một trong những cơ sở y tế uy tín hàng đầu tại khu vực. Được thành lập từ nhiều năm qua, chúng tôi luôn cam kết mang lại dịch vụ chăm sóc sức khỏe chất lượng cao nhất cho người dân.</p>
+                    <p>Với đội ngũ bác sĩ chuyên khoa giỏi, trang thiết bị hiện đại và quy trình khám bệnh chuyên nghiệp, chúng tôi tự hào là địa chỉ tin cậy cho hàng triệu <strong>bệnh nhân</strong>.</p>
                 }
                 else
                 {
@@ -1176,12 +1176,12 @@
         <div class="intro-section" id="dich-vu">
             <div class="intro-content">
                 <div class="intro-title">
-                    <i class="fas fa-stethoscope"></i> Dá»‹ch vá»¥ khÃ¡m chá»¯a bá»‡nh
+                    <i class="fas fa-stethoscope"></i> Dịch vụ khám chữa bệnh
                 </div>
                 @if (!string.IsNullOrWhiteSpace(noiDungDichVu))
                 {
-                    <p>@tenCoSo cung cáº¥p Ä‘a dáº¡ng cÃ¡c gÃ³i dá»‹ch vá»¥ khÃ¡m sá»©c khá»e toÃ n diá»‡n vÃ  Ä‘iá»u trá»‹ chuyÃªn sÃ¢u. ChÃºng tÃ´i tiáº¿p nháº­n khÃ¡m báº£o hiá»ƒm y táº¿ vÃ  khÃ¡m dá»‹ch vá»¥ theo yÃªu cáº§u vá»›i quy trÃ¬nh nhanh gá»n, tá»‘i Æ°u thá»i gian chá» Ä‘á»£i.</p>
-                    <p>CÃ¡c chuyÃªn khoa mÅ©i nhá»n bao gá»“m: Ná»™i tá»•ng quÃ¡t, Ngoáº¡i sáº£n, Nhi khoa, Tai MÅ©i Há»ng, RÄƒng HÃ m Máº·t vÃ  há»— trá»£ táº§m soÃ¡t ung thÆ° sá»›m báº±ng cÃ´ng nghá»‡ tiÃªn tiáº¿n nháº¥t.</p>
+                    <p>@tenCoSo cung cấp đa dạng các gói dịch vụ khám sức khỏe toàn diện và điều trị chuyên sâu. Chúng tôi tiếp nhận khám bảo hiểm y tế và khám dịch vụ theo yêu cầu với quy trình nhanh gọn, tối ưu thời gian chờ đợi.</p>
+                    <p>Các chuyên khoa mũi nhọn bao gồm: Nội tổng quát, Ngoại sản, Nhi khoa, Tai Mũi Họng, Răng Hàm Mặt và hỗ trợ tầm soát ung thư sớm bằng công nghệ tiên tiến nhất.</p>
                 }
                 else
                 {
@@ -1193,12 +1193,12 @@
         <div class="intro-section" id="doi-ngu">
             <div class="intro-content">
                 <div class="intro-title">
-                    <i class="fas fa-user-md"></i> Äá»™i ngÅ© bÃ¡c sÄ© chuyÃªn khoa
+                    <i class="fas fa-user-md"></i> Đội ngũ bác sĩ chuyên khoa
                 </div>
                 @if (!string.IsNullOrWhiteSpace(noiDungDoiNgu))
                 {
-                    <p>ChÃºng tÃ´i tá»± hÃ o quy tá»¥ Ä‘á»™i ngÅ© phÃ³ giÃ¡o sÆ°, tiáº¿n sÄ©, tháº¡c sÄ© vÃ  bÃ¡c sÄ© chuyÃªn khoa cáº¥p I, cáº¥p II giÃ u kinh nghiá»‡m táº¡i Viá»‡t Nam. CÃ¡c bÃ¡c sÄ© táº¡i @tenCoSo luÃ´n táº­n tÃ¢m, chu Ä‘Ã¡o, khÃ´ng ngá»«ng nÃ¢ng cao tay nghá» chuyÃªn mÃ´n.</p>
-                    <p>Nhiá»u chuyÃªn gia y táº¿ táº¡i Ä‘Ã¢y Ä‘Ã£ cÃ³ thá»i gian tu nghiá»‡p vÃ  giáº£ng dáº¡y táº¡i cÃ¡c bá»‡nh viá»‡n lá»›n trong vÃ  ngoÃ i nÆ°á»›c, cam káº¿t Ä‘Æ°a ra cháº©n Ä‘oÃ¡n chÃ­nh xÃ¡c vÃ  phÃ¡c Ä‘á»“ Ä‘iá»u trá»‹ tá»‘i Æ°u.</p>
+                    <p>Chúng tôi tự hào quy tụ đội ngũ phó giáo sư, tiến sĩ, thạc sĩ và bác sĩ chuyên khoa cấp I, cấp II giàu kinh nghiệm tại Việt Nam. Các bác sĩ tại @tenCoSo luôn tận tâm, chu đáo, không ngừng nâng cao tay nghề chuyên môn.</p>
+                    <p>Nhiều chuyên gia y tế tại đây đã có thời gian tu nghiệp và giảng dạy tại các bệnh viện lớn trong và ngoài nước, cam kết đưa ra chẩn đoán chính xác và phác đồ điều trị tối ưu.</p>
                 }
                 else
                 {
@@ -1210,12 +1210,12 @@
         <div class="intro-section" id="trang-thiet-bi">
             <div class="intro-content">
                 <div class="intro-title">
-                    <i class="fas fa-tools"></i> Trang thiáº¿t bá»‹ hiá»‡n Ä‘áº¡i
+                    <i class="fas fa-tools"></i> Trang thiết bị hiện đại
                 </div>
                 @if (!string.IsNullOrWhiteSpace(noiDungTrangThietBi))
                 {
-                    <p>Äá»ƒ phá»¥c vá»¥ cÃ´ng tÃ¡c cháº©n Ä‘oÃ¡n hÃ¬nh áº£nh vÃ  xÃ©t nghiá»‡m chuáº©n xÃ¡c, @tenCoSo liÃªn tá»¥c Ä‘áº§u tÆ° há»‡ thá»‘ng mÃ¡y mÃ³c nháº­p kháº©u Ä‘á»“ng bá»™ tá»« cÃ¡c táº­p Ä‘oÃ n y táº¿ hÃ ng Ä‘áº§u tháº¿ giá»›i (GE, Siemens, Philips).</p>
-                    <p>Há»‡ thá»‘ng bao gá»“m mÃ¡y chá»¥p MRI cÃ´ng nghá»‡ cao, mÃ¡y cáº¯t lá»›p vi tÃ­nh CT Ä‘a dÃ£y, há»‡ thá»‘ng ná»™i soi tiÃªu hÃ³a khÃ´ng Ä‘au NBI, mÃ¡y siÃªu Ã¢m mÃ u 4D tháº¿ há»‡ má»›i vÃ  phÃ²ng xÃ©t nghiá»‡m tá»± Ä‘á»™ng Ä‘áº¡t chuáº©n quá»‘c táº¿.</p>
+                    <p>Để phục vụ công tác chẩn đoán hình ảnh và xét nghiệm chuẩn xác, @tenCoSo liên tục đầu tư hệ thống máy móc nhập khẩu đồng bộ từ các tập đo� n y tế hàng đầu thế giới (GE, Siemens, Philips).</p>
+                    <p>Hệ thống bao gồm máy chụp MRI công nghệ cao, máy cắt lớp vi tính CT đa dãy, hệ thống nội soi tiêu hóa không đau NBI, máy siêu âm màu 4D thế hệ mới và phòng xét nghiệm tự động đạt chuẩn quốc tế.</p>
                 }
                 else
                 {
@@ -1227,12 +1227,12 @@
         <div class="intro-section" id="lien-he">
             <div class="intro-content">
                 <div class="intro-title">
-                    <i class="fas fa-headset"></i> ChÄƒm sÃ³c & Há»— trá»£ khÃ¡ch hÃ ng
+                    <i class="fas fa-headset"></i> Chăm sóc & Hỗ trợ khách hàng
                 </div>
                 @if (!string.IsNullOrWhiteSpace(noiDungLienHe))
                 {
-                    <p>Táº¡i @tenCoSo, sá»± hÃ i lÃ²ng vÃ  tráº£i nghiá»‡m thoáº£i mÃ¡i cá»§a bá»‡nh nhÃ¢n lÃ  Æ°u tiÃªn sá»‘ má»™t. Bá»™ pháº­n chÄƒm sÃ³c khÃ¡ch hÃ ng luÃ´n sáºµn sÃ ng tiáº¿p Ä‘Ã³n, hÆ°á»›ng dáº«n thá»§ tá»¥c hÃ nh chÃ­nh, giáº£i Ä‘Ã¡p tháº¯c máº¯c vÃ  há»— trá»£ Ä‘áº·t lá»‹ch háº¹n trá»±c tuyáº¿n.</p>
-                    <p>ChÃºng tÃ´i cung cáº¥p Ä‘Æ°á»ng dÃ¢y nÃ³ng há»— trá»£ kháº©n cáº¥p 24/7, dá»‹ch vá»¥ tÆ° váº¥n y táº¿ tá»« xa, chÄƒm sÃ³c sau Ä‘iá»u trá»‹ vÃ  tiáº¿p thu Ã½ kiáº¿n pháº£n há»“i Ä‘á»ƒ khÃ´ng ngá»«ng cáº£i thiá»‡n cháº¥t lÆ°á»£ng dá»‹ch vá»¥ phá»¥c vá»¥ nhÃ¢n dÃ¢n.</p>
+                    <p>Tại @tenCoSo, sự hài lòng và trải nghiệm thoải mái của bệnh nhân là ưu tiên số một. Bộ phận chăm sóc khách hàng luôn sẵn sàng tiếp đón, hướng dẫn thủ tục hành chính, giải đáp thắc mắc và hỗ trợ đặt lịch hẹn trực tuyến.</p>
+                    <p>Chúng tôi cung cấp đường dây nóng hỗ trợ khẩn cấp 24/7, dịch vụ tư vấn y tế từ xa, chăm sóc sau điều trị và tiếp thu ý kiến phản hồi để không ngừng cải thiện chất lượng dịch vụ phục vụ nhân dân.</p>
                 }
                 else
                 {
@@ -1258,32 +1258,32 @@
             <div class="stat-icon blue"><i class="fas fa-headset"></i></div>
             <div class="stat-info">
                 <div class="value">24/7</div>
-                <div class="title">Há»— trá»£</div>
-                <div class="desc">LuÃ´n sáºµn sÃ ng</div>
+                <div class="title">Hỗ trợ</div>
+                <div class="desc">Luôn sẵn sàng</div>
             </div>
         </div>
         <div class="stat-card">
             <div class="stat-icon green"><i class="far fa-star"></i></div>
             <div class="stat-info">
                 <div class="value">4.8/5</div>
-                <div class="title">ÄÃ¡nh giÃ¡</div>
-                <div class="desc">Tá»« 1.248 khÃ¡ch hÃ ng</div>
+                <div class="title">Đánh giá</div>
+                <div class="desc">Từ 1.248 khách hàng</div>
             </div>
         </div>
         <div class="stat-card">
             <div class="stat-icon purple"><i class="fas fa-user-friends"></i></div>
             <div class="stat-info">
                 <div class="value">50+</div>
-                <div class="title">BÃ¡c sÄ©</div>
-                <div class="desc">GiÃ u kinh nghiá»‡m</div>
+                <div class="title">Bác sĩ</div>
+                <div class="desc">Giàu kinh nghiệm</div>
             </div>
         </div>
         <div class="stat-card">
             <div class="stat-icon orange"><i class="fas fa-briefcase-medical"></i></div>
             <div class="stat-info">
                 <div class="value">20+</div>
-                <div class="title">Dá»‹ch vá»¥</div>
-                <div class="desc">Äa dáº¡ng chuyÃªn khoa</div>
+                <div class="title">Dịch vụ</div>
+                <div class="desc">Đa dạng chuyên khoa</div>
             </div>
         </div>
     </div>
@@ -1296,20 +1296,20 @@
         <div style="font-size: 14px; color: #334155;"><i class="fas fa-globe me-2 text-secondary"></i><a href="https://sixossoft.com" target="_blank" rel="noopener noreferrer" class="text-primary text-decoration-none">sixossoft.com</a></div>
     </div>
     <div class="ytv-footer-right d-flex flex-wrap justify-content-center align-items-center" style="font-size: 14px; row-gap: 8px;">
-        <a href="javascript:void(0)" onclick="showPolicy('baomat')" class="text-dark text-decoration-none hover-primary">ChÃ­nh sÃ¡ch báº£o máº­t</a>
+        <a href="javascript:void(0)" onclick="showPolicy('baomat')" class="text-dark text-decoration-none hover-primary">Chính sách bảo mật</a>
         <span class="mx-2 text-muted d-none d-sm-inline">|</span>
-        <a href="javascript:void(0)" onclick="showPolicy('dieukhoan')" class="text-dark text-decoration-none hover-primary">Äiá»u khoáº£n sá»­ dá»¥ng</a>
+        <a href="javascript:void(0)" onclick="showPolicy('dieukhoan')" class="text-dark text-decoration-none hover-primary">Điều khoản sử dụng</a>
         <span class="mx-2 text-muted d-none d-sm-inline">|</span>
-        <a href="javascript:void(0)" onclick="showPolicy('khieunai')" class="text-dark text-decoration-none hover-primary">Giáº£i quyáº¿t khiáº¿u náº¡i</a>
+        <a href="javascript:void(0)" onclick="showPolicy('khieunai')" class="text-dark text-decoration-none hover-primary">Giải quyết khiếu nại</a>
         <span class="mx-2 text-muted d-none d-sm-inline">|</span>
-        <a href="javascript:void(0)" onclick="showPolicy('baohanh')" class="text-dark text-decoration-none hover-primary">ChÃ­nh sÃ¡ch báº£o hÃ nh</a>
+        <a href="javascript:void(0)" onclick="showPolicy('baohanh')" class="text-dark text-decoration-none hover-primary">Chính sách bảo hành</a>
     </div>
 </div>
 
-<!-- Floating Action Button (ÄÄƒng kÃ½ khÃ¡m) 
+<!-- Floating Action Button (Đăng ký khám)
 <a href="/DangNhap/Login" class="fab-btn">
     <i class="far fa-calendar-plus"></i>
-    <span class="fab-text">ÄÄ‚NG<br>KÃ<br>KHÃM</span>
+    <span class="fab-text">ĐĂNG<br>KÝ<br>KHÁM</span>
 </a> -->
 
 <script>
