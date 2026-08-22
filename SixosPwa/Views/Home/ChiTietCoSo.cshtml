@@ -751,12 +751,7 @@
                 <div class="intro-title">
                     <i class="fas fa-info-circle"></i> Giới thiệu
                 </div>
-                @if (string.IsNullOrWhiteSpace(noiDungGioiThieu))
-                {
-                    <p>@tenCoSo là một trong những cơ sở y tế uy tín hàng đầu tại khu vực. Được thành lập từ nhiều năm qua, chúng tôi luôn cam kết mang lại dịch vụ chăm sóc sức khỏe chất lượng cao nhất cho người dân.</p>
-                    <p>Với đội ngũ bác sĩ chuyên khoa giỏi, trang thiết bị hiện đại và quy trình khám bệnh chuyên nghiệp, chúng tôi tự hào là địa chỉ tin cậy cho hàng triệu <strong>bệnh nhân</strong>.</p>
-                }
-                else
+                @if (!string.IsNullOrWhiteSpace(noiDungGioiThieu))
                 {
                     <div class="nd-cskcb-text">@Html.Raw(noiDungGioiThieu)</div>
                 }
@@ -769,12 +764,7 @@
                 <div class="intro-title">
                     <i class="fas fa-stethoscope"></i> Dịch vụ khám chữa bệnh
                 </div>
-                @if (string.IsNullOrWhiteSpace(noiDungDichVu))
-                {
-                    <p>@tenCoSo cung cấp đa dạng các gói dịch vụ khám sức khỏe toàn diện và điều trị chuyên sâu. Chúng tôi tiếp nhận khám bảo hiểm y tế và khám dịch vụ theo yêu cầu với quy trình nhanh gọn, tối ưu thời gian chờ đợi.</p>
-                    <p>Các chuyên khoa mũi nhọn bao gồm: Nội tổng quát, Ngoại sản, Nhi khoa, Tai Mũi Họng, Răng Hàm Mặt và hỗ trợ tầm soát ung thư sớm bằng công nghệ tiên tiến nhất.</p>
-                }
-                else
+                @if (!string.IsNullOrWhiteSpace(noiDungDichVu))
                 {
                     <div class="nd-cskcb-text">@Html.Raw(noiDungDichVu)</div>
                 }
@@ -786,12 +776,7 @@
                 <div class="intro-title">
                     <i class="fas fa-user-md"></i> Đội ngũ bác sĩ chuyên khoa
                 </div>
-                @if (string.IsNullOrWhiteSpace(noiDungDoiNgu))
-                {
-                    <p>Chúng tôi tự hào quy tụ đội ngũ phó giáo sư, tiến sĩ, thạc sĩ và bác sĩ chuyên khoa cấp I, cấp II giàu kinh nghiệm tại Việt Nam. Các bác sĩ tại @tenCoSo luôn tận tâm, chu đáo, không ngừng nâng cao tay nghề chuyên môn.</p>
-                    <p>Nhiều chuyên gia y tế tại đây đã có thời gian tu nghiệp và giảng dạy tại các bệnh viện lớn trong và ngoài nước, cam kết đưa ra chẩn đoán chính xác và phác đồ điều trị tối ưu.</p>
-                }
-                else
+                @if (!string.IsNullOrWhiteSpace(noiDungDoiNgu))
                 {
                     <div class="nd-cskcb-text">@Html.Raw(noiDungDoiNgu)</div>
                 }
@@ -803,12 +788,7 @@
                 <div class="intro-title">
                     <i class="fas fa-tools"></i> Trang thiết bị hiện đại
                 </div>
-                @if (string.IsNullOrWhiteSpace(noiDungTrangThietBi))
-                {
-                    <p>Để phục vụ công tác chẩn đoán hình ảnh và xét nghiệm chuẩn xác, @tenCoSo liên tục đầu tư hệ thống máy móc nhập khẩu đồng bộ từ các tập đoàn y tế hàng đầu thế giới (GE, Siemens, Philips).</p>
-                    <p>Hệ thống bao gồm máy chụp MRI công nghệ cao, máy cắt lớp vi tính CT đa dãy, hệ thống nội soi tiêu hóa không đau NBI, máy siêu âm màu 4D thế hệ mới và phòng xét nghiệm tự động đạt chuẩn quốc tế.</p>
-                }
-                else
+                @if (!string.IsNullOrWhiteSpace(noiDungTrangThietBi))
                 {
                     <div class="nd-cskcb-text">@Html.Raw(noiDungTrangThietBi)</div>
                 }
@@ -820,12 +800,7 @@
                 <div class="intro-title">
                     <i class="fas fa-headset"></i> Chăm sóc & Hỗ trợ khách hàng
                 </div>
-                @if (string.IsNullOrWhiteSpace(noiDungLienHe))
-                {
-                    <p>Tại @tenCoSo, sự hài lòng và trải nghiệm thoải mái của bệnh nhân là ưu tiên số một. Bộ phận chăm sóc khách hàng luôn sẵn sàng tiếp đón, hướng dẫn thủ tục hành chính, giải đáp thắc mắc và hỗ trợ đặt lịch hẹn trực tuyến.</p>
-                    <p>Chúng tôi cung cấp đường dây nóng hỗ trợ khẩn cấp 24/7, dịch vụ tư vấn y tế từ xa, chăm sóc sau điều trị và tiếp thu ý kiến phản hồi để không ngừng cải thiện chất lượng dịch vụ phục vụ nhân dân.</p>
-                }
-                else
+                @if (!string.IsNullOrWhiteSpace(noiDungLienHe))
                 {
                     <div class="nd-cskcb-text">@Html.Raw(noiDungLienHe)</div>
                 }
