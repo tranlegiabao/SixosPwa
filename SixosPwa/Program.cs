@@ -153,6 +153,18 @@ using (var scope = app.Services.CreateScope())
         ");
 
         db.Database.ExecuteSqlRaw(@"
+            IF OBJECT_ID('ND_CSKCB', 'U') IS NOT NULL
+               AND OBJECT_ID('DMChuDe', 'U') IS NOT NULL
+            BEGIN
+                UPDATE nd
+                SET LoaiND = CONVERT(NVARCHAR(20), cd.ID)
+                FROM ND_CSKCB nd
+                INNER JOIN DMChuDe cd ON cd.LoaiND = nd.LoaiND
+                WHERE TRY_CONVERT(BIGINT, nd.LoaiND) IS NULL
+            END
+        ");
+
+        db.Database.ExecuteSqlRaw(@"
             IF OBJECT_ID('DMCSKCB', 'U') IS NOT NULL
                 AND COL_LENGTH('DMCSKCB', 'Huyen') IS NULL
             BEGIN
