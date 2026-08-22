@@ -367,8 +367,13 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
     /// </summary>
     private async Task BaoDamHoSoNoiBoAsync(string maCoSo, string cccd, string dinhDanh, CancellationToken ct)
     {
-        var taiKhoan = await TimTaiKhoanAsync(cccd, ct);
-        if (taiKhoan is not null) return;
+        // Khong duoc dung o "da co tai khoan": tai khoan la mot, nhung ho so thi
+        // MOI CO SO MOT CAI. Benh nhan tung dung co so A sang co so B ma chi kiem
+        // tai khoan thi B khong co ho so nao, va trang benh nhan khong biet chao ai.
+        var daCoHoSo = await _db.BenhNhans
+            .AnyAsync(x => (x.SDT == dinhDanh || x.Email == dinhDanh) && x.MaDT == maCoSo, ct);
+
+        if (daCoHoSo) return;
 
         await TaoHoSoNoiBoAsync(maCoSo, cccd, dinhDanh, string.Empty, ct);
     }

@@ -137,10 +137,14 @@ public class HomeController : Controller
             ? null
             : await _db.DMCSKCBs.AsNoTracking().FirstOrDefaultAsync(x => x.MaCoSo == maCoSo);
 
+        // Phai loc theo CA dinh danh LAN co so: mot so dien thoai co the co ho so
+        // o nhieu co so khac nhau (du lieu that dang co truong hop do), khong loc
+        // thi trang chao ten lay tu ho so cua co so KHAC.
         var benhNhan = string.IsNullOrWhiteSpace(dinhDanh)
             ? null
             : await _db.BenhNhans.AsNoTracking()
-                .FirstOrDefaultAsync(x => x.SDT == dinhDanh || x.Email == dinhDanh);
+                .FirstOrDefaultAsync(x => (x.SDT == dinhDanh || x.Email == dinhDanh)
+                                       && x.MaDT == maCoSo);
 
         ViewBag.MaCoSo = maCoSo;
         ViewBag.TenCoSo = coSo?.TenCoSo ?? "Cơ sở khám chữa bệnh";
