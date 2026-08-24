@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using SixosPwa.Areas.Admin.Models;
 using SixosPwa.Data;
 using SixosPwa.Models;
@@ -90,7 +91,7 @@ public sealed class CoSoYTeController : AdminControllerBase
 
         if (!ModelState.IsValid)
         {
-            await PopulateContentEditorAsync(model, model.TopicId > 0 ? model.TopicId : null);
+            await PopulateContentEditorAsync(model, model.TopicId > 0 ? model.TopicId : null, loadSelectedContent: false);
             return View(model);
         }
 
@@ -98,7 +99,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         if (!result.Succeeded)
         {
             ModelState.AddModelError(nameof(model.MaCoSo), result.Message ?? "Không thể thêm cơ sở y tế.");
-            await PopulateContentEditorAsync(model, model.TopicId > 0 ? model.TopicId : null);
+            await PopulateContentEditorAsync(model, model.TopicId > 0 ? model.TopicId : null, loadSelectedContent: false);
             return View(model);
         }
 
@@ -129,12 +130,19 @@ public sealed class CoSoYTeController : AdminControllerBase
                 .FirstOrDefaultAsync();
             if (createdFacility != null)
             {
-                var contentResult = await SaveContentAsync(createdFacility, model.TopicId, model.NoiDung);
+                var topicContents = ParseTopicContents(model.TopicContentsJson);
+                if (!topicContents.ContainsKey(model.TopicId))
+                    topicContents[model.TopicId] = model.NoiDung;
+
+                foreach (var topicContent in topicContents)
+                {
+                var contentResult = await SaveContentAsync(createdFacility, topicContent.Key, topicContent.Value);
                 if (!contentResult.Succeeded)
                 {
                     Error(contentResult.Message ?? "Không thể lưu nội dung HTML.");
                     return RedirectToAction(nameof(Edit), new { id = createdFacility.Id, topicId = model.TopicId });
                 }
+            }
             }
         }
 
@@ -143,11 +151,12 @@ public sealed class CoSoYTeController : AdminControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Edit(long id, long? topicId = null)
+    public async Task<IActionResult> Edit(long id, long? topicId = null, string? section = null)
     {
         var entity = await _db.DMCSKCBs.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
         if (entity == null) return NotFound();
         var model = ToViewModel(entity);
+        model.ActiveSection = section;
         var advertising = await GetAdvertisingAsync(entity.MaCoSo, entity.TenCoSo);
         model.NoiDungQuangCao = advertising?.NoiDung;
         model.QuangCaoImg = advertising?.Img;
@@ -190,7 +199,7 @@ public sealed class CoSoYTeController : AdminControllerBase
 
         if (!ModelState.IsValid)
         {
-            await PopulateContentEditorAsync(model, model.TopicId > 0 ? model.TopicId : null);
+            await PopulateContentEditorAsync(model, model.TopicId > 0 ? model.TopicId : null, loadSelectedContent: false);
             return View(model);
         }
 
@@ -202,7 +211,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         {
             if (result.Code == 3) return NotFound();
             ModelState.AddModelError(nameof(model.MaCoSo), result.Message ?? "Không thể cập nhật cơ sở y tế.");
-            await PopulateContentEditorAsync(model, model.TopicId > 0 ? model.TopicId : null);
+            await PopulateContentEditorAsync(model, model.TopicId > 0 ? model.TopicId : null, loadSelectedContent: false);
             return View(model);
         }
 
@@ -213,33 +222,119 @@ public sealed class CoSoYTeController : AdminControllerBase
         if (!advertisingResult.Succeeded)
         {
             Error(advertisingResult.Message ?? "Khong the luu quang cao.");
-            return RedirectToAction(nameof(Edit), new { id = model.Id, topicId = model.TopicId });
+            return RedirectToAction(nameof(Edit), new { id = model.Id, topicId = model.TopicId, section = model.ActiveSection });
         }
 
-        if (model.TopicId > 0)
+        if (string.Equals(model.ActiveSection, "noiDungChiTiet", StringComparison.OrdinalIgnoreCase)
+            || !string.IsNullOrWhiteSpace(model.TopicContentsJson))
         {
+            var topicContents = ParseTopicContents(model.TopicContentsJson);
+            if (string.Equals(model.ActiveSection, "noiDungChiTiet", StringComparison.OrdinalIgnoreCase)
+                && model.TopicId > 0
+                && !topicContents.ContainsKey(model.TopicId))
+                topicContents[model.TopicId] = model.NoiDung;
+
+            foreach (var topicContent in topicContents)
+            {
             var contentResult = await SaveContentAsync(
                 new DMCSKCB { MaCoSo = model.MaCoSo, TenCoSo = model.TenCoSo },
-                model.TopicId,
-                model.NoiDung);
+                topicContent.Key,
+                topicContent.Value);
             if (!contentResult.Succeeded)
             {
                 Error(contentResult.Message ?? "Không thể lưu nội dung HTML.");
-                return RedirectToAction(nameof(Edit), new { id = model.Id, topicId = model.TopicId });
+                return RedirectToAction(nameof(Edit), new { id = model.Id, topicId = model.TopicId, section = model.ActiveSection });
             }
+        }
         }
 
         Success("Đã cập nhật cơ sở y tế.");
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Edit), new { id = model.Id, topicId = model.TopicId, section = model.ActiveSection });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Preview(CoSoYTeEditViewModel model)
+    {
+        var storedFacility = model.Id > 0
+            ? await _db.DMCSKCBs.AsNoTracking().FirstOrDefaultAsync(x => x.Id == model.Id)
+            : null;
+        var facility = new DMCSKCB
+        {
+            Id = model.Id,
+            MaCoSo = model.MaCoSo ?? storedFacility?.MaCoSo,
+            Slug = model.Slug ?? storedFacility?.Slug,
+            TenCoSo = model.TenCoSo ?? storedFacility?.TenCoSo,
+            DiaChi = model.DiaChi ?? storedFacility?.DiaChi,
+            LoaiCS = model.LoaiCS ?? storedFacility?.LoaiCS,
+            TGLamViec = model.TGLamViec ?? storedFacility?.TGLamViec,
+            NgayLamViec = model.NgayLamViec,
+            GioMoCua = ParsePreviewTime(model.GioMoCua),
+            GioDongCua = ParsePreviewTime(model.GioDongCua),
+            Img = model.Img ?? storedFacility?.Img,
+            logo = await ReadPreviewImageAsync(model.LogoFile, model.LogoUrlInput, model.Logo ?? storedFacility?.logo),
+            XacMinh = model.XacMinh ? 1 : 0
+        };
+
+        if (facility.GioMoCua.HasValue && facility.GioDongCua.HasValue
+            && !string.IsNullOrWhiteSpace(facility.NgayLamViec))
+        {
+            facility.TGLamViec = OperatingHours.Encode(
+                facility.NgayLamViec,
+                facility.GioMoCua.Value.ToString("HH:mm"),
+                facility.GioDongCua.Value.ToString("HH:mm"));
+        }
+
+        var topics = await _db.DMChuDes.AsNoTracking().ToListAsync();
+        var contents = await LoadPreviewContentsAsync(facility, topics);
+        var draftContents = ParseTopicContents(model.TopicContentsJson);
+        foreach (var draft in draftContents)
+        {
+            var topic = topics.FirstOrDefault(x => x.ID == draft.Key);
+            if (!string.IsNullOrWhiteSpace(topic?.LoaiND))
+                contents[topic.LoaiND!] = draft.Value ?? string.Empty;
+        }
+
+        if (model.TopicId > 0 && !draftContents.ContainsKey(model.TopicId))
+        {
+            var topic = topics.FirstOrDefault(x => x.ID == model.TopicId);
+            if (!string.IsNullOrWhiteSpace(topic?.LoaiND))
+                contents[topic.LoaiND!] = model.NoiDung ?? string.Empty;
+        }
+
+        ViewData["Title"] = "Xem trước cơ sở y tế";
+        ViewData["CoSoYTe"] = facility;
+        ViewData["TenCoSo"] = facility.TenCoSo ?? "Cơ sở y tế";
+        ViewData["DiaChi"] = facility.DiaChi ?? "Đang cập nhật";
+        ViewData["Type"] = facility.LoaiCS ?? "benhvien";
+        ViewData["Img"] = facility.Img;
+        ViewData["Logo"] = facility.logo;
+        ViewData["TGLamViec"] = facility.TGLamViec;
+        ViewData["NoiDungCskcb"] = contents;
+        ViewData["PreviewLoaiND"] = topics.FirstOrDefault(x => x.ID == model.TopicId)?.LoaiND;
+        ViewData["PreviewStatic"] = true;
+
+        return View("~/Views/Home/ChiTietCoSo.cshtml");
     }
 
     private async Task<QCKCB?> GetAdvertisingAsync(string? maCoSo, string? tenCoSo)
     {
         var query = _db.QCKCBs.AsNoTracking();
         if (!string.IsNullOrWhiteSpace(maCoSo))
-            query = query.Where(x => x.MaCoSo == maCoSo);
-        else
+        {
+            var advertisingByCode = await query
+                .Where(x => x.MaCoSo == maCoSo)
+                .OrderByDescending(x => x.Id)
+                .FirstOrDefaultAsync();
+            if (advertisingByCode != null)
+                return advertisingByCode;
+
             query = query.Where(x => (x.MaCoSo == null || x.MaCoSo == "") && x.TenCoSo == tenCoSo);
+        }
+        else
+        {
+            query = query.Where(x => (x.MaCoSo == null || x.MaCoSo == "") && x.TenCoSo == tenCoSo);
+        }
 
         return await query.OrderByDescending(x => x.Id).FirstOrDefaultAsync();
     }
@@ -361,6 +456,70 @@ public sealed class CoSoYTeController : AdminControllerBase
         model.NoiDungQuangCao = model.NoiDungQuangCao?.Trim();
         model.QuangCaoImg = model.QuangCaoImg?.Trim();
         model.QuangCaoImgUrlInput = model.QuangCaoImgUrlInput?.Trim();
+        model.ActiveSection = model.ActiveSection?.Trim();
+        model.TopicContentsJson = model.TopicContentsJson?.Trim();
+    }
+
+    private static Dictionary<long, string?> ParseTopicContents(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return new Dictionary<long, string?>();
+
+        try
+        {
+            return JsonSerializer.Deserialize<Dictionary<long, string?>>(json)
+                ?.Where(item => item.Key > 0)
+                .ToDictionary(item => item.Key, item => item.Value)
+                ?? new Dictionary<long, string?>();
+        }
+        catch (JsonException)
+        {
+            return new Dictionary<long, string?>();
+        }
+    }
+
+    private async Task<Dictionary<string, string>> LoadPreviewContentsAsync(
+        DMCSKCB facility,
+        IReadOnlyCollection<DMChuDe> topics)
+    {
+        IQueryable<NDCSKCB> query = _db.NDCSKCBs.AsNoTracking();
+        query = string.IsNullOrWhiteSpace(facility.MaCoSo)
+            ? query.Where(x => (x.MaCoSo == null || x.MaCoSo == "") && x.TenCoSo == facility.TenCoSo)
+            : query.Where(x => x.MaCoSo == facility.MaCoSo);
+
+        var topicById = topics
+            .Where(x => !string.IsNullOrWhiteSpace(x.LoaiND))
+            .ToDictionary(x => x.ID.ToString(), x => x.LoaiND!, StringComparer.OrdinalIgnoreCase);
+        var items = await query.OrderBy(x => x.Id).ToListAsync();
+
+        return items
+            .Select(x => new { Item = x, LoaiND = ResolvePreviewLoaiND(x.LoaiND, topicById) })
+            .Where(x => x.LoaiND != null && NDCSKCB.AllowedLoaiND.Contains(x.LoaiND, StringComparer.OrdinalIgnoreCase))
+            .GroupBy(x => x.LoaiND!, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(x => x.Key, x => x.First().Item.NoiDung ?? "", StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static string? ResolvePreviewLoaiND(string? storedLoaiND, IReadOnlyDictionary<string, string> topicById)
+    {
+        var value = storedLoaiND?.Trim();
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        if (topicById.TryGetValue(value, out var loaiND)) return loaiND;
+        return NDCSKCB.AllowedLoaiND.FirstOrDefault(x => string.Equals(x, value, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static TimeSpan? ParsePreviewTime(string? value) =>
+        OperatingHours.TryParseTime(value, out var time) ? time.ToTimeSpan() : null;
+
+    private static async Task<string?> ReadPreviewImageAsync(IFormFile? imageFile, string? urlInput, string? fallback)
+    {
+        if (imageFile is { Length: > 0 })
+        {
+            await using var stream = new MemoryStream();
+            await imageFile.CopyToAsync(stream);
+            var contentType = string.IsNullOrWhiteSpace(imageFile.ContentType) ? "image/*" : imageFile.ContentType;
+            return $"data:{contentType};base64,{Convert.ToBase64String(stream.ToArray())}";
+        }
+
+        return string.IsNullOrWhiteSpace(urlInput) ? fallback : urlInput.Trim();
     }
 
     private void ApplyOperatingHours(CoSoYTeEditViewModel model)
@@ -427,10 +586,27 @@ public sealed class CoSoYTeController : AdminControllerBase
             facility.MaCoSo,
             facility.TenCoSo,
             topicId);
+
+        if (noiDung == null)
+        {
+            var topic = await _db.DMChuDes.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.ID == topicId);
+            if (topic != null)
+            {
+                var fallbackContents = await LoadPreviewContentsAsync(facility, new[] { topic });
+                if (!string.IsNullOrWhiteSpace(topic.LoaiND)
+                    && fallbackContents.TryGetValue(topic.LoaiND, out var fallbackContent))
+                    noiDung = fallbackContent;
+            }
+        }
+
         return Json(new { noiDung = noiDung ?? string.Empty });
     }
 
-    private async Task PopulateContentEditorAsync(CoSoYTeEditViewModel model, long? topicId = null)
+    private async Task PopulateContentEditorAsync(
+        CoSoYTeEditViewModel model,
+        long? topicId = null,
+        bool loadSelectedContent = true)
     {
         model.NhomCSList = await _db.DMNhomCSs.AsNoTracking().ToListAsync();
         model.ChuDeList = await _db.DMChuDes.AsNoTracking().ToListAsync();
@@ -443,7 +619,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         model.SelectedTopicId = topicId ?? model.ChuDeList.FirstOrDefault()?.ID;
         model.TopicId = model.SelectedTopicId ?? 0;
 
-        if (model.Id > 0 && model.TopicId > 0)
+        if (loadSelectedContent && model.Id > 0 && model.TopicId > 0)
         {
             model.NoiDung = await _adminStoredProcedures.GetNoiDungCskcbAsync(
                 model.MaCoSo,
