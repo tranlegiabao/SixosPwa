@@ -34,7 +34,6 @@
         <div class="auth__brand">
             <img src="~/static/icon-192.png" alt="HisSoft" width="72" height="72" />
             <h1>HisSoft</h1>
-            <p>Đăng nhập nhanh bằng số điện thoại hoặc email</p>
         </div>
 
         <div class="card auth__card">
@@ -65,7 +64,6 @@
                             <label class="form-label" for="maCoSo">Mã CSKCB</label>
                             <input type="text" class="form-control form-control-lg" id="maCoSo" readonly
                                    value="@ViewBag.MaCoSo — @ViewBag.TenCoSo" />
-                            <div class="form-text">Cơ sở bạn đang đăng ký khám.</div>
                         </div>
                     }
 
@@ -73,14 +71,12 @@
                         <label class="form-label" for="soDienThoai">Số điện thoại hoặc Email</label>
                         <input type="text" class="form-control form-control-lg" id="soDienThoai" 
                                placeholder="Ví dụ: 0987654321 hoặc ten@domain.com" autocomplete="username" maxlength="50" required />
-                        <div class="form-text">Nhập số điện thoại hoặc email để đăng nhập.</div>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label" for="cccd">Số Căn cước công dân</label>
                         <input type="text" class="form-control form-control-lg" id="cccd" inputmode="numeric"
                                placeholder="12 số trên thẻ căn cước" autocomplete="off" maxlength="20" required />
-                        <div class="form-text">Dùng để tìm hồ sơ của bạn tại cơ sở khám chữa bệnh.</div>
                     </div>
 
                     <button type="submit" id="btnGuiOtp" class="btn btn-primary w-100 py-2 fw-bold">
