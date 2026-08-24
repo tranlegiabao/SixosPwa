@@ -20,22 +20,36 @@
             var isIgnored = /^\/(DangNhap|Admin)/i.test(currentPath);
             var isRootPage = currentPath === '/' || currentPath === '/Home' || currentPath === '/benh-nhan';
 
+            // Man CHI admin moi vao duoc nhung lai nam duoi /Home nen lot khoi
+            // luat isIgnored o tren (HomeController.cs:461 —
+            // [Authorize(AuthenticationSchemes = AdminAuthentication.Scheme, Roles = "Admin")]).
+            // Khoi phuc toi day khi khong phai admin thi bi thu thach cookie Admin
+            // va an nguyen man DANG NHAP ADMIN — localStorage dung chung ca trinh
+            // duyet nen benh nhan/khach tren cung may cung dinh.
+            var laTrangChiAdmin = function (p) { return /^\/Home\/GuiTinNhan/i.test(p); };
+            var dangLaAdmin = @(layoutLaAdmin ? "true" : "false");
+
             if (!isIgnored) {
                 if (isRootPage) {
                     var referrer = document.referrer;
                     var hasReferrerSameOrigin = referrer && referrer.indexOf(window.location.origin) === 0;
-                    
+
                     if (!hasReferrerSameOrigin) {
                         var lastVisited = localStorage.getItem('lastVisitedUrl');
                         if (lastVisited && lastVisited !== (currentPath + window.location.search + window.location.hash)) {
                             var targetPath = lastVisited.split('?')[0].split('#')[0];
                             var isTargetRoot = targetPath === '/' || targetPath === '/Home' || targetPath === '/benh-nhan';
-                            if (!isTargetRoot) {
+
+                            // Chan ca gia tri CU con ket trong localStorage tu phien
+                            // admin truoc do — xoa luon de khong lam phien lan sau.
+                            if (laTrangChiAdmin(targetPath) && !dangLaAdmin) {
+                                localStorage.removeItem('lastVisitedUrl');
+                            } else if (!isTargetRoot) {
                                 window.location.replace(lastVisited);
                             }
                         }
                     }
-                } else {
+                } else if (!laTrangChiAdmin(currentPath) || dangLaAdmin) {
                     localStorage.setItem('lastVisitedUrl', currentPath + window.location.search + window.location.hash);
                 }
             }
