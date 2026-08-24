@@ -2,14 +2,15 @@
 @{ ViewData["Title"] = "Thêm cơ sở y tế"; }
 
 <div class="admin-panel form-panel facility-form-panel">
-    <form asp-action="Create" method="post" enctype="multipart/form-data" class="admin-form" id="coSoYTeForm">
+    <form asp-action="Create" method="post" enctype="multipart/form-data" class="admin-form" id="coSoYTeForm" asp-antiforgery="false">
+        @Html.AntiForgeryToken()
         <div asp-validation-summary="ModelOnly" class="text-danger validation-summary"></div>
 
         <div class="form-section-title">Thông tin cơ sở</div>
         <div class="row g-3">
             <div class="col-md-4"><label asp-for="MaCoSo" class="form-label">Mã cơ sở</label><input asp-for="MaCoSo" class="form-control" autocomplete="off" /><span asp-validation-for="MaCoSo" class="text-danger field-error"></span></div>
             <div class="col-md-8"><label asp-for="TenCoSo" class="form-label">Tên cơ sở <span>*</span></label><input asp-for="TenCoSo" class="form-control" /><span asp-validation-for="TenCoSo" class="text-danger field-error"></span></div>
-            <div class="col-md-12"><label asp-for="Slug" class="form-label">Đường dẫn cố định</label><div class="input-group"><span class="input-group-text">/pk/</span><input asp-for="Slug" class="form-control" autocomplete="off" placeholder="benh-vien-ung-buou" /></div><div class="form-text">Địa chỉ cố định của cơ sở, dùng để in tờ rơi hoặc mã QR. Đặt một lần rồi giữ nguyên — đổi sẽ làm hỏng mọi đường link đã phát đi.</div><span asp-validation-for="Slug" class="text-danger field-error"></span></div>
+            <div class="col-md-12"><label asp-for="Slug" class="form-label">Đường dẫn cố định</label><div class="input-group"><span class="input-group-text">/DangKyOnline/</span><input asp-for="Slug" class="form-control" autocomplete="off" placeholder="benh-vien-ung-buou" /></div><div class="form-text">Địa chỉ cố định của cơ sở, dùng để in tờ rơi hoặc mã QR. Đặt một lần rồi giữ nguyên — đổi sẽ làm hỏng mọi đường link đã phát đi.</div><span asp-validation-for="Slug" class="text-danger field-error"></span></div>
             <div class="col-md-4"><label asp-for="LoaiCS" class="form-label">Loại hình</label><select asp-for="LoaiCS" class="form-select"><option value="">Chưa phân loại</option><option value="benhvien">Bệnh viện</option><option value="pkdk">Phòng khám</option><option value="nhakhoa">Nha khoa</option><option value="phongmach">Phòng mạch</option><option value="nhathuoc">Nhà thuốc</option></select></div>
             @await Html.PartialAsync("_CoSoYTeOperatingHoursFields", Model)
             @await Html.PartialAsync("_CoSoYTeAddressFields", Model)
@@ -20,32 +21,86 @@
             <div class="col-lg-6"><label class="form-label">Logo cơ sở</label>@await Html.PartialAsync("_CoSoYTeLogoSourceField", Model)</div>
         </div>
 
-        <div class="form-section-title">Quảng cáo và hiển thị</div>
-        <div class="media-ad-row">
-            <div class="ad-amount-stack">
-                <div class="ad-amount-cell">
-                    <label asp-for="QuangCao" class="form-label">Số tiền đã trả cho quảng cáo (VNĐ)</label>
-                    <div class="input-group"><input asp-for="QuangCao" class="form-control" type="number" min="0" step="1000" inputmode="numeric" placeholder="Nhập số tiền" data-advertising-amount /><span class="input-group-text">VNĐ</span></div>
-                    <span asp-validation-for="QuangCao" class="text-danger field-error"></span>
-                </div>
-                <div class="advertising-details @(Model.QuangCao.GetValueOrDefault() > 0 ? string.Empty : "d-none")" data-advertising-details>
-                    <label class="form-label">Ảnh quảng cáo</label>
-                    @await Html.PartialAsync("_QuangCaoImageSourceField", Model)
-                    <div class="form-note"><span>i</span> Số tiền quảng cáo cao hơn sẽ được ưu tiên hiển thị trước.</div>
-                </div>
-            </div>
-            <div class="ad-content-cell @(Model.QuangCao.GetValueOrDefault() > 0 ? string.Empty : "d-none")" data-advertising-content>
-                <label asp-for="NoiDungQuangCao" class="form-label">Nội dung quảng cáo</label>
-                <textarea asp-for="NoiDungQuangCao" id="advertisingContentEditor" class="form-control" rows="5" placeholder="Nhập nội dung quảng cáo"></textarea>
-                <span asp-validation-for="NoiDungQuangCao" class="text-danger field-error"></span>
+        <div class="form-section-title">Cấu hình hiển thị &amp; nội dung</div>
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <label class="form-label fw-bold">Chọn phần muốn chỉnh sửa</label>
+                <select asp-for="ActiveSection" id="editSectionSelector" class="form-select border-primary-subtle">
+                    <option value="">-- Chọn phần muốn chỉnh sửa --</option>
+                    <option value="noiDungChiTiet">Nội dung trang chi tiết cơ sở kcb</option>
+                    <option value="quangCao">Quảng cáo và hiển thị</option>
+                </select>
             </div>
         </div>
-        <div class="form-check form-switch mt-3"><input asp-for="XacMinh" class="form-check-input" /><label asp-for="XacMinh" class="form-check-label">Đã xác minh và cho phép hiển thị</label></div>
 
-        @await Html.PartialAsync("_CoSoYTeDashboardContentFields", Model)
+        <div id="section-quang-cao" class="d-none">
+            <div class="form-section-title">Quảng cáo và hiển thị</div>
+            <div class="media-ad-row">
+                <div class="ad-amount-stack">
+                    <div class="ad-amount-cell">
+                        <label asp-for="QuangCao" class="form-label">Số tiền đã trả cho quảng cáo (VNĐ)</label>
+                        <div class="input-group"><input asp-for="QuangCao" class="form-control" type="number" min="0" step="1000" inputmode="numeric" placeholder="Nhập số tiền" data-advertising-amount /><span class="input-group-text">VNĐ</span></div>
+                        <span asp-validation-for="QuangCao" class="text-danger field-error"></span>
+                    </div>
+                    <div class="advertising-details @(Model.QuangCao.GetValueOrDefault() > 0 ? string.Empty : "d-none")" data-advertising-details>
+                        <label class="form-label">Ảnh quảng cáo</label>
+                        @await Html.PartialAsync("_QuangCaoImageSourceField", Model)
+                        <div class="form-note"><span>i</span> Số tiền quảng cáo cao hơn sẽ được ưu tiên hiển thị trước.</div>
+                    </div>
+                </div>
+                <div class="ad-content-cell @(Model.QuangCao.GetValueOrDefault() > 0 ? string.Empty : "d-none")" data-advertising-content>
+                    <label asp-for="NoiDungQuangCao" class="form-label">Nội dung quảng cáo</label>
+                    <textarea asp-for="NoiDungQuangCao" id="advertisingContentEditor" class="form-control" rows="5" placeholder="Nhập nội dung quảng cáo"></textarea>
+                    <span asp-validation-for="NoiDungQuangCao" class="text-danger field-error"></span>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-noi-dung-chi-tiet" class="d-none">
+            @await Html.PartialAsync("_CoSoYTeDashboardContentFields", Model)
+        </div>
+
+        <div class="form-check form-switch mt-4 mb-4"><input asp-for="XacMinh" class="form-check-input" /><label asp-for="XacMinh" class="form-check-label">Đã xác minh và cho phép hiển thị</label></div>
 
         <div class="form-actions"><a asp-action="Index" class="btn admin-btn-secondary">Hủy</a><button type="submit" class="btn admin-btn-primary">Lưu cơ sở</button></div>
     </form>
 </div>
 
-@section Scripts { <script src="~/dist/libs/tinymce/tinymce.min.js"></script><script src="~/js/admin-co-so-y-te.js" asp-append-version="true"></script><script src="~/js/admin-co-so-y-te-address.js" asp-append-version="true"></script><script src="~/js/admin-co-so-y-te-content.js" asp-append-version="true"></script><partial name="_ValidationScriptsPartial" /> }
+@section Scripts {
+    <script src="~/dist/libs/tinymce/tinymce.min.js"></script>
+    <script src="~/js/admin-co-so-y-te.js" asp-append-version="true"></script>
+    <script src="~/js/admin-co-so-y-te-address.js" asp-append-version="true"></script>
+    <script src="~/js/admin-co-so-y-te-content.js" asp-append-version="true"></script>
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var selector = document.getElementById('editSectionSelector');
+            var sectionQuangCao = document.getElementById('section-quang-cao');
+            var sectionNoiDungChiTiet = document.getElementById('section-noi-dung-chi-tiet');
+
+            if (selector && sectionQuangCao && sectionNoiDungChiTiet) {
+                function updateVisibility() {
+                    if (selector.value === 'quangCao') {
+                        sectionQuangCao.classList.remove('d-none');
+                        sectionNoiDungChiTiet.classList.add('d-none');
+                        if (window.initializeEditor) {
+                            window.initializeEditor('#advertisingContentEditor', 250);
+                        }
+                    } else if (selector.value === 'noiDungChiTiet') {
+                        sectionQuangCao.classList.add('d-none');
+                        sectionNoiDungChiTiet.classList.remove('d-none');
+                        if (window.initializeEditor) {
+                            window.initializeEditor('#summernote', 450);
+                        }
+                    } else {
+                        sectionQuangCao.classList.add('d-none');
+                        sectionNoiDungChiTiet.classList.add('d-none');
+                    }
+                }
+
+                selector.addEventListener('change', updateVisibility);
+                updateVisibility();
+            }
+        });
+    </script>
+}

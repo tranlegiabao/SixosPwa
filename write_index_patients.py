@@ -1,4 +1,7 @@
-@model SixosPwa.Areas.Admin.Models.DashboardViewModel
+import codecs
+
+file_path = "SixosPwa/Areas/Admin/Views/Dashboard/Index.cshtml"
+content = """@model SixosPwa.Areas.Admin.Models.DashboardViewModel
 @{
     ViewData["Title"] = "Quản lý dữ liệu";
 }
@@ -26,12 +29,12 @@
     @foreach(var group in Model.FacilityGroupStats)
     {
         <div class="col-md-3">
-            <div class="card shadow-sm border-0 rounded-3 flash-effect" style="cursor: pointer; background-color: #e3f2fd;" onclick="toggleGroup('@group.LoaiCS')">
+            <div class="card shadow-sm border-0 rounded-3 flash-effect" style="cursor: pointer;" onclick="toggleGroup('@group.LoaiCS')">
                 <div class="card-body text-center p-4">
                     <div class="fw-bold mb-3 text-primary" style="font-size: 18px; text-transform: uppercase;">@group.TenLoaiCS</div>
-                    <div class="text-secondary mt-3 d-inline-block text-start" style="font-size: 15px; font-weight: 500;">
-                        <div class="mb-1">Cơ sở: <span class="text-dark fw-bold ms-1">@group.FacilityCount</span></div>
-                        <div>Số bệnh nhân: <span class="text-dark fw-bold ms-1">@group.TotalPatientCount</span></div>
+                    <div class="d-flex justify-content-between text-secondary" style="font-size: 15px; font-weight: 500;">
+                        <span>@group.FacilityCount cơ sở</span>
+                        <span>@group.TotalPatientCount BN</span>
                     </div>
                 </div>
             </div>
@@ -128,4 +131,7 @@
             }
         }
     }
-</script>
+</script>"""
+
+with codecs.open(file_path, "w", "utf-8-sig") as f:
+    f.write(content)

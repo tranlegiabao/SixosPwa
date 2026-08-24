@@ -38,9 +38,6 @@
                 <a asp-area="Admin" asp-controller="TaiKhoan" asp-action="Index" class="admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "TaiKhoan" ? "active" : "")">
                     <span class="nav-symbol">◎</span><span>Tài khoản</span>
                 </a>
-                <a asp-area="Admin" asp-controller="DoiTac" asp-action="Index" class="admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "DoiTac" ? "active" : "")">
-                    <span class="nav-symbol">◇</span><span>Đối tác</span>
-                </a>
                 <a asp-area="Admin" asp-controller="CoSoYTe" asp-action="Index" class="admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "CoSoYTe" ? "active" : "")">
                     <span class="nav-symbol">+</span><span>Cơ sở y tế</span>
                 </a>

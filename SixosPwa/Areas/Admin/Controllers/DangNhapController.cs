@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
+using SixosPwa.Models;
 using SixosPwa.Security;
 using SixosPwa.Services;
 
@@ -33,7 +34,7 @@ public sealed class DangNhapController : Controller
     }
 
     [HttpPost]
-    public IActionResult GuiOtp([FromBody] AdminGuiOtpRequest model)
+    public async Task<IActionResult> GuiOtp([FromBody] AdminGuiOtpRequest model)
     {
         if (string.IsNullOrWhiteSpace(model.SoDienThoai))
             return Json(new { success = false, message = "Vui lòng nhập số điện thoại hoặc email." });
@@ -49,8 +50,19 @@ public sealed class DangNhapController : Controller
             return Json(new { success = false, message = "Số điện thoại không hợp lệ." });
         }
 
-        _cache.Set($"AdminOTP_{input}", "123456", TimeSpan.FromMinutes(5));
-        return Json(new { success = true, message = "Đã gửi mã OTP Admin.", otpDemo = "123456" });
+        // Kiểm tra xem tài khoản có tồn tại và là Admin hay không
+        var taiKhoan = await _taiKhoanService.DangNhapAsync(input, "");
+
+        if (taiKhoan == null || (!string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase) && !string.Equals(taiKhoan.Role, "DoiTac", StringComparison.OrdinalIgnoreCase)))
+        {
+            return Json(new { success = false, message = "Tài khoản không có quyền truy cập khu vực Admin." });
+        }
+
+        return Json(new { 
+            success = true, 
+            isPassword = true,
+            message = "Vui lòng nhập mật khẩu Admin để đăng nhập."
+        });
     }
 
     [HttpPost]
@@ -60,21 +72,22 @@ public sealed class DangNhapController : Controller
             return Json(new { success = false, message = "Vui lòng nhập đầy đủ thông tin." });
 
         var input = model.SoDienThoai.Trim();
-        _cache.TryGetValue($"AdminOTP_{input}", out string? cachedOtp);
-        if (model.Otp.Trim() != "123456" && model.Otp.Trim() != "1234"
-            && !string.Equals(model.Otp.Trim(), cachedOtp, StringComparison.Ordinal))
-        {
-            return Json(new { success = false, message = "Mã OTP không chính xác hoặc đã hết hạn." });
-        }
+        var otpInput = model.Otp.Trim();
 
         var taiKhoan = await _taiKhoanService.DangNhapAsync(input, "");
-        if (taiKhoan == null || !string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+        if (taiKhoan == null || (!string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase) && !string.Equals(taiKhoan.Role, "DoiTac", StringComparison.OrdinalIgnoreCase)))
         {
             return Json(new
             {
                 success = false,
                 message = "Tài khoản không có quyền truy cập khu vực Admin."
             });
+        }
+
+        // So khớp mật khẩu từ cột MatKhau trong bảng TaiKhoan
+        if (string.IsNullOrEmpty(taiKhoan.MatKhau) || !string.Equals(taiKhoan.MatKhau, otpInput, StringComparison.Ordinal))
+        {
+            return Json(new { success = false, message = "Mật khẩu không chính xác." });
         }
 
         var username = string.IsNullOrWhiteSpace(taiKhoan.SDT) ? input : taiKhoan.SDT;

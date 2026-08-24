@@ -1,0 +1,87 @@
+import codecs
+
+file_path = "SixosPwa/Areas/Admin/Views/Dashboard/Index.cshtml"
+content = """@model SixosPwa.Areas.Admin.Models.DashboardViewModel
+@{
+    ViewData["Title"] = "Quản lý dữ liệu";
+}
+
+<style>
+    .admin-content {
+        padding: 15px 15px var(--admin-footer-space) 15px !important;
+        max-width: 100% !important;
+    }
+    .flash-effect {
+        animation: pulse 2s infinite;
+        transition: transform 0.2s;
+    }
+    .flash-effect:hover {
+        transform: translateY(-5px);
+    }
+    @@keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(13, 110, 253, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); }
+    }
+</style>
+
+<div class="row g-4 mb-4">
+    @foreach(var group in Model.FacilityGroupStats)
+    {
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 rounded-3 flash-effect" style="cursor: pointer;" onclick="toggleGroup('@group.LoaiCS')">
+                <div class="card-body text-center p-4">
+                    <div class="fw-bold mb-3 text-primary" style="font-size: 18px; text-transform: uppercase;">@group.TenLoaiCS</div>
+                    <div class="d-flex justify-content-between text-secondary" style="font-size: 15px; font-weight: 500;">
+                        <span>@group.FacilityCount cơ sở</span>
+                        <span>@group.TotalPatientCount BN</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<div id="facilities-container">
+    @foreach(var group in Model.FacilityGroupStats)
+    {
+        <div id="group-@group.LoaiCS" style="display: none;" class="card shadow-sm border-0 rounded-3 mb-4">
+            <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                <div class="fw-bold text-secondary mb-0" style="font-size: 16px;">Danh sách @group.TenLoaiCS.ToLower()</div>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    @if(!group.Facilities.Any())
+                    {
+                        <div class="col-12 text-muted">Chưa có cơ sở nào.</div>
+                    }
+                    @foreach(var f in group.Facilities)
+                    {
+                        <div class="col-md-4">
+                            <div class="p-3 border rounded-3 bg-light d-flex justify-content-between align-items-center">
+                                <span class="fw-semibold text-dark text-truncate me-2" style="font-size: 15px;" title="@f.TenCoSo">@f.TenCoSo</span>
+                                <span class="badge bg-success rounded-pill">@f.PatientCount BN</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<script>
+    function toggleGroup(loaiCS) {
+        var allGroups = document.querySelectorAll('[id^="group-"]');
+        allGroups.forEach(function(el) {
+            if (el.id === 'group-' + loaiCS) {
+                el.style.display = el.style.display === 'none' ? 'block' : 'none';
+            } else {
+                el.style.display = 'none';
+            }
+        });
+    }
+</script>"""
+
+with codecs.open(file_path, "w", "utf-8-sig") as f:
+    f.write(content)
