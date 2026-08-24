@@ -54,6 +54,42 @@ public sealed class DashboardController : AdminControllerBase
                 selectedTopic.ID)
             : null;
 
+        
+        // Count of patient accounts by MaCoSo
+        var facilityPatients = await _db.TaiKhoanDoiTacs
+            .Join(_db.TaiKhoans, 
+                  td => td.IdTaiKhoan, 
+                  tk => tk.Id, 
+                  (td, tk) => new { td.MaCoSo, tk.SDT, tk.Id, tk.CCCD })
+            .ToListAsync();
+            
+        var patientsByFacility = facilityPatients
+            .GroupBy(x => x.MaCoSo)
+            .ToDictionary(
+                g => g.Key, 
+                g => g.Select(x => new PatientAccountStat { Id = x.Id, SDT = x.SDT ?? "", CCCD = x.CCCD ?? "" }).ToList()
+            );
+
+        var groups = nhomCSList
+            .Where(x => new[] { "benhvien", "nhakhoa", "pkdk", "nhathuoc" }.Contains(x.LoaiCS?.ToLower()))
+            .Select(n => new FacilityGroupStat
+            {
+                TenLoaiCS = n.TenLoaiCS ?? "",
+                LoaiCS = n.LoaiCS ?? "",
+                Facilities = facilityList
+                    .Where(f => string.Equals(f.LoaiCS, n.LoaiCS, StringComparison.OrdinalIgnoreCase))
+                    .Select(f => new FacilityStat
+                    {
+                        Id = f.Id,
+                        MaCoSo = f.MaCoSo ?? "",
+                        TenCoSo = f.TenCoSo ?? "",
+                        PatientCount = patientsByFacility.GetValueOrDefault(f.MaCoSo ?? "", new List<PatientAccountStat>()).Count,
+                        PatientAccounts = patientsByFacility.GetValueOrDefault(f.MaCoSo ?? "", new List<PatientAccountStat>())
+                    })
+                    .ToList()
+            })
+            .ToList();
+
         var model = new DashboardViewModel
         {
             AccountCount = await _db.TaiKhoans.CountAsync(),
@@ -89,7 +125,8 @@ public sealed class DashboardController : AdminControllerBase
             SelectedNhomCSId = selectedNhom?.ID,
             SelectedFacilityId = selectedFacility?.Id,
             SelectedTopicId = selectedTopic?.ID,
-            NoiDung = noiDung
+            NoiDung = noiDung,
+            FacilityGroupStats = groups
         };
 
         return View(model);

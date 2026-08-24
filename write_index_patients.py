@@ -1,4 +1,7 @@
-﻿@model SixosPwa.Areas.Admin.Models.DashboardViewModel
+import codecs
+
+file_path = "SixosPwa/Areas/Admin/Views/Dashboard/Index.cshtml"
+content = """@model SixosPwa.Areas.Admin.Models.DashboardViewModel
 @{
     ViewData["Title"] = "Quản lý dữ liệu";
 }
@@ -128,4 +131,7 @@
             }
         }
     }
-</script>
+</script>"""
+
+with codecs.open(file_path, "w", "utf-8-sig") as f:
+    f.write(content)
