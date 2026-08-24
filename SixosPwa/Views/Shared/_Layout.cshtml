@@ -1,3 +1,11 @@
+@{
+    // Dang nhap khu Admin ky CA HAI cookie — AdminAuthentication.Scheme VA cookie
+    // mac dinh, kem Role="Admin" (Areas/Admin/Controllers/DangNhapController.cs:113-121),
+    // nen admin qua duoc [Authorize] cua TimBacSi/HoSoBenhAn va thay menu benh nhan.
+    // Admin KHONG co claim Cccd/MaCoSo => "Ho so benh nhan" se roi vao nhanh du phong
+    // cua DiTiep va da ve /benh-nhan rong khong ten. Phai re rieng.
+    var layoutLaAdmin = User.Identity?.IsAuthenticated == true && User.IsInRole("Admin");
+}
 <!doctype html>
 <html lang="vi">
 <head>
@@ -461,10 +469,20 @@
             <span class="d-block mt-1" style="font-size: 11px; font-weight: 600;">Trang chủ</span>
         </a>
         
-        <a href="/DangNhap/DiTiep?returnUrl=ho-so" class="bottom-nav-item text-decoration-none">
-            <i class="fas fa-user-md fs-4"></i>
-            <span class="d-block mt-1" style="font-size: 11px; font-weight: 600;">Hồ sơ bệnh nhân</span>
-        </a>
+        @if (layoutLaAdmin)
+        {
+            <a href="/Admin" class="bottom-nav-item text-decoration-none">
+                <i class="fas fa-user-shield fs-4"></i>
+                <span class="d-block mt-1" style="font-size: 11px; font-weight: 600;">Tài khoản</span>
+            </a>
+        }
+        else
+        {
+            <a href="/DangNhap/DiTiep?returnUrl=ho-so" class="bottom-nav-item text-decoration-none">
+                <i class="fas fa-user-md fs-4"></i>
+                <span class="d-block mt-1" style="font-size: 11px; font-weight: 600;">Hồ sơ bệnh nhân</span>
+            </a>
+        }
 
         <a href="javascript:void(0)" class="bottom-nav-item text-decoration-none">
             <i class="fas fa-question-circle fs-4"></i>
@@ -487,13 +505,13 @@
         <div class="offcanvas-body p-0 pt-2">
             
             <!-- Hồ sơ thu gọn -->
-            <a href="/DangNhap/DiTiep?returnUrl=ho-so" class="text-decoration-none text-dark">
+            <a href="@(layoutLaAdmin ? "/Admin" : "/DangNhap/DiTiep?returnUrl=ho-so")" class="text-decoration-none text-dark">
                 <div class="fb-menu-profile d-flex align-items-center">
-                    <img src="https://ui-avatars.com/api/?name=@(ViewData["TenBN"] ?? ViewData["UserName"] ?? "BN")&background=1691E2&color=fff" 
+                    <img src="https://ui-avatars.com/api/?name=@(ViewData["TenBN"] ?? ViewData["UserName"] ?? "BN")&background=1691E2&color=fff"
                          alt="Avatar" class="rounded-circle me-3" style="width:40px; height:40px; border:1px solid #ddd;" />
                     <div class="flex-grow-1">
-                        <h6 class="mb-0 fw-bold">@(ViewData["TenBN"] ?? "Hồ sơ bệnh nhân")</h6>
-                        <small class="text-muted">Xem trang cá nhân của bạn</small>
+                        <h6 class="mb-0 fw-bold">@(layoutLaAdmin ? "Tài khoản" : (ViewData["TenBN"] ?? "Hồ sơ bệnh nhân"))</h6>
+                        <small class="text-muted">@(layoutLaAdmin ? "Vào khu quản trị" : "Xem trang cá nhân của bạn")</small>
                     </div>
                     <i class="fas fa-chevron-down text-muted bg-light rounded-circle p-2"></i>
                 </div>
@@ -507,17 +525,27 @@
                 Trang chủ
             </a>
             
-            <a href="/DangNhap/DiTiep?returnUrl=ho-so" class="fb-menu-item">
-                <div class="fb-menu-icon"><i class="fas fa-user-md"></i></div>
-                Hồ sơ bệnh nhân
-            </a>
+            @if (layoutLaAdmin)
+            {
+                <a href="/Admin" class="fb-menu-item">
+                    <div class="fb-menu-icon"><i class="fas fa-user-shield"></i></div>
+                    Tài khoản
+                </a>
+            }
+            else
+            {
+                <a href="/DangNhap/DiTiep?returnUrl=ho-so" class="fb-menu-item">
+                    <div class="fb-menu-icon"><i class="fas fa-user-md"></i></div>
+                    Hồ sơ bệnh nhân
+                </a>
+            }
 
             <a href="javascript:void(0)" class="fb-menu-item">
                 <div class="fb-menu-icon"><i class="fas fa-question-circle"></i></div>
                 Trợ giúp & Hỗ trợ
             </a>
 
-            <a href="/DangNhap/DangXuat" class="fb-menu-item text-danger">
+            <a href="@(layoutLaAdmin ? "/Admin/DangNhap/Logout" : "/DangNhap/DangXuat")" class="fb-menu-item text-danger">
                 <div class="fb-menu-icon" style="background:#fee2e2; color:#dc2626;"><i class="fas fa-sign-out-alt"></i></div>
                 Đăng xuất
             </a>

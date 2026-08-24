@@ -5,7 +5,16 @@
     ViewData["ChanTrangCong"] = true;
 }
 <link rel="stylesheet" href="~/css/thong-tin-benh-nhan.css" asp-append-version="true" />
-@{ var daDangNhap = User.Identity?.IsAuthenticated == true; }
+@{
+    var daDangNhap = User.Identity?.IsAuthenticated == true;
+
+    // Dang nhap khu Admin ky CA HAI cookie — AdminAuthentication.Scheme VA cookie
+    // mac dinh, kem Role="Admin" (Areas/Admin/Controllers/DangNhapController.cs:113-121).
+    // Nen o trang benh nhan, admin trong y het mot nguoi da dang nhap binh thuong.
+    // Phai re rieng: admin KHONG co claim Cccd/MaCoSo nen "Ho so benh nhan" se roi
+    // vao nhanh du phong cua DiTiep va da ve /benh-nhan rong khong ten.
+    var laAdmin = daDangNhap && User.IsInRole("Admin");
+}
 @if (!daDangNhap)
 {
     <style>
@@ -59,7 +68,17 @@
                re theo trang thai dang nhap — offcanvas cua _Layout khong can vi
                chi song tren cac trang [Authorize]. Khach vang lai dang nhap tu
                2 nut o trang co so (/DangKyOnline/{slug}), khong phai tu day. *@
-            @if (daDangNhap)
+            @if (laAdmin)
+            {
+                <div class="ytv-dropdown-title">Tài khoản</div>
+                <a href="/Admin" role="menuitem">
+                    <i class="fas fa-user-shield" aria-hidden="true"></i> Tài khoản
+                </a>
+                <a href="/Admin/DangNhap/Logout" role="menuitem" class="ytv-dropdown-thoat">
+                    <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Đăng xuất
+                </a>
+            }
+            else if (daDangNhap)
             {
                 <div class="ytv-dropdown-title">Tài khoản</div>
                 <a href="/DangNhap/DiTiep?returnUrl=ho-so" role="menuitem">
