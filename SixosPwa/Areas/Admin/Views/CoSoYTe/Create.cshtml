@@ -2,7 +2,8 @@
 @{ ViewData["Title"] = "Thêm cơ sở y tế"; }
 
 <div class="admin-panel form-panel facility-form-panel">
-    <form asp-action="Create" method="post" enctype="multipart/form-data" class="admin-form" id="coSoYTeForm">
+    <form asp-action="Create" method="post" enctype="multipart/form-data" class="admin-form" id="coSoYTeForm" asp-antiforgery="false">
+        @Html.AntiForgeryToken()
         <div asp-validation-summary="ModelOnly" class="text-danger validation-summary"></div>
 
         <div class="form-section-title">Thông tin cơ sở</div>

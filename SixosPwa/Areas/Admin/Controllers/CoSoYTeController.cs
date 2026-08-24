@@ -304,6 +304,8 @@ public sealed class CoSoYTeController : AdminControllerBase
 
         ViewData["Title"] = "Xem trước cơ sở y tế";
         ViewData["CoSoYTe"] = facility;
+        ViewData["MaCoSo"] = facility.MaCoSo;
+        ViewData["Slug"] = facility.Slug;
         ViewData["TenCoSo"] = facility.TenCoSo ?? "Cơ sở y tế";
         ViewData["DiaChi"] = facility.DiaChi ?? "Đang cập nhật";
         ViewData["Type"] = facility.LoaiCS ?? "benhvien";
@@ -315,6 +317,45 @@ public sealed class CoSoYTeController : AdminControllerBase
         ViewData["PreviewStatic"] = true;
 
         return View("~/Views/Home/ChiTietCoSo.cshtml");
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> PreviewHome(CoSoYTeEditViewModel model)
+    {
+        var storedFacility = model.Id > 0
+            ? await _db.DMCSKCBs.AsNoTracking().FirstOrDefaultAsync(x => x.Id == model.Id)
+            : null;
+        var storedAdvertising = storedFacility == null
+            ? null
+            : await GetAdvertisingAsync(storedFacility.MaCoSo, storedFacility.TenCoSo);
+
+        var previewItems = await LoadHomePreviewAdsAsync();
+        var previewImage = await ReadPreviewImageAsync(
+            model.QuangCaoImageFile,
+            model.QuangCaoImgUrlInput,
+            model.QuangCaoImg ?? storedAdvertising?.Img);
+        var previewContent = string.IsNullOrWhiteSpace(model.NoiDungQuangCao)
+            ? storedAdvertising?.NoiDung
+            : model.NoiDungQuangCao;
+
+        if (model.QuangCao.GetValueOrDefault() > 0
+            && !string.IsNullOrWhiteSpace(model.TenCoSo))
+        {
+            previewItems.RemoveAll(x => string.Equals(x.TenCoSo, model.TenCoSo, StringComparison.OrdinalIgnoreCase));
+            previewItems.Insert(0, new TopCSKCBQC
+            {
+                TenCoSo = model.TenCoSo,
+                NoiDung = previewContent ?? string.Empty,
+                Img = previewImage ?? string.Empty
+            });
+        }
+
+        ViewData["Title"] = "Xem trước trang Home";
+        ViewData["TopCSKCB"] = previewItems;
+        ViewData["PreviewStatic"] = true;
+
+        return View("~/Views/Home/ThongTinBenhNhan.cshtml", new List<LichSuKham>());
     }
 
     private async Task<QCKCB?> GetAdvertisingAsync(string? maCoSo, string? tenCoSo)
@@ -496,6 +537,41 @@ public sealed class CoSoYTeController : AdminControllerBase
             .Where(x => x.LoaiND != null && NDCSKCB.AllowedLoaiND.Contains(x.LoaiND, StringComparer.OrdinalIgnoreCase))
             .GroupBy(x => x.LoaiND!, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(x => x.Key, x => x.First().Item.NoiDung ?? "", StringComparer.OrdinalIgnoreCase);
+    }
+
+    private async Task<List<TopCSKCBQC>> LoadHomePreviewAdsAsync()
+    {
+        var facilities = await _db.DMCSKCBs.AsNoTracking()
+            .Where(x => x.QuangCao.GetValueOrDefault() > 0)
+            .OrderByDescending(x => x.QuangCao)
+            .Take(5)
+            .ToListAsync();
+        var facilityCodes = facilities
+            .Select(x => x.MaCoSo)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToList();
+        var facilityNames = facilities
+            .Select(x => x.TenCoSo)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToList();
+        var advertising = await _db.QCKCBs.AsNoTracking()
+            .Where(x => (x.MaCoSo != null && facilityCodes.Contains(x.MaCoSo))
+                || (x.MaCoSo == null && facilityNames.Contains(x.TenCoSo)))
+            .OrderByDescending(x => x.Id)
+            .ToListAsync();
+
+        return facilities.Select(facility =>
+        {
+            var item = advertising.FirstOrDefault(x =>
+                (!string.IsNullOrWhiteSpace(facility.MaCoSo) && x.MaCoSo == facility.MaCoSo)
+                || (string.IsNullOrWhiteSpace(x.MaCoSo) && x.TenCoSo == facility.TenCoSo));
+            return new TopCSKCBQC
+            {
+                TenCoSo = facility.TenCoSo ?? string.Empty,
+                NoiDung = item?.NoiDung ?? string.Empty,
+                Img = item?.Img ?? facility.Img ?? string.Empty
+            };
+        }).ToList();
     }
 
     private static string? ResolvePreviewLoaiND(string? storedLoaiND, IReadOnlyDictionary<string, string> topicById)

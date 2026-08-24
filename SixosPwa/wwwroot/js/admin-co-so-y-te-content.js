@@ -237,6 +237,37 @@
         if (!form) throw new Error('Không tìm thấy biểu mẫu cơ sở y tế.');
 
         var isDetailEditor = editor.id === 'summernote';
+        var currentContent = ensureDefaultBlackHtml(editor.getContent({ format: 'raw' }));
+
+        // Quảng cáo và hiển thị phải xem theo đúng giao diện trang Home,
+        // nên gửi dữ liệu nháp lên endpoint render trang Home tĩnh.
+        if (!isDetailEditor) {
+            syncEditorValue('#advertisingContentEditor');
+            var homeFormData = new FormData(form);
+            homeFormData.set('NoiDungQuangCao', currentContent);
+            var advertisingFileInput = document.querySelector('input[name="QuangCaoImageFile"]');
+            var imageSource = advertisingFileInput?.closest('[data-image-source]');
+            if (imageSource?.dataset.existingImage) {
+                homeFormData.set('QuangCaoImg', imageSource.dataset.existingImage);
+            }
+
+            var homeResponse = await fetch('/Admin/CoSoYTe/PreviewHome', {
+                method: 'POST',
+                body: homeFormData,
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'RequestVerificationToken': form.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                }
+            });
+            if (!homeResponse.ok) throw new Error('Không tải được bản xem trước trang Home.');
+
+            var homeDocument = new DOMParser().parseFromString(await homeResponse.text(), 'text/html');
+            sanitizePreviewDocument(homeDocument);
+            frame.srcdoc = '<!doctype html>' + homeDocument.documentElement.outerHTML;
+            return;
+        }
+
         if (isDetailEditor) {
             syncEditorValue('#summernote');
             syncTopicContents();
@@ -251,11 +282,20 @@
         var response = await fetch('/Admin/CoSoYTe/Preview', {
             method: 'POST',
             body: formData,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            credentials: 'same-origin',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'RequestVerificationToken': form.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+            }
         });
         if (!response.ok) throw new Error('Không tải được bản xem trước.');
 
         var previewDocument = new DOMParser().parseFromString(await response.text(), 'text/html');
+        sanitizePreviewDocument(previewDocument);
+        frame.srcdoc = '<!doctype html>' + previewDocument.documentElement.outerHTML;
+    }
+
+    function sanitizePreviewDocument(previewDocument) {
         previewDocument.querySelectorAll('script').forEach(function (script) { script.remove(); });
         previewDocument.querySelectorAll('a').forEach(function (link) {
             link.removeAttribute('href');
@@ -270,7 +310,6 @@
             formElement.removeAttribute('method');
             formElement.removeAttribute('onsubmit');
         });
-        frame.srcdoc = '<!doctype html>' + previewDocument.documentElement.outerHTML;
     }
 
     function openResponsivePreview(editor) {
@@ -323,9 +362,11 @@
         frame.setAttribute('sandbox', 'allow-same-origin');
         frame.srcdoc = '<!doctype html><html lang="vi"><body style="font-family:system-ui;padding:24px">Đang tải bản xem trước...</body></html>';
         renderStaticPreview(frame, editor).catch(function (error) {
-            frame.srcdoc = '<!doctype html><html lang="vi"><body style="font-family:system-ui;padding:24px;color:#b91c1c">'
-                + escapePreviewText(error.message || 'Không tải được bản xem trước.')
-                + '</body></html>';
+            // Endpoint có thể tạm lỗi khi dữ liệu DB/phiên đăng nhập chưa sẵn sàng;
+            // vẫn cho xem bản tĩnh nội dung đang nhập, không để iframe trắng.
+            var currentContent = ensureDefaultBlackHtml(editor.getContent({ format: 'raw' }));
+            frame.srcdoc = buildResponsivePreviewDocument(currentContent);
+            console.warn('Không tải được bản xem trước đầy đủ:', error);
         });
 
         function closePreview() {
