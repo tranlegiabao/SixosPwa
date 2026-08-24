@@ -59,3 +59,32 @@ trước khi tới đích — đây là cái giá đã biết và chấp nhận.
 
 Cột `DM_DoiTacApi.MaChiNhanh` giữ lại dù chưa dùng: có cửa GET thì nó chính là
 tham số cần gửi.
+
+## Đính chính 2026-08-24 — bỏ popup, chấp nhận đích mờ
+
+`BanGiao.cshtml` từng mở một cửa sổ popup (`window.open('', 'cuaSoBanGiao', 'width=480,height=560')`)
+chỉ để có một script sống sót qua bước POST: script đó nằm ở tab gốc (SixosPwa), POST vào popup, đợi
+cookie đặt xong rồi tự tay ép popup nhảy tiếp tới đích chính xác (`cuaSo.location.href = trangChu`).
+Popup không phải là phần thiết kế cốt lõi — nó chỉ là **cái giá phải trả để giữ được khả năng ép điều
+hướng chính xác** sau một POST liên site.
+
+Bỏ popup, cho form POST chạy **top-level ngay trong tab đang đứng**, thì cái giá đó không còn trả
+được nữa: tab rời SixosPwa ngay lúc `form.submit()`, script chết theo, không còn ai đứng đó ép điều
+hướng tiếp. Đây không phải lỗi cần vá — là hệ quả tất yếu của việc bỏ cửa sổ thứ hai.
+
+**Quyết định:** chấp nhận **đích mờ**. Ban đầu đoán bệnh nhân sẽ hạ cánh ở "trang chủ của họ" — **đo
+thật 24/08 thì sai**: `/HeThong/HT_DangNhap/login` là API trả **JSON trần**
+(`{"statusCode":200,"message":"Đăng nhập thành công",...}`), không phải một trang. Vì POST đi thẳng
+top-level (không phải AJAX — fetch không đặt được cookie liên site, xem phần trên), trình duyệt hiển
+thị nguyên văn JSON đó, và bệnh nhân **kẹt ở đây** — không có gì để bấm tiếp, không tự chuyển đi đâu.
+**User đã xem trực tiếp và chốt CHẤP NHẬN tạm thời** (2026-08-24) thay vì quay lại cơ chế 2 cửa sổ
+(script sống sót qua POST cần một tab/popup thứ hai — đã cân nhắc, từ chối vì lo ngại hành vi
+`window.open` trong PWA cài đặt standalone, bung ra ngoài app). Đây là **giới hạn đã biết, chưa vá**,
+không phải sơ suất bỏ sót — vá tận gốc chỉ có được khi UB mở cửa GET (mục dưới) hoặc UB đổi endpoint
+login trả về một trang thay vì JSON (ngoài tầm, không sửa được repo UB). Bốn điểm tựa và giới hạn
+SameSite=Lax ở trên **không đổi** — vẫn không sửa dòng nào trong repo UB, vẫn chỉ một bước POST.
+
+**Chỗ cắm cho cửa GET tương lai:** không đổi gì ở tầng dữ liệu — `UbGateway.DungThongTinBanGiao` vẫn
+tính `DichCuoi` như cũ (`ManTheoYDinh` + `TrangChu`), chỉ là view không dùng nó để ép điều hướng nữa.
+Khi UB mở cửa GET, đổi `BanGiao.cshtml` sang `Redirect(dichCuoi)` ngay sau khi có cookie là đủ — không
+cần đụng `UbGateway.cs` hay thêm cột DB nào.

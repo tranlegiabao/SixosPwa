@@ -75,13 +75,14 @@ public class HomeController : Controller
     /// </summary>
     [HttpGet("/DangKyOnline/{slug}")]
     [AllowAnonymous]
-    public async Task<IActionResult> ChiTietCoSo(string slug)
+    public async Task<IActionResult> ChiTietCoSo(string slug, string? canhBao = null)
     {
         var coSo = await _db.DMCSKCBs.FirstOrDefaultAsync(x => x.Slug == slug);
 
         if (coSo == null) return NotFound();
 
         await DoDuLieuCoSoAsync(coSo);
+        await DoDoiChieuPhienCoSoAsync(coSo.MaCoSo, canhBao == "1");
         return View();
     }
 
@@ -114,6 +115,7 @@ public class HomeController : Controller
                 // Co so chua duoc dat slug: van hien duoc trang, chi la khong co
                 // URL co dinh. Quan tri vien dat slug trong man Admin/CoSoYTe.
                 await DoDuLieuCoSoAsync(matchedCS);
+                await DoDoiChieuPhienCoSoAsync(matchedCS.MaCoSo, tuDongMoCanhBao: false);
                 return View(nameof(ChiTietCoSo));
             }
         }
@@ -219,6 +221,27 @@ public class HomeController : Controller
         ViewData["Logo"] = coSo.logo ?? LogoCoSoMacDinh;
         ViewData["TGLamViec"] = GetOperatingHoursValue(coSo);
         ViewData["NoiDungCskcb"] = await LoadNoiDungAsync(coSo);
+    }
+
+    /// <summary>
+    /// So MaCoSo cua phien voi co so dang xem, de trang tu quyet dinh co bat modal
+    /// chan dang nhap cheo co so hay khong. Chi so — KHONG tu doi claim, viec doi
+    /// (neu benh nhan dong y) di qua DangXuat roi Login binh thuong.
+    /// </summary>
+    private async Task DoDoiChieuPhienCoSoAsync(string? maCoSoTrang, bool tuDongMoCanhBao)
+    {
+        ViewData["TuDongMoCanhBao"] = tuDongMoCanhBao;
+
+        var maCoSoPhien = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
+        if (string.IsNullOrWhiteSpace(maCoSoPhien) || maCoSoPhien == maCoSoTrang)
+        {
+            ViewData["PhienCoSoKhac"] = null;
+            return;
+        }
+
+        var coSoKhac = await _db.DMCSKCBs.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.MaCoSo == maCoSoPhien);
+        ViewData["PhienCoSoKhac"] = coSoKhac?.TenCoSo ?? "cơ sở khác";
     }
 
     private async Task<IReadOnlyDictionary<string, string>> LoadNoiDungAsync(DMCSKCB coSo)

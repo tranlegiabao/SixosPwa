@@ -5,7 +5,7 @@ public class DMCSKCB
     public long Id { get; set; }
     public string? MaCoSo { get; set; }
 
-    /// <summary>Doan chu quan tri vien dat tay, lam nen URL co dinh /pk/{Slug}.
+    /// <summary>Doan chu quan tri vien dat tay, lam nen URL co dinh /DangKyOnline/{Slug}.
     /// KHONG tu sinh tu ten, nen doi ten co so khong gay URL.</summary>
     public string? Slug { get; set; }
     public string? TenCoSo { get; set; }

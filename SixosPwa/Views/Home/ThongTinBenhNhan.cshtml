@@ -5,6 +5,31 @@
     ViewData["ChanTrangCong"] = true;
 }
 <link rel="stylesheet" href="~/css/thong-tin-benh-nhan.css" asp-append-version="true" />
+@{
+    var daDangNhap = User.Identity?.IsAuthenticated == true;
+
+    // Dang nhap khu Admin ky CA HAI cookie — AdminAuthentication.Scheme VA cookie
+    // mac dinh, kem Role="Admin" (Areas/Admin/Controllers/DangNhapController.cs:113-121).
+    // Nen o trang benh nhan, admin trong y het mot nguoi da dang nhap binh thuong.
+    // Phai re rieng: admin KHONG co claim Cccd/MaCoSo nen "Ho so benh nhan" se roi
+    // vao nhanh du phong cua DiTiep va da ve /benh-nhan rong khong ten.
+    var laAdmin = daDangNhap && User.IsInRole("Admin");
+}
+@if (!daDangNhap)
+{
+    <style>
+        /* Khach (chua dang nhap): tu tablet len sidebar da co san danh muc co
+           so roi, nut ☰ luc do chi con dan tai khoan trong (khong con gi de
+           dang nhap tu day) nen an han — khong phai an co dieu kien theo noi
+           dung, la an vi khong con noi dung gi dang mo.
+           BAT BUOC visibility:hidden, KHONG duoc display:none: .ytv-header la
+           flex justify-content:space-between 3 con (logo/tieu de/nut menu) —
+           bo nut menu khoi flow thi tieu de mat doi trong, giat sang han phai. */
+        @@media (min-width: 768px) {
+            .ytv-header-menu { visibility: hidden !important; }
+        }
+    </style>
+}
 
 <div class="ytv-header">
     <div class="ytv-logo-area">
@@ -38,17 +63,31 @@
                     <i class="fas fa-pills bieu-tuong-nha-thuoc" aria-hidden="true"></i> Nhà thuốc
                 </a>
             </div>
-            @* Nhom 2 - tai khoan: luon hien o moi be ngang *@
-            <div class="ytv-dropdown-title">Tài khoản</div>
-            <a href="javascript:void(0)" role="menuitem" onclick="showHoSoBenhNhan()">
-                <i class="fas fa-user-md" aria-hidden="true"></i> Hồ sơ bệnh nhân
-            </a>
-            <a href="/Home/ThongTinBenhNhan" role="menuitem">
-                <i class="fas fa-notes-medical" aria-hidden="true"></i> Lịch sử khám bệnh
-            </a>
-            <a href="/DangNhap/DangXuat" role="menuitem" class="ytv-dropdown-thoat">
-                <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Đăng xuất
-            </a>
+            @* Nhom 2 - tai khoan: CHI hien khi da dang nhap. Trang nay
+               [AllowAnonymous] nen la noi DUY NHAT trong 2 menu tai khoan phai
+               re theo trang thai dang nhap — offcanvas cua _Layout khong can vi
+               chi song tren cac trang [Authorize]. Khach vang lai dang nhap tu
+               2 nut o trang co so (/DangKyOnline/{slug}), khong phai tu day. *@
+            @if (laAdmin)
+            {
+                <div class="ytv-dropdown-title">Tài khoản</div>
+                <a href="/Admin" role="menuitem">
+                    <i class="fas fa-user-shield" aria-hidden="true"></i> Tài khoản
+                </a>
+                <a href="/Admin/DangNhap/Logout" role="menuitem" class="ytv-dropdown-thoat">
+                    <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Đăng xuất
+                </a>
+            }
+            else if (daDangNhap)
+            {
+                <div class="ytv-dropdown-title">Tài khoản</div>
+                <a href="/DangNhap/DiTiep?returnUrl=ho-so" role="menuitem">
+                    <i class="fas fa-user-md" aria-hidden="true"></i> Hồ sơ bệnh nhân
+                </a>
+                <a href="/DangNhap/DangXuat" role="menuitem" class="ytv-dropdown-thoat">
+                    <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Đăng xuất
+                </a>
+            }
         </div>
     </div>
 </div>
@@ -373,7 +412,7 @@
                             <img src="https://sixossoft.com/assets/images/ui-software/phan-mem-quan-ly-benh-vien.webp" alt="Bệnh viện" style="width: 100%; max-height: 50px; object-fit: contain;" />
                         </div>
                         <div style="text-align: center;">
-                            <div style="font-family: 'Times New Roman', Times, serif; font-weight: 900; color: #12345b; font-size: 14px; line-height: 1.1;">Phần mềm<br>quản lý bệnh viện</div>
+                            <div style="font-family: 'Times New Roman', Times, serif; font-weight: 900; color: #12345b; font-size: 12px; line-height: 1.1;">Phần mềm<br>quản lý bệnh viện</div>
                         </div>
                     </a>
                     <div style="width: 1px; background-color: #e2e8f0; height: 80%; align-self: center;"></div>
@@ -382,7 +421,7 @@
                             <img src="https://sixossoft.com/assets/images/ui-software/phan-mem-quan-ly-phong-kham-da-khoa.webp" alt="Phòng khám" style="width: 100%; max-height: 50px; object-fit: contain;" />
                         </div>
                         <div style="text-align: center;">
-                            <div style="font-family: 'Times New Roman', Times, serif; font-weight: 900; color: #12345b; font-size: 14px; line-height: 1.1;">Phần mềm<br>quản lý phòng khám</div>
+                            <div style="font-family: 'Times New Roman', Times, serif; font-weight: 900; color: #12345b; font-size: 12px; line-height: 1.1;">Phần mềm<br>quản lý phòng khám</div>
                         </div>
                     </a>
                 </div>
@@ -393,7 +432,7 @@
                             <img src="https://sixossoft.com/assets/images/ui-software/phan-mem-quan-ly-nha-khoa.webp" alt="Nha khoa" style="width: 100%; max-height: 50px; object-fit: contain;" />
                         </div>
                         <div style="text-align: center;">
-                            <div style="font-family: 'Times New Roman', Times, serif; font-weight: 900; color: #12345b; font-size: 14px; line-height: 1.1;">Phần mềm<br>quản lý nha khoa</div>
+                            <div style="font-family: 'Times New Roman', Times, serif; font-weight: 900; color: #12345b; font-size: 12px; line-height: 1.1;">Phần mềm<br>quản lý nha khoa</div>
                         </div>
                     </a>
                     <div style="width: 1px; background-color: #e2e8f0; height: 80%; align-self: center;"></div>
@@ -402,7 +441,7 @@
                             <img src="https://sixossoft.com/assets/images/ui-software/phan-mem-quan-ly-ban-hang.webp" alt="Bán hàng" style="width: 100%; max-height: 50px; object-fit: contain;" />
                         </div>
                         <div style="text-align: center;">
-                            <div style="font-family: 'Times New Roman', Times, serif; font-weight: 900; color: #12345b; font-size: 14px; line-height: 1.1;">Phần mềm<br>quản lý nhà thuốc</div>
+                            <div style="font-family: 'Times New Roman', Times, serif; font-weight: 900; color: #12345b; font-size: 12px; line-height: 1.1;">Phần mềm<br>quản lý nhà thuốc</div>
                         </div>
                     </a>
                 </div>
