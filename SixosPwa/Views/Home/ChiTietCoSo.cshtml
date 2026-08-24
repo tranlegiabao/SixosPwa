@@ -29,6 +29,10 @@
     var noiDungDoiNgu = noiDungCskcb.GetValueOrDefault(NDCSKCB.DoiNgu);
     var noiDungTrangThietBi = noiDungCskcb.GetValueOrDefault(NDCSKCB.TrangThietBi);
     var noiDungLienHe = noiDungCskcb.GetValueOrDefault(NDCSKCB.LienHe);
+    var previewLoaiND = ViewData["PreviewLoaiND"]?.ToString();
+    var activeLoaiND = NDCSKCB.AllowedLoaiND.Contains(previewLoaiND, StringComparer.OrdinalIgnoreCase)
+        ? previewLoaiND
+        : NDCSKCB.GioiThieu;
 }
 
 <style>
@@ -1043,19 +1047,19 @@
             <img src="@logo" alt="Logo" class="sidebar-logo" />
         </div>
         <div class="sidebar-scroll-area">
-        <a class="ytv-menu-item active" onclick="showTab('gioi-thieu', this)" href="#gioi-thieu">
+        <a class="ytv-menu-item @(activeLoaiND == NDCSKCB.GioiThieu ? "active" : string.Empty)" onclick="showTab('gioi-thieu', this)" href="#gioi-thieu">
             <i class="fas fa-info-circle"></i> Giới thiệu
         </a>
-        <a class="ytv-menu-item" onclick="showTab('dich-vu', this)" href="#dich-vu">
+        <a class="ytv-menu-item @(activeLoaiND == NDCSKCB.DichVu ? "active" : string.Empty)" onclick="showTab('dich-vu', this)" href="#dich-vu">
             <i class="fas fa-stethoscope"></i> Dịch vụ
         </a>
-        <a class="ytv-menu-item" onclick="showTab('doi-ngu', this)" href="#doi-ngu">
+        <a class="ytv-menu-item @(activeLoaiND == NDCSKCB.DoiNgu ? "active" : string.Empty)" onclick="showTab('doi-ngu', this)" href="#doi-ngu">
             <i class="fas fa-user-md"></i> Đội ngũ y bác sĩ
         </a>
-        <a class="ytv-menu-item" onclick="showTab('trang-thiet-bi', this)" href="#trang-thiet-bi">
+        <a class="ytv-menu-item @(activeLoaiND == NDCSKCB.TrangThietBi ? "active" : string.Empty)" onclick="showTab('trang-thiet-bi', this)" href="#trang-thiet-bi">
             <i class="fas fa-tools"></i> Các trang thiết bị
         </a>
-        <a class="ytv-menu-item" onclick="showTab('lien-he', this)" href="#lien-he">
+        <a class="ytv-menu-item @(activeLoaiND == NDCSKCB.LienHe ? "active" : string.Empty)" onclick="showTab('lien-he', this)" href="#lien-he">
             <i class="fas fa-headset"></i> Liên hệ
         </a>
         
@@ -1079,7 +1083,7 @@
 
     <div class="ytv-content">
         <!-- Intro Sections (Tabs) -->
-        <div class="intro-section active-tab" id="gioi-thieu">
+        <div class="intro-section @(activeLoaiND == NDCSKCB.GioiThieu ? "active-tab" : string.Empty)" id="gioi-thieu">
             <div class="intro-content">
                 <div class="intro-title">
                     <i class="fas fa-info-circle"></i> Giới thiệu
@@ -1092,7 +1096,7 @@
             <!-- <img src="https://img.freepik.com/free-vector/hospital-building-concept-illustration_114360-8440.jpg?w=800" alt="Hospital Illustration" class="intro-image" /> -->
         </div>
 
-        <div class="intro-section" id="dich-vu">
+        <div class="intro-section @(activeLoaiND == NDCSKCB.DichVu ? "active-tab" : string.Empty)" id="dich-vu">
             <div class="intro-content">
                 <div class="intro-title">
                     <i class="fas fa-stethoscope"></i> Dịch vụ khám chữa bệnh
@@ -1104,7 +1108,7 @@
             </div>
         </div>
 
-        <div class="intro-section" id="doi-ngu">
+        <div class="intro-section @(activeLoaiND == NDCSKCB.DoiNgu ? "active-tab" : string.Empty)" id="doi-ngu">
             <div class="intro-content">
                 <div class="intro-title">
                     <i class="fas fa-user-md"></i> Đội ngũ bác sĩ chuyên khoa
@@ -1116,7 +1120,7 @@
             </div>
         </div>
 
-        <div class="intro-section" id="trang-thiet-bi">
+        <div class="intro-section @(activeLoaiND == NDCSKCB.TrangThietBi ? "active-tab" : string.Empty)" id="trang-thiet-bi">
             <div class="intro-content">
                 <div class="intro-title">
                     <i class="fas fa-tools"></i> Trang thiết bị hiện đại
@@ -1128,7 +1132,7 @@
             </div>
         </div>
 
-        <div class="intro-section" id="lien-he">
+        <div class="intro-section @(activeLoaiND == NDCSKCB.LienHe ? "active-tab" : string.Empty)" id="lien-he">
             <div class="intro-content">
                 <div class="intro-title">
                     <i class="fas fa-headset"></i> Chăm sóc & Hỗ trợ khách hàng

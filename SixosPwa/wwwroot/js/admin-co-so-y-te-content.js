@@ -1,6 +1,7 @@
 (function () {
     var contentDrafts = Object.create(null);
     var contentLoadSequence = 0;
+    var activeTopicId = '';
 
     function ensureDefaultBlackHtml(content) {
         var html = (content || '').trim();
@@ -36,12 +37,13 @@
         }
     }
 
-    function cacheCurrentTopicContent() {
+    function cacheCurrentTopicContent(topicIdOverride) {
         var topic = document.getElementById('cboChuDe');
         var editor = typeof tinymce !== 'undefined' ? tinymce.get('summernote') : null;
-        if (!topic || !topic.value || !editor) return;
+        var topicId = topicIdOverride || activeTopicId || topic?.value;
+        if (!topicId || !editor) return;
 
-        contentDrafts[topic.value] = ensureDefaultBlackHtml(editor.getContent({ format: 'raw' }));
+        contentDrafts[topicId] = ensureDefaultBlackHtml(editor.getContent({ format: 'raw' }));
     }
 
     function syncTopicContents() {
@@ -230,8 +232,48 @@
         }, true);
     }
 
+    async function renderStaticPreview(frame, editor) {
+        var form = document.getElementById('coSoYTeForm');
+        if (!form) throw new Error('Không tìm thấy biểu mẫu cơ sở y tế.');
+
+        var isDetailEditor = editor.id === 'summernote';
+        if (isDetailEditor) {
+            syncEditorValue('#summernote');
+            syncTopicContents();
+        }
+        var formData = new FormData(form);
+        if (isDetailEditor) {
+            formData.set('NoiDung', ensureDefaultBlackHtml(editor.getContent({ format: 'raw' })));
+            formData.set('TopicId', document.getElementById('cboChuDe')?.value || '');
+            formData.set('TopicContentsJson', document.getElementById('topicContentsJson')?.value || '{}');
+        }
+
+        var response = await fetch('/Admin/CoSoYTe/Preview', {
+            method: 'POST',
+            body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        if (!response.ok) throw new Error('Không tải được bản xem trước.');
+
+        var previewDocument = new DOMParser().parseFromString(await response.text(), 'text/html');
+        previewDocument.querySelectorAll('script').forEach(function (script) { script.remove(); });
+        previewDocument.querySelectorAll('a').forEach(function (link) {
+            link.removeAttribute('href');
+            link.removeAttribute('onclick');
+            link.setAttribute('aria-disabled', 'true');
+        });
+        previewDocument.querySelectorAll('[onclick]').forEach(function (element) {
+            element.removeAttribute('onclick');
+        });
+        previewDocument.querySelectorAll('form').forEach(function (formElement) {
+            formElement.removeAttribute('action');
+            formElement.removeAttribute('method');
+            formElement.removeAttribute('onsubmit');
+        });
+        frame.srcdoc = '<!doctype html>' + previewDocument.documentElement.outerHTML;
+    }
+
     function openResponsivePreview(editor) {
-        var content = ensureDefaultBlackHtml(editor.getContent({ format: 'raw' }));
         var overlay = document.createElement('div');
         overlay.className = 'cskcb-responsive-preview';
         overlay.innerHTML = `
@@ -279,7 +321,12 @@
         document.body.appendChild(overlay);
         var frame = overlay.querySelector('.cskcb-preview-frame');
         frame.setAttribute('sandbox', 'allow-same-origin');
-        frame.srcdoc = buildResponsivePreviewDocument(content);
+        frame.srcdoc = '<!doctype html><html lang="vi"><body style="font-family:system-ui;padding:24px">Đang tải bản xem trước...</body></html>';
+        renderStaticPreview(frame, editor).catch(function (error) {
+            frame.srcdoc = '<!doctype html><html lang="vi"><body style="font-family:system-ui;padding:24px;color:#b91c1c">'
+                + escapePreviewText(error.message || 'Không tải được bản xem trước.')
+                + '</body></html>';
+        });
 
         function closePreview() {
             document.removeEventListener('keydown', onKeyDown);
@@ -307,11 +354,12 @@
         document.addEventListener('keydown', onKeyDown);
     }
 
-    async function loadContent() {
-        var topicId = document.getElementById('cboChuDe')?.value;
+    async function loadContent(topicIdOverride) {
+        var topicId = topicIdOverride || document.getElementById('cboChuDe')?.value;
         var currentId = document.querySelector('input[name="Id"]')?.value;
         var topicHidden = document.getElementById('contentTopicId');
         var requestSequence = ++contentLoadSequence;
+        activeTopicId = topicId || '';
         if (topicHidden) topicHidden.value = topicId || '';
 
         if (!currentId || !topicId) {
@@ -328,7 +376,9 @@
             var data = await response.json();
             var currentTopicId = document.getElementById('cboChuDe')?.value;
             if (requestSequence !== contentLoadSequence || currentTopicId !== topicId) return;
-            setEditorContent('#summernote', data.noiDung || '');
+            contentDrafts[topicId] = ensureDefaultBlackHtml(data.noiDung || '');
+            setEditorContent('#summernote', contentDrafts[topicId]);
+            syncTopicContents();
         } catch (error) {
             if (requestSequence !== contentLoadSequence) return;
             setEditorContent('#summernote', '');
@@ -372,6 +422,10 @@
                 });
                 editor.on('init', function () {
                     preventPreviewButtonSubmit(editor);
+                    if (selector === '#advertisingContentEditor') {
+                        var advertisingTextarea = document.querySelector(selector);
+                        editor.setContent(advertisingTextarea?.value || '');
+                    }
                     if (selector === '#summernote') {
                         loadContent();
                     }
@@ -440,11 +494,17 @@
         var topic = document.getElementById('cboChuDe');
         if (topic) {
             topic.addEventListener('change', function () {
-                cacheCurrentTopicContent();
+                cacheCurrentTopicContent(activeTopicId);
+                activeTopicId = topic.value || '';
                 ++contentLoadSequence;
                 var topicHidden = document.getElementById('contentTopicId');
                 if (topicHidden) topicHidden.value = topic.value || '';
-                setEditorContent('#summernote', '');
+                if (Object.prototype.hasOwnProperty.call(contentDrafts, topic.value)) {
+                    setEditorContent('#summernote', contentDrafts[topic.value]);
+                } else {
+                    setEditorContent('#summernote', '');
+                    loadContent(topic.value);
+                }
             });
         }
 

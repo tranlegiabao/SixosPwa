@@ -203,6 +203,21 @@
 .admin-footer { background: var(--admin-shell-footer); }
 .admin-pagination .pagination-current { display: inline-flex !important; align-items: center; justify-content: center; width: max-content !important; min-width: max-content !important; padding: 0 7px; }
 
+/* Căn giữa tiêu đề trên thanh header, độc lập với nút menu và thông tin tài khoản. */
+.admin-topbar { position: sticky; justify-content: center; }
+.admin-topbar-heading { position: absolute; left: 50%; margin: 0; text-align: center; transform: translateX(-50%); }
+.admin-topbar-heading > div { text-align: center; }
+.admin-topbar .admin-user-chip { position: absolute; right: 4.5%; margin-left: 0; }
+
+@media (max-width: 991.98px) {
+    .admin-topbar-heading .admin-menu-button { position: absolute; top: 50%; right: calc(100% + 12px); transform: translateY(-50%); }
+}
+
+@media (max-width: 575.98px) {
+    .admin-topbar { padding-right: 16px; padding-left: 16px; }
+    .admin-topbar .admin-user-chip { right: 16px; }
+}
+
 .image-source-control { width: 100%; }
 .media-ad-row { display: flex; align-items: flex-start; gap: 18px; width: 100%; }
 .image-source-cell { flex: 0 0 auto; display: flex; align-items: stretch; }
