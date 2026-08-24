@@ -34,7 +34,7 @@
 .admin-nav-link:hover { color: var(--admin-blue); background: #f1f5ff; transform: translateX(2px); }
 .admin-nav-link.active { color: var(--admin-blue); background: #eef3ff; box-shadow: inset 3px 0 0 var(--admin-blue); }
 .nav-symbol { width: 20px; color: currentColor; font-size: 20px; line-height: 1; text-align: center; font-weight: 400; }
-.admin-sidebar-footer { margin: auto -17px -18px; padding: 22px 30px 18px; background: var(--admin-shell-footer); border-top: 1px solid #bae6fd; }
+.admin-sidebar-footer { margin: auto -17px -18px; padding: 10px 30px 12px; background: var(--admin-shell-footer); border-top: 1px solid #bae6fd; }
 .admin-security-note { color: #93a0b6; font-size: 11px; margin-bottom: 18px; }
 .admin-sidebar-footer .admin-security-note { color: #64748b; }
 .status-dot, .health-badge span { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #31bd87; margin-right: 5px; box-shadow: 0 0 0 3px #e5f8f0; }
