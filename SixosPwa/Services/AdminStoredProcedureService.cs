@@ -53,6 +53,7 @@ public sealed class AdminStoredProcedureService
         {
             AddParameter(command, "@Id", DbType.Int64, model.Id);
             AddParameter(command, "@MaCoSo", DbType.String, model.MaCoSo, 10);
+            AddParameter(command, "@Slug", DbType.String, model.Slug, 100);
             AddParameter(command, "@TenCoSo", DbType.String, model.TenCoSo, 100);
             AddParameter(command, "@DiaChi", DbType.String, model.DiaChi, 255);
             AddParameter(command, "@SoToaNha", DbType.String, model.SoToaNha, 100);

@@ -344,6 +344,7 @@ GO
 CREATE OR ALTER PROCEDURE dbo.Admin_CoSoYTe_Save
     @Id BIGINT,
     @MaCoSo NVARCHAR(10),
+    @Slug NVARCHAR(100),
     @TenCoSo NVARCHAR(100),
     @DiaChi NVARCHAR(255),
     @SoToaNha NVARCHAR(100),
@@ -384,10 +385,10 @@ BEGIN
         IF @Id = 0
         BEGIN
             INSERT INTO DMCSKCB
-                (MaCoSo, TenCoSo, DiaChi, SoToaNha, Tinh, PhuongXa, LoaiCS,
+                (MaCoSo, Slug, TenCoSo, DiaChi, SoToaNha, Tinh, PhuongXa, LoaiCS,
                  TGLamViec, NgayLamViec, GioMoCua, GioDongCua, XacMinh, Img, logo, QuangCao)
             VALUES
-                (@MaCoSo, @TenCoSo, @DiaChi, @SoToaNha, @Tinh, @PhuongXa, @LoaiCS,
+                (@MaCoSo, @Slug, @TenCoSo, @DiaChi, @SoToaNha, @Tinh, @PhuongXa, @LoaiCS,
                  @TGLamViec, @NgayLamViec, @GioMoCua, @GioDongCua, @XacMinh, @Img, @Logo, @QuangCao);
         END
         ELSE
@@ -402,6 +403,7 @@ BEGIN
 
             UPDATE DMCSKCB
             SET MaCoSo = @MaCoSo,
+                Slug = @Slug,
                 TenCoSo = @TenCoSo,
                 DiaChi = @DiaChi,
                 SoToaNha = @SoToaNha,
