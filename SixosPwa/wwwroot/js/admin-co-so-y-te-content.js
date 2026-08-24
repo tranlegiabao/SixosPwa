@@ -75,7 +75,8 @@
             promotion: false,
             license_key: 'gpl',
             plugins: 'advlist autolink lists link image table code',
-            toolbar: 'undo redo | bold italic underline | bullist numlist | ' +
+            font_size_formats: '8pt 10pt 12pt 14pt 16pt 18pt 24pt 36pt 48pt',
+            toolbar: 'undo redo | bold italic underline | fontsize | bullist numlist | ' +
                      'alignleft aligncenter alignright | table image link | ' +
                      'forecolor backcolor removeformat | code',
             paste_data_images: false,
