@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using SixosPwa.Areas.Admin.Models;
 using SixosPwa.Data;
 using SixosPwa.Models;
@@ -90,7 +91,7 @@ public sealed class CoSoYTeController : AdminControllerBase
 
         if (!ModelState.IsValid)
         {
-            await PopulateContentEditorAsync(model, model.TopicId > 0 ? model.TopicId : null);
+            await PopulateContentEditorAsync(model, model.TopicId > 0 ? model.TopicId : null, loadSelectedContent: false);
             return View(model);
         }
 
@@ -98,7 +99,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         if (!result.Succeeded)
         {
             ModelState.AddModelError(nameof(model.MaCoSo), result.Message ?? "Không thể thêm cơ sở y tế.");
-            await PopulateContentEditorAsync(model, model.TopicId > 0 ? model.TopicId : null);
+            await PopulateContentEditorAsync(model, model.TopicId > 0 ? model.TopicId : null, loadSelectedContent: false);
             return View(model);
         }
 
@@ -129,12 +130,19 @@ public sealed class CoSoYTeController : AdminControllerBase
                 .FirstOrDefaultAsync();
             if (createdFacility != null)
             {
-                var contentResult = await SaveContentAsync(createdFacility, model.TopicId, model.NoiDung);
+                var topicContents = ParseTopicContents(model.TopicContentsJson);
+                if (!topicContents.ContainsKey(model.TopicId))
+                    topicContents[model.TopicId] = model.NoiDung;
+
+                foreach (var topicContent in topicContents)
+                {
+                var contentResult = await SaveContentAsync(createdFacility, topicContent.Key, topicContent.Value);
                 if (!contentResult.Succeeded)
                 {
                     Error(contentResult.Message ?? "Không thể lưu nội dung HTML.");
                     return RedirectToAction(nameof(Edit), new { id = createdFacility.Id, topicId = model.TopicId });
                 }
+            }
             }
         }
 
@@ -143,11 +151,12 @@ public sealed class CoSoYTeController : AdminControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Edit(long id, long? topicId = null)
+    public async Task<IActionResult> Edit(long id, long? topicId = null, string? section = null)
     {
         var entity = await _db.DMCSKCBs.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
         if (entity == null) return NotFound();
         var model = ToViewModel(entity);
+        model.ActiveSection = section;
         var advertising = await GetAdvertisingAsync(entity.MaCoSo, entity.TenCoSo);
         model.NoiDungQuangCao = advertising?.NoiDung;
         model.QuangCaoImg = advertising?.Img;
@@ -190,7 +199,7 @@ public sealed class CoSoYTeController : AdminControllerBase
 
         if (!ModelState.IsValid)
         {
-            await PopulateContentEditorAsync(model, model.TopicId > 0 ? model.TopicId : null);
+            await PopulateContentEditorAsync(model, model.TopicId > 0 ? model.TopicId : null, loadSelectedContent: false);
             return View(model);
         }
 
@@ -202,7 +211,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         {
             if (result.Code == 3) return NotFound();
             ModelState.AddModelError(nameof(model.MaCoSo), result.Message ?? "Không thể cập nhật cơ sở y tế.");
-            await PopulateContentEditorAsync(model, model.TopicId > 0 ? model.TopicId : null);
+            await PopulateContentEditorAsync(model, model.TopicId > 0 ? model.TopicId : null, loadSelectedContent: false);
             return View(model);
         }
 
@@ -213,24 +222,34 @@ public sealed class CoSoYTeController : AdminControllerBase
         if (!advertisingResult.Succeeded)
         {
             Error(advertisingResult.Message ?? "Khong the luu quang cao.");
-            return RedirectToAction(nameof(Edit), new { id = model.Id, topicId = model.TopicId });
+            return RedirectToAction(nameof(Edit), new { id = model.Id, topicId = model.TopicId, section = model.ActiveSection });
         }
 
-        if (model.TopicId > 0)
+        if (string.Equals(model.ActiveSection, "noiDungChiTiet", StringComparison.OrdinalIgnoreCase)
+            || !string.IsNullOrWhiteSpace(model.TopicContentsJson))
         {
+            var topicContents = ParseTopicContents(model.TopicContentsJson);
+            if (string.Equals(model.ActiveSection, "noiDungChiTiet", StringComparison.OrdinalIgnoreCase)
+                && model.TopicId > 0
+                && !topicContents.ContainsKey(model.TopicId))
+                topicContents[model.TopicId] = model.NoiDung;
+
+            foreach (var topicContent in topicContents)
+            {
             var contentResult = await SaveContentAsync(
                 new DMCSKCB { MaCoSo = model.MaCoSo, TenCoSo = model.TenCoSo },
-                model.TopicId,
-                model.NoiDung);
+                topicContent.Key,
+                topicContent.Value);
             if (!contentResult.Succeeded)
             {
                 Error(contentResult.Message ?? "Không thể lưu nội dung HTML.");
-                return RedirectToAction(nameof(Edit), new { id = model.Id, topicId = model.TopicId });
+                return RedirectToAction(nameof(Edit), new { id = model.Id, topicId = model.TopicId, section = model.ActiveSection });
             }
+        }
         }
 
         Success("Đã cập nhật cơ sở y tế.");
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Edit), new { id = model.Id, topicId = model.TopicId, section = model.ActiveSection });
     }
 
     private async Task<QCKCB?> GetAdvertisingAsync(string? maCoSo, string? tenCoSo)
@@ -361,6 +380,25 @@ public sealed class CoSoYTeController : AdminControllerBase
         model.NoiDungQuangCao = model.NoiDungQuangCao?.Trim();
         model.QuangCaoImg = model.QuangCaoImg?.Trim();
         model.QuangCaoImgUrlInput = model.QuangCaoImgUrlInput?.Trim();
+        model.ActiveSection = model.ActiveSection?.Trim();
+        model.TopicContentsJson = model.TopicContentsJson?.Trim();
+    }
+
+    private static Dictionary<long, string?> ParseTopicContents(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return new Dictionary<long, string?>();
+
+        try
+        {
+            return JsonSerializer.Deserialize<Dictionary<long, string?>>(json)
+                ?.Where(item => item.Key > 0)
+                .ToDictionary(item => item.Key, item => item.Value)
+                ?? new Dictionary<long, string?>();
+        }
+        catch (JsonException)
+        {
+            return new Dictionary<long, string?>();
+        }
     }
 
     private void ApplyOperatingHours(CoSoYTeEditViewModel model)
@@ -430,7 +468,10 @@ public sealed class CoSoYTeController : AdminControllerBase
         return Json(new { noiDung = noiDung ?? string.Empty });
     }
 
-    private async Task PopulateContentEditorAsync(CoSoYTeEditViewModel model, long? topicId = null)
+    private async Task PopulateContentEditorAsync(
+        CoSoYTeEditViewModel model,
+        long? topicId = null,
+        bool loadSelectedContent = true)
     {
         model.NhomCSList = await _db.DMNhomCSs.AsNoTracking().ToListAsync();
         model.ChuDeList = await _db.DMChuDes.AsNoTracking().ToListAsync();
@@ -443,7 +484,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         model.SelectedTopicId = topicId ?? model.ChuDeList.FirstOrDefault()?.ID;
         model.TopicId = model.SelectedTopicId ?? 0;
 
-        if (model.Id > 0 && model.TopicId > 0)
+        if (loadSelectedContent && model.Id > 0 && model.TopicId > 0)
         {
             model.NoiDung = await _adminStoredProcedures.GetNoiDungCskcbAsync(
                 model.MaCoSo,

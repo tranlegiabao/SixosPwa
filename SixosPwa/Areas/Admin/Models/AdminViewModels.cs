@@ -186,6 +186,8 @@ public sealed class CoSoYTeEditViewModel
     public long? SelectedFacilityId { get; set; }
     public long? SelectedTopicId { get; set; }
     public long TopicId { get; set; }
+    public string? ActiveSection { get; set; }
+    public string? TopicContentsJson { get; set; }
     public string? NoiDung { get; set; }
 
     public string? NoiDungGioiThieu { get; set; }

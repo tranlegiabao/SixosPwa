@@ -25,8 +25,8 @@
         <div class="row g-3 mb-4">
             <div class="col-md-6">
                 <label class="form-label fw-bold">Chọn phần muốn chỉnh sửa</label>
-                <select id="editSectionSelector" class="form-select border-primary-subtle">
-                    <option value="" selected="selected">-- Chọn phần muốn chỉnh sửa --</option>
+                <select asp-for="ActiveSection" id="editSectionSelector" class="form-select border-primary-subtle">
+                    <option value="">-- Chọn phần muốn chỉnh sửa --</option>
                     <option value="noiDungChiTiet">Nội dung trang chi tiết cơ sở kcb</option>
                     <option value="quangCao">Quảng cáo và hiển thị</option>
                 </select>
