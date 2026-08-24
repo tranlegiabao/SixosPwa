@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SixosPwa.Models;
 
 namespace SixosPwa.Data;
@@ -65,6 +65,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<TaiKhoan>().Property(e => e.Role).HasMaxLength(50).IsRequired();
         modelBuilder.Entity<TaiKhoan>().Property(e => e.Email).HasMaxLength(50);
         modelBuilder.Entity<TaiKhoan>().Property(e => e.CCCD).HasMaxLength(20);
+        modelBuilder.Entity<TaiKhoan>().Property(e => e.MatKhau).HasMaxLength(255);
 
         // Configure ThongBao
         modelBuilder.Entity<ThongBao>().ToTable("ThongBao");
