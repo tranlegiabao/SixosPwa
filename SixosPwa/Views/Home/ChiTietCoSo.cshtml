@@ -693,17 +693,14 @@
     /* Responsive layout for DangKyOnline */
     .ytv-content > *,
     .hospital-card,
-    .intro-section,
-    .sixos-section {
+    .intro-section {
         width: 100%;
         box-sizing: border-box;
         min-width: 0;
     }
 
     .nd-cskcb-text,
-    .nd-cskcb-text table,
-    .sixos-item-title,
-    .sixos-item-desc {
+    .nd-cskcb-text table {
         overflow-wrap: anywhere;
         word-break: break-word;
     }
@@ -856,16 +853,6 @@
 
         .intro-content .nd-cskcb-text {
             overflow-x: auto;
-        }
-
-        .sixos-section {
-            grid-template-columns: minmax(0, 1fr);
-            gap: 16px;
-            margin-top: 0;
-        }
-
-        .sixos-card {
-            padding: 24px 18px;
         }
 
         /* On mobile these blocks must stay in document flow, so they cannot cover operating hours or content. */
@@ -1136,209 +1123,15 @@
     </div>
 </div>
 
-<!-- Login Modal -->
-@* Man dang nhap noi trang da duoc go bo lan hai (2026-08-24, Nam sua).
-   Day la BAN SAO THU HAI cua /DangNhap/Login: no dang nhap bang SDT + OTP,
-   khong co CCCD, khong co ma CSKCB, nen bam vao la ra ngoai luong ban giao
-   sang doi tac. Hai nut ben tren gio deu di ve cung mot cong.
-   (Lan mot go 2026-08-22, bi commit 3b32872 chep de bung tro lai.)
-   Khoi gioi thieu SIXOS truoc kia bi chon BEN TRONG modal nay — da bo ra
-   ngoai, dat ngay duoi day, de go modal khong lam mat noi dung dang hien. *@
+@* 2026-08-24 (Nam sua) — da go khoi day hai thu, theo yeu cau:
+   ① man dang nhap noi trang (modal + JS openLoginModal/closeLoginModal/
+     GuiOtp/XacNhanOtp). Do la BAN SAO THU HAI cua /DangNhap/Login: dang
+     nhap bang SDT + OTP, khong co CCCD, khong co ma CSKCB, nen bam vao la
+     ra ngoai luong ban giao sang doi tac. Hai nut ben tren gio deu di ve
+     cung mot cong. (Lan mot go 22/08, bi commit 3b32872 chep de bung lai.)
+   ② khoi gioi thieu SIXOS von bi chon BEN TRONG modal do.
+   Can lay lai: git show 53381ff -- SixosPwa/Views/Home/ChiTietCoSo.cshtml *@
 
-<style>
-    .sixos-section {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 24px;
-        margin-top: 20px;
-        font-family: 'Inter', sans-serif;
-    }
-    .sixos-card {
-        background: white;
-        border-radius: 20px;
-        padding: 32px 24px;
-        box-shadow: 0 10px 40px -10px rgba(0,0,0,0.05);
-        border: 1px solid #f1f5f9;
-        display: flex;
-        flex-direction: column;
-        position: relative;
-    }
-    .sixos-card.primary {
-        border-left: 6px solid #2563eb;
-        text-align: center;
-        align-items: center;
-    }
-    .sixos-logo-box {
-        width: 70px;
-        height: 70px;
-        background: #eff6ff;
-        border-radius: 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 20px;
-        color: #2563eb;
-        font-size: 32px;
-    }
-    .sixos-title {
-        font-size: 24px;
-        font-weight: 800;
-        color: #1e40af;
-        margin-bottom: 0px;
-        letter-spacing: 1px;
-    }
-    .sixos-subtitle {
-        font-size: 16px;
-        font-weight: 700;
-        color: #0f172a;
-        margin-bottom: 16px;
-        line-height: 1.4;
-    }
-    .sixos-desc {
-        font-size: 14px;
-        color: #64748b;
-        line-height: 1.6;
-    }
-    
-    .sixos-card-header {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        margin-bottom: 24px;
-        padding-bottom: 20px;
-        border-bottom: 1px solid #f1f5f9;
-    }
-    .sixos-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-    }
-    .sixos-icon.blue { background: #eff6ff; color: #2563eb; }
-    .sixos-icon.green { background: #f0fdf4; color: #16a34a; }
-    
-    .sixos-header-title {
-        font-size: 18px;
-        font-weight: 700;
-        color: #0f172a;
-    }
-    
-    .sixos-list {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-    }
-    .sixos-item {
-        display: flex;
-        align-items: flex-start;
-        gap: 16px;
-        text-decoration: none;
-        padding: 12px;
-        border-radius: 12px;
-        transition: background 0.2s;
-        margin: -12px;
-    }
-    .sixos-item:hover {
-        background: #f8fafc;
-    }
-    .sixos-item-icon {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #f1f5f9;
-        color: #3b82f6;
-        flex-shrink: 0;
-    }
-    .sixos-item-icon.green-bg { background: #dcfce7; color: #16a34a; }
-    
-    .sixos-item-content { flex: 1; }
-    .sixos-item-title {
-        font-size: 15px;
-        font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 0px;
-    }
-    .sixos-item-desc {
-        font-size: 13px;
-        color: #64748b;
-        line-height: 1.5;
-    }
-    .sixos-item-arrow {
-        color: #cbd5e1;
-        font-size: 14px;
-        margin-top: 10px;
-    }
-    .sixos-item:hover .sixos-item-arrow { color: #3b82f6; transform: translateX(2px); transition: all 0.2s; }
-</style>
-
-<div class="sixos-section">
-    <!-- Card 1 -->
-    <div class="sixos-card primary">
-        <div class="sixos-logo-box">
-            <i class="fab fa-connectdevelop"></i>
-        </div>
-        <div class="sixos-title">SIXOS</div>
-        <div class="sixos-subtitle">Công Ty Công Nghệ và<br>Giải Pháp Phần Mềm Vũ Phong</div>
-    </div>
-
-    <!-- Card 2 -->
-    <div class="sixos-card">
-        <div class="sixos-card-header">
-            <div class="sixos-icon blue"><i class="fas fa-laptop-code"></i></div>
-            <div class="sixos-header-title">Dịch vụ phần mềm</div>
-        </div>
-        <div class="sixos-list">
-            <a href="javascript:void(0)" class="sixos-item">
-                <div class="sixos-item-icon"><i class="fas fa-cog"></i></div>
-                <div class="sixos-item-content">
-                    <div class="sixos-item-title">Phần mềm lập trình theo yêu cầu</div>
-                    <div class="sixos-item-desc">Giải pháp phù hợp với nhu cầu và đặc thù của doanh nghiệp.</div>
-                </div>
-                <div class="sixos-item-arrow"><i class="fas fa-chevron-right"></i></div>
-            </a>
-            <a href="javascript:void(0)" class="sixos-item">
-                <div class="sixos-item-icon"><i class="fas fa-cloud"></i></div>
-                <div class="sixos-item-content">
-                    <div class="sixos-item-title">Cho thuê theo yêu cầu</div>
-                    <div class="sixos-item-desc">Linh hoạt, tiết kiệm chi phí, hỗ trợ nhanh chóng.</div>
-                </div>
-                <div class="sixos-item-arrow"><i class="fas fa-chevron-right"></i></div>
-            </a>
-        </div>
-    </div>
-
-    <!-- Card 3 -->
-    <div class="sixos-card">
-        <div class="sixos-card-header">
-            <div class="sixos-icon green"><i class="fas fa-shield-alt"></i></div>
-            <div class="sixos-header-title">Hạ tầng & bảo mật</div>
-        </div>
-        <div class="sixos-list">
-            <a href="javascript:void(0)" class="sixos-item">
-                <div class="sixos-item-icon green-bg"><i class="fas fa-server"></i></div>
-                <div class="sixos-item-content">
-                    <div class="sixos-item-title">Server dự phòng</div>
-                    <div class="sixos-item-desc">Hệ thống dự phòng ổn định, sẵn sàng 24/7.</div>
-                </div>
-                <div class="sixos-item-arrow"><i class="fas fa-chevron-right"></i></div>
-            </a>
-            <a href="javascript:void(0)" class="sixos-item">
-                <div class="sixos-item-icon green-bg"><i class="fas fa-cloud-upload-alt"></i></div>
-                <div class="sixos-item-content">
-                    <div class="sixos-item-title">Sao lưu dữ liệu</div>
-                    <div class="sixos-item-desc">Đảm bảo an toàn dữ liệu, khôi phục nhanh chóng.</div>
-                </div>
-                <div class="sixos-item-arrow"><i class="fas fa-chevron-right"></i></div>
-            </a>
-        </div>
-    </div>
-</div>
 
 <div class="stats-footer-bar">
     <div class="stats-grid">
