@@ -88,3 +88,58 @@ SameSite=Lax ở trên **không đổi** — vẫn không sửa dòng nào trong
 tính `DichCuoi` như cũ (`ManTheoYDinh` + `TrangChu`), chỉ là view không dùng nó để ép điều hướng nữa.
 Khi UB mở cửa GET, đổi `BanGiao.cshtml` sang `Redirect(dichCuoi)` ngay sau khi có cookie là đủ — không
 cần đụng `UbGateway.cs` hay thêm cột DB nào.
+
+## Đính chính 2026-08-24 (muộn hơn) — JSON trần ĐÃ GỠ, và UB thôi gửi tin nhắn thừa
+
+Mục "Đính chính 2026-08-24" ngay trên ghi rằng bệnh nhân kẹt ở màn JSON và ta **chấp nhận tạm thời**.
+Điều đó **hết hiệu lực** trong cùng ngày: repo UB đã được sửa, nên khoản "không sửa dòng nào trong
+repo UB" của bản gốc cũng không còn đúng nữa. Bốn điểm tựa và giới hạn `SameSite=Lax` thì vẫn nguyên.
+
+**Cửa mà UB mở KHÔNG phải một route `/redirect`** như tên gọi lúc bàn — thử `/redirect` trả 404. Nó
+là một **nhánh non-AJAX** thêm vào hai action sẵn có: nếu request thiếu header `X-Requested-With`
+(thứ mà jQuery `$.ajax` luôn tự gắn, còn form POST top-level thì không) và `statusCode == 200`, thì
+`Redirect(...)` thay vì `Ok(json)`. Luồng AJAX hằng ngày của UB không đổi một dòng.
+
+| Nhánh bàn giao trong `DungThongTinBanGiao` | Endpoint | Vá ở |
+|---|---|---|
+| Đăng nhập lại bằng mật khẩu | `POST /HeThong/HT_DangNhap/login` | `f653f96` |
+| Tài khoản vừa mở, có mã xác nhận | `POST /api/HT_DangNhap/XacThucMaXacNhan` | `d57d081` |
+
+Cả hai nằm trên nhánh `namnhat_2408_BanGiaoTuSixosPwa` của `DangKyOnlineUB`. Hai điều dễ vấp khi đọc
+lại chỗ này:
+
+- **Có HAI action trùng tên `XacThucMaXacNhan`.** Bản ở `PhongMach/Controllers/` chỉ `Ok(result)`,
+  **không** gọi `AddClaimsAsync` nên không đặt cookie; bản ở `PhongMach/Area/API/Controllers/` mới là
+  bản đặt cookie và lưu refresh token. SixosPwa POST vào bản Area/API — đừng "gom cho gọn" sang bản kia.
+- **Đích sau xác thực mã là `/`, không phải `/QuanLy/QL_HoSoBenhNhan`** như nhánh `login`. Vừa vì đó
+  là điều hướng thật của `HT_DangKy_FE.js`, vừa vì bắt buộc: kết quả ở đó là `dynamic`
+  `{ statusCode, IdTK, message }`, không có `hasThongTinBenhNhan`/`laNhanVien` — đọc vào là
+  `RuntimeBinderException` **lúc chạy**, không phải lỗi biên dịch.
+
+Đã đo thật qua tunnel: log UB `POST /api/HT_DangNhap/XacThucMaXacNhan responded 302`, trong khi cùng
+endpoint đó trước bản vá luôn là `responded 200`.
+
+### Kênh `xacthuc = 4` — UB chỉ sinh mã, không gửi tin
+
+Mã xác nhận của UB chỉ là **vé bàn giao** để đặt cookie phiên bên họ; bệnh nhân không bao giờ phải gõ,
+vì họ đã qua OTP của SixosPwa trước đó. Nhưng mã đó chỉ ra đời **bên trong** `SendCode`, mà cả ba kênh
+`1` (Zalo) / `2` (Email) / `3` (SMS) đều gửi tin thật trước khi trả mã về; nhánh mặc định thì không gửi
+nhưng cũng **không trả trường `code`** nên không mượn được. Vì `UbGateway` không có email, ta luôn rơi
+vào SMS ⇒ **mỗi lần mở tài khoản là một tin nhắn thật bị gửi đi**: tốn tiền của bệnh viện, và bệnh
+nhân hoang mang vì nhận một mã không dùng tới.
+
+`a172c0b` thêm kênh `4` bên UB — chỉ sinh mã, lưu `MaXacNhan`, trả `code`, không gọi SMS/Zalo/Email;
+`e2e65f2` đổi `UbGateway` sang gửi `4`. Ba kênh cũ giữ nguyên.
+
+**Thứ tự deploy: UB trước, SixosPwa sau.** Nếu SixosPwa gửi `4` mà UB còn bản cũ thì `switch` rơi vào
+nhánh mặc định, trả `statusCode 500` không kèm `code` ⇒ không bàn giao được. Hai hằng số
+`KenhEmail`/`KenhSms` được giữ lại trong `UbGateway` đúng để đổi về một dòng trong tình huống đó.
+
+**Còn một lỗi có sẵn bên UB, chưa vá:** cuối `SendCode` chỉ tra `thongTinBenhNhan` khi `SoDienThoai`
+khác rỗng rồi gán `MaXacNhan` vô điều kiện — nên kênh Email (`2`) ném `NullReferenceException`, rơi
+vào `catch` và trả *"Gửi mã xác thực thất bại"*. Kênh `4` truyền số điện thoại nên không dính, nhưng
+đừng bật lại `KenhEmail` khi chưa vá chỗ đó.
+
+**Ý định `yDinh` vẫn chưa giữ được:** UB hardcode đích, còn `DichCuoi` mà `DungThongTinBanGiao` tính
+thì `BanGiao.cshtml` không dùng tới nữa. "Đặt gói khám" và "Hồ sơ bệnh nhân" hạ cánh cùng một chỗ.
+Muốn giữ thì phải thêm tham số `returnUrl` (kèm whitelist) cho cửa UB — chưa làm.
