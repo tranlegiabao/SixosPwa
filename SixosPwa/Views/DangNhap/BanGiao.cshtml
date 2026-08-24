@@ -85,7 +85,7 @@
         const duongVe = @Html.Raw(Json.Serialize(
             string.IsNullOrWhiteSpace(ViewBag.SlugCoSo as string)
                 ? "/benh-nhan"
-                : $"/pk/{ViewBag.SlugCoSo}"));
+                : $"/DangKyOnline/{ViewBag.SlugCoSo}"));
 
         // Doi tac can chut thoi gian de xu ly POST va tra Set-Cookie ve popup.
         // Het khoang nay thi day popup sang trang chu — cung la de che not phan

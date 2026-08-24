@@ -14,4 +14,6 @@ public class TaiKhoan
     /// tao truoc khi co cong benh nhan.
     /// </summary>
     public string? CCCD { get; set; }
+
+    public string? MatKhau { get; set; }
 }

@@ -495,7 +495,8 @@
             img: c.Img || c.img || images[i % images.length],
             tinh: c.Tinh !== undefined ? c.Tinh : c.tinh,
             phuongXa: c.PhuongXa !== undefined ? c.PhuongXa : c.phuongXa,
-            quangCao: c.QuangCao !== undefined ? c.QuangCao : (c.quangCao || 0)
+            quangCao: c.QuangCao !== undefined ? c.QuangCao : (c.quangCao || 0),
+            slug: c.Slug || c.slug || ""
         }));
 
         // Trạng thái ban đầu
@@ -807,7 +808,7 @@
                             <i class="fas fa-map-pin"></i>
                             <span class="address-text">${c.address}</span>
                         </div>
-                        <a href="/Home/DangKyOnline/${toSlug(c.name)}" class="ytv-card-btn">Xem chi tiết</a>
+                        <a href="${c.slug ? `/DangKyOnline/${c.slug}` : `/Home/DangKyOnline/${toSlug(c.name)}`}" class="ytv-card-btn">Xem chi tiết</a>
                     </div>
                 </div>`).join("");
         }

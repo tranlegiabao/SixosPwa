@@ -73,7 +73,7 @@ public class HomeController : Controller
     /// URL co dinh cua tung co so. Slug do quan tri vien dat tay (DMCSKCB.Slug),
     /// KHONG sinh tu ten, nen doi ten co so khong lam gay URL da phat cho doi tac.
     /// </summary>
-    [HttpGet("/pk/{slug}")]
+    [HttpGet("/DangKyOnline/{slug}")]
     [AllowAnonymous]
     public async Task<IActionResult> ChiTietCoSo(string slug)
     {
@@ -108,7 +108,7 @@ public class HomeController : Controller
                 // tham so ?coSo= va luong ban giao sang doi tac chet. Xem ADR 0003.
                 if (!string.IsNullOrWhiteSpace(matchedCS.Slug))
                 {
-                    return RedirectPermanent($"/pk/{matchedCS.Slug}");
+                    return RedirectPermanent($"/DangKyOnline/{matchedCS.Slug}");
                 }
 
                 // Co so chua duoc dat slug: van hien duoc trang, chi la khong co
