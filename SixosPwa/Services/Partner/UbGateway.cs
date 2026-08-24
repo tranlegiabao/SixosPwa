@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -34,9 +34,28 @@ public class UbGateway : IPartnerGateway
             ["ho-so"] = "/QuanLy/QL_HoSoBenhNhan"
         };
 
-    // 1 = Zalo, 2 = Email, 3 = SMS — khop switch trong RegisterAsync cua doi tac.
+    // 1 = Zalo, 2 = Email, 3 = SMS, 4 = chi sinh ma — khop switch trong
+    // RegisterAsync cua doi tac.
+    // Hai kenh nay hien KHONG duoc dung nua (xem KenhChiSinhMa). Giu lai de doi
+    // ve mot dong neu co so nao con chay ban UB cu chua co kenh 4.
     private const int KenhEmail = 2;
     private const int KenhSms = 3;
+
+    /// <summary>
+    /// Kenh 4 — doi tac CHI sinh ma xac nhan, KHONG gui SMS/Zalo/Email.
+    ///
+    /// Benh nhan da xac thuc bang OTP cua SixosPwa truoc do roi; ma cua doi tac
+    /// chi la VE BAN GIAO de dat cookie phien ben ho, benh nhan khong bao gio
+    /// phai go. Truoc day ta phai muon kenh SMS (3) chi de lay duoc ma trong than
+    /// phan hoi ⇒ MOI lan mo tai khoan la mot tin nhan that bi gui di: ton tien
+    /// va lam benh nhan hoang mang vi nhan ma khong dung toi.
+    ///
+    /// ⚠️ Kenh nay CHI ton tai tu ban va d57d081+ ben DangKyOnlineUB. Neu co so
+    /// nao con chay ban UB cu thi switch cua ho roi vao nhanh mac dinh, tra
+    /// statusCode 500 va KHONG co truong "code" ⇒ khong ban giao duoc. Phai deploy
+    /// UB truoc, roi moi deploy SixosPwa.
+    /// </summary>
+    private const int KenhChiSinhMa = 4;
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<UbGateway> _logger;
@@ -86,9 +105,10 @@ public class UbGateway : IPartnerGateway
             return new KetQuaMoTaiKhoan(false, "Chưa cấu hình địa chỉ trang của cơ sở này", null);
         }
 
-        // Doi tac tu chon kenh gui ma theo tham so xacthuc. Uu tien Email vi khong
-        // ton SMS; khong co email thi rot ve SMS.
-        var kenh = string.IsNullOrWhiteSpace(yeuCau.Email) ? KenhSms : KenhEmail;
+        // Khong nho doi tac gui gi ca — benh nhan da qua OTP cua SixosPwa roi,
+        // ta chi can truong "code" trong than phan hoi de tu xac thuc (diem tua
+        // so 2, ADR 0003). Xem chu thich cua KenhChiSinhMa.
+        var kenh = KenhChiSinhMa;
 
         var than = new
         {
