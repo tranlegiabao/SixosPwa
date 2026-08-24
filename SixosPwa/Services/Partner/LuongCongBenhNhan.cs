@@ -15,6 +15,9 @@ public interface ILuongCongBenhNhan
     /// <summary>Cho ha canh sau khi OTP dung.</summary>
     Task<string> ChonDichDenAsync(string maCoSo, string cccd, string dinhDanh, string? returnUrl, CancellationToken ct = default);
 
+    /// <summary>Cua cua mot co so — de man hinh biet co so do co ban giao hay khong.</summary>
+    Task<CuaCoSo?> LayCuaAsync(string? maCoSo, CancellationToken ct = default);
+
     /// <summary>Tao ho so noi bo + mo tai khoan ben doi tac (neu co).</summary>
     Task<KetQuaBuoc> MoTaiKhoanAsync(string maCoSo, string cccd, string dinhDanh, string hoTen, string matKhau, string? returnUrl = null, CancellationToken ct = default);
 
@@ -41,6 +44,38 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
 
     /// <summary>Claim giu ma co so benh nhan dang dung trong phien.</summary>
     public const string ClaimMaCoSo = "MaCoSo";
+
+    /// <summary>
+    /// Do dai mat khau sinh cho he doi tac. Ben ho bat TOI THIEU 6 ky tu
+    /// (RegisterService: "Mat khau phai co toi thieu 6 ky tu"), user chot TOI DA
+    /// 6 — nen chi con dung mot con so.
+    /// </summary>
+    private const int DoDaiMatKhauDoiTac = 6;
+
+    /// <summary>
+    /// Sinh mat khau ngau nhien cho tai khoan ben he doi tac (user chot 22/08).
+    /// Benh nhan khong bao gio phai go no: SixosPwa cat lai trong
+    /// TaiKhoan_DoiTac.MatKhau va tu dien khi ban giao.
+    ///
+    /// CO Y KHONG dung CCCD lam mat khau: CCCD in tren giay to, ai doc duoc la
+    /// dang nhap thang vao trang cua doi tac.
+    ///
+    /// Bo ky tu bo qua 0/O va 1/l/I — mat khau nay co the phai doc cho nhan vien
+    /// ho tro qua dien thoai, nham mot ky tu la mat cong lam lai tu dau.
+    /// Dung RandomNumberGenerator chu khong phai Random: Random doan duoc.
+    /// </summary>
+    private static string SinhMatKhauChoDoiTac()
+    {
+        const string boKyTu = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
+
+        var ky = new char[DoDaiMatKhauDoiTac];
+        for (var i = 0; i < ky.Length; i++)
+        {
+            ky[i] = boKyTu[System.Security.Cryptography.RandomNumberGenerator.GetInt32(boKyTu.Length)];
+        }
+
+        return new string(ky);
+    }
 
     private readonly ApplicationDbContext _db;
     private readonly IPartnerGatewayFactory _cuaFactory;
@@ -111,6 +146,9 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
         return "/DangNhap/LienKet" + thamSo;
     }
 
+    public Task<CuaCoSo?> LayCuaAsync(string? maCoSo, CancellationToken ct = default)
+        => _cuaFactory.LayAsync(maCoSo, ct);
+
     // ------------------------------------------------------------------
     //  Man Dang ky
     // ------------------------------------------------------------------
@@ -129,6 +167,10 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
 
         var dienThoai = LayDienThoai(dinhDanh, taiKhoan);
         var email = LayEmail(dinhDanh, taiKhoan);
+
+        // Nhanh co API: mat khau ben doi tac do may chu sinh ngau nhien, khong
+        // hoi benh nhan (man Dang ky cung khong con o nhap nua).
+        matKhau = SinhMatKhauChoDoiTac();
 
         var ketQua = await coSo.Cua.MoTaiKhoanAsync(
             coSo.CauHinh, new YeuCauMoTaiKhoan(hoTen, cccd, dienThoai, email, matKhau), ct);
@@ -167,6 +209,10 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
         {
             return new KetQuaBuoc(false, "Cơ sở này không cần liên kết tài khoản", null);
         }
+
+        // Dat lai mat khau ben doi tac bang mot chuoi ngau nhien moi, dong bo
+        // voi luong Dang ky. Benh nhan khong can biet no la gi.
+        matKhau = SinhMatKhauChoDoiTac();
 
         var ketQua = await coSo.Cua.DatLaiMatKhauAsync(coSo.CauHinh, cccd, dienThoai, ma, matKhau, ct);
         if (!ketQua.ThanhCong)

@@ -355,14 +355,9 @@ public class DangNhapController : Controller
     [Authorize]
     public async Task<IActionResult> TaoTaiKhoan([FromBody] TaoTaiKhoanRequest model)
     {
-        if (string.IsNullOrWhiteSpace(model.HoTen) || string.IsNullOrWhiteSpace(model.MatKhau))
+        if (string.IsNullOrWhiteSpace(model.HoTen))
         {
-            return Json(new { success = false, message = "Vui lòng nhập đầy đủ họ tên và mật khẩu!" });
-        }
-
-        if (model.MatKhau.Length < 6)
-        {
-            return Json(new { success = false, message = "Mật khẩu phải có ít nhất 6 ký tự!" });
+            return Json(new { success = false, message = "Vui lòng nhập họ và tên!" });
         }
 
         // KHONG tin cccd / maCoSo / dinhDanh tu body: neu tin thi bat ky ai cung
@@ -371,6 +366,14 @@ public class DangNhapController : Controller
         if (maCoSo is null || cccd is null)
         {
             return Json(new { success = false, message = "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại!" });
+        }
+
+        // Nhanh co API: mat khau ben doi tac = CCCD, man Dang ky khong hoi nua.
+        // Nhanh noi bo: benh nhan tu dat, van phai kiem do dai.
+        var cua = await _luong.LayCuaAsync(maCoSo);
+        if (cua?.CoBanGiao != true && (string.IsNullOrWhiteSpace(model.MatKhau) || model.MatKhau.Length < 6))
+        {
+            return Json(new { success = false, message = "Mật khẩu phải có ít nhất 6 ký tự!" });
         }
 
         var ketQua = await _luong.MoTaiKhoanAsync(
@@ -415,9 +418,9 @@ public class DangNhapController : Controller
     [Authorize]
     public async Task<IActionResult> XacNhanLienKet([FromBody] XacNhanLienKetRequest model)
     {
-        if (string.IsNullOrWhiteSpace(model.Ma) || string.IsNullOrWhiteSpace(model.MatKhau))
+        if (string.IsNullOrWhiteSpace(model.Ma))
         {
-            return Json(new { success = false, message = "Vui lòng nhập đầy đủ mã xác thực và mật khẩu!" });
+            return Json(new { success = false, message = "Vui lòng nhập mã xác thực!" });
         }
 
         var (maCoSo, cccd, _) = LayDanhTinhPhien();
@@ -598,6 +601,11 @@ public class DangNhapController : Controller
         ViewBag.Cccd = User.FindFirst(LuongCongBenhNhan.ClaimCccd)?.Value;
         ViewBag.DinhDanh = User.FindFirst(ClaimTypes.Name)?.Value;
         ViewBag.DienThoai = User.FindFirst(ClaimTypes.MobilePhone)?.Value;
+
+        // Co so co API rieng thi mat khau ben ho dat bang CCCD, khong hoi benh
+        // nhan nua. Co so noi bo thi van de ho tu dat.
+        var cua = await _luong.LayCuaAsync(maCoSo);
+        ViewBag.CoBanGiao = cua?.CoBanGiao == true;
     }
 
     /// <summary>

@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = "Y TẾ VIỆT - Đăng Ký Khám Bệnh";
     Layout = "_Layout";
+    ViewData["ChanTrangCong"] = true;
 }
 <link rel="stylesheet" href="~/css/thong-tin-benh-nhan.css" asp-append-version="true" />
 
@@ -14,23 +15,39 @@
         <h1>Dịch Vụ Đăng Ký Khám Bệnh Online</h1>
         <p>Tiện lợi - Nhanh chóng - Chính xác</p>
     </div>
-    <div class="ytv-header-menu" id="menuBtn" onclick="toggleMenu()">
-        <i class="fas fa-bars"></i>
-        <div class="ytv-dropdown" id="dropdownMenu">
-            <a href="/Home/DanhSachCoSo?type=benhvien">
-                <i class="fas fa-hospital bieu-tuong-benh-vien"></i> Bệnh viện
+    <div class="ytv-header-menu" id="menuBtn" onclick="toggleMenu()" role="button" tabindex="0"
+         aria-label="Mở menu" aria-haspopup="true" aria-expanded="false" aria-controls="dropdownMenu">
+        <i class="fas fa-bars" aria-hidden="true"></i>
+        <div class="ytv-dropdown" id="dropdownMenu" role="menu" aria-label="Menu">
+            @* Nhom 1 - loai co so: CHI hien tren dien thoai.
+               Tu tablet tro len da co san o sidebar than trang nen an di, khoi lap. *@
+            <div class="ytv-dropdown-coso">
+                <a href="/Home/DanhSachCoSo-benhvien" role="menuitem">
+                    <i class="fas fa-hospital bieu-tuong-benh-vien" aria-hidden="true"></i> Bệnh viện
+                </a>
+                <a href="/Home/DanhSachCoSo-pkdk" role="menuitem">
+                    <i class="fas fa-clinic-medical bieu-tuong-phong-kham" aria-hidden="true"></i> Phòng khám đa khoa
+                </a>
+                <a href="/Home/DanhSachCoSo-nhakhoa" role="menuitem">
+                    <i class="fas fa-tooth bieu-tuong-nha-khoa" aria-hidden="true"></i> Nha khoa
+                </a>
+                <a href="/Home/DanhSachCoSo-phongmach" role="menuitem">
+                    <i class="fas fa-stethoscope bieu-tuong-phong-mach" aria-hidden="true"></i> Phòng mạch
+                </a>
+                <a href="/Home/DanhSachCoSo-nhathuoc" role="menuitem">
+                    <i class="fas fa-pills bieu-tuong-nha-thuoc" aria-hidden="true"></i> Nhà thuốc
+                </a>
+            </div>
+            @* Nhom 2 - tai khoan: luon hien o moi be ngang *@
+            <div class="ytv-dropdown-title">Tài khoản</div>
+            <a href="javascript:void(0)" role="menuitem" onclick="showHoSoBenhNhan()">
+                <i class="fas fa-user-md" aria-hidden="true"></i> Hồ sơ bệnh nhân
             </a>
-            <a href="/Home/DanhSachCoSo?type=pkdk">
-                <i class="fas fa-clinic-medical bieu-tuong-phong-kham"></i> Phòng khám đa khoa
+            <a href="/Home/ThongTinBenhNhan" role="menuitem">
+                <i class="fas fa-notes-medical" aria-hidden="true"></i> Lịch sử khám bệnh
             </a>
-            <a href="/Home/DanhSachCoSo?type=nhakhoa">
-                <i class="fas fa-tooth bieu-tuong-nha-khoa"></i> Nha khoa
-            </a>
-            <a href="/Home/DanhSachCoSo?type=phongmach">
-                <i class="fas fa-stethoscope bieu-tuong-phong-mach"></i> Phòng mạch
-            </a>
-            <a href="/Home/DanhSachCoSo?type=nhathuoc">
-                <i class="fas fa-pills bieu-tuong-nha-thuoc"></i> Nhà thuốc
+            <a href="/DangNhap/DangXuat" role="menuitem" class="ytv-dropdown-thoat">
+                <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Đăng xuất
             </a>
         </div>
     </div>
@@ -62,7 +79,7 @@
     
     <div class="ytv-content">
         <!-- Bootstrap Carousel for Slider -->
-        <div id="mainSlider" class="carousel slide ytv-slider" data-bs-ride="carousel" data-bs-interval="3000">
+        <div id="mainSlider" class="carousel slide ytv-slider" aria-roledescription="carousel" aria-label="Cơ sở nổi bật">
             @{
                 var topCSKCB = ViewData["TopCSKCB"] as List<SixosPwa.Models.TopCSKCBQC> ?? new List<SixosPwa.Models.TopCSKCBQC>();
 
@@ -395,33 +412,6 @@
     </div>
 </div>
 
-<div class="ytv-footer d-flex flex-column-reverse flex-md-row justify-content-between align-items-center gap-3" style="background: #e0f2fe; padding: 2px 30px; border-top: 1px solid #bae6fd;">
-    <div class="ytv-footer-left d-flex flex-column flex-md-row align-items-center gap-2 gap-md-4">
-        <div style="font-size: 13px; color: #334155;"><i class="fas fa-headset me-2 text-secondary"></i><strong class="text-primary">0901 87 88 96</strong> - <strong class="text-primary">0364 956 007</strong></div>
-        <div style="font-size: 13px; color: #334155;"><i class="fas fa-envelope me-2 text-secondary"></i><a href="mailto:sixossoft@gmail.com" class="text-primary text-decoration-none">sixossoft@gmail.com</a></div>
-        <div style="font-size: 13px; color: #334155;"><i class="fas fa-globe me-2 text-secondary"></i><a href="https://sixossoft.com" target="_blank" rel="noopener noreferrer" class="text-primary text-decoration-none">sixossoft.com</a></div>
-    </div>
-    <div class="ytv-footer-right" style="font-size: 13px;">
-        <!-- Mobile 2x2 grid -->
-        <div class="row text-center m-0 d-flex d-sm-none w-100" style="row-gap: 8px;">
-            <div class="col-6 p-0"><a href="javascript:void(0)" onclick="showPolicy('baomat')" class="text-dark text-decoration-none hover-primary">Chính sách bảo mật</a></div>
-            <div class="col-6 p-0"><a href="javascript:void(0)" onclick="showPolicy('dieukhoan')" class="text-dark text-decoration-none hover-primary">Điều khoản sử dụng</a></div>
-            <div class="col-6 p-0"><a href="javascript:void(0)" onclick="showPolicy('khieunai')" class="text-dark text-decoration-none hover-primary">Giải quyết khiếu nại</a></div>
-            <div class="col-6 p-0"><a href="javascript:void(0)" onclick="showPolicy('baohanh')" class="text-dark text-decoration-none hover-primary">Chính sách bảo hành</a></div>
-        </div>
-        
-        <!-- Desktop inline -->
-        <div class="d-none d-sm-flex flex-wrap justify-content-center align-items-center gap-2">
-            <a href="javascript:void(0)" onclick="showPolicy('baomat')" class="text-dark text-decoration-none hover-primary">Chính sách bảo mật</a>
-            <span class="text-muted">|</span>
-            <a href="javascript:void(0)" onclick="showPolicy('dieukhoan')" class="text-dark text-decoration-none hover-primary">Điều khoản sử dụng</a>
-            <span class="text-muted">|</span>
-            <a href="javascript:void(0)" onclick="showPolicy('khieunai')" class="text-dark text-decoration-none hover-primary">Giải quyết khiếu nại</a>
-            <span class="text-muted">|</span>
-            <a href="javascript:void(0)" onclick="showPolicy('baohanh')" class="text-dark text-decoration-none hover-primary">Chính sách bảo hành</a>
-        </div>
-    </div>
-</div>
 
 <style>
     .hover-primary:hover { color: #2563eb !important; text-decoration: underline !important; }
@@ -429,23 +419,6 @@
 
 <script src="~/js/thong-tin-benh-nhan.js" asp-append-version="true"></script>
 
-<!-- Policy Modal -->
-<div class="modal fade" id="policyModal" tabindex="-1" aria-labelledby="policyModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header bg-primary text-white">
-        <h5 class="modal-title" id="policyModalLabel">Chính sách</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body ytv-policy-body" id="policyModalBody">
-        <!-- Content injected via JS -->
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-      </div>
-    </div>
-  </div>
-</div>
 
 
 

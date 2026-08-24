@@ -1,4 +1,5 @@
 @{
+    ViewData["ChanTrangCong"] = true;
     var tenCoSo = Uri.UnescapeDataString(ViewData["TenCoSo"]?.ToString() ?? "Bệnh Viện ĐHYD");
     var diaChi = Uri.UnescapeDataString(ViewData["DiaChi"]?.ToString() ?? "215 Hồng Bàng, Phường Chợ Lớn");
     var type = ViewData["Type"]?.ToString() ?? "benhvien";
@@ -639,71 +640,12 @@
         }
     }
 
-    /* FOOTER */
-    .ytv-footer {
-        background: #e0f2fe; /* xanh nhạt */
-        color: #334155;
-        padding: 12px 30px;
-        display: flex;
-        flex-direction: column;
-        border-top: 4px solid var(--ytv-primary);
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        z-index: 1000;
-    }
-    .ytv-footer-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        flex-wrap: wrap;
-        gap: 20px;
-    }
-    .ytv-support-col {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-    .ytv-support-phones {
-        font-size: 16px;
-        font-weight: 500;
-    }
-    .ytv-support-contacts {
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-    .ytv-support-contacts div {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-    .ytv-support-contacts div i {
-        color: var(--ytv-primary);
-    }
-    .ytv-email-link {
-        color: var(--ytv-primary);
-        font-weight: 600;
-        text-decoration: none;
-    }
-    .ytv-email-link:hover {
-        text-decoration: underline;
-    }
-    .ytv-support-phones span {
-        color: var(--ytv-primary);
-        font-weight: 700;
-        font-size: 18px;
-    }
-
     /* Stats Footer (Second Footer) */
     .stats-footer-bar {
         background: transparent !important;
         border: none !important;
         position: fixed;
-        bottom: 50px;
+        bottom: calc(var(--ctc-cao) + 8px);
         left: 250px;
         width: calc(100% - 250px);
         z-index: 999;
@@ -985,21 +927,6 @@
             color: #64748b !important;
         }
 
-        .ytv-footer {
-            position: relative;
-            inset: auto;
-            width: 100%;
-            box-sizing: border-box;
-            padding: 12px 16px !important;
-        }
-
-        .ytv-footer-left,
-        .ytv-footer-right {
-            width: 100%;
-            justify-content: center;
-            text-align: center;
-        }
-
         .fab-btn {
             top: auto;
             right: 16px;
@@ -1101,11 +1028,11 @@
     <div class="ytv-header-menu" id="menuBtn" onclick="toggleMenu()">
         <i class="fas fa-bars"></i>
         <div class="ytv-dropdown" id="dropdownMenu">
-            <a href="/Home/DanhSachCoSo?type=benhvien"><i class="fas fa-hospital"></i> Bệnh viện</a>
-            <a href="/Home/DanhSachCoSo?type=pkdk"><i class="fas fa-clinic-medical"></i> Phòng khám đa khoa</a>
-            <a href="/Home/DanhSachCoSo?type=nhakhoa"><i class="fas fa-tooth"></i> Nha khoa</a>
-            <a href="/Home/DanhSachCoSo?type=phongmach"><i class="fas fa-stethoscope"></i> Phòng mạch</a>
-            <a href="/Home/DanhSachCoSo?type=nhathuoc"><i class="fas fa-pills"></i> Nhà thuốc</a>
+            <a href="/Home/DanhSachCoSo-benhvien"><i class="fas fa-hospital"></i> Bệnh viện</a>
+            <a href="/Home/DanhSachCoSo-pkdk"><i class="fas fa-clinic-medical"></i> Phòng khám đa khoa</a>
+            <a href="/Home/DanhSachCoSo-nhakhoa"><i class="fas fa-tooth"></i> Nha khoa</a>
+            <a href="/Home/DanhSachCoSo-phongmach"><i class="fas fa-stethoscope"></i> Phòng mạch</a>
+            <a href="/Home/DanhSachCoSo-nhathuoc"><i class="fas fa-pills"></i> Nhà thuốc</a>
         </div>
     </div>
 </div>
@@ -1487,22 +1414,6 @@
     </div>
 </div>
 
-<div class="ytv-footer d-flex flex-column flex-md-row justify-content-between align-items-center gap-3" style="background: #e0f2fe; padding: 15px 30px; border-top: 1px solid #bae6fd;">
-    <div class="ytv-footer-left d-flex flex-column flex-md-row align-items-center gap-2 gap-md-4">
-        <div style="font-size: 14px; color: #334155;"><i class="fas fa-headset me-2 text-secondary"></i><strong class="text-primary">0901 87 88 96</strong> - <strong class="text-primary">0364 956 007</strong></div>
-        <div style="font-size: 14px; color: #334155;"><i class="fas fa-envelope me-2 text-secondary"></i><a href="mailto:sixossoft@gmail.com" class="text-primary text-decoration-none">sixossoft@gmail.com</a></div>
-        <div style="font-size: 14px; color: #334155;"><i class="fas fa-globe me-2 text-secondary"></i><a href="https://sixossoft.com" target="_blank" rel="noopener noreferrer" class="text-primary text-decoration-none">sixossoft.com</a></div>
-    </div>
-    <div class="ytv-footer-right d-flex flex-wrap justify-content-center align-items-center" style="font-size: 14px; row-gap: 8px;">
-        <a href="javascript:void(0)" onclick="showPolicy('baomat')" class="text-dark text-decoration-none hover-primary">Chính sách bảo mật</a>
-        <span class="mx-2 text-muted d-none d-sm-inline">|</span>
-        <a href="javascript:void(0)" onclick="showPolicy('dieukhoan')" class="text-dark text-decoration-none hover-primary">Điều khoản sử dụng</a>
-        <span class="mx-2 text-muted d-none d-sm-inline">|</span>
-        <a href="javascript:void(0)" onclick="showPolicy('khieunai')" class="text-dark text-decoration-none hover-primary">Giải quyết khiếu nại</a>
-        <span class="mx-2 text-muted d-none d-sm-inline">|</span>
-        <a href="javascript:void(0)" onclick="showPolicy('baohanh')" class="text-dark text-decoration-none hover-primary">Chính sách bảo hành</a>
-    </div>
-</div>
 
 <!-- Floating Action Button (Đăng ký khám) 
 <a href="/DangNhap/Login" class="fab-btn">

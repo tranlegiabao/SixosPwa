@@ -69,14 +69,9 @@
                         <div class="form-text">Mã do <strong>@ViewBag.TenCoSo</strong> gửi tới bạn.</div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label" for="matKhau">Đặt mật khẩu mới</label>
-                        <input type="password" class="form-control form-control-lg" id="matKhau"
-                               autocomplete="new-password" minlength="6" maxlength="50" required />
-                        <div class="form-text">
-                            Mật khẩu này dùng cho trang của cơ sở. Bạn tự đặt nên luôn biết nó là gì.
-                        </div>
-                    </div>
+                    @* Khong hoi mat khau nua: man nay chi hien voi co so CO API, ma
+                       o do may chu tu sinh mat khau ngau nhien roi cat lai. Benh
+                       nhan chi can nhap ma xac thuc. *@
 
                     <button type="submit" id="btnXacNhan" class="btn btn-success w-100 py-2 fw-bold mb-2">
                         Xác nhận liên kết
@@ -142,15 +137,10 @@
 
         async function xacNhan() {
             const ma = document.getElementById('ma').value.trim();
-            const matKhau = document.getElementById('matKhau').value;
             const dienThoai = document.getElementById('dienThoai').value.trim();
 
             if (!ma) {
                 showToast('Vui lòng nhập mã xác thực!', 400);
-                return;
-            }
-            if (matKhau.length < 6) {
-                showToast('Mật khẩu phải có ít nhất 6 ký tự!', 400);
                 return;
             }
 
@@ -164,7 +154,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         maCoSo: maCoSo, cccd: cccd, dienThoai: dienThoai,
-                        ma: ma, matKhau: matKhau
+                        ma: ma
                     })
                 });
 
