@@ -1039,19 +1039,19 @@
             <img src="@logo" alt="Logo" class="sidebar-logo" />
         </div>
         <div class="sidebar-scroll-area">
-        <a class="ytv-menu-item @(activeLoaiND == NDCSKCB.GioiThieu ? "active" : string.Empty)" onclick="showTab('gioi-thieu', this)" href="#gioi-thieu">
+        <a class="ytv-menu-item @(activeLoaiND == NDCSKCB.GioiThieu ? "active" : string.Empty)" onclick="showTab('gioi-thieu', this, event)" href="#gioi-thieu">
             <i class="fas fa-info-circle"></i> Giới thiệu
         </a>
-        <a class="ytv-menu-item @(activeLoaiND == NDCSKCB.DichVu ? "active" : string.Empty)" onclick="showTab('dich-vu', this)" href="#dich-vu">
+        <a class="ytv-menu-item @(activeLoaiND == NDCSKCB.DichVu ? "active" : string.Empty)" onclick="showTab('dich-vu', this, event)" href="#dich-vu">
             <i class="fas fa-stethoscope"></i> Dịch vụ
         </a>
-        <a class="ytv-menu-item @(activeLoaiND == NDCSKCB.DoiNgu ? "active" : string.Empty)" onclick="showTab('doi-ngu', this)" href="#doi-ngu">
+        <a class="ytv-menu-item @(activeLoaiND == NDCSKCB.DoiNgu ? "active" : string.Empty)" onclick="showTab('doi-ngu', this, event)" href="#doi-ngu">
             <i class="fas fa-user-md"></i> Đội ngũ y bác sĩ
         </a>
-        <a class="ytv-menu-item @(activeLoaiND == NDCSKCB.TrangThietBi ? "active" : string.Empty)" onclick="showTab('trang-thiet-bi', this)" href="#trang-thiet-bi">
+        <a class="ytv-menu-item @(activeLoaiND == NDCSKCB.TrangThietBi ? "active" : string.Empty)" onclick="showTab('trang-thiet-bi', this, event)" href="#trang-thiet-bi">
             <i class="fas fa-tools"></i> Các trang thiết bị
         </a>
-        <a class="ytv-menu-item @(activeLoaiND == NDCSKCB.LienHe ? "active" : string.Empty)" onclick="showTab('lien-he', this)" href="#lien-he">
+        <a class="ytv-menu-item @(activeLoaiND == NDCSKCB.LienHe ? "active" : string.Empty)" onclick="showTab('lien-he', this, event)" href="#lien-he">
             <i class="fas fa-headset"></i> Liên hệ
         </a>
         
@@ -1205,7 +1205,12 @@
 </a> -->
 
 <script>
-    function showTab(tabId, el) {
+    function showTab(tabId, el, event) {
+        // Chi doi noi dung tab; khong de lien ket hash tu dong nhay/cuon trang.
+        if (event) {
+            event.preventDefault();
+        }
+
         // Handle active state in sidebar
         document.querySelectorAll('.ytv-menu-item').forEach(m => m.classList.remove('active'));
         el.classList.add('active');
