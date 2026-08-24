@@ -1,6 +1,4 @@
 @{
-    // Layout = null giống Views/HT_DangNhap/Login.cshtml của HisSoft:
-    // màn đăng nhập tự dựng trang, không đội menu của layout chính.
     Layout = null;
     ViewData["Title"] = "Đăng nhập";
 }
@@ -12,11 +10,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Đăng nhập — HisSoft</title>
 
-    @* Trang này là start_url của manifest nên BẮT BUỘC phải có khai báo PWA. *@
     <partial name="_PwaHead" />
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/show-toast.css" asp-append-version="true" />
+    <script src="~/js/show-toast.js" asp-append-version="true"></script>
+    <style>
+        .otp-input-group {
+            letter-spacing: 0.25rem;
+            font-size: 1.25rem;
+            text-align: center;
+            font-weight: 600;
+        }
+        .step-2 {
+            display: none;
+        }
+    </style>
 </head>
 <body class="page-center">
 
@@ -24,38 +34,406 @@
         <div class="auth__brand">
             <img src="~/static/icon-192.png" alt="HisSoft" width="72" height="72" />
             <h1>HisSoft</h1>
-            <p>Hệ thống thông tin bệnh viện</p>
+            <p>Đăng nhập nhanh bằng số điện thoại hoặc email</p>
         </div>
 
         <div class="card auth__card">
             <div class="card-body">
-                <form asp-controller="DangNhap" asp-action="Login" method="post">
+
+                @if (!string.IsNullOrWhiteSpace(ViewBag.DangDangNhapLa as string))
+                {
+                    @* Con phien cu. KHONG tu day di — de nguoi dung tu chon, vi
+                       ta khong biet ho vua dang xuat ben he doi tac hay chua. *@
+                    <div class="alert alert-light border mb-3">
+                        <div class="small text-muted mb-1">Bạn đang đăng nhập với</div>
+                        <div class="fw-bold mb-2">@ViewBag.DangDangNhapLa</div>
+                        <a href="@ViewBag.LinkDiTiep" class="btn btn-primary w-100 py-2 fw-bold">
+                            Tiếp tục với tài khoản này
+                        </a>
+                    </div>
+
+                    <div class="text-center text-muted small mb-3">hoặc đăng nhập tài khoản khác</div>
+                }
+
+                <!-- BƯỚC 1: NHẬP SỐ ĐIỆN THOẠI HOẶC EMAIL -->
+                <form id="formStep1" class="step-1" onsubmit="event.preventDefault(); guiOtp();">
+                    @if (!string.IsNullOrWhiteSpace(ViewBag.TenCoSo as string))
+                    {
+                        @* Ma co so den tu trang co so (?coSo=slug). Chi de xem —
+                           benh nhan khong duoc doi, vi no quyet dinh toan bo luong phia sau. *@
+                        <div class="mb-3">
+                            <label class="form-label" for="maCoSo">Mã CSKCB</label>
+                            <input type="text" class="form-control form-control-lg" id="maCoSo" readonly
+                                   value="@ViewBag.MaCoSo — @ViewBag.TenCoSo" />
+                            <div class="form-text">Cơ sở bạn đang đăng ký khám.</div>
+                        </div>
+                    }
+
                     <div class="mb-3">
-                        <label class="form-label" for="userName">Tài khoản</label>
-                        <input type="text" class="form-control" id="userName" name="userName"
-                               placeholder="Nhập tài khoản" autocomplete="off" />
+                        <label class="form-label" for="soDienThoai">Số điện thoại hoặc Email</label>
+                        <input type="text" class="form-control form-control-lg" id="soDienThoai" 
+                               placeholder="Ví dụ: 0987654321 hoặc ten@domain.com" autocomplete="username" maxlength="50" required />
+                        <div class="form-text">Nhập số điện thoại hoặc email để nhận mã xác thực OTP.</div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label" for="passWord">Mật khẩu</label>
-                        <input type="password" class="form-control" id="passWord" name="passWord"
-                               placeholder="Nhập mật khẩu" autocomplete="off" />
+                        <label class="form-label" for="cccd">Số Căn cước công dân</label>
+                        <input type="text" class="form-control form-control-lg" id="cccd" inputmode="numeric"
+                               placeholder="12 số trên thẻ căn cước" autocomplete="off" maxlength="20" required />
+                        <div class="form-text">Dùng để tìm hồ sơ của bạn tại cơ sở khám chữa bệnh.</div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100">Đăng nhập</button>
+                    <button type="submit" id="btnGuiOtp" class="btn btn-primary w-100 py-2 fw-bold">
+                        Gửi mã OTP
+                    </button>
                 </form>
 
-                @* Khối cài đặt nằm ngay dưới nút Đăng nhập — đúng vị trí đã chốt. *@
+                <!-- BƯỚC 2: NHẬP MÃ OTP -->
+                <form id="formStep2" class="step-2" onsubmit="event.preventDefault(); xacNhanOtp();">
+                    <div class="mb-3 text-center">
+                        <label class="form-label d-block text-start" for="maOtp">Nhập mã OTP xác thực</label>
+                        <input type="text" class="form-control form-control-lg otp-input-group mb-2" id="maOtp" 
+                               placeholder="123456" maxlength="6" autocomplete="one-time-code" required />
+                        <span class="text-muted small">Mã gửi tới: <strong id="lblSoDienThoai"></strong></span>
+                    </div>
+
+                    <button type="submit" id="btnXacNhan" class="btn btn-success w-100 py-2 fw-bold mb-2">
+                        Xác thực & Đăng nhập
+                    </button>
+
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" onclick="quayLaiStep1()">
+                            &larr; Đổi số điện thoại hoặc email
+                        </button>
+                        <button type="button" id="btnGuiLaiOtp" class="btn btn-link btn-sm p-0 text-decoration-none" onclick="guiOtp()">
+                            Gửi lại mã OTP
+                        </button>
+                    </div>
+                </form>
+
                 <partial name="_PwaInstall" />
             </div>
         </div>
 
         <p class="auth__foot">
-            Bản mẫu &mdash; đăng nhập chưa kiểm tra tài khoản, bấm là vào.
+            🔒 Chỉ cần đăng nhập 1 lần duy nhất &mdash; lần sau tự động vào thẳng!
         </p>
     </main>
 
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/pwa-install.js" asp-append-version="true"></script>
+
+    <!-- Khối reCAPTCHA ẩn cho Firebase Phone Auth -->
+    <div id="recaptcha-container"></div>
+
+    <script>
+        // CẤU HÌNH FIREBASE PROJECT CỦA BẠN (Dự án: my-pwa-app-4eb1b)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCX9m0qimWQ5-4t5_U2vdbTQXqitrdioE8",
+            authDomain: "my-pwa-app-4eb1b.firebaseapp.com",
+            projectId: "my-pwa-app-4eb1b",
+            storageBucket: "my-pwa-app-4eb1b.firebasestorage.app",
+            messagingSenderId: "689094471128",
+            appId: "1:689094471128:web:61653ca054732bb26916ad",
+            measurementId: "G-55REDZ6C01"
+        };
+
+        // Chế độ OTP thử nghiệm trực tiếp trên giao diện (Không cần Firebase / Khỏi tốn phí)
+        let useRealFirebase = false;
+        let confirmationResultObj = null;
+        let recaptchaVerifier = null;
+        let currentSdt = '';
+        const adminReturnUrl = new URLSearchParams(window.location.search).get('returnUrl');
+        const maCoSoHienTai = '@(ViewBag.MaCoSo as string ?? "")';
+        let currentCccd = '';
+
+        function showAlert(msg, type = 'info') {
+            const plainMessage = String(msg ?? '').replace(/<[^>]*>/g, '');
+            showToast(plainMessage, type);
+        }
+
+        function hideAlert() {
+            // Thông báo đăng nhập được hiển thị bằng showToast.
+        }
+
+        // Chuyển 0987654321 thành +84987654321 cho định dạng quốc tế của Firebase
+        function formatPhoneNumber(sdt) {
+            sdt = sdt.replace(/\s+/g, '');
+            if (sdt.startsWith('0')) {
+                return '+84' + sdt.substring(1);
+            }
+            if (!sdt.startsWith('+')) {
+                return '+84' + sdt;
+            }
+            return sdt;
+        }
+
+        async function guiOtp() {
+            const sdtInput = document.getElementById('soDienThoai').value.trim();
+            if (!sdtInput) {
+                showAlert('Vui lòng nhập số điện thoại hoặc email!', 'danger');
+                return;
+            }
+
+            const oCccd = document.getElementById('cccd');
+            const cccdInput = oCccd ? oCccd.value.trim() : '';
+            if (oCccd && !cccdInput) {
+                showAlert('Vui lòng nhập số Căn cước công dân!', 'danger');
+                return;
+            }
+            currentCccd = cccdInput;
+
+            const isEmail = sdtInput.indexOf('@@') !== -1;
+            if (isEmail) {
+                const emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+                if (!emailRegex.test(sdtInput)) {
+                    showAlert('Email không đúng định dạng!', 'danger');
+                    return;
+                }
+            } else {
+                if (sdtInput.length < 9) {
+                    showAlert('Số điện thoại không hợp lệ!', 'danger');
+                    return;
+                }
+            }
+
+            currentSdt = sdtInput;
+            const btnGui = document.getElementById('btnGuiOtp');
+            btnGui.disabled = true;
+            btnGui.innerText = 'Đang gửi mã...';
+
+            if (useRealFirebase) {
+                if (isEmail) {
+                    showAlert('Chế độ OTP qua SMS thật không hỗ trợ Email!', 'danger');
+                    btnGui.disabled = false;
+                    btnGui.innerText = 'Gửi mã OTP';
+                    return;
+                }
+                // CHẾ ĐỘ 1: GỬI SMS THẬT QUA FIREBASE
+                try {
+                    if (!recaptchaVerifier) {
+                        recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+                            'size': 'invisible'
+                        });
+                    }
+
+                    const formattedPhone = formatPhoneNumber(sdtInput);
+                    confirmationResultObj = await firebase.auth().signInWithPhoneNumber(formattedPhone, recaptchaVerifier);
+
+                    document.getElementById('lblSoDienThoai').innerText = formattedPhone;
+                    document.querySelector('.step-1').style.display = 'none';
+                    document.querySelector('.step-2').style.display = 'block';
+
+                    showAlert(`📲 <strong>Mã OTP thực tế đã được gửi qua SMS tới ${formattedPhone}!</strong><br/>Vui lòng kiểm tra điện thoại của bạn.`, 'success');
+                    document.getElementById('maOtp').focus();
+                } catch (error) {
+                    console.error("Firebase Auth Error:", error);
+                    showAlert('Không thể gửi SMS OTP: ' + (error.message || 'Lỗi Firebase'), 'danger');
+                    if (recaptchaVerifier) recaptchaVerifier.render().then(widgetId => grecaptcha.reset(widgetId));
+                } finally {
+                    btnGui.disabled = false;
+                    btnGui.innerText = 'Gửi mã OTP';
+                }
+            } else {
+                // CHẾ ĐỘ 2: DEMO MÃ THỬ NGHIỆM (NẾU CHƯA ĐIỀN API KEY FIREBASE)
+                try {
+                    const response = await fetch('/DangNhap/GuiOtp', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ soDienThoai: sdtInput, maCoSo: maCoSoHienTai, cccd: currentCccd })
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        document.getElementById('lblSoDienThoai').innerText = currentSdt;
+                        document.querySelector('.step-1').style.display = 'none';
+                        document.querySelector('.step-2').style.display = 'block';
+                        document.getElementById('maOtp').value = data.otpDemo;
+
+                        showAlert(`🔑 <strong>Mã OTP xác thực của bạn là: <span style="font-size: 1.2em; color: #0d6efd;">${data.otpDemo}</span></strong><br/><small>Đã tự động điền sẵn mã cho bạn test nhanh!</small>`, 'success');
+                        document.getElementById('maOtp').focus();
+                    } else {
+                        showAlert(data.message, 'danger');
+                    }
+                } catch (err) {
+                    showAlert('Lỗi kết nối máy chủ!', 'danger');
+                } finally {
+                    btnGui.disabled = false;
+                    btnGui.innerText = 'Gửi mã OTP';
+                }
+            }
+        }
+
+        function getCookie(name) {
+            try {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+            } catch (e) {
+                console.warn("Lỗi đọc cookie:", e);
+            }
+            return null;
+        }
+
+        function setCookie(name, value, days) {
+            try {
+                const d = new Date();
+                d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+                const expires = "expires=" + d.toUTCString();
+                document.cookie = name + "=" + value + ";" + expires + ";path=/;SameSite=Strict";
+            } catch (e) {
+                console.warn("Lỗi ghi cookie:", e);
+            }
+        }
+
+        function getDeviceId() {
+            let deviceId = null;
+            
+            // 1. Thử lấy từ localStorage
+            try {
+                deviceId = localStorage.getItem('deviceId');
+            } catch (e) {
+                console.warn("Không thể truy cập localStorage:", e);
+            }
+
+            // 2. Nếu không có, thử lấy từ Cookie
+            if (!deviceId) {
+                deviceId = getCookie('deviceId');
+            }
+
+            // 3. Nếu vẫn không có, sinh mới
+            if (!deviceId) {
+                if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+                    deviceId = crypto.randomUUID();
+                } else {
+                    deviceId = 'dev_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+                }
+            }
+
+            // 4. Đồng bộ lưu lại cả 2 nơi để tăng độ bền vững
+            try {
+                localStorage.setItem('deviceId', deviceId);
+            } catch (e) {
+                console.warn("Không thể ghi vào localStorage:", e);
+            }
+            setCookie('deviceId', deviceId, 365);
+
+            console.log("Device ID hiện tại:", deviceId);
+            return deviceId;
+        }
+
+        function getDeviceName() {
+            const ua = navigator.userAgent;
+            let os = "Unknown OS";
+            let browser = "Unknown Browser";
+
+            if (ua.indexOf("Win") !== -1) os = "Windows";
+            else if (ua.indexOf("Mac") !== -1) os = "macOS";
+            else if (ua.indexOf("X11") !== -1) os = "UNIX";
+            else if (ua.indexOf("Linux") !== -1) os = "Linux";
+            else if (/Android/.test(ua)) os = "Android";
+            else if (/iPhone|iPad|iPod/.test(ua)) os = "iOS";
+
+            if (ua.indexOf("Chrome") !== -1) browser = "Chrome";
+            else if (ua.indexOf("Safari") !== -1) browser = "Safari";
+            else if (ua.indexOf("Firefox") !== -1) browser = "Firefox";
+            else if (ua.indexOf("MSIE") !== -1 || !!document.documentMode === true) browser = "IE";
+            else if (ua.indexOf("Edge") !== -1) browser = "Edge";
+
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+            const mode = isStandalone ? " (PWA)" : "";
+
+            return `${os} - ${browser}${mode}`;
+        }
+
+        async function xacNhanOtp() {
+            const otpInput = document.getElementById('maOtp').value.trim();
+            if (!otpInput) {
+                showAlert('Vui lòng nhập mã OTP!', 'danger');
+                return;
+            }
+
+            const btnXacNhan = document.getElementById('btnXacNhan');
+            btnXacNhan.disabled = true;
+            btnXacNhan.innerText = 'Đang xác thực...';
+
+            if (useRealFirebase && confirmationResultObj) {
+                // XÁC THỰC MÃ OTP THẬT VỚI GOOGLE FIREBASE
+                try {
+                    const result = await confirmationResultObj.confirm(otpInput);
+                    const userPhone = result.user.phoneNumber || currentSdt;
+
+                    // Gửi token xác thực thành công về Server C# để tạo Cookie 365 ngày
+                    const response = await fetch('/DangNhap/XacNhanFirebaseToken', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            soDienThoai: userPhone,
+                            maCoSo: maCoSoHienTai,
+                            cccd: currentCccd,
+                            deviceId: getDeviceId(),
+                            deviceName: getDeviceName(),
+                            returnUrl: adminReturnUrl
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        showAlert('🎉 Đăng nhập thành công! Đang chuyển hướng...', 'success');
+                        window.location.href = data.redirectUrl;
+                    } else {
+                        showAlert('Lỗi tạo phiên đăng nhập!', 'danger');
+                    }
+                } catch (error) {
+                    console.error("Lỗi xác thực OTP Firebase:", error);
+                    showAlert('Mã OTP không đúng hoặc đã hết hạn!', 'danger');
+                } finally {
+                    btnXacNhan.disabled = false;
+                    btnXacNhan.innerText = 'Xác thực & Đăng nhập';
+                }
+            } else {
+                // DEMO MODE
+                try {
+                    const response = await fetch('/DangNhap/XacNhanOtp', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            soDienThoai: currentSdt, 
+                            otp: otpInput,
+                            maCoSo: maCoSoHienTai,
+                            cccd: currentCccd,
+                            deviceId: getDeviceId(),
+                            deviceName: getDeviceName(),
+                            returnUrl: adminReturnUrl
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        showAlert('Đăng nhập thành công! Đang chuyển hướng...', 'success');
+                        window.location.href = data.redirectUrl;
+                    } else {
+                        showAlert(data.message, 'danger');
+                    }
+                } catch (err) {
+                    showAlert('Lỗi xác thực OTP!', 'danger');
+                } finally {
+                    btnXacNhan.disabled = false;
+                    btnXacNhan.innerText = 'Xác thực & Đăng nhập';
+                }
+            }
+        }
+
+        function quayLaiStep1() {
+            hideAlert();
+            document.querySelector('.step-2').style.display = 'none';
+            document.querySelector('.step-1').style.display = 'block';
+            document.getElementById('soDienThoai').focus();
+        }
+    </script>
 </body>
 </html>
+

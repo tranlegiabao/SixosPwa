@@ -1,0 +1,5 @@
+Read and follow `.agents/AGENTS.md` before changing code.
+Use `.agents/context/QUICK_REFERENCE.md` and `.agents/context/AUTO_DISCOVERY.md` for repository-specific context.
+Select the closest workflow from `.agents/skills/`.
+Prefer verified repository conventions over generic examples.
+Never expose secrets, invent APIs/schema, or claim tests passed without successful output.

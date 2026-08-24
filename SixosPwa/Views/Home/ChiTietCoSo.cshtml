@@ -1,0 +1,1538 @@
+@{
+    ViewData["ChanTrangCong"] = true;
+    var tenCoSo = Uri.UnescapeDataString(ViewData["TenCoSo"]?.ToString() ?? "Bệnh Viện ĐHYD");
+    var diaChi = Uri.UnescapeDataString(ViewData["DiaChi"]?.ToString() ?? "215 Hồng Bàng, Phường Chợ Lớn");
+    var type = ViewData["Type"]?.ToString() ?? "benhvien";
+    var img = Uri.UnescapeDataString(ViewData["Img"]?.ToString() ?? "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80");
+    var logo = Uri.UnescapeDataString(ViewData["Logo"]?.ToString() ?? "https://tse1.mm.bing.net/th/id/OIP.JgUNpJPll-8BkzE3XN6LggHaHa?r=0&pid=Api&P=0&h=180");
+    var coSoYTe = ViewData["CoSoYTe"] as DMCSKCB;
+    OperatingHours? parsedOperatingHours = null;
+    if (coSoYTe != null
+        && !string.IsNullOrWhiteSpace(coSoYTe.NgayLamViec)
+        && coSoYTe.GioMoCua.HasValue
+        && coSoYTe.GioDongCua.HasValue)
+    {
+        parsedOperatingHours = new OperatingHours(
+            coSoYTe.NgayLamViec!,
+            coSoYTe.GioMoCua.Value.ToString(@"hh\:mm"),
+            coSoYTe.GioDongCua.Value.ToString(@"hh\:mm"));
+    }
+
+    if (parsedOperatingHours == null)
+        OperatingHours.TryParse(ViewData["TGLamViec"]?.ToString(), out parsedOperatingHours);
+
+    var operatingHours = parsedOperatingHours ?? OperatingHours.Default;
+    var noiDungCskcb = ViewData["NoiDungCskcb"] as IReadOnlyDictionary<string, string>
+        ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    var noiDungGioiThieu = noiDungCskcb.GetValueOrDefault(NDCSKCB.GioiThieu);
+    var noiDungDichVu = noiDungCskcb.GetValueOrDefault(NDCSKCB.DichVu);
+    var noiDungDoiNgu = noiDungCskcb.GetValueOrDefault(NDCSKCB.DoiNgu);
+    var noiDungTrangThietBi = noiDungCskcb.GetValueOrDefault(NDCSKCB.TrangThietBi);
+    var noiDungLienHe = noiDungCskcb.GetValueOrDefault(NDCSKCB.LienHe);
+}
+
+<style>
+    .app-nav { display: none !important; }
+    .bottom-nav { display: none !important; }
+    body { 
+        background: #ffffff !important; 
+        padding-top: 74px !important; 
+        padding-bottom: 130px !important; 
+        margin: 0 !important; 
+        font-family: 'Inter', system-ui, sans-serif; 
+    }
+
+    .container, .container-fluid, .container-sm, .container-md, .container-lg, .container-xl {
+        max-width: 100% !important; width: 100% !important;
+        padding-left: 0 !important; padding-right: 0 !important;
+        margin-left: 0 !important; margin-right: 0 !important;
+    }
+    :root { --ytv-primary: #1d4ed8; --ytv-secondary: #3b82f6; --ytv-text: #1e293b; }
+
+    /* Header */
+    .ytv-header {
+        background: linear-gradient(135deg, #4285f4, #60a5fa);
+        color: white; padding: 12px 30px;
+        display: flex; align-items: center; justify-content: space-between;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        position: fixed; top: 0; left: 0; width: 100%; z-index: 1100; box-sizing: border-box;
+    }
+    .ytv-logo-area { display: flex; align-items: center; gap: 15px; text-decoration: none; color: #ffffff; }
+    .ytv-logo-text { font-family: 'Times New Roman', serif; font-size: 26px; font-weight: 900; line-height: 1.1; }
+    .ytv-header-title { text-align: center; flex-grow: 1; }
+    .ytv-header-title h1 { margin: 0; font-size: 20px; font-weight: 700; color: #ffffff; }
+    .ytv-header-title p { margin: 4px 0 0; font-size: 14px; opacity: 0.9; color: #ffffff; }
+    .ytv-header-menu { font-size: 24px; cursor: pointer; color: #ffffff; position: relative; }
+    
+    .ytv-dropdown { display: none; position: absolute; top: 100%; right: 0; background: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); min-width: 240px; z-index: 9999; animation: fadeDown 0.2s ease; margin-top: 15px; }
+    .ytv-dropdown.open { display: block; }
+    @@keyframes fadeDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .ytv-dropdown a { display: flex; align-items: center; gap: 14px; padding: 15px 20px; color: #334155; font-size: 16px; font-weight: 600; text-decoration: none; border-bottom: 1px solid #f1f5f9; transition: all 0.2s; white-space: nowrap; }
+    .ytv-dropdown a:last-child { border-bottom: none; }
+    .ytv-dropdown a:hover { background: #eff6ff; color: #1d4ed8; padding-left: 28px; }
+    .ytv-dropdown a i { font-size: 20px; width: 26px; text-align: center; color: #3b82f6; }
+
+    /* Layout */
+    .ytv-main { display: flex; width: 100%; min-height: calc(100vh - 184px); align-items: flex-start; padding-left: 250px; box-sizing: border-box; }
+
+    /* Sidebar */
+    .ytv-sidebar {
+    width: 250px;
+    flex-shrink: 0;
+    background: white;
+    border-right: 1px solid #e2e8f0;
+
+    display: flex;
+    flex-direction: column;
+
+    padding: 24px 0 0;
+
+    position: fixed;
+    top: 74px;
+    left: 0;
+
+    bottom: 65px; /* đổi 110 -> khoảng chiều cao footer */
+
+    overflow: hidden;
+    z-index: 100;
+}
+
+    .sidebar-scroll-area {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+    .sidebar-scroll-area::-webkit-scrollbar {
+        width: 5px;
+    }
+    .sidebar-scroll-area::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .sidebar-scroll-area::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+    }
+    .sidebar-scroll-area::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+    .operating-hours-box {
+        flex-shrink: 0;
+        margin-bottom: 0;
+    }
+
+    .ytv-sidebar::-webkit-scrollbar {
+        width: 5px;
+    }
+    .ytv-sidebar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .ytv-sidebar::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+    }
+    .ytv-sidebar::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+    .sidebar-logo-container {
+        text-align: left;
+        margin-bottom: 24px;
+        padding: 0 16px;
+        flex: 0 0 auto;
+    }
+    .sidebar-logo {
+        width: 100px;
+        height: 100px;
+        object-fit: contain;
+        border-radius: 50%;
+        border: 3px solid #f1f5f9;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        background: white;
+        transition: transform 0.3s ease;
+    }
+    .sidebar-logo:hover {
+        transform: scale(1.05);
+    }
+    .ytv-sidebar-title {
+        font-size: 11px; font-weight: 700; color: #94a3b8;
+        text-transform: uppercase; letter-spacing: 1px;
+        padding: 0 20px 10px; border-bottom: 1px solid #f1f5f9; margin-bottom: 0px;
+    }
+    .ytv-menu-item {
+        display: flex; align-items: center; padding: 12px 16px; margin: 4px 16px; gap: 12px;
+        color: #475569; font-size: 14px; font-weight: 600; text-decoration: none;
+        transition: all 0.2s ease; border-radius: 12px; cursor: pointer;
+    }
+    .ytv-menu-item i { font-size: 16px; width: 20px; text-align: center; color: #64748b; transition: color 0.2s ease; }
+    .ytv-menu-item:hover {
+        background: #f1f5f9; color: #0f172a;
+    }
+    .ytv-menu-item:hover i { color: #475569; }
+    .ytv-menu-item.active {
+        background: #eff6ff; color: #1d4ed8;
+    }
+    .ytv-menu-item.active i { color: #1d4ed8; }
+
+    /* Content Area */
+    .ytv-content { flex: 1; background: transparent; padding: 30px; display: flex; flex-direction: column; gap: 24px; min-width: 0; max-width: 1050px; margin: 0; }
+
+    /* New Content Styles */
+    .hospital-card {
+        background: transparent;
+        border-radius: 16px;
+        display: flex;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+    .hospital-card-img {
+        width: 300px;
+        object-fit: cover;
+    }
+    .hospital-card-content {
+        padding: 24px 30px;
+        flex: 1;
+        position: relative;
+    }
+    .verified-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(255, 255, 255, 0.15);
+        color: #60a5fa;
+        font-size: 13px;
+        font-weight: 600;
+        padding: 6px 14px;
+        border-radius: 20px;
+        margin-bottom: 16px;
+    }
+    .verified-badge i { color: #10b981; }
+    
+    .hospital-title {
+        font-size: 32px;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0 0 8px 0;
+    }
+    .hospital-rating {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 16px;
+        color: rgba(255, 255, 255, 0.75);
+        margin-bottom: 20px;
+    }
+    .hospital-rating .score {
+        color: #0f172a;
+        font-weight: 600;
+        font-size: 18px;
+    }
+    .hospital-rating .stars i { color: #f59e0b; font-size: 17px; }
+    .hospital-rating .count { color: #38bdf8; }
+
+    .hospital-info-grid {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 24px;
+        gap: 20px;
+    }
+
+    .hospital-details {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .detail-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 17px;
+    }
+    .detail-item i { width: 18px; color: rgba(255, 255, 255, 0.7); text-align: center; }
+    .detail-item a { color: #38bdf8; text-decoration: none; }
+
+    .operating-hours-box {
+        background: #f8fafc;
+        border-radius: 16px;
+        padding: 16px;
+        margin: 12px 16px 0;
+        border: 1px solid #e2e8f0;
+        box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .oh-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0px;
+    }
+    .oh-header i {
+        font-size: 14px;
+        color: #94a3b8;
+    }
+    .oh-days {
+        font-size: 13px;
+        color: #334155;
+        font-weight: 600;
+    }
+    .oh-time {
+        font-size: 16px;
+        color: #0f172a;
+        font-weight: 700;
+        margin-top: 4px;
+        margin-bottom: 0px;
+    }
+    .oh-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: #16a34a;
+        font-weight: 700;
+        background: #f0fdf4;
+        padding: 4px 8px;
+        border-radius: 20px;
+        border: 1px solid #bbf7d0;
+    }
+    .status-dot {
+        width: 6px;
+        height: 6px;
+        background: #16a34a;
+        border-radius: 50%;
+        display: inline-block;
+        animation: status-pulse 2s infinite;
+    }
+    
+    @@keyframes status-pulse {
+        0% {
+            box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.4);
+        }
+        70% {
+            box-shadow: 0 0 0 6px rgba(22, 163, 74, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(22, 163, 74, 0);
+        }
+    }
+
+    .hospital-actions { padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; flex: 0 0 auto; }
+    .btn-primary { background: #1d4ed8; color: #0f172a; padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; border: none; cursor: pointer; transition: background 0.2s; flex: 1; }
+    .btn-primary:hover { background: #1e40af; color: #0f172a; }
+    .btn-outline {
+        background: #ffffff;
+        color: #1d4ed8;
+        padding: 12px 16px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-decoration: none;
+        border: 1.5px solid #1d4ed8;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .btn-outline:hover {
+        background: #eff6ff;
+        border-color: #1e40af;
+        color: #1e40af;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(29, 78, 216, 0.08);
+    }
+
+    /* Stats Grid */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    .stat-card {
+        background: transparent;
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    }
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(255, 255, 255, 0.05);
+        background: rgba(255, 255, 255, 0.08);
+    }
+    .stat-icon { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+    .stat-icon.blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+    .stat-icon.green { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+    .stat-icon.purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+    .stat-icon.orange { background: rgba(249, 115, 22, 0.15); color: #ff9d5c; }
+    .stat-info { display: flex; flex-direction: column; }
+    .stat-info .value { margin: 0; font-size: 20px; font-weight: 800; color: #0f172a; }
+    .stat-info .title { font-size: 14px; font-weight: 600; color: rgba(255, 255, 255, 0.9); margin: 2px 0; }
+    .stat-info .desc { font-size: 12px; color: rgba(255, 255, 255, 0.6); margin: 0; }
+
+    .intro-section {
+        background: transparent;
+        border-radius: 16px;
+        padding: 32px;
+        display: none;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+    .intro-section.active-tab {
+        display: flex !important;
+    }
+    .intro-content { flex: 1; width: 100%; max-width: 100%; }
+    .intro-title { display: flex; align-items: center; gap: 10px; font-size: 24px; font-weight: 700; color: #38bdf8; margin-bottom: 20px; }
+    .intro-content p { color: #334155; line-height: 1.8; font-size: 17px; margin-bottom: 16px; }
+    .intro-content .nd-cskcb-text { color: #000000; line-height: 1.8; font-size: 17px; width: 100%; max-width: 100%; overflow-x: auto; }
+    .intro-content .nd-cskcb-text img { max-width: 100%; height: auto; }
+    .intro-image { width: 320px; height: auto; opacity: 0.85; border-radius: 12px; }
+
+
+
+    /* Login Modal Styles */
+    .ytv-modal-overlay {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+        display: none; align-items: center; justify-content: center;
+        z-index: 2000; opacity: 0; transition: opacity 0.3s ease;
+    }
+    .ytv-modal-overlay.show { display: flex; opacity: 1; }
+    .ytv-modal-content {
+        background: white; border-radius: 20px; width: 100%; max-width: 420px; margin: 0 20px;
+        padding: 40px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        transform: translateY(20px); transition: transform 0.3s ease; position: relative;
+    }
+    .ytv-modal-overlay.show .ytv-modal-content { transform: translateY(0); }
+    .ytv-modal-close {
+        position: absolute; top: 16px; right: 20px; background: none; border: none;
+        font-size: 28px; color: #94a3b8; cursor: pointer; transition: color 0.2s; line-height: 1;
+    }
+    .ytv-modal-close:hover { color: #0f172a; }
+    
+    .login-step { display: none; }
+    .login-step.active { display: block; animation: fadeIn 0.4s; }
+    @@keyframes fadeIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+
+    .login-title { font-size: 24px; font-weight: 800; color: #0f172a; margin: 0 0 10px 0; text-align: center; }
+    .login-desc { font-size: 14px; color: #64748b; margin-bottom: 30px; text-align: center; line-height: 1.6; }
+    
+    .input-group { margin-bottom: 24px; position: relative; }
+    .input-group i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 18px; }
+    .ytv-input {
+        width: 100%; padding: 14px 16px 14px 44px; border: 2px solid #e2e8f0;
+        border-radius: 12px; font-size: 16px; color: #0f172a; outline: none; transition: all 0.2s;
+        box-sizing: border-box; font-family: inherit; font-weight: 500;
+    }
+    .ytv-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+    
+    .btn-submit {
+        width: 100%; background: #1d4ed8; color: #0f172a; border: none; border-radius: 12px;
+        padding: 16px; font-size: 16px; font-weight: 700; cursor: pointer; transition: background 0.2s;
+        box-shadow: 0 4px 12px rgba(29, 78, 216, 0.2);
+    }
+    .btn-submit:hover { background: #1e40af; transform: translateY(-1px); }
+    
+    .otp-inputs { display: flex; gap: 12px; justify-content: center; margin-bottom: 30px; }
+    .otp-input {
+        width: 50px; height: 60px; border: 2px solid #e2e8f0; border-radius: 12px;
+        font-size: 24px; font-weight: 700; text-align: center; color: #0f172a;
+        outline: none; transition: all 0.2s; background: #f8fafc;
+    }
+    .otp-input:focus { border-color: #3b82f6; background: white; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+    
+    .resend-text { text-align: center; margin-top: 24px; font-size: 14px; color: #64748b; }
+    .resend-link { color: #3b82f6; font-weight: 600; text-decoration: none; cursor: pointer; transition: color 0.2s; }
+    .resend-link:hover { color: #1d4ed8; text-decoration: underline; }
+
+    @@media (max-width: 992px) {
+        .ytv-main { flex-direction: column; padding-left: 0; }
+        .ytv-sidebar { 
+            position: relative; top: 0; left: 0; height: auto; z-index: 1; width: 100%; 
+            flex-direction: column; overflow: hidden; padding: 10px 16px;
+            border-right: none; border-bottom: 1px solid #e2e8f0; 
+            align-items: stretch; gap: 0;
+        }
+        .sidebar-scroll-area {
+            display: block;
+            flex: 1 1 auto;
+            min-height: auto;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+        .ytv-menu-item { 
+            margin: 0 !important; 
+            padding: 8px 16px !important;
+            border-radius: 8px !important;
+            white-space: nowrap; 
+        }
+        .sidebar-logo-container {
+            margin-bottom: 0 !important;
+            padding: 0 !important;
+            flex-shrink: 0 !important;
+        }
+        .sidebar-logo {
+            width: 50px !important;
+            height: 50px !important;
+            border-width: 1.5px !important;
+        }
+        .hospital-card { flex-direction: column; }
+        .hospital-card-img { width: 100%; height: 250px; }
+        .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        .intro-section { flex-direction: column; text-align: left; }
+        .intro-image { margin-top: 24px; width: 100%; max-width: 400px; }
+        .hospital-title-row { flex-direction: column; gap: 16px; }
+        .operating-hours-box { 
+            width: auto !important; 
+            margin: 0 !important; 
+            padding: 10px 16px !important; 
+            flex-shrink: 0 !important; 
+        }
+        .hospital-actions { 
+            padding: 0 !important; 
+            margin: 0 !important; 
+            flex-shrink: 0 !important; 
+        }
+        .btn-outline { 
+            padding: 8px 16px !important; 
+            border-radius: 8px !important; 
+            font-size: 13px !important; 
+            width: auto !important;
+        }
+        .oh-header { margin-bottom: 4px !important; }
+        .oh-time { font-size: 14px !important; margin-bottom: 4px !important; }
+        .oh-status { padding: 2px 6px !important; }
+
+        /* Stats Footer Responsive */
+        .stats-footer-bar {
+            position: relative !important;
+            bottom: auto !important;
+            left: auto !important;
+            width: 100% !important;
+            padding: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            border-top: none !important;
+            z-index: 1 !important;
+        }
+        .stats-footer-bar .stats-grid {
+            max-width: 100% !important;
+        }
+        .stats-footer-bar .stat-card {
+            background: transparent !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            padding: 20px !important;
+        }
+        .stats-footer-bar .stat-info .value {
+            color: white !important;
+        }
+        .stats-footer-bar .stat-info .title {
+            color: rgba(255, 255, 255, 0.9) !important;
+        }
+        .stats-footer-bar .stat-info .desc {
+            color: rgba(255, 255, 255, 0.6) !important;
+        }
+        .stats-footer-bar .stat-icon.blue { background: rgba(59, 130, 246, 0.15) !important; color: #60a5fa !important; }
+        .stats-footer-bar .stat-icon.green { background: rgba(34, 197, 94, 0.15) !important; color: #4ade80 !important; }
+        .stats-footer-bar .stat-icon.purple { background: rgba(168, 85, 247, 0.15) !important; color: #c084fc !important; }
+        .stats-footer-bar .stat-icon.orange { background: rgba(249, 115, 22, 0.15) !important; color: #ff9d5c !important; }
+    }
+    @@media (max-width: 576px) {
+        .stats-grid { grid-template-columns: 1fr; }
+        .fab-btn {
+            width: 56px !important;
+            height: 130px !important;
+            right: 12px !important;
+            gap: 6px !important;
+            border-width: 2px !important;
+        }
+        .fab-btn i {
+            font-size: 20px !important;
+        }
+        .fab-text {
+            font-size: 11px !important;
+            line-height: 1.2 !important;
+        }
+    }
+
+    /* Floating Action Button (FAB) */
+    .fab-btn {
+        position: fixed;
+        top: 50%;
+        right: 24px;
+        transform: translateY(-50%);
+        z-index: 1005; /* Above the footer and header */
+        background: #ffffff;
+        color: #1d4ed8 !important;
+        border: 2.5px solid #1d4ed8;
+        width: 70px;
+        height: 160px;
+        border-radius: 40px; /* Vertical oval */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-decoration: none !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        transition: all 0.3s ease;
+        animation: fab-pulse 2s infinite;
+    }
+    .fab-btn i {
+        font-size: 24px;
+    }
+    .fab-text {
+        font-size: 13px;
+        font-weight: 800;
+        text-align: center;
+        line-height: 1.25;
+        letter-spacing: 0.5px;
+    }
+    .fab-btn:hover {
+        background: #1d4ed8;
+        color: white !important;
+        transform: translateY(-50%) scale(1.08);
+        box-shadow: 0 8px 25px rgba(29, 78, 216, 0.4);
+    }
+    .fab-btn:active {
+        transform: translateY(-50%) scale(1.02);
+    }
+
+    @@keyframes fab-pulse {
+        0% {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15), 0 0 0 0 rgba(29, 78, 216, 0.4);
+        }
+        70% {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15), 0 0 0 15px rgba(29, 78, 216, 0);
+        }
+        100% {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15), 0 0 0 0 rgba(29, 78, 216, 0);
+        }
+    }
+
+    /* Stats Footer (Second Footer) */
+    .stats-footer-bar {
+        background: transparent !important;
+        border: none !important;
+        position: fixed;
+        bottom: calc(var(--ctc-cao) + 8px);
+        left: 250px;
+        width: calc(100% - 250px);
+        z-index: 999;
+        padding: 6px 30px;
+        box-sizing: border-box;
+        box-shadow: none !important;
+        pointer-events: none;
+    }
+    .stats-footer-bar .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px; /* Minimized gap */
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    .stats-footer-bar .stat-card {
+        background: #f8fafc;
+        border-radius: 10px;
+        padding: 2px 12px; /* Minimized padding inside cards */
+        display: flex;
+        align-items: center;
+        gap: 10px; /* Minimized gap between icon and text */
+        border: 1px solid #f1f5f9;
+        box-shadow: none;
+    }
+    .stats-footer-bar .stat-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .stats-footer-bar .stat-info {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.1;
+    }
+    .stats-footer-bar .stat-info .value {
+        color: #1d4ed8;
+        font-size: 15px;
+        font-weight: 700;
+        margin: 0;
+    }
+    .stats-footer-bar .stat-info .title {
+        color: #334155;
+        font-size: 12px;
+        font-weight: 600;
+        margin: 2px 0 1px 0;
+    }
+    .stats-footer-bar .stat-info .desc {
+        color: #64748b;
+        font-size: 10px;
+        margin: 0;
+    }
+    .stats-footer-bar .stat-icon.blue { background: #eff6ff; color: #3b82f6; }
+    .stats-footer-bar .stat-icon.green { background: #f0fdf4; color: #22c55e; }
+    .stats-footer-bar .stat-icon.purple { background: #faf5ff; color: #a855f7; }
+    .stats-footer-bar .stat-icon.orange { background: #fff7ed; color: #f97316; }
+
+    /* Responsive layout for DangKyOnline */
+    .ytv-content > *,
+    .hospital-card,
+    .intro-section,
+    .sixos-section {
+        width: 100%;
+        box-sizing: border-box;
+        min-width: 0;
+    }
+
+    .nd-cskcb-text,
+    .nd-cskcb-text table,
+    .sixos-item-title,
+    .sixos-item-desc {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    @@media (min-width: 1200px) {
+        .ytv-content {
+            max-width: none;
+            padding-left: clamp(24px, 3vw, 48px);
+            padding-right: clamp(24px, 3vw, 48px);
+        }
+    }
+
+    @@media (max-width: 992px) {
+        body {
+            padding-top: 62px !important;
+            padding-bottom: 0 !important;
+            overflow-x: hidden;
+        }
+
+        .ytv-header {
+            min-height: 62px;
+            padding: 8px 16px;
+        }
+
+        .ytv-logo-area {
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .ytv-logo-area img {
+            width: 40px !important;
+            height: 40px !important;
+        }
+
+        .ytv-logo-text {
+            font-size: 20px;
+            line-height: 1;
+        }
+
+        .ytv-header-title {
+            min-width: 0;
+            padding: 0 8px;
+        }
+
+        .ytv-header-title h1 {
+            font-size: clamp(14px, 3.5vw, 18px);
+            line-height: 1.2;
+        }
+
+        .ytv-header-title p {
+            font-size: 11px;
+            margin-top: 2px;
+        }
+
+        .ytv-header-menu {
+            flex-shrink: 0;
+            font-size: 22px;
+        }
+
+        .ytv-main {
+            width: 100%;
+            min-height: auto;
+        }
+
+        .ytv-sidebar {
+            width: 100%;
+            box-sizing: border-box;
+            max-height: none;
+            bottom: auto;
+        }
+
+        .sidebar-scroll-area {
+            max-height: none;
+            overflow-y: visible;
+        }
+
+        .sidebar-logo-container {
+            text-align: center;
+            margin-bottom: 12px !important;
+        }
+
+        .sidebar-logo {
+            width: 72px !important;
+            height: 72px !important;
+        }
+
+        .hospital-actions {
+            width: 100%;
+            box-sizing: border-box;
+            gap: 8px;
+        }
+
+        .hospital-actions .btn-outline {
+            width: 100% !important;
+            box-sizing: border-box;
+        }
+
+        .operating-hours-box {
+            width: 100% !important;
+            box-sizing: border-box;
+        }
+
+        .ytv-content {
+            width: 100%;
+            max-width: none;
+            padding: 16px;
+            gap: 16px;
+        }
+
+        .hospital-card-content {
+            padding: 20px;
+        }
+
+        .hospital-card-img {
+            width: 100%;
+            height: auto;
+            min-height: 180px;
+            max-height: 280px;
+        }
+
+        .hospital-title {
+            font-size: clamp(24px, 5vw, 32px);
+            overflow-wrap: anywhere;
+        }
+
+        .hospital-info-grid {
+            flex-wrap: wrap;
+        }
+
+        .detail-item {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .intro-section {
+            padding: 20px;
+        }
+
+        .intro-title {
+            font-size: 20px;
+            line-height: 1.3;
+            margin-bottom: 14px;
+        }
+
+        .intro-content p,
+        .intro-content .nd-cskcb-text {
+            font-size: 15px;
+            line-height: 1.65;
+        }
+
+        .intro-content .nd-cskcb-text {
+            overflow-x: auto;
+        }
+
+        .sixos-section {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 16px;
+            margin-top: 0;
+        }
+
+        .sixos-card {
+            padding: 24px 18px;
+        }
+
+        /* On mobile these blocks must stay in document flow, so they cannot cover operating hours or content. */
+        .stats-footer-bar {
+            position: relative !important;
+            inset: auto !important;
+            width: 100% !important;
+            padding: 0 16px 12px !important;
+            background: transparent !important;
+            border: 0 !important;
+            box-shadow: none !important;
+            pointer-events: auto;
+            z-index: 1 !important;
+        }
+
+        .stats-footer-bar .stats-grid {
+            width: 100%;
+            max-width: none !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .stats-footer-bar .stat-card {
+            min-width: 0;
+            padding: 10px !important;
+            gap: 8px;
+            background: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: none !important;
+        }
+
+        .stats-footer-bar .stat-info .value {
+            color: #1d4ed8 !important;
+        }
+
+        .stats-footer-bar .stat-info .title {
+            color: #334155 !important;
+        }
+
+        .stats-footer-bar .stat-info .desc {
+            color: #64748b !important;
+        }
+
+        .fab-btn {
+            top: auto;
+            right: 16px;
+            bottom: 16px;
+            transform: none;
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            gap: 0;
+        }
+
+        .fab-text {
+            display: none;
+        }
+
+        .fab-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .fab-btn:active {
+            transform: scale(1.02);
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .ytv-header {
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        .ytv-logo-text {
+            font-size: 17px;
+        }
+
+        .ytv-header-title h1 {
+            font-size: 14px;
+        }
+
+        .ytv-header-title p {
+            display: none;
+        }
+
+        .ytv-content {
+            padding: 12px;
+        }
+
+        .hospital-card-content,
+        .intro-section {
+            padding: 16px;
+        }
+
+        .hospital-title {
+            font-size: 24px;
+        }
+
+        .hospital-info-grid {
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .stats-footer-bar {
+            padding-left: 12px !important;
+            padding-right: 12px !important;
+        }
+
+        .stats-footer-bar .stat-card {
+            padding: 8px !important;
+        }
+
+        .stats-footer-bar .stat-icon {
+            width: 30px;
+            height: 30px;
+            font-size: 14px;
+        }
+
+        .stats-footer-bar .stat-info .value {
+            font-size: 14px;
+        }
+
+        .stats-footer-bar .stat-info .title {
+            font-size: 11px;
+        }
+
+        .stats-footer-bar .stat-info .desc {
+            font-size: 9px;
+        }
+    }
+</style>
+
+<div class="ytv-header">
+    <a href="/Home/ThongTinBenhNhan" class="ytv-logo-area">
+        <img src="/static/icon-512.png" alt="Logo" style="height: 50px; width: 50px; object-fit: cover; background: white; border-radius: 50%; padding: 0;" />
+        <div class="ytv-logo-text">Y TẾ<br>VIỆT</div>
+    </a>
+    <div class="ytv-header-title">
+        <h1>@tenCoSo</h1>
+        <p>Hotline: 19008198</p>
+    </div>
+    <div class="ytv-header-menu" id="menuBtn" onclick="toggleMenu()">
+        <i class="fas fa-bars"></i>
+        <div class="ytv-dropdown" id="dropdownMenu">
+            <a href="/Home/DanhSachCoSo-benhvien"><i class="fas fa-hospital"></i> Bệnh viện</a>
+            <a href="/Home/DanhSachCoSo-pkdk"><i class="fas fa-clinic-medical"></i> Phòng khám đa khoa</a>
+            <a href="/Home/DanhSachCoSo-nhakhoa"><i class="fas fa-tooth"></i> Nha khoa</a>
+            <a href="/Home/DanhSachCoSo-phongmach"><i class="fas fa-stethoscope"></i> Phòng mạch</a>
+            <a href="/Home/DanhSachCoSo-nhathuoc"><i class="fas fa-pills"></i> Nhà thuốc</a>
+        </div>
+    </div>
+</div>
+
+<div class="ytv-main">
+    <div class="ytv-sidebar">
+        <div class="sidebar-logo-container">
+            <img src="@logo" alt="Logo" class="sidebar-logo" />
+        </div>
+        <div class="sidebar-scroll-area">
+        <a class="ytv-menu-item active" onclick="showTab('gioi-thieu', this)" href="#gioi-thieu">
+            <i class="fas fa-info-circle"></i> Giới thiệu
+        </a>
+        <a class="ytv-menu-item" onclick="showTab('dich-vu', this)" href="#dich-vu">
+            <i class="fas fa-stethoscope"></i> Dịch vụ
+        </a>
+        <a class="ytv-menu-item" onclick="showTab('doi-ngu', this)" href="#doi-ngu">
+            <i class="fas fa-user-md"></i> Đội ngũ y bác sĩ
+        </a>
+        <a class="ytv-menu-item" onclick="showTab('trang-thiet-bi', this)" href="#trang-thiet-bi">
+            <i class="fas fa-tools"></i> Các trang thiết bị
+        </a>
+        <a class="ytv-menu-item" onclick="showTab('lien-he', this)" href="#lien-he">
+            <i class="fas fa-headset"></i> Liên hệ
+        </a>
+        
+        </div>
+        <div class="hospital-actions">
+            <a href="/DangNhap/Login" class="btn-outline" style="background-color: #1d4ed8; color:aliceblue">
+                <i class="fas fa-sign-in-alt" style="color: aliceblue"></i> Đăng ký khám
+            </a>
+            <a href="javascript:void(0)" onclick="openLoginModal()" class="btn-outline">
+                <i class="fas fa-sign-in-alt"></i> Đăng nhập
+            </a>
+        </div>
+        <div class="operating-hours-box">
+            <div class="oh-header"><i class="far fa-clock"></i> Giờ hoạt động</div>
+            <div class="oh-days">@operatingHours.Days</div>
+            <div class="oh-time">@operatingHours.OpenTime - @operatingHours.CloseTime</div>
+            <div class="oh-status"><span class="status-dot"></span> Đang mở cửa</div>
+        </div>
+    </div>
+    
+
+    <div class="ytv-content">
+        <!-- Intro Sections (Tabs) -->
+        <div class="intro-section active-tab" id="gioi-thieu">
+            <div class="intro-content">
+                <div class="intro-title">
+                    <i class="fas fa-info-circle"></i> Giới thiệu
+                </div>
+                @if (!string.IsNullOrWhiteSpace(noiDungGioiThieu))
+                {
+                    <div class="nd-cskcb-text">@Html.Raw(noiDungGioiThieu)</div>
+                }
+            </div>
+            <!-- <img src="https://img.freepik.com/free-vector/hospital-building-concept-illustration_114360-8440.jpg?w=800" alt="Hospital Illustration" class="intro-image" /> -->
+        </div>
+
+        <div class="intro-section" id="dich-vu">
+            <div class="intro-content">
+                <div class="intro-title">
+                    <i class="fas fa-stethoscope"></i> Dịch vụ khám chữa bệnh
+                </div>
+                @if (!string.IsNullOrWhiteSpace(noiDungDichVu))
+                {
+                    <div class="nd-cskcb-text">@Html.Raw(noiDungDichVu)</div>
+                }
+            </div>
+        </div>
+
+        <div class="intro-section" id="doi-ngu">
+            <div class="intro-content">
+                <div class="intro-title">
+                    <i class="fas fa-user-md"></i> Đội ngũ bác sĩ chuyên khoa
+                </div>
+                @if (!string.IsNullOrWhiteSpace(noiDungDoiNgu))
+                {
+                    <div class="nd-cskcb-text">@Html.Raw(noiDungDoiNgu)</div>
+                }
+            </div>
+        </div>
+
+        <div class="intro-section" id="trang-thiet-bi">
+            <div class="intro-content">
+                <div class="intro-title">
+                    <i class="fas fa-tools"></i> Trang thiết bị hiện đại
+                </div>
+                @if (!string.IsNullOrWhiteSpace(noiDungTrangThietBi))
+                {
+                    <div class="nd-cskcb-text">@Html.Raw(noiDungTrangThietBi)</div>
+                }
+            </div>
+        </div>
+
+        <div class="intro-section" id="lien-he">
+            <div class="intro-content">
+                <div class="intro-title">
+                    <i class="fas fa-headset"></i> Chăm sóc & Hỗ trợ khách hàng
+                </div>
+                @if (!string.IsNullOrWhiteSpace(noiDungLienHe))
+                {
+                    <div class="nd-cskcb-text">@Html.Raw(noiDungLienHe)</div>
+                }
+            </div>
+        </div>
+
+
+    </div>
+</div>
+
+<!-- Login Modal -->
+<div class="ytv-modal-overlay" id="loginModal">
+    <div class="ytv-modal-content">
+        <button class="ytv-modal-close" onclick="closeLoginModal()">&times;</button>
+        
+        <!-- Step 1: Phone Input -->
+        <div class="login-step active" id="stepPhone">
+            <h2 class="login-title">Đăng nhập</h2>
+            <p class="login-desc">Vui lòng nhập số điện thoại của bạn để đăng nhập hoặc tạo tài khoản mới.</p>
+            
+            <div class="input-group">
+                <i class="fas fa-phone-alt"></i>
+                <input type="tel" id="phoneNumber" class="ytv-input" placeholder="Nhập số điện thoại..." autocomplete="off">
+            </div>
+            
+            <button class="btn-submit" onclick="sendOTP()">Gửi mã OTP</button>
+        </div>
+        
+        <!-- Step 2: OTP Input -->
+        <div class="login-step" id="stepOTP">
+            <h2 class="login-title">Xác thực OTP</h2>
+            <p class="login-desc">Mã xác thực gồm 4 số đã được gửi đến số <br><strong id="displayPhone" style="color:#0f172a; font-size: 16px;"></strong></p>
+            
+            <div class="otp-inputs" id="otpContainer">
+                <input type="text" class="otp-input" maxlength="1" onkeyup="moveToNext(this, event)">
+                <input type="text" class="otp-input" maxlength="1" onkeyup="moveToNext(this, event)">
+                <input type="text" class="otp-input" maxlength="1" onkeyup="moveToNext(this, event)">
+                <input type="text" class="otp-input" maxlength="1" onkeyup="moveToNext(this, event)">
+            </div>
+            
+            <button class="btn-submit" onclick="verifyOTP()">Xác nhận</button>
+            <div class="resend-text">
+                Chưa nhận được mã? <a class="resend-link" onclick="sendOTP()">Gửi lại</a>
+            </div>
+        </div>
+        <!-- Partner Cards Section -->
+        <style>
+            .sixos-section {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 24px;
+                margin-top: 20px;
+                font-family: 'Inter', sans-serif;
+            }
+            .sixos-card {
+                background: white;
+                border-radius: 20px;
+                padding: 32px 24px;
+                box-shadow: 0 10px 40px -10px rgba(0,0,0,0.05);
+                border: 1px solid #f1f5f9;
+                display: flex;
+                flex-direction: column;
+                position: relative;
+            }
+            .sixos-card.primary {
+                border-left: 6px solid #2563eb;
+                text-align: center;
+                align-items: center;
+            }
+            .sixos-logo-box {
+                width: 70px;
+                height: 70px;
+                background: #eff6ff;
+                border-radius: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 20px;
+                color: #2563eb;
+                font-size: 32px;
+            }
+            .sixos-title {
+                font-size: 24px;
+                font-weight: 800;
+                color: #1e40af;
+                margin-bottom: 0px;
+                letter-spacing: 1px;
+            }
+            .sixos-subtitle {
+                font-size: 16px;
+                font-weight: 700;
+                color: #0f172a;
+                margin-bottom: 16px;
+                line-height: 1.4;
+            }
+            .sixos-desc {
+                font-size: 14px;
+                color: #64748b;
+                line-height: 1.6;
+            }
+            
+            .sixos-card-header {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                margin-bottom: 24px;
+                padding-bottom: 20px;
+                border-bottom: 1px solid #f1f5f9;
+            }
+            .sixos-icon {
+                width: 48px;
+                height: 48px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 20px;
+            }
+            .sixos-icon.blue { background: #eff6ff; color: #2563eb; }
+            .sixos-icon.green { background: #f0fdf4; color: #16a34a; }
+            
+            .sixos-header-title {
+                font-size: 18px;
+                font-weight: 700;
+                color: #0f172a;
+            }
+            
+            .sixos-list {
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+            }
+            .sixos-item {
+                display: flex;
+                align-items: flex-start;
+                gap: 16px;
+                text-decoration: none;
+                padding: 12px;
+                border-radius: 12px;
+                transition: background 0.2s;
+                margin: -12px;
+            }
+            .sixos-item:hover {
+                background: #f8fafc;
+            }
+            .sixos-item-icon {
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: #f1f5f9;
+                color: #3b82f6;
+                flex-shrink: 0;
+            }
+            .sixos-item-icon.green-bg { background: #dcfce7; color: #16a34a; }
+            
+            .sixos-item-content { flex: 1; }
+            .sixos-item-title {
+                font-size: 15px;
+                font-weight: 700;
+                color: #1e293b;
+                margin-bottom: 0px;
+            }
+            .sixos-item-desc {
+                font-size: 13px;
+                color: #64748b;
+                line-height: 1.5;
+            }
+            .sixos-item-arrow {
+                color: #cbd5e1;
+                font-size: 14px;
+                margin-top: 10px;
+            }
+            .sixos-item:hover .sixos-item-arrow { color: #3b82f6; transform: translateX(2px); transition: all 0.2s; }
+        </style>
+
+        <div class="sixos-section">
+            <!-- Card 1 -->
+            <div class="sixos-card primary">
+                <div class="sixos-logo-box">
+                    <i class="fab fa-connectdevelop"></i>
+                </div>
+                <div class="sixos-title">SIXOS</div>
+                <div class="sixos-subtitle">Công Ty Công Nghệ và<br>Giải Pháp Phần Mềm Vũ Phong</div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="sixos-card">
+                <div class="sixos-card-header">
+                    <div class="sixos-icon blue"><i class="fas fa-laptop-code"></i></div>
+                    <div class="sixos-header-title">Dịch vụ phần mềm</div>
+                </div>
+                <div class="sixos-list">
+                    <a href="javascript:void(0)" class="sixos-item">
+                        <div class="sixos-item-icon"><i class="fas fa-cog"></i></div>
+                        <div class="sixos-item-content">
+                            <div class="sixos-item-title">Phần mềm lập trình theo yêu cầu</div>
+                            <div class="sixos-item-desc">Giải pháp phù hợp với nhu cầu và đặc thù của doanh nghiệp.</div>
+                        </div>
+                        <div class="sixos-item-arrow"><i class="fas fa-chevron-right"></i></div>
+                    </a>
+                    <a href="javascript:void(0)" class="sixos-item">
+                        <div class="sixos-item-icon"><i class="fas fa-cloud"></i></div>
+                        <div class="sixos-item-content">
+                            <div class="sixos-item-title">Cho thuê theo yêu cầu</div>
+                            <div class="sixos-item-desc">Linh hoạt, tiết kiệm chi phí, hỗ trợ nhanh chóng.</div>
+                        </div>
+                        <div class="sixos-item-arrow"><i class="fas fa-chevron-right"></i></div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="sixos-card">
+                <div class="sixos-card-header">
+                    <div class="sixos-icon green"><i class="fas fa-shield-alt"></i></div>
+                    <div class="sixos-header-title">Hạ tầng & bảo mật</div>
+                </div>
+                <div class="sixos-list">
+                    <a href="javascript:void(0)" class="sixos-item">
+                        <div class="sixos-item-icon green-bg"><i class="fas fa-server"></i></div>
+                        <div class="sixos-item-content">
+                            <div class="sixos-item-title">Server dự phòng</div>
+                            <div class="sixos-item-desc">Hệ thống dự phòng ổn định, sẵn sàng 24/7.</div>
+                        </div>
+                        <div class="sixos-item-arrow"><i class="fas fa-chevron-right"></i></div>
+                    </a>
+                    <a href="javascript:void(0)" class="sixos-item">
+                        <div class="sixos-item-icon green-bg"><i class="fas fa-cloud-upload-alt"></i></div>
+                        <div class="sixos-item-content">
+                            <div class="sixos-item-title">Sao lưu dữ liệu</div>
+                            <div class="sixos-item-desc">Đảm bảo an toàn dữ liệu, khôi phục nhanh chóng.</div>
+                        </div>
+                        <div class="sixos-item-arrow"><i class="fas fa-chevron-right"></i></div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="stats-footer-bar">
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon blue"><i class="fas fa-headset"></i></div>
+            <div class="stat-info">
+                <div class="value">24/7</div>
+                <div class="title">Hỗ trợ</div>
+                <div class="desc">Luôn sẵn sàng</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon green"><i class="far fa-star"></i></div>
+            <div class="stat-info">
+                <div class="value">4.8/5</div>
+                <div class="title">Đánh giá</div>
+                <div class="desc">Từ 1.248 khách hàng</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon purple"><i class="fas fa-user-friends"></i></div>
+            <div class="stat-info">
+                <div class="value">50+</div>
+                <div class="title">Bác sĩ</div>
+                <div class="desc">Giàu kinh nghiệm</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon orange"><i class="fas fa-briefcase-medical"></i></div>
+            <div class="stat-info">
+                <div class="value">20+</div>
+                <div class="title">Dịch vụ</div>
+                <div class="desc">Đa dạng chuyên khoa</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Floating Action Button (Đăng ký khám) 
+<a href="/DangNhap/Login" class="fab-btn">
+    <i class="far fa-calendar-plus"></i>
+    <span class="fab-text">ĐĂNG<br>KÝ<br>KHÁM</span>
+</a> -->
+
+<script>
+    function showTab(tabId, el) {
+        // Handle active state in sidebar
+        document.querySelectorAll('.ytv-menu-item').forEach(m => m.classList.remove('active'));
+        el.classList.add('active');
+
+        // Handle active content tab
+        document.querySelectorAll('.intro-section').forEach(sec => sec.classList.remove('active-tab'));
+        var targetSec = document.getElementById(tabId);
+        if (targetSec) {
+            targetSec.classList.add('active-tab');
+        }
+    }
+
+    function toggleMenu() {
+        var menu = document.getElementById("dropdownMenu");
+        menu.classList.toggle("open");
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        var menuBtn = document.getElementById("menuBtn");
+        if (menuBtn) {
+            menuBtn.addEventListener("mouseleave", function() {
+                var menu = document.getElementById("dropdownMenu");
+                if (menu) menu.classList.remove("open");
+            });
+        }
+    });
+
+    window.onclick = function(event) {
+        if (!event.target.closest('#menuBtn')) {
+            var dropdowns = document.getElementsByClassName("ytv-dropdown");
+            for (var i = 0; i < dropdowns.length; i++) {
+                if (dropdowns[i].classList.contains('open')) {
+                    dropdowns[i].classList.remove('open');
+                }
+            }
+        }
+        var modal = document.getElementById('loginModal');
+        if (event.target == modal) {
+            closeLoginModal();
+        }
+    }
+
+    // Login Modal Functions
+    function openLoginModal() {
+        document.getElementById('loginModal').classList.add('show');
+        document.getElementById('stepPhone').classList.add('active');
+        document.getElementById('stepOTP').classList.remove('active');
+        document.getElementById('phoneNumber').value = '';
+        document.querySelectorAll('.otp-input').forEach(inp => inp.value = '');
+        setTimeout(() => document.getElementById('phoneNumber').focus(), 100);
+    }
+
+    function closeLoginModal() {
+        document.getElementById('loginModal').classList.remove('show');
+    }
+
+    async function sendOTP() {
+        var phone = document.getElementById('phoneNumber').value;
+        if(phone.length < 9) {
+            showToast("Vui lòng nhập số điện thoại hợp lệ (từ 9 số trở lên)!", 'warning');
+            return;
+        }
+
+        try {
+            const response = await fetch('/DangNhap/GuiOtp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ soDienThoai: phone })
+            });
+            const data = await response.json();
+            if (!data.success) {
+                showToast(data.message, 'error');
+                return;
+            }
+        } catch (err) {
+            console.error(err);
+        }
+
+        document.getElementById('displayPhone').innerText = phone;
+        document.getElementById('stepPhone').classList.remove('active');
+        document.getElementById('stepOTP').classList.add('active');
+        
+        setTimeout(() => {
+            document.querySelectorAll('.otp-input').forEach(inp => inp.value = '');
+            document.querySelector('.otp-input').focus();
+        }, 100);
+    }
+
+    function moveToNext(elem, event) {
+        if (event.key === 'Backspace') {
+            if (elem.previousElementSibling) {
+                elem.previousElementSibling.focus();
+            }
+        } else {
+            if (!/^\d*$/.test(elem.value)) {
+                elem.value = "";
+                return;
+            }
+            if (elem.value.length === 1 && elem.nextElementSibling) {
+                elem.nextElementSibling.focus();
+            }
+        }
+    }
+
+    async function verifyOTP() {
+        var otp = Array.from(document.querySelectorAll('.otp-input')).map(inp => inp.value).join('');
+        if(otp.length === 4) {
+            var phone = document.getElementById('phoneNumber').value;
+            try {
+                const response = await fetch('/DangNhap/XacNhanOtp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ soDienThoai: phone, otp: otp })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    closeLoginModal();
+                    window.location.href = data.redirectUrl;
+                } else {
+                    showToast(data.message, 'error');
+                }
+            } catch (err) {
+                showToast('Lỗi xác thực OTP!', 'error');
+            }
+        } else {
+            showToast("Vui lòng nhập đầy đủ 4 số mã OTP!", 'warning');
+        }
+    }
+</script>
+

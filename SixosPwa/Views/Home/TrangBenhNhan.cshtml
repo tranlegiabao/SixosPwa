@@ -1,0 +1,199 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "Trang bệnh nhân";
+}
+
+<!doctype html>
+<html lang="vi">
+<head>
+    <title>@ViewBag.TenCoSo — HisSoft</title>
+    <partial name="_CongHead" />
+    <style>
+        /*
+            Bo cuc theo ho so "Patient Portal / Health Records": Minimalism & Swiss
+            + Accessible. Ba the dich vu xep DOC het be ngang — tieng Viet dai nen
+            the ngang moi du cho ten kem mot dong mo ta, va vung cham cao 56px.
+            Khong co thanh tab day: ca trang chi co ba chuc nang, nhin het trong
+            mot man, tab bar se chiem cho vinh vien ma khong dieu huong them gi.
+        */
+        :root {
+            --bn-nen: #f5f7fa;
+            --bn-the: #ffffff;
+            --bn-vien: #dde4ed;
+            --bn-chu: #12202e;
+            --bn-chu-nhat: #66788a;
+            --bn-xanh: #0d5bd4;
+            --bn-xanh-nhat: #e6effc;
+            --bn-luc: #12876f;
+            --bn-do: #b3261e;
+            --bn-do-nhat: #fdeceb;
+        }
+
+        body.bn-trang {
+            background: var(--bn-nen);
+            color: var(--bn-chu);
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .bn-khung { max-width: 560px; margin: 0 auto; padding-bottom: 32px; }
+
+        .bn-dau {
+            background: var(--bn-xanh);
+            color: #fff;
+            padding: 18px 20px 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .bn-dau .bn-coso { font-size: 13px; opacity: .9; }
+        .bn-dau .bn-chao { font-size: 20px; font-weight: 700; line-height: 1.3; }
+
+        .bn-danhtinh {
+            background: var(--bn-the);
+            border: 1px solid var(--bn-vien);
+            border-left: 4px solid var(--bn-luc);
+            border-radius: 10px;
+            margin: -12px 16px 0;
+            padding: 14px 16px;
+            box-shadow: 0 2px 10px -6px rgba(18, 32, 46, .35);
+        }
+        .bn-danhtinh .bn-dong {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            font-size: 13.5px;
+            padding: 3px 0;
+        }
+        .bn-danhtinh .bn-dong span:first-child { color: var(--bn-chu-nhat); }
+        .bn-danhtinh .bn-dong span:last-child { font-weight: 600; }
+
+        .bn-muc {
+            font-size: 11px;
+            letter-spacing: .12em;
+            font-weight: 700;
+            color: var(--bn-chu-nhat);
+            padding: 20px 20px 8px;
+        }
+
+        .bn-the {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            background: var(--bn-the);
+            border: 1px solid var(--bn-vien);
+            border-radius: 10px;
+            margin: 0 16px 10px;
+            padding: 14px 16px;
+            min-height: 56px;
+            text-decoration: none;
+            color: inherit;
+            transition: border-color .15s, box-shadow .15s;
+        }
+        .bn-the:hover, .bn-the:focus-visible {
+            border-color: var(--bn-xanh);
+            box-shadow: 0 2px 12px -6px rgba(13, 91, 212, .5);
+            color: inherit;
+        }
+        .bn-the:focus-visible { outline: 3px solid var(--bn-xanh); outline-offset: 2px; }
+
+        .bn-the .bn-bieutuong {
+            width: 38px; height: 38px; flex: 0 0 auto;
+            border-radius: 9px;
+            background: var(--bn-xanh-nhat);
+            color: var(--bn-xanh);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 17px;
+        }
+        /* Phai la block: dung span inline thi ten dich vu va mo ta dinh lien
+           nhau tren cung mot dong. */
+        .bn-the .bn-ten { display: block; font-weight: 700; font-size: 14.5px; }
+        .bn-the .bn-mota { display: block; font-size: 12.5px; color: var(--bn-chu-nhat); margin-top: 2px; }
+
+        .bn-canhbao {
+            background: var(--bn-do-nhat);
+            border: 1px solid var(--bn-do);
+            border-radius: 10px;
+            margin: 12px 16px 0;
+            padding: 12px 14px;
+            font-size: 13px;
+            color: var(--bn-chu);
+        }
+
+        .bn-chan {
+            padding: 20px;
+            text-align: center;
+            font-size: 12.5px;
+            color: var(--bn-chu-nhat);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .bn-chan a { color: var(--bn-xanh); text-decoration: none; }
+        .bn-chan a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body class="bn-trang">
+
+    <div class="bn-khung">
+
+        <header class="bn-dau">
+            <span class="bn-coso">@ViewBag.TenCoSo</span>
+            <span class="bn-chao">Xin chào @ViewBag.TenBenhNhan</span>
+        </header>
+
+        <section class="bn-danhtinh">
+            <div class="bn-dong"><span>Mã CSKCB</span><span>@ViewBag.MaCoSo</span></div>
+            <div class="bn-dong"><span>CCCD</span><span>@ViewBag.CccdCheBot</span></div>
+            <div class="bn-dong"><span>Điện thoại</span><span>@ViewBag.DienThoai</span></div>
+        </section>
+
+        @if (ViewBag.CoLoiKetNoi == true)
+        {
+            <div class="bn-canhbao">
+                Chưa kết nối được với hệ thống của cơ sở. Bạn vẫn xem được thông tin ở đây,
+                nhưng các dịch vụ đặt lịch và tra cứu hồ sơ tạm thời chưa dùng được.
+            </div>
+        }
+
+        <div class="bn-muc">DỊCH VỤ</div>
+
+        @* Chu va thu tu ba the lay dung tu trang cua doi tac. Dot nay MOI CHI
+           DUNG GIAO DIEN — ca ba deu dan toi man trong "Dang cap nhat". *@
+        <a class="bn-the" href="/benh-nhan/sap-co?muc=dat-goi-kham">
+            <span class="bn-bieutuong" aria-hidden="true">▤</span>
+            <span>
+                <span class="bn-ten">Đăng ký khám theo gói</span>
+                <span class="bn-mota">Chọn gói khám phù hợp — sức khoẻ trọn gói, an tâm tuyệt đối</span>
+            </span>
+        </a>
+
+        <a class="bn-the" href="/benh-nhan/sap-co?muc=lich-su-hen">
+            <span class="bn-bieutuong" aria-hidden="true">◷</span>
+            <span>
+                <span class="bn-ten">Lịch sử hẹn khám</span>
+                <span class="bn-mota">Quản lý lịch hẹn, thay đổi lịch hẹn</span>
+            </span>
+        </a>
+
+        <a class="bn-the" href="/benh-nhan/sap-co?muc=ho-so-kham">
+            <span class="bn-bieutuong" aria-hidden="true">◫</span>
+            <span>
+                <span class="bn-ten">Tra cứu hồ sơ khám bệnh</span>
+                <span class="bn-mota">Quản lý hồ sơ khám chữa bệnh</span>
+            </span>
+        </a>
+
+        <footer class="bn-chan">
+            <div>Hỗ trợ: <a href="tel:0901878896">0901 87 88 96</a></div>
+            <div>
+                <a href="/DangNhap/DoiMatKhau?coSo=@ViewBag.MaCoSo">Đổi mật khẩu</a>
+                &nbsp;·&nbsp;
+                <a href="/DangNhap/DangXuat">Đăng xuất</a>
+            </div>
+        </footer>
+
+    </div>
+
+</body>
+</html>

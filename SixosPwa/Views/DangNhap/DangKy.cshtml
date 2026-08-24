@@ -1,0 +1,136 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "Tạo tài khoản";
+}
+
+<!doctype html>
+<html lang="vi">
+<head>
+    <title>Tạo tài khoản — HisSoft</title>
+    <partial name="_CongHead" />
+</head>
+<body class="page-center">
+
+    <main class="auth">
+        <div class="auth__brand">
+            <img src="~/static/icon-192.png" alt="HisSoft" width="72" height="72" />
+            <h1>Tạo tài khoản</h1>
+            <p>Chỉ còn một bước nữa là xong</p>
+        </div>
+
+        <div class="card auth__card">
+            <div class="card-body">
+
+                <div class="alert alert-light border small mb-3">
+                    Số căn cước này chưa có hồ sơ tại
+                    <strong>@ViewBag.TenCoSo</strong>. Điền họ tên để tạo hồ sơ mới.
+                </div>
+
+                <form id="formDangKy" onsubmit="event.preventDefault(); taoTaiKhoan();">
+                    @* Ba o duoi day benh nhan da nhap o man dang nhap. Hien lai
+                       de ho doi chieu, va khoa lai de khong ai sua nham. *@
+                    <div class="mb-3">
+                        <label class="form-label" for="maCoSo">Mã CSKCB</label>
+                        <input type="text" class="form-control" id="maCoSo" readonly
+                               value="@ViewBag.MaCoSo — @ViewBag.TenCoSo" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="dinhDanh">Số điện thoại hoặc Email</label>
+                        <input type="text" class="form-control" id="dinhDanh" readonly value="@ViewBag.DinhDanh" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="cccd">Số Căn cước công dân</label>
+                        <input type="text" class="form-control" id="cccd" readonly value="@ViewBag.Cccd" />
+                    </div>
+
+                    <hr class="my-3" />
+
+                    <div class="mb-3">
+                        <label class="form-label" for="hoTen">Họ và tên <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control form-control-lg" id="hoTen"
+                               placeholder="Ví dụ: Nguyễn Văn A" autocomplete="name" maxlength="100" required />
+                        <div class="form-text">Ghi đúng như trên thẻ căn cước.</div>
+                    </div>
+
+                    @if (ViewBag.CoBanGiao != true)
+                    {
+                        @* Chi co so NOI BO moi hoi mat khau. Co so co API rieng thi
+                           may chu sinh mat khau ngau nhien cho tai khoan ben ho va tu
+                           cat lai — benh nhan khong bao gio phai go no. *@
+                        <div class="mb-3">
+                            <label class="form-label" for="matKhau">Mật khẩu <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control form-control-lg" id="matKhau"
+                                   autocomplete="new-password" minlength="6" maxlength="50" required />
+                            <div class="form-text">
+                                Tối thiểu 6 ký tự. Dùng để vào những lần sau.
+                            </div>
+                        </div>
+                    }
+
+                    <button type="submit" id="btnTao" class="btn btn-primary w-100 py-2 fw-bold">
+                        Tạo tài khoản
+                    </button>
+                </form>
+
+            </div>
+        </div>
+
+        <p class="auth__foot">
+            <a href="/DangNhap/Login?coSo=@ViewBag.SlugCoSo" class="text-decoration-none">&larr; Quay lại</a>
+        </p>
+    </main>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        async function taoTaiKhoan() {
+            const hoTen = document.getElementById('hoTen').value.trim();
+            const oMatKhau = document.getElementById('matKhau');
+            const matKhau = oMatKhau ? oMatKhau.value : '';
+
+            if (!hoTen) {
+                showToast('Vui lòng nhập họ và tên!', 400);
+                return;
+            }
+            // Khong co o mat khau = co so co API, mat khau dat bang CCCD o may chu.
+            if (oMatKhau && matKhau.length < 6) {
+                showToast('Mật khẩu phải có ít nhất 6 ký tự!', 400);
+                return;
+            }
+
+            const btn = document.getElementById('btnTao');
+            btn.disabled = true;
+            btn.innerText = 'Đang tạo tài khoản...';
+
+            try {
+                const phanHoi = await fetch('/DangNhap/TaoTaiKhoan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        maCoSo: '@(ViewBag.MaCoSo as string ?? "")',
+                        cccd: '@(ViewBag.Cccd as string ?? "")',
+                        dinhDanh: '@(ViewBag.DinhDanh as string ?? "")',
+                        hoTen: hoTen,
+                        matKhau: matKhau,
+                        returnUrl: '@(ViewBag.ReturnUrl as string ?? "")'
+                    })
+                });
+
+                const duLieu = await phanHoi.json();
+                if (duLieu.success) {
+                    window.location.href = duLieu.redirectUrl;
+                    return;
+                }
+
+                showToast(duLieu.message, 400);
+            } catch (loi) {
+                showToast('Không kết nối được máy chủ, vui lòng thử lại!', 500);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Tạo tài khoản';
+            }
+        }
+    </script>
+</body>
+</html>

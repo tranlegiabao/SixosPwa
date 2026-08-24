@@ -1,0 +1,123 @@
+/* ============================================================
+   Chan trang dung chung cua cong benh nhan (SixosPwa)
+   Mot khuon markup cho ca hai thiet bi; dien thoai chi an bot bang CSS.
+   Do bang Playwright tren phac thao: 102px @391px  -  84px @1180px.
+   KHONG can !important o day: 3 khoi !important cua site.css da bi xoa.
+   ============================================================ */
+
+:root { --ctc-cao: 104px; }
+@media (min-width: 768px) { :root { --ctc-cao: 96px; } }
+
+/* !important o day la BAT BUOC, khong phai cau tha:
+   thong-tin-benh-nhan.css:3 dat  html, body { padding: 0 !important }  cho app-shell 100dvh.
+   Bo !important di la man Thong tin benh nhan mat cho chua va chan trang de len noi dung. */
+body.co-chan-trang { padding-bottom: calc(var(--ctc-cao) + env(safe-area-inset-bottom, 0px)) !important; }
+
+.ytv-footer.ctc, .ytv-footer.ctc * { box-sizing: border-box; }
+
+.ytv-footer.ctc {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    background: #e0f2fe;
+    color: #334155;
+    border-top: 3px solid var(--ytv-primary, #3b82f6);
+    padding: 9px 12px calc(9px + env(safe-area-inset-bottom, 0px)) 12px;
+    max-width: none;   /* DanhSachCoSo dat body > * { width:100% !important } - dung keo gian */
+}
+
+.ytv-footer.ctc a { text-decoration: none; }
+
+.fb2-top {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+}
+
+.fb2-call {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 19px;
+    font-weight: 800;
+    color: #0b4ea2;
+}
+
+.fb2-call i { font-size: 20px; }
+
+.fb2-ic {
+    display: inline-flex;
+    width: 34px;
+    height: 34px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #fff;
+    color: #0b4ea2;
+    border: 1px solid #bae6fd;
+}
+
+/* Dien thoai: chi hotline chinh + 2 icon tron */
+.fb2-h2, .fb2-lb { display: none; }
+
+.fb2-pol {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 10px;
+    width: 100%;
+    font-size: 13px;
+    line-height: 1.25;
+    text-align: center;
+}
+
+.fb2-pol a { color: #0f172a; }
+.fb2-pol .sep { display: none; }
+
+/* ---------------- desktop: thiet ke rieng, hien DU chu ---------------- */
+@media (min-width: 768px) {
+    .ytv-footer.ctc {
+        align-items: center;
+        gap: 10px;
+        padding: 14px 30px;
+    }
+
+    .fb2-h2, .fb2-lb { display: inline; }
+
+    .fb2-ic {
+        width: auto;
+        height: auto;
+        border: 0;
+        background: transparent;
+        border-radius: 0;
+        gap: 8px;
+        font-size: 15px;
+        font-weight: 600;
+    }
+
+    .fb2-call { font-size: 17px; }
+
+    .fb2-top {
+        gap: 26px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .fb2-pol {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        width: auto;
+        font-size: 14px;
+        gap: 6px 12px;
+    }
+
+    .fb2-pol .sep { display: inline; color: #94a3b8; }
+}
