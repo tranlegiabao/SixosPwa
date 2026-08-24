@@ -5,7 +5,8 @@ namespace SixosPwa.Areas.Admin.Models;
 
 public sealed class DashboardViewModel
 {
-    public int AccountCount { get; init; }
+            public int AccountCount { get; init; }
+    public IReadOnlyList<FacilityGroupStat> FacilityGroupStats { get; init; } = Array.Empty<FacilityGroupStat>();
     public int AdminAccountCount { get; init; }
     public int PatientAccountCount { get; init; }
     public int PartnerCount { get; init; }
@@ -216,4 +217,31 @@ public sealed class PaginationViewModel
     public string? MaDT { get; init; }
 }
 
+public sealed class FacilityGroupStat
+{
+    public string TenLoaiCS { get; set; } = "";
+    public string LoaiCS { get; set; } = "";
+    public int FacilityCount => Facilities.Count;
+    public int TotalPatientCount => Facilities.Sum(x => x.PatientCount);
+    public List<FacilityStat> Facilities { get; set; } = new();
+}
+
+public sealed class FacilityStat
+{
+    public long Id { get; set; }
+    public List<PatientAccountStat> PatientAccounts { get; set; } = new();
+    public string MaCoSo { get; set; } = "";
+    public string TenCoSo { get; set; } = "";
+    public int PatientCount { get; set; }
+}
+
+
+
+
+public sealed class PatientAccountStat
+{
+    public long Id { get; set; }
+    public string SDT { get; set; } = "";
+    public string CCCD { get; set; } = "";
+}
 
