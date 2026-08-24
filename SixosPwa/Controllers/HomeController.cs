@@ -103,14 +103,17 @@ public class HomeController : Controller
 
             if (matchedCS != null)
             {
-                ViewData["CoSoYTe"] = matchedCS;
-                ViewData["TenCoSo"] = matchedCS.TenCoSo;
-                ViewData["DiaChi"] = matchedCS.DiaChi ?? "Đang cập nhật";
-                ViewData["Type"] = matchedCS.LoaiCS ?? "benhvien";
-                ViewData["Img"] = matchedCS.Img ?? AnhCoSoMacDinh;
-                ViewData["Logo"] = matchedCS.logo ?? logo ?? LogoCoSoMacDinh;
-                ViewData["TGLamViec"] = GetOperatingHoursValue(matchedCS);
-                ViewData["NoiDungCskcb"] = await LoadNoiDungAsync(matchedCS);
+                // Nam sua 2026-08-24: tra lai 301 sang /pk/{slug}. Render thang o day
+                // thi ViewData thieu Slug/MaCoSo, keo theo hai nut ben trang co so mat
+                // tham so ?coSo= va luong ban giao sang doi tac chet. Xem ADR 0003.
+                if (!string.IsNullOrWhiteSpace(matchedCS.Slug))
+                {
+                    return RedirectPermanent($"/pk/{matchedCS.Slug}");
+                }
+
+                // Co so chua duoc dat slug: van hien duoc trang, chi la khong co
+                // URL co dinh. Quan tri vien dat slug trong man Admin/CoSoYTe.
+                await DoDuLieuCoSoAsync(matchedCS);
                 return View(nameof(ChiTietCoSo));
             }
         }
@@ -206,6 +209,7 @@ public class HomeController : Controller
     /// </summary>
     private async Task DoDuLieuCoSoAsync(DMCSKCB coSo)
     {
+        ViewData["CoSoYTe"] = coSo;
         ViewData["MaCoSo"] = coSo.MaCoSo;
         ViewData["Slug"] = coSo.Slug;
         ViewData["TenCoSo"] = coSo.TenCoSo;
