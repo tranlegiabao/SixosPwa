@@ -530,6 +530,101 @@
         editor.value = ensureDefaultBlackHtml(html);
     }
 
+    function renderValidationErrors(form, errors) {
+        form.querySelectorAll('[data-valmsg-for]').forEach(function (element) {
+            element.textContent = '';
+            element.classList.remove('field-validation-error');
+            element.classList.add('field-validation-valid');
+        });
+
+        Object.entries(errors || {}).forEach(function (entry) {
+            var fieldName = entry[0];
+            var messages = Array.isArray(entry[1]) ? entry[1] : [entry[1]];
+            var target = Array.from(form.querySelectorAll('[data-valmsg-for]'))
+                .find(function (element) { return element.getAttribute('data-valmsg-for') === fieldName; });
+            if (!target) return;
+
+            target.textContent = messages.filter(Boolean).join(' ');
+            target.classList.remove('field-validation-valid');
+            target.classList.add('field-validation-error');
+        });
+    }
+
+    function setSaveButtonState(form, isSaving) {
+        var button = form.querySelector('button[type="submit"]');
+        if (!button) return;
+
+        if (isSaving) {
+            button.dataset.originalText = button.textContent;
+            button.disabled = true;
+            button.textContent = 'Đang lưu...';
+            return;
+        }
+
+        button.disabled = false;
+        if (button.dataset.originalText) button.textContent = button.dataset.originalText;
+    }
+
+    async function submitCoSoYTeForm(event, form, topic) {
+        event.preventDefault();
+        if (form.dataset.saving === 'true') return;
+
+        form.dataset.saving = 'true';
+        setSaveButtonState(form, true);
+        renderValidationErrors(form, {});
+
+        try {
+            var topicHidden = document.getElementById('contentTopicId');
+            if (topicHidden && topic) topicHidden.value = topic.value || '';
+            syncEditorValue('#summernote');
+            syncEditorValue('#advertisingContentEditor');
+            syncTopicContents();
+
+            var response = await fetch(form.action || window.location.href, {
+                method: 'POST',
+                body: new FormData(form),
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            var result = await response.json();
+
+            if (!response.ok || !result.success) {
+                renderValidationErrors(form, result.errors);
+                throw new Error(result.message || 'Không thể lưu cơ sở y tế.');
+            }
+
+            if (result.id > 0 && result.editUrl) {
+                form.action = result.editUrl;
+                var idInput = form.querySelector('input[name="Id"]');
+                if (!idInput) {
+                    idInput = document.createElement('input');
+                    idInput.type = 'hidden';
+                    idInput.name = 'Id';
+                    form.appendChild(idInput);
+                }
+                idInput.value = result.id;
+                window.history.replaceState({}, '', result.editUrl);
+            }
+
+            if (typeof showToast === 'function') showToast(result.message, 'success');
+        } catch (error) {
+            if (typeof showToast === 'function') {
+                var message = error instanceof Error
+                    && error.name !== 'SyntaxError'
+                    && error.message !== 'Failed to fetch'
+                    ? error.message
+                    : 'Không thể lưu cơ sở y tế.';
+                showToast(message, 'error');
+            }
+        } finally {
+            form.dataset.saving = 'false';
+            setSaveButtonState(form, false);
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         initialize();
         var topic = document.getElementById('cboChuDe');
@@ -551,12 +646,8 @@
 
         var form = document.getElementById('coSoYTeForm');
         if (form) {
-            form.addEventListener('submit', function () {
-                var topicHidden = document.getElementById('contentTopicId');
-                if (topicHidden && topic) topicHidden.value = topic.value || '';
-                syncEditorValue('#summernote');
-                syncEditorValue('#advertisingContentEditor');
-                syncTopicContents();
+            form.addEventListener('submit', function (event) {
+                submitCoSoYTeForm(event, form, topic);
             });
         }
 
