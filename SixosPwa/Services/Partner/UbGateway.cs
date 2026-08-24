@@ -29,7 +29,9 @@ public class UbGateway : IPartnerGateway
         {
             ["dat-goi-kham"] = "/QuanLy/QL_DangKyTheoGoi",
             ["lich-su-hen"] = "/QuanLy/QL_DangKyLichOnline_LichSuKhamBenh",
-            ["ho-so-kham"] = "/QuanLy/QL_LichSuKhamBenh"
+            ["ho-so-kham"] = "/QuanLy/QL_LichSuKhamBenh",
+            // Bam "Ho so benh nhan" o menu 3 gach khi da dang nhap — man chon ho so.
+            ["ho-so"] = "/QuanLy/QL_HoSoBenhNhan"
         };
 
     // 1 = Zalo, 2 = Email, 3 = SMS — khop switch trong RegisterAsync cua doi tac.

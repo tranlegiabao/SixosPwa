@@ -1010,6 +1010,35 @@
             font-size: 9px;
         }
     }
+
+    /* Modal chan dang nhap cheo co so (ADR 0006) — man moi, khong co khuon cu */
+    .ccs-lop-phu {
+        position: fixed; inset: 0; z-index: 2000;
+        background: rgba(15, 23, 42, .55);
+        display: flex; align-items: center; justify-content: center; padding: 16px;
+    }
+    .ccs-lop-phu[hidden] { display: none; }
+    .ccs-hop {
+        background: #fff; border-radius: 16px; max-width: 380px; width: 100%;
+        box-shadow: 0 18px 50px rgba(0,0,0,.25); overflow: hidden;
+    }
+    .ccs-than { padding: 22px 22px 16px; text-align: center; }
+    .ccs-bieu-tuong {
+        width: 52px; height: 52px; border-radius: 50%; background: #fef3c7; color: #b45309;
+        font-size: 26px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 14px;
+    }
+    .ccs-than h4 { margin: 0 0 10px; font-size: 17px; font-weight: 700; color: #0f172a; }
+    .ccs-than p { margin: 0 0 6px; font-size: 14px; color: #64748b; line-height: 1.5; }
+    .ccs-ten-co-so { font-weight: 700; color: #1d4ed8; font-size: 15px; margin-bottom: 10px; }
+    .ccs-nut { display: flex; flex-direction: column; gap: 9px; padding: 0 22px 22px; }
+    .ccs-nut a, .ccs-nut button {
+        font: inherit; font-weight: 700; font-size: 14px; padding: 12px; border-radius: 12px;
+        cursor: pointer; border: 1.5px solid transparent; text-align: center; text-decoration: none;
+        display: block;
+    }
+    .ccs-nut .ccs-chinh { background: #dc2626; color: #fff; }
+    .ccs-nut .ccs-phu { background: #fff; color: #475569; border-color: #cbd5e1; }
 </style>
 
 <div class="ytv-header">
@@ -1065,15 +1094,24 @@
             var thamSoCoSo = string.IsNullOrWhiteSpace(slugCoSo)
                 ? string.Empty
                 : $"coSo={Uri.EscapeDataString(slugCoSo)}&";   // Razor tu ma hoa thanh &amp; — viet san &amp; o day la bi ma hoa hai lan
+
+            // Phien dang o mot co so KHAC co so trang nay (ADR 0006): null neu
+            // trung co so hoac chua dang nhap — HomeController.DoDoiChieuPhienCoSoAsync
+            // da tinh san, o day chi doc ra de quyet dinh co chan hai nut khong.
+            var phienCoSoKhac = ViewData["PhienCoSoKhac"] as string;
+            var tuDongMoCanhBao = ViewData["TuDongMoCanhBao"] as bool? ?? false;
         }
         <div class="hospital-actions">
-            <a href="/DangNhap/Login?@(thamSoCoSo)returnUrl=%2Fdat-goi-kham" class="btn-outline" style="background-color: #1d4ed8; color:aliceblue">
+            <a href="/DangNhap/Login?@(thamSoCoSo)returnUrl=%2Fdat-goi-kham" class="btn-outline" style="background-color: #1d4ed8; color:aliceblue"
+               data-returnurl="/dat-goi-kham" @Html.Raw(phienCoSoKhac != null ? "onclick=\"return ccsChanNeuCheoCoSo(event, this)\"" : "")>
                 <i class="fas fa-sign-in-alt" style="color: aliceblue"></i> Đăng ký khám
             </a>
-            <a href="/DangNhap/Login?@(thamSoCoSo)returnUrl=%2F" class="btn-outline">
+            <a href="/DangNhap/Login?@(thamSoCoSo)returnUrl=%2F" class="btn-outline"
+               data-returnurl="/" @Html.Raw(phienCoSoKhac != null ? "onclick=\"return ccsChanNeuCheoCoSo(event, this)\"" : "")>
                 <i class="fas fa-sign-in-alt"></i> Đăng nhập
             </a>
         </div>
+
         <div class="operating-hours-box">
             <div class="oh-header"><i class="far fa-clock"></i> Giờ hoạt động</div>
             <div class="oh-days">@operatingHours.Days</div>
@@ -1159,6 +1197,30 @@
    ② khoi gioi thieu SIXOS von bi chon BEN TRONG modal do.
    Can lay lai: git show 53381ff -- SixosPwa/Views/Home/ChiTietCoSo.cshtml *@
 
+@* Modal chan dang nhap cheo co so (ADR 0006) — BAT BUOC dat O DAY, cap cao
+   nhat cua trang, KHONG duoc long trong .ytv-sidebar: sidebar co
+   "overflow: hidden" (dong 108) nen se GHIM/CAT bat cu con position:fixed
+   nao no chua, du con do co z-index cao bao nhieu — tung dat trong sidebar
+   lam bam-ra-ngoai-hop khong dong duoc vi footer .ytv-footer.ctc (z-index
+   1000, KHONG bi sidebar giam giu) ve de len tren. *@
+@if (phienCoSoKhac != null)
+{
+    <div class="ccs-lop-phu" id="ccsLopPhu" hidden>
+        <div class="ccs-hop">
+            <div class="ccs-than">
+                <div class="ccs-bieu-tuong">!</div>
+                <h4>Bạn đang đăng nhập ở cơ sở khác</h4>
+                <p>Tài khoản đang dùng tại</p>
+                <p class="ccs-ten-co-so">@phienCoSoKhac</p>
+                <p>Để đăng nhập tại <b>@tenCoSo</b>, vui lòng đăng xuất trước.</p>
+            </div>
+            <div class="ccs-nut">
+                <a href="#" id="ccsNutDangXuat" class="ccs-chinh">Đăng xuất và đăng nhập lại</a>
+                <button type="button" class="ccs-phu" onclick="ccsDongModal()">Quay lại</button>
+            </div>
+        </div>
+    </div>
+}
 
 <div class="stats-footer-bar">
     <div class="stats-grid">
@@ -1252,5 +1314,52 @@
     // JS cua man dang nhap noi trang da di theo modal (2026-08-24). Dung tim
     // openLoginModal/closeLoginModal nua — hai nut deu la the <a> tro thang
     // sang /DangNhap/Login?coSo={slug}&returnUrl=...
+
+    // ===== Modal chan dang nhap cheo co so (ADR 0006) =====
+    var ccsPhienCoSoKhac = @Html.Raw(Json.Serialize(phienCoSoKhac));
+    var ccsTuDongMo = @Html.Raw(Json.Serialize(tuDongMoCanhBao));
+    var ccsSlugTrang = @Html.Raw(Json.Serialize(slugCoSo));
+
+    function ccsMoModal(returnUrl) {
+        var lop = document.getElementById('ccsLopPhu');
+        if (!lop) return;
+
+        var nut = document.getElementById('ccsNutDangXuat');
+        if (nut) {
+            nut.href = '/DangNhap/DangXuat?denCoSo=' + encodeURIComponent(ccsSlugTrang || '') +
+                '&returnUrl=' + encodeURIComponent(returnUrl || '/');
+        }
+
+        lop.hidden = false;
+    }
+
+    function ccsDongModal() {
+        var lop = document.getElementById('ccsLopPhu');
+        if (lop) lop.hidden = true;
+    }
+
+    // Goi tu onclick cua hai nut hanh dong khi phien dang o co so khac.
+    function ccsChanNeuCheoCoSo(event, linkEl) {
+        event.preventDefault();
+        ccsMoModal(linkEl.getAttribute('data-returnurl'));
+        return false;
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var lop = document.getElementById('ccsLopPhu');
+        if (lop) {
+            // Bam ra ngoai hop (khong phai ban than hop) cung dong modal.
+            lop.addEventListener('click', function (e) {
+                if (e.target === lop) ccsDongModal();
+            });
+        }
+
+        // Go thang /DangNhap/Login?coSo=... bi lech co so: server da doi ve day
+        // kem ?canhBao=1 — tu mo dung modal nay, khong bat benh nhan bam lai nut.
+        if (ccsTuDongMo && ccsPhienCoSoKhac) {
+            var thamSo = new URLSearchParams(window.location.search);
+            ccsMoModal(thamSo.get('returnUrl') || '/');
+        }
+    });
 </script>
 

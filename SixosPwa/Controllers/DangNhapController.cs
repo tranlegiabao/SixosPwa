@@ -60,12 +60,23 @@ public class DangNhapController : Controller
         if (User.Identity?.IsAuthenticated == true && !adminReauth)
         {
             var cccdPhien = User.FindFirst(LuongCongBenhNhan.ClaimCccd)?.Value;
-            var maCoSoDich = maCoSoTuUrl ?? User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
+            var cuaPhien = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
+            var maCoSoDich = maCoSoTuUrl ?? cuaPhien;
 
             if (!string.IsNullOrWhiteSpace(cccdPhien))
             {
+                // Go thang URL/bookmark vao mot co so KHAC co so cua phien: khong
+                // tu dung man nay noi hai thu tu do lua chon nua — day ve dung
+                // trang co so do de MOT modal duy nhat bat dang nhap cheo co so
+                // hien ra (ADR 0006), khong lech thong diep giua hai loi vao.
+                if (!string.IsNullOrWhiteSpace(coSo) && maCoSoDich != cuaPhien)
+                {
+                    var yDinh = returnUrl ?? "/";
+                    return Redirect($"/DangKyOnline/{coSo}?canhBao=1&returnUrl={Uri.EscapeDataString(yDinh)}");
+                }
+
                 ViewBag.DangDangNhapLa = User.FindFirst(ClaimTypes.Name)?.Value;
-                ViewBag.LinkDiTiep = Url.Action(nameof(DiTiep), new { coSo, returnUrl });
+                ViewBag.LinkDiTiep = Url.Action(nameof(DiTiep), new { returnUrl });
             }
             else
             {
@@ -535,67 +546,28 @@ public class DangNhapController : Controller
     }
 
     /// <summary>
-    /// Nguoi dung chu dong bam "Tiep tuc" o man dang nhap khi phien van con.
-    /// Day moi la cho chay cay quyet dinh — KHONG tu chay khi chi mo trang.
+    /// Nguoi dung chu dong bam "Tiep tuc" o man dang nhap khi phien van con, hoac
+    /// bam "Ho so benh nhan" o menu 3 gach khi da dang nhap. Day moi la cho chay
+    /// cay quyet dinh — KHONG tu chay khi chi mo trang. Chi thao tac tren MaCoSo
+    /// CUA PHIEN — doi sang co so khac khong con di qua day nua, modal chan dang
+    /// nhap cheo co so (ADR 0006) da lo tu luc vao, nen khong con nhanh "doi claim
+    /// am tham" o day.
     /// </summary>
     [HttpGet]
     [Authorize]
-    public async Task<IActionResult> DiTiep(string? coSo = null, string? returnUrl = null)
+    public async Task<IActionResult> DiTiep(string? returnUrl = null)
     {
         var cccd = User.FindFirst(LuongCongBenhNhan.ClaimCccd)?.Value;
         var dinhDanh = User.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;
-
         var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
-
-        if (!string.IsNullOrWhiteSpace(coSo))
-        {
-            var thongTin = await _dbContext.DMCSKCBs
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Slug == coSo);
-
-            if (thongTin?.MaCoSo is not null) maCoSo = thongTin.MaCoSo;
-        }
 
         if (string.IsNullOrWhiteSpace(maCoSo) || string.IsNullOrWhiteSpace(cccd))
         {
             return Redirect("/benh-nhan");
         }
 
-        // Bam nut tu mot co so KHAC voi co so cua phien: doi claim sang co so moi.
-        // Danh tinh da xac thuc bang OTP roi nen khong bat lam lai tu dau.
-        if (maCoSo != User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value)
-        {
-            await DoiCoSoTrongPhienAsync(maCoSo);
-        }
-
         var dichDen = await _luong.ChonDichDenAsync(maCoSo, cccd, dinhDanh, returnUrl);
         return Redirect(dichDen);
-    }
-
-    /// <summary>
-    /// Doi ma co so trong phien hien tai, giu nguyen moi claim khac. Dung khi
-    /// benh nhan da dang nhap roi bam nut tu mot co so khac — danh tinh da xac
-    /// thuc bang OTP nen khong co ly do bat ho lam lai tu dau.
-    /// </summary>
-    private async Task DoiCoSoTrongPhienAsync(string maCoSoMoi)
-    {
-        var claims = User.Claims
-            .Where(c => c.Type != LuongCongBenhNhan.ClaimMaCoSo)
-            .Select(c => new Claim(c.Type, c.Value))
-            .ToList();
-
-        claims.Add(new Claim(LuongCongBenhNhan.ClaimMaCoSo, maCoSoMoi));
-
-        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-
-        await HttpContext.SignInAsync(
-            CookieAuthenticationDefaults.AuthenticationScheme,
-            new ClaimsPrincipal(identity),
-            new AuthenticationProperties
-            {
-                IsPersistent = true,
-                ExpiresUtc = DateTimeOffset.UtcNow.AddDays(365)
-            });
     }
 
     /// <summary>
@@ -644,7 +616,7 @@ public class DangNhapController : Controller
     /// <summary>
     /// Cho ha canh sau khi xac thuc. Vao thang /DangNhap/Login (khong qua trang
     /// co so) thi khong biet benh nhan o co so nao, nen chi ve duoc trang benh
-    /// nhan dang toi gian — muon di tiep phai vao lai qua /pk/{slug}.
+    /// nhan dang toi gian — muon di tiep phai vao lai qua /DangKyOnline/{slug}.
     /// </summary>
     private async Task<string?> ChonDichDenAsync(string? maCoSo, string? cccd, string dinhDanh, string? returnUrl)
     {
@@ -693,9 +665,15 @@ public class DangNhapController : Controller
         }
     }
 
+    /// <summary>
+    /// denCoSo (slug): dung khi bam "Dang xuat va dang nhap lai" trong modal chan
+    /// dang nhap cheo co so (ADR 0006) — sau khi thoat phien cu, dua thang toi man
+    /// dang nhap cua co so MOI kem returnUrl la y dinh cua nut benh nhan da bam,
+    /// thay vi ve lai co so cu nhu dang xuat binh thuong.
+    /// </summary>
     [HttpGet]
     [HttpPost]
-    public async Task<IActionResult> DangXuat()
+    public async Task<IActionResult> DangXuat(string? denCoSo = null, string? returnUrl = null)
     {
         // Doc ma co so TRUOC khi dang xuat, vi sau SignOut la mat sach claim.
         // Dang xuat khoi cong benh nhan cua mot co so thi phai quay ve dung
@@ -714,9 +692,15 @@ public class DangNhapController : Controller
         await HttpContext.SignOutAsync(AdminAuthentication.Scheme);
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
+        if (!string.IsNullOrWhiteSpace(denCoSo))
+        {
+            var yDinh = !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl) ? returnUrl : "/";
+            return Redirect($"/DangNhap/Login?coSo={denCoSo}&returnUrl={Uri.EscapeDataString(yDinh)}");
+        }
+
         if (!string.IsNullOrWhiteSpace(slug))
         {
-            return Redirect($"/pk/{slug}");
+            return Redirect($"/DangKyOnline/{slug}");
         }
 
         return RedirectToAction(nameof(Login));
