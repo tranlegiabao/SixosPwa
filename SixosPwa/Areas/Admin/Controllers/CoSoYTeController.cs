@@ -25,6 +25,32 @@ public sealed class CoSoYTeController : AdminControllerBase
         _adminStoredProcedures = adminStoredProcedures;
     }
 
+    private bool IsAjaxRequest() =>
+        string.Equals(Request.Headers["X-Requested-With"].ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+
+    private IActionResult AjaxFailure(string message) =>
+        BadRequest(new { success = false, message });
+
+    private IActionResult AjaxValidationFailure()
+    {
+        var errors = ModelState
+            .Where(item => item.Value?.Errors.Count > 0)
+            .ToDictionary(
+                item => item.Key,
+                item => item.Value!.Errors
+                    .Select(error => string.IsNullOrWhiteSpace(error.ErrorMessage)
+                        ? "Giá trị không hợp lệ."
+                        : error.ErrorMessage)
+                    .ToArray());
+
+        return UnprocessableEntity(new
+        {
+            success = false,
+            message = "Vui lòng kiểm tra lại thông tin đã nhập.",
+            errors
+        });
+    }
+
     public async Task<IActionResult> Index(string? q, string? loaiCS, int page = 1)
     {
         page = SafePage(page);
@@ -91,6 +117,7 @@ public sealed class CoSoYTeController : AdminControllerBase
 
         if (!ModelState.IsValid)
         {
+            if (IsAjaxRequest()) return AjaxValidationFailure();
             await PopulateContentEditorAsync(model, model.TopicId > 0 ? model.TopicId : null, loadSelectedContent: false);
             return View(model);
         }
@@ -98,6 +125,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         var result = await _adminStoredProcedures.SaveCoSoYTeAsync(model);
         if (!result.Succeeded)
         {
+            if (IsAjaxRequest()) return AjaxFailure(result.Message ?? "Không thể thêm cơ sở y tế.");
             ModelState.AddModelError(nameof(model.MaCoSo), result.Message ?? "Không thể thêm cơ sở y tế.");
             await PopulateContentEditorAsync(model, model.TopicId > 0 ? model.TopicId : null, loadSelectedContent: false);
             return View(model);
@@ -116,6 +144,7 @@ public sealed class CoSoYTeController : AdminControllerBase
                 advertisingImageUrl);
             if (!advertisingResult.Succeeded)
             {
+                if (IsAjaxRequest()) return AjaxFailure(advertisingResult.Message ?? "Không thể lưu quảng cáo.");
                 Error(advertisingResult.Message ?? "Khong the luu quang cao.");
                 return RedirectToAction(nameof(Edit), new { id = createdFacilityForAdvertising.Id, topicId = model.TopicId });
             }
@@ -139,6 +168,7 @@ public sealed class CoSoYTeController : AdminControllerBase
                 var contentResult = await SaveContentAsync(createdFacility, topicContent.Key, topicContent.Value);
                 if (!contentResult.Succeeded)
                 {
+                    if (IsAjaxRequest()) return AjaxFailure(contentResult.Message ?? "Không thể lưu nội dung HTML.");
                     Error(contentResult.Message ?? "Không thể lưu nội dung HTML.");
                     return RedirectToAction(nameof(Edit), new { id = createdFacility.Id, topicId = model.TopicId });
                 }
@@ -146,6 +176,18 @@ public sealed class CoSoYTeController : AdminControllerBase
             }
         }
 
+        if (IsAjaxRequest())
+        {
+            return Json(new
+            {
+                success = true,
+                message = "Đã thêm cơ sở y tế.",
+                id = createdFacilityForAdvertising?.Id ?? 0,
+                editUrl = createdFacilityForAdvertising == null
+                    ? null
+                    : Url.Action(nameof(Edit), new { id = createdFacilityForAdvertising.Id, topicId = model.TopicId })
+            });
+        }
         Success("Đã thêm cơ sở y tế.");
         return RedirectToAction(nameof(Index));
     }
@@ -199,6 +241,7 @@ public sealed class CoSoYTeController : AdminControllerBase
 
         if (!ModelState.IsValid)
         {
+            if (IsAjaxRequest()) return AjaxValidationFailure();
             await PopulateContentEditorAsync(model, model.TopicId > 0 ? model.TopicId : null, loadSelectedContent: false);
             return View(model);
         }
@@ -209,7 +252,11 @@ public sealed class CoSoYTeController : AdminControllerBase
             entity.TenCoSo);
         if (!result.Succeeded)
         {
-            if (result.Code == 3) return NotFound();
+            if (result.Code == 3)
+                return IsAjaxRequest()
+                    ? NotFound(new { success = false, message = "Không tìm thấy cơ sở y tế." })
+                    : NotFound();
+            if (IsAjaxRequest()) return AjaxFailure(result.Message ?? "Không thể cập nhật cơ sở y tế.");
             ModelState.AddModelError(nameof(model.MaCoSo), result.Message ?? "Không thể cập nhật cơ sở y tế.");
             await PopulateContentEditorAsync(model, model.TopicId > 0 ? model.TopicId : null, loadSelectedContent: false);
             return View(model);
@@ -221,6 +268,7 @@ public sealed class CoSoYTeController : AdminControllerBase
             advertisingImageUrl);
         if (!advertisingResult.Succeeded)
         {
+            if (IsAjaxRequest()) return AjaxFailure(advertisingResult.Message ?? "Không thể lưu quảng cáo.");
             Error(advertisingResult.Message ?? "Khong the luu quang cao.");
             return RedirectToAction(nameof(Edit), new { id = model.Id, topicId = model.TopicId, section = model.ActiveSection });
         }
@@ -242,12 +290,23 @@ public sealed class CoSoYTeController : AdminControllerBase
                 topicContent.Value);
             if (!contentResult.Succeeded)
             {
+                if (IsAjaxRequest()) return AjaxFailure(contentResult.Message ?? "Không thể lưu nội dung HTML.");
                 Error(contentResult.Message ?? "Không thể lưu nội dung HTML.");
                 return RedirectToAction(nameof(Edit), new { id = model.Id, topicId = model.TopicId, section = model.ActiveSection });
             }
         }
         }
 
+        if (IsAjaxRequest())
+        {
+            return Json(new
+            {
+                success = true,
+                message = "Đã cập nhật cơ sở y tế.",
+                id = model.Id,
+                editUrl = Url.Action(nameof(Edit), new { id = model.Id, topicId = model.TopicId, section = model.ActiveSection })
+            });
+        }
         Success("Đã cập nhật cơ sở y tế.");
         return RedirectToAction(nameof(Edit), new { id = model.Id, topicId = model.TopicId, section = model.ActiveSection });
     }
@@ -483,6 +542,9 @@ public sealed class CoSoYTeController : AdminControllerBase
     private static void Normalize(CoSoYTeEditViewModel model)
     {
         model.MaCoSo = model.MaCoSo?.Trim();
+        model.Slug = string.IsNullOrWhiteSpace(model.Slug)
+            ? null
+            : model.Slug.Trim().ToLowerInvariant();
         model.TenCoSo = model.TenCoSo?.Trim();
         model.DiaChi = model.DiaChi?.Trim();
         model.SoToaNha = model.SoToaNha?.Trim();
@@ -726,6 +788,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         {
             Id = entity.Id,
             MaCoSo = entity.MaCoSo,
+            Slug = entity.Slug,
             TenCoSo = entity.TenCoSo,
             DiaChi = entity.DiaChi,
             SoToaNha = entity.SoToaNha,
