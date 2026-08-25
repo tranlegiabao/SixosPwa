@@ -62,7 +62,14 @@ public sealed class CoSoYTeController : AdminControllerBase
                 || (x.TenCoSo != null && x.TenCoSo.Contains(q)));
         }
         if (!string.IsNullOrWhiteSpace(loaiCS) && AllowedTypes.Contains(loaiCS))
-            query = query.Where(x => x.LoaiCS == loaiCS);
+        {
+            // Nhom co so nay la khoa ngoai sang DM_NhomCS, khong con la chuoi trong bang co so.
+            var idNhom = await _db.DMNhomCSs.AsNoTracking()
+                .Where(nc => nc.MaNhom == loaiCS)
+                .Select(nc => (long?)nc.ID)
+                .FirstOrDefaultAsync();
+            query = query.Where(x => x.IdNhomCS == idNhom);
+        }
 
         var total = await query.CountAsync();
         var items = await query.OrderBy(x => x.TenCoSo)
@@ -70,8 +77,12 @@ public sealed class CoSoYTeController : AdminControllerBase
             .Take(DefaultPageSize)
             .ToListAsync();
 
+        var maNhom = await _db.DMNhomCSs.AsNoTracking()
+            .ToDictionaryAsync(x => x.ID, x => x.MaNhom);
+
         return View(new CoSoYTeListViewModel
         {
+            MaNhomTheoId = maNhom,
             Items = items,
             Query = q,
             LoaiCS = loaiCS,
@@ -139,7 +150,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         if (createdFacilityForAdvertising != null)
         {
             var advertisingResult = await SaveAdvertisingAsync(
-                createdFacilityForAdvertising,
+                createdFacilityForAdvertising.Id,
                 model,
                 advertisingImageUrl);
             if (!advertisingResult.Succeeded)
@@ -165,7 +176,7 @@ public sealed class CoSoYTeController : AdminControllerBase
 
                 foreach (var topicContent in topicContents)
                 {
-                var contentResult = await SaveContentAsync(createdFacility, topicContent.Key, topicContent.Value);
+                var contentResult = await SaveContentAsync(createdFacility.Id, topicContent.Key, topicContent.Value);
                 if (!contentResult.Succeeded)
                 {
                     if (IsAjaxRequest()) return AjaxFailure(contentResult.Message ?? "Không thể lưu nội dung HTML.");
@@ -199,7 +210,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         if (entity == null) return NotFound();
         var model = ToViewModel(entity);
         model.ActiveSection = section;
-        var advertising = await GetAdvertisingAsync(entity.MaCoSo, entity.TenCoSo);
+        var advertising = await GetAdvertisingAsync(entity.Id);
         model.NoiDungQuangCao = advertising?.NoiDung;
         model.QuangCaoImg = advertising?.Img;
         await PopulateContentEditorAsync(model, topicId);
@@ -213,7 +224,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         var entity = await _db.DMCSKCBs.AsNoTracking().FirstOrDefaultAsync(x => x.Id == model.Id);
         if (entity == null) return NotFound();
 
-        var existingAdvertising = await GetAdvertisingAsync(entity.MaCoSo, entity.TenCoSo);
+        var existingAdvertising = await GetAdvertisingAsync(entity.Id);
         Normalize(model);
         if (model.ImageFile != null)
             model.Img = await SaveImageAsync(model.ImageFile, "static/img_cs", "/static/img_cs", nameof(model.ImageFile));
@@ -222,7 +233,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         model.Logo = await ResolveImageAsync(
             model.LogoFile,
             model.LogoUrlInput,
-            entity.logo,
+            entity.Logo,
             "static/logo_cs",
             "/static/logo_cs",
             nameof(model.LogoFile));
@@ -246,10 +257,7 @@ public sealed class CoSoYTeController : AdminControllerBase
             return View(model);
         }
 
-        var result = await _adminStoredProcedures.SaveCoSoYTeAsync(
-            model,
-            entity.MaCoSo,
-            entity.TenCoSo);
+        var result = await _adminStoredProcedures.SaveCoSoYTeAsync(model);
         if (!result.Succeeded)
         {
             if (result.Code == 3)
@@ -262,10 +270,7 @@ public sealed class CoSoYTeController : AdminControllerBase
             return View(model);
         }
 
-        var advertisingResult = await SaveAdvertisingAsync(
-            new DMCSKCB { MaCoSo = model.MaCoSo, TenCoSo = model.TenCoSo },
-            model,
-            advertisingImageUrl);
+        var advertisingResult = await SaveAdvertisingAsync(model.Id, model, advertisingImageUrl);
         if (!advertisingResult.Succeeded)
         {
             if (IsAjaxRequest()) return AjaxFailure(advertisingResult.Message ?? "Không thể lưu quảng cáo.");
@@ -285,7 +290,7 @@ public sealed class CoSoYTeController : AdminControllerBase
             foreach (var topicContent in topicContents)
             {
             var contentResult = await SaveContentAsync(
-                new DMCSKCB { MaCoSo = model.MaCoSo, TenCoSo = model.TenCoSo },
+                model.Id,
                 topicContent.Key,
                 topicContent.Value);
             if (!contentResult.Succeeded)
@@ -321,27 +326,29 @@ public sealed class CoSoYTeController : AdminControllerBase
         var facility = new DMCSKCB
         {
             Id = model.Id,
-            MaCoSo = model.MaCoSo ?? storedFacility?.MaCoSo,
-            Slug = model.Slug ?? storedFacility?.Slug,
-            TenCoSo = model.TenCoSo ?? storedFacility?.TenCoSo,
+            MaCoSo = model.MaCoSo ?? storedFacility?.MaCoSo ?? string.Empty,
+            Slug = model.Slug ?? storedFacility?.Slug ?? string.Empty,
+            TenCoSo = model.TenCoSo ?? storedFacility?.TenCoSo ?? string.Empty,
             DiaChi = model.DiaChi ?? storedFacility?.DiaChi,
-            LoaiCS = model.LoaiCS ?? storedFacility?.LoaiCS,
-            TGLamViec = model.TGLamViec ?? storedFacility?.TGLamViec,
-            NgayLamViec = model.NgayLamViec,
-            GioMoCua = ParsePreviewTime(model.GioMoCua),
-            GioDongCua = ParsePreviewTime(model.GioDongCua),
+            IdNhomCS = model.SelectedNhomCSId ?? storedFacility?.IdNhomCS,
             Img = model.Img ?? storedFacility?.Img,
-            logo = await ReadPreviewImageAsync(model.LogoFile, model.LogoUrlInput, model.Logo ?? storedFacility?.logo),
-            XacMinh = model.XacMinh ? 1 : 0
+            Logo = await ReadPreviewImageAsync(model.LogoFile, model.LogoUrlInput, model.Logo ?? storedFacility?.Logo),
+            XacMinh = model.XacMinh
         };
 
-        if (facility.GioMoCua.HasValue && facility.GioDongCua.HasValue
-            && !string.IsNullOrWhiteSpace(facility.NgayLamViec))
+        // Gio lam viec nay nam o bang con DM_CSKCB_GioLamViec, khong con la cot cua
+        // bang co so. Man xem truoc chi can chuoi hien thi nen dung thang gia tri
+        // dang nhap tren form.
+        var moCuaXemTruoc = ParsePreviewTime(model.GioMoCua);
+        var dongCuaXemTruoc = ParsePreviewTime(model.GioDongCua);
+        var tgLamViecXemTruoc = model.TGLamViec;
+        if (moCuaXemTruoc.HasValue && dongCuaXemTruoc.HasValue
+            && !string.IsNullOrWhiteSpace(model.NgayLamViec))
         {
-            facility.TGLamViec = OperatingHours.Encode(
-                facility.NgayLamViec,
-                facility.GioMoCua.Value.ToString("HH:mm"),
-                facility.GioDongCua.Value.ToString("HH:mm"));
+            tgLamViecXemTruoc = OperatingHours.Encode(
+                model.NgayLamViec,
+                moCuaXemTruoc.Value.ToString("HH:mm"),
+                dongCuaXemTruoc.Value.ToString("HH:mm"));
         }
 
         var topics = await _db.DMChuDes.AsNoTracking().ToListAsync();
@@ -350,15 +357,15 @@ public sealed class CoSoYTeController : AdminControllerBase
         foreach (var draft in draftContents)
         {
             var topic = topics.FirstOrDefault(x => x.ID == draft.Key);
-            if (!string.IsNullOrWhiteSpace(topic?.LoaiND))
-                contents[topic.LoaiND!] = draft.Value ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(topic?.MaChuDe))
+                contents[topic.MaChuDe!] = draft.Value ?? string.Empty;
         }
 
         if (model.TopicId > 0 && !draftContents.ContainsKey(model.TopicId))
         {
             var topic = topics.FirstOrDefault(x => x.ID == model.TopicId);
-            if (!string.IsNullOrWhiteSpace(topic?.LoaiND))
-                contents[topic.LoaiND!] = model.NoiDung ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(topic?.MaChuDe))
+                contents[topic.MaChuDe!] = model.NoiDung ?? string.Empty;
         }
 
         ViewData["Title"] = "Xem trước cơ sở y tế";
@@ -367,12 +374,12 @@ public sealed class CoSoYTeController : AdminControllerBase
         ViewData["Slug"] = facility.Slug;
         ViewData["TenCoSo"] = facility.TenCoSo ?? "Cơ sở y tế";
         ViewData["DiaChi"] = facility.DiaChi ?? "Đang cập nhật";
-        ViewData["Type"] = facility.LoaiCS ?? "benhvien";
+        ViewData["Type"] = model.LoaiCS ?? "benhvien";
         ViewData["Img"] = facility.Img;
-        ViewData["Logo"] = facility.logo;
-        ViewData["TGLamViec"] = facility.TGLamViec;
+        ViewData["Logo"] = facility.Logo;
+        ViewData["TGLamViec"] = tgLamViecXemTruoc;
         ViewData["NoiDungCskcb"] = contents;
-        ViewData["PreviewLoaiND"] = topics.FirstOrDefault(x => x.ID == model.TopicId)?.LoaiND;
+        ViewData["PreviewLoaiND"] = topics.FirstOrDefault(x => x.ID == model.TopicId)?.MaChuDe;
         ViewData["PreviewStatic"] = true;
 
         return View("~/Views/Home/ChiTietCoSo.cshtml");
@@ -387,7 +394,7 @@ public sealed class CoSoYTeController : AdminControllerBase
             : null;
         var storedAdvertising = storedFacility == null
             ? null
-            : await GetAdvertisingAsync(storedFacility.MaCoSo, storedFacility.TenCoSo);
+            : await GetAdvertisingAsync(storedFacility.Id);
 
         var previewItems = await LoadHomePreviewAdsAsync();
         var previewImage = await ReadPreviewImageAsync(
@@ -417,27 +424,13 @@ public sealed class CoSoYTeController : AdminControllerBase
         return View("~/Views/Home/ThongTinBenhNhan.cshtml", new List<LichSuKham>());
     }
 
-    private async Task<QCKCB?> GetAdvertisingAsync(string? maCoSo, string? tenCoSo)
-    {
-        var query = _db.QCKCBs.AsNoTracking();
-        if (!string.IsNullOrWhiteSpace(maCoSo))
-        {
-            var advertisingByCode = await query
-                .Where(x => x.MaCoSo == maCoSo)
-                .OrderByDescending(x => x.Id)
-                .FirstOrDefaultAsync();
-            if (advertisingByCode != null)
-                return advertisingByCode;
-
-            query = query.Where(x => (x.MaCoSo == null || x.MaCoSo == "") && x.TenCoSo == tenCoSo);
-        }
-        else
-        {
-            query = query.Where(x => (x.MaCoSo == null || x.MaCoSo == "") && x.TenCoSo == tenCoSo);
-        }
-
-        return await query.OrderByDescending(x => x.Id).FirstOrDefaultAsync();
-    }
+    /// <summary>
+    /// Quang cao nay khoa theo IDCoSo. Truoc dot tai kien truc no phai do tim theo
+    /// MaCoSo roi nga sang TenCoSo — mot bang khong co rang buoc nao noi ve co so.
+    /// UK_DM_CSKCB_QuangCao bao dam moi co so nhieu nhat mot dong.
+    /// </summary>
+    private Task<QCKCB?> GetAdvertisingAsync(long idCoSo) =>
+        _db.QCKCBs.AsNoTracking().FirstOrDefaultAsync(x => x.IdCoSo == idCoSo);
 
     private async Task<string?> ResolveAdvertisingImageAsync(
         CoSoYTeEditViewModel model,
@@ -470,17 +463,15 @@ public sealed class CoSoYTeController : AdminControllerBase
     }
 
     private Task<AdminStoredProcedureResult> SaveAdvertisingAsync(
-        DMCSKCB facility,
+        long idCoSo,
         CoSoYTeEditViewModel model,
         string? imageUrl)
     {
         var enabled = model.QuangCao.GetValueOrDefault() > 0;
         return _adminStoredProcedures.SaveQCKCBAsync(
-            facility.MaCoSo,
-            facility.TenCoSo,
+            idCoSo,
             enabled ? model.NoiDungQuangCao : null,
-            enabled ? imageUrl : null,
-            enabled);
+            enabled ? imageUrl : null);
     }
 
     private void ValidateType(string? type)
@@ -584,20 +575,19 @@ public sealed class CoSoYTeController : AdminControllerBase
         DMCSKCB facility,
         IReadOnlyCollection<DMChuDe> topics)
     {
-        IQueryable<NDCSKCB> query = _db.NDCSKCBs.AsNoTracking();
-        query = string.IsNullOrWhiteSpace(facility.MaCoSo)
-            ? query.Where(x => (x.MaCoSo == null || x.MaCoSo == "") && x.TenCoSo == facility.TenCoSo)
-            : query.Where(x => x.MaCoSo == facility.MaCoSo);
+        var items = await _db.NDCSKCBs.AsNoTracking()
+            .Where(x => x.IdCoSo == facility.Id)
+            .OrderBy(x => x.Id)
+            .ToListAsync();
 
-        var topicById = topics
-            .Where(x => !string.IsNullOrWhiteSpace(x.LoaiND))
-            .ToDictionary(x => x.ID.ToString(), x => x.LoaiND!, StringComparer.OrdinalIgnoreCase);
-        var items = await query.OrderBy(x => x.Id).ToListAsync();
+        // Chu de nay la khoa ngoai IDChuDe, khong con la chuoi LoaiND tron hai he ma.
+        var maTheoId = topics.ToDictionary(x => x.ID, x => x.MaChuDe);
 
         return items
-            .Select(x => new { Item = x, LoaiND = ResolvePreviewLoaiND(x.LoaiND, topicById) })
-            .Where(x => x.LoaiND != null && NDCSKCB.AllowedLoaiND.Contains(x.LoaiND, StringComparer.OrdinalIgnoreCase))
-            .GroupBy(x => x.LoaiND!, StringComparer.OrdinalIgnoreCase)
+            .Where(x => maTheoId.ContainsKey(x.IdChuDe))
+            .Select(x => new { Item = x, Ma = maTheoId[x.IdChuDe] })
+            .Where(x => NDCSKCB.AllowedLoaiND.Contains(x.Ma, StringComparer.OrdinalIgnoreCase))
+            .GroupBy(x => x.Ma, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(x => x.Key, x => x.First().Item.NoiDung ?? "", StringComparer.OrdinalIgnoreCase);
     }
 
@@ -608,25 +598,15 @@ public sealed class CoSoYTeController : AdminControllerBase
             .OrderByDescending(x => x.QuangCao)
             .Take(5)
             .ToListAsync();
-        var facilityCodes = facilities
-            .Select(x => x.MaCoSo)
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .ToList();
-        var facilityNames = facilities
-            .Select(x => x.TenCoSo)
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .ToList();
+        var facilityIds = facilities.Select(x => x.Id).ToList();
         var advertising = await _db.QCKCBs.AsNoTracking()
-            .Where(x => (x.MaCoSo != null && facilityCodes.Contains(x.MaCoSo))
-                || (x.MaCoSo == null && facilityNames.Contains(x.TenCoSo)))
+            .Where(x => facilityIds.Contains(x.IdCoSo))
             .OrderByDescending(x => x.Id)
             .ToListAsync();
 
         return facilities.Select(facility =>
         {
-            var item = advertising.FirstOrDefault(x =>
-                (!string.IsNullOrWhiteSpace(facility.MaCoSo) && x.MaCoSo == facility.MaCoSo)
-                || (string.IsNullOrWhiteSpace(x.MaCoSo) && x.TenCoSo == facility.TenCoSo));
+            var item = advertising.FirstOrDefault(x => x.IdCoSo == facility.Id);
             return new TopCSKCBQC
             {
                 TenCoSo = facility.TenCoSo ?? string.Empty,
@@ -720,10 +700,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         var facility = await _db.DMCSKCBs.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
         if (facility == null || topicId <= 0) return NotFound();
 
-        var noiDung = await _adminStoredProcedures.GetNoiDungCskcbAsync(
-            facility.MaCoSo,
-            facility.TenCoSo,
-            topicId);
+        var noiDung = await _adminStoredProcedures.GetNoiDungCskcbAsync(facility.Id, topicId);
 
         if (noiDung == null)
         {
@@ -732,8 +709,8 @@ public sealed class CoSoYTeController : AdminControllerBase
             if (topic != null)
             {
                 var fallbackContents = await LoadPreviewContentsAsync(facility, new[] { topic });
-                if (!string.IsNullOrWhiteSpace(topic.LoaiND)
-                    && fallbackContents.TryGetValue(topic.LoaiND, out var fallbackContent))
+                if (!string.IsNullOrWhiteSpace(topic.MaChuDe)
+                    && fallbackContents.TryGetValue(topic.MaChuDe, out var fallbackContent))
                     noiDung = fallbackContent;
             }
         }
@@ -750,41 +727,32 @@ public sealed class CoSoYTeController : AdminControllerBase
         model.ChuDeList = await _db.DMChuDes.AsNoTracking().ToListAsync();
         model.FacilityList = await _db.DMCSKCBs.AsNoTracking().ToListAsync();
         model.SelectedFacilityId = model.Id > 0 ? model.Id : null;
-        model.SelectedNhomCSId = model.Id > 0
+        model.SelectedNhomCSId ??= model.Id > 0
             ? model.NhomCSList.FirstOrDefault(x =>
-                string.Equals(x.LoaiCS, model.LoaiCS, StringComparison.OrdinalIgnoreCase))?.ID
+                string.Equals(x.MaNhom, model.LoaiCS, StringComparison.OrdinalIgnoreCase))?.ID
             : null;
         model.SelectedTopicId = topicId ?? model.ChuDeList.FirstOrDefault()?.ID;
         model.TopicId = model.SelectedTopicId ?? 0;
 
         if (loadSelectedContent && model.Id > 0 && model.TopicId > 0)
         {
-            model.NoiDung = await _adminStoredProcedures.GetNoiDungCskcbAsync(
-                model.MaCoSo,
-                model.TenCoSo,
-                model.TopicId);
+            model.NoiDung = await _adminStoredProcedures.GetNoiDungCskcbAsync(model.Id, model.TopicId);
         }
     }
 
     private Task<AdminStoredProcedureResult> SaveContentAsync(
-        DMCSKCB facility,
+        long idCoSo,
         long topicId,
         string? noiDung) =>
-        _adminStoredProcedures.SaveNoiDungCskcbAsync(
-            facility.MaCoSo,
-            facility.TenCoSo,
-            topicId,
-            noiDung);
+        _adminStoredProcedures.SaveNoiDungCskcbAsync(idCoSo, topicId, noiDung);
 
-    private static CoSoYTeEditViewModel ToViewModel(DMCSKCB entity)
-    {
-        OperatingHours.TryParse(entity.TGLamViec, out var operatingHours);
-        var storedDays = string.IsNullOrWhiteSpace(entity.NgayLamViec)
-            ? operatingHours?.Days
-            : entity.NgayLamViec;
-        var storedOpenTime = entity.GioMoCua?.ToString(@"hh\:mm") ?? operatingHours?.OpenTime;
-        var storedCloseTime = entity.GioDongCua?.ToString(@"hh\:mm") ?? operatingHours?.CloseTime;
-        return new CoSoYTeEditViewModel
+    /// <summary>
+    /// Gio lam viec khong con nam trong bang co so — no o bang con DM_CSKCB_GioLamViec.
+    /// Ban dung <see cref="ToViewModelAsync"/> khi can hien gio; ban dong bo nay de
+    /// nhung cho chi can thong tin chung.
+    /// </summary>
+    private static CoSoYTeEditViewModel ToViewModel(DMCSKCB entity) =>
+        new()
         {
             Id = entity.Id,
             MaCoSo = entity.MaCoSo,
@@ -794,16 +762,43 @@ public sealed class CoSoYTeController : AdminControllerBase
             SoToaNha = entity.SoToaNha,
             Tinh = entity.Tinh,
             PhuongXa = entity.PhuongXa,
-            LoaiCS = entity.LoaiCS,
-            TGLamViec = entity.TGLamViec,
-            NgayLamViec = storedDays,
-            GioMoCua = storedOpenTime,
-            GioDongCua = storedCloseTime,
-            XacMinh = entity.XacMinh == 1,
+            SDT = entity.SDT,
+            Email = entity.Email,
+            TenTM = entity.TenTM,
+            SelectedNhomCSId = entity.IdNhomCS,
+            XacMinh = entity.XacMinh,
+            Active = entity.Active,
             Img = entity.Img,
-            Logo = entity.logo,
+            Logo = entity.Logo,
             QuangCao = entity.QuangCao
         };
+
+    /// <summary>Nhu tren nhung nap them gio lam viec tu bang con.</summary>
+    private async Task<CoSoYTeEditViewModel> ToViewModelAsync(DMCSKCB entity)
+    {
+        var model = ToViewModel(entity);
+        model.LoaiCS = entity.IdNhomCS is null
+            ? null
+            : await _db.DMNhomCSs.AsNoTracking()
+                .Where(x => x.ID == entity.IdNhomCS)
+                .Select(x => x.MaNhom)
+                .FirstOrDefaultAsync();
+
+        var gio = await _db.CSKCBGioLamViecs.AsNoTracking()
+            .Where(x => x.IdCoSo == entity.Id)
+            .OrderBy(x => x.Thu)
+            .ToListAsync();
+
+        if (gio.Count > 0)
+        {
+            model.GioMoCua = gio[0].GioMoCua.ToString(@"hh\:mm");
+            model.GioDongCua = gio[0].GioDongCua.ToString(@"hh\:mm");
+            model.NgayLamViec = string.Join(",", gio.Select(x => x.Thu));
+            model.TGLamViec = OperatingHours.Encode(
+                model.NgayLamViec, model.GioMoCua, model.GioDongCua);
+        }
+
+        return model;
     }
 
 }

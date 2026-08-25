@@ -10,5 +10,9 @@ public class DoiTac
     public string? Email { get; set; }
     public long? IdPm { get; set; }
     public string? BrandName { get; set; }
-    public string? Password { get; set; }
+
+    /// <summary>Doi ten tu Password — tranh nham voi mat khau dang nhap noi bo (ADR 0009).</summary>
+    public string? MatKhauDoiTac { get; set; }
+
+    public DateTime NgayTao { get; set; } = DateTime.Now;
 }

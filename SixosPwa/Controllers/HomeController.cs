@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using SixosPwa.Data;
 using SixosPwa.Models;
 using SixosPwa.Security;
+using SixosPwa.Services;
 using SixosPwa.Services.Partner;
 using WebPush;
 
@@ -16,31 +17,50 @@ public class HomeController : Controller
     private readonly ILogger<HomeController> _logger;
     private readonly ApplicationDbContext _db;
     private readonly IConfiguration _config;
+    private readonly AdminStoredProcedureService _thuTuc;
 
-    public HomeController(ILogger<HomeController> logger, ApplicationDbContext db, IConfiguration config)
+    public HomeController(
+        ILogger<HomeController> logger,
+        ApplicationDbContext db,
+        IConfiguration config,
+        AdminStoredProcedureService thuTuc)
     {
         _logger = logger;
         _db = db;
         _config = config;
+        _thuTuc = thuTuc;
     }
+
+    /// <summary>
+    /// Thong bao / thiet bi / push nay khoa theo IDTaiKhoan chu khong con theo chuoi
+    /// so dien thoai. Cac API JSON van GIU nguyen ten khoa cu (nguoiGui/nguoiNhan la
+    /// so dien thoai) vi JS phia trinh duyet dang doc theo do.
+    /// </summary>
+    private Task<long?> LayIdTaiKhoanAsync(string sdt) =>
+        _db.TaiKhoans.AsNoTracking()
+            .Where(t => t.SDT == sdt)
+            .Select(t => (long?)t.Id)
+            .FirstOrDefaultAsync();
 
     // Action Index (trang benh nhan cu) da duoc go bo ngay 2026-08-22 theo yeu cau
     // cua user: luong do khong dung nua, thay bang /benh-nhan. Lay lai neu can:
     //   git show 224341a -- SixosPwa/Views/Home/Index.cshtml
 
+    // Tham so van ten phongKhamId de khong pha URL dang chay; thuc chat no la
+    // ID CO SO — bang PhongKham da bi xoa o dot tai kien truc (W-05).
     public IActionResult TimBacSi(long phongKhamId)
     {
         ViewData["PhongKhamId"] = phongKhamId;
-        var phongKham = _db.PhongKhams.FirstOrDefault(p => p.Id == phongKhamId);
-        ViewData["TenPhongKham"] = phongKham?.TenPhongKham ?? "Phòng khám";
+        var coSo = _db.DMCSKCBs.AsNoTracking().FirstOrDefault(p => p.Id == phongKhamId);
+        ViewData["TenPhongKham"] = coSo?.TenCoSo ?? "Phòng khám";
         return View();
     }
 
     public IActionResult HoSoBenhAn(long phongKhamId)
     {
         ViewData["PhongKhamId"] = phongKhamId;
-        var phongKham = _db.PhongKhams.FirstOrDefault(p => p.Id == phongKhamId);
-        ViewData["TenPhongKham"] = phongKham?.TenPhongKham ?? "Phòng khám";
+        var coSo = _db.DMCSKCBs.AsNoTracking().FirstOrDefault(p => p.Id == phongKhamId);
+        ViewData["TenPhongKham"] = coSo?.TenCoSo ?? "Phòng khám";
         return View();
     }
 
@@ -61,8 +81,13 @@ public class HomeController : Controller
         ViewData["Title"] = title;
         ViewData["Type"] = type;
 
+        var idNhom = await _db.DMNhomCSs.AsNoTracking()
+            .Where(nc => nc.MaNhom == type)
+            .Select(nc => (long?)nc.ID)
+            .FirstOrDefaultAsync();
+
         var dsCoso = await _db.DMCSKCBs
-            .Where(x => x.LoaiCS == type)
+            .Where(x => x.IdNhomCS == idNhom)
             .OrderByDescending(x => x.QuangCao)
             .ToListAsync();
 
@@ -148,9 +173,11 @@ public class HomeController : Controller
         // thi trang chao ten lay tu ho so cua co so KHAC.
         var benhNhan = string.IsNullOrWhiteSpace(dinhDanh)
             ? null
-            : await _db.BenhNhans.AsNoTracking()
-                .FirstOrDefaultAsync(x => (x.SDT == dinhDanh || x.Email == dinhDanh)
-                                       && x.MaDT == maCoSo);
+            : await (from p in _db.BenhNhans.AsNoTracking()
+                     join h in _db.BenhNhanCoSos.AsNoTracking() on p.Id equals h.IdBenhNhan
+                     join cs in _db.DMCSKCBs.AsNoTracking() on h.IdCoSo equals cs.Id
+                     where (p.SDT == dinhDanh || p.Email == dinhDanh) && cs.MaCoSo == maCoSo
+                     select p).FirstOrDefaultAsync();
 
         ViewBag.MaCoSo = maCoSo;
         ViewBag.TenCoSo = coSo?.TenCoSo ?? "Cơ sở khám chữa bệnh";
@@ -162,19 +189,23 @@ public class HomeController : Controller
         return View();
     }
 
-    private static string? GetOperatingHoursValue(DMCSKCB coSo)
+    /// <summary>
+    /// Gio lam viec nay nam o bang con DM_CSKCB_GioLamViec (mot dong moi thu), khong
+    /// con la cap cot TGLamViec/NgayLamViec voi noi dung nguoc ten cot nhu truoc.
+    /// </summary>
+    private async Task<string?> GetOperatingHoursValueAsync(DMCSKCB coSo)
     {
-        if (!string.IsNullOrWhiteSpace(coSo.NgayLamViec)
-            && coSo.GioMoCua.HasValue
-            && coSo.GioDongCua.HasValue)
-        {
-            return OperatingHours.Encode(
-                coSo.NgayLamViec,
-                coSo.GioMoCua.Value.ToString(@"hh\:mm"),
-                coSo.GioDongCua.Value.ToString(@"hh\:mm"));
-        }
+        var gio = await _db.CSKCBGioLamViecs.AsNoTracking()
+            .Where(x => x.IdCoSo == coSo.Id)
+            .OrderBy(x => x.Thu)
+            .ToListAsync();
 
-        return coSo.TGLamViec;
+        if (gio.Count == 0) return null;
+
+        return OperatingHours.Encode(
+            string.Join(",", gio.Select(x => x.Thu)),
+            gio[0].GioMoCua.ToString(@"hh\:mm"),
+            gio[0].GioDongCua.ToString(@"hh\:mm"));
     }
 
     /// <summary>Man trong cho ba the chua noi du lieu.</summary>
@@ -216,10 +247,15 @@ public class HomeController : Controller
         ViewData["Slug"] = coSo.Slug;
         ViewData["TenCoSo"] = coSo.TenCoSo;
         ViewData["DiaChi"] = coSo.DiaChi ?? "Đang cập nhật";
-        ViewData["Type"] = coSo.LoaiCS ?? "benhvien";
+        ViewData["Type"] = (coSo.IdNhomCS is null
+            ? null
+            : await _db.DMNhomCSs.AsNoTracking()
+                .Where(x => x.ID == coSo.IdNhomCS)
+                .Select(x => x.MaNhom)
+                .FirstOrDefaultAsync()) ?? "benhvien";
         ViewData["Img"] = coSo.Img ?? AnhCoSoMacDinh;
-        ViewData["Logo"] = coSo.logo ?? LogoCoSoMacDinh;
-        ViewData["TGLamViec"] = GetOperatingHoursValue(coSo);
+        ViewData["Logo"] = coSo.Logo ?? LogoCoSoMacDinh;
+        ViewData["TGLamViec"] = await GetOperatingHoursValueAsync(coSo);
         ViewData["NoiDungCskcb"] = await LoadNoiDungAsync(coSo);
     }
 
@@ -246,51 +282,26 @@ public class HomeController : Controller
 
     private async Task<IReadOnlyDictionary<string, string>> LoadNoiDungAsync(DMCSKCB coSo)
     {
-        IQueryable<NDCSKCB> query = _db.NDCSKCBs.AsNoTracking();
-        if (!string.IsNullOrWhiteSpace(coSo.MaCoSo))
-        {
-            query = query.Where(x => x.MaCoSo == coSo.MaCoSo);
-        }
-        else
-        {
-            query = query.Where(x => (x.MaCoSo == null || x.MaCoSo == "") && x.TenCoSo == coSo.TenCoSo);
-        }
-
-        var topicById = (await _db.DMChuDes.AsNoTracking().ToListAsync())
-            .Where(x => !string.IsNullOrWhiteSpace(x.LoaiND))
-            .ToDictionary(x => x.ID.ToString(), x => x.LoaiND!, StringComparer.OrdinalIgnoreCase);
-        var items = await query
+        var items = await _db.NDCSKCBs.AsNoTracking()
+            .Where(x => x.IdCoSo == coSo.Id)
             .OrderBy(x => x.Id)
             .ToListAsync();
 
+        var maTheoId = (await _db.DMChuDes.AsNoTracking().ToListAsync())
+            .ToDictionary(x => x.ID, x => x.MaChuDe);
+
         return items
-            .Select(x => new
-            {
-                Item = x,
-                LoaiND = ResolveLoaiND(x.LoaiND, topicById)
-            })
-            .Where(x => x.LoaiND != null
-                && NDCSKCB.AllowedLoaiND.Contains(x.LoaiND, StringComparer.OrdinalIgnoreCase))
-            .GroupBy(x => x.LoaiND!, StringComparer.OrdinalIgnoreCase)
+            .Where(x => maTheoId.ContainsKey(x.IdChuDe))
+            .Select(x => new { Item = x, Ma = maTheoId[x.IdChuDe] })
+            .Where(x => NDCSKCB.AllowedLoaiND.Contains(x.Ma, StringComparer.OrdinalIgnoreCase))
+            .GroupBy(x => x.Ma, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(x => x.Key, x => x.First().Item.NoiDung ?? "", StringComparer.OrdinalIgnoreCase);
-    }
-
-    private static string? ResolveLoaiND(
-        string? storedLoaiND,
-        IReadOnlyDictionary<string, string> topicById)
-    {
-        var value = storedLoaiND?.Trim();
-        if (string.IsNullOrWhiteSpace(value)) return null;
-        if (topicById.TryGetValue(value, out var loaiND)) return loaiND;
-
-        return NDCSKCB.AllowedLoaiND.FirstOrDefault(x =>
-            string.Equals(x, value, StringComparison.OrdinalIgnoreCase));
     }
 
     private static string RemoveAccentsAndSpaces(string text)
     {
         if (string.IsNullOrEmpty(text)) return string.Empty;
-        
+
         string normalized = text.Normalize(System.Text.NormalizationForm.FormD);
         var sb = new System.Text.StringBuilder();
         foreach (char c in normalized)
@@ -302,9 +313,9 @@ public class HomeController : Controller
             }
         }
         string cleanText = sb.ToString().Normalize(System.Text.NormalizationForm.FormC);
-        
+
         cleanText = cleanText.Replace("đ", "d").Replace("Đ", "D");
-        
+
         var finalSb = new System.Text.StringBuilder();
         foreach (char c in cleanText)
         {
@@ -334,7 +345,13 @@ public class HomeController : Controller
             {
                 using var cmd = conn.CreateCommand();
                 cmd.CommandType = System.Data.CommandType.StoredProcedure;
-                cmd.CommandText = "Top_CSKCB_QC";
+                // Thu tuc cu Top_CSKCB_QC da bi V002 xoa. Ban moi sua loi nhan dong
+                // cua no (W-03) va nhan @SoLuong thay vi khoa cung TOP 5.
+                cmd.CommandText = "DM_CSKCB_TopQuangCao";
+                var pSoLuong = cmd.CreateParameter();
+                pSoLuong.ParameterName = "@SoLuong";
+                pSoLuong.Value = 5;
+                cmd.Parameters.Add(pSoLuong);
 
                 using var reader = await cmd.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
@@ -357,7 +374,7 @@ public class HomeController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Lỗi khi gọi stored procedure Top_CSKCB_QC");
+            _logger.LogError(ex, "Lỗi khi gọi stored procedure DM_CSKCB_TopQuangCao");
         }
 
         ViewData["TopCSKCB"] = topCSKCBList;
@@ -371,88 +388,38 @@ public class HomeController : Controller
         ViewData["UserName"] = sdt;
         ViewData["UserRole"] = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "BenhNhan";
 
-        // Lấy thông tin bệnh nhân
-        var benhNhan = await _db.BenhNhans
-            .FirstOrDefaultAsync(b => b.SDT == sdt);
+        // Ho so con nguoi. KHONG tu tao o day: day la mot GET, ma khoi tu tao cu
+        // chinh la nguon cua nhung dong rac MaDT = 'DT001' (phat hien C-02).
+        var benhNhan = await _db.BenhNhans.FirstOrDefaultAsync(b => b.SDT == sdt);
 
-        // Nếu chưa có bệnh nhân, tạo mới tự động
-        if (benhNhan == null)
+        if (benhNhan is null)
         {
-            benhNhan = new BenhNhan
-            {
-                MaBN = $"BN-{DateTime.Now:yyyyMMdd}-{new Random().Next(1000, 9999)}",
-                MaDT = "DT001",
-                SDT = sdt,
-                TenBN = $"Bệnh nhân {sdt.Substring(sdt.Length - 4)}",
-                DiaChi = "Chưa cập nhật",
-                Email = ""
-            };
-            _db.BenhNhans.Add(benhNhan);
-            await _db.SaveChangesAsync();
+            // Tai khoan vua dang ky OTP nhung chua co ho so — danh sach rong la
+            // KET QUA DUNG, dung thay bang du lieu mau.
+            ViewData["MaBN"] = "";
+            ViewData["TenBN"] = "";
+            ViewData["DiaChi"] = "";
+            ViewData["Email"] = "";
+            return View(new List<LichSuKham>());
         }
 
-        ViewData["MaBN"] = benhNhan.MaBN;
+        ViewData["MaBN"] = await _db.BenhNhanCoSos
+            .Where(h => h.IdBenhNhan == benhNhan.Id)
+            .OrderBy(h => h.Id)
+            .Select(h => h.MaBN)
+            .FirstOrDefaultAsync() ?? "";
         ViewData["TenBN"] = benhNhan.TenBN;
         ViewData["DiaChi"] = benhNhan.DiaChi ?? "";
         ViewData["Email"] = benhNhan.Email ?? "";
 
-        // Lấy danh sách phòng khám đã khám
-        var lichSuKham = await _db.LichSuKhams
-            .Include(ls => ls.PhongKham)
-            .Where(ls => ls.MaBN == benhNhan.MaBN)
-            .OrderByDescending(ls => ls.NgayKhamGanNhat)
-            .ToListAsync();
-
-        // Nếu chưa có lịch sử khám, tạo dữ liệu mẫu
-        if (lichSuKham.Count == 0)
-        {
-            // Đảm bảo có ít nhất phòng khám PKDK Bảo Minh
-            var phongKhamBaoMinh = await _db.PhongKhams.FirstOrDefaultAsync(p => p.MaPhongKham == "PKDK-BM");
-            if (phongKhamBaoMinh != null)
-            {
-                var lichSuMoi = new List<LichSuKham>
-                {
-                    new LichSuKham
-                    {
-                        MaBN = benhNhan.MaBN,
-                        PhongKhamId = phongKhamBaoMinh.Id,
-                        NgayKhamDau = DateTime.Now.AddMonths(-6),
-                        NgayKhamGanNhat = DateTime.Now.AddDays(-5),
-                        SoLanKham = 8,
-                        TrangThai = "Đang theo dõi định kỳ"
-                    }
-                };
-
-                // Thêm phòng khám khác nếu có
-                var phongKhamKhac = await _db.PhongKhams
-                    .Where(p => p.MaPhongKham != "PKDK-BM")
-                    .Take(2)
-                    .ToListAsync();
-
-                foreach (var pk in phongKhamKhac)
-                {
-                    lichSuMoi.Add(new LichSuKham
-                    {
-                        MaBN = benhNhan.MaBN,
-                        PhongKhamId = pk.Id,
-                        NgayKhamDau = DateTime.Now.AddMonths(-4),
-                        NgayKhamGanNhat = DateTime.Now.AddMonths(-1),
-                        SoLanKham = new Random().Next(2, 6),
-                        TrangThai = "Ổn định"
-                    });
-                }
-
-                _db.LichSuKhams.AddRange(lichSuMoi);
-                await _db.SaveChangesAsync();
-
-                // Load lại dữ liệu
-                lichSuKham = await _db.LichSuKhams
-                    .Include(ls => ls.PhongKham)
-                    .Where(ls => ls.MaBN == benhNhan.MaBN)
-                    .OrderByDescending(ls => ls.NgayKhamGanNhat)
-                    .ToListAsync();
-            }
-        }
+        // Lich su kham nay treo vao HO SO TAI MOT CO SO — bang PhongKham da bi
+        // xoa o dot tai kien truc (W-05).
+        var lichSuKham = await (
+            from ls in _db.LichSuKhams
+            join h in _db.BenhNhanCoSos on ls.IdBenhNhanCoSo equals h.Id
+            where h.IdBenhNhan == benhNhan.Id
+            orderby ls.NgayKhamGanNhat descending
+            select ls).ToListAsync();
 
         return View(lichSuKham);
     }
@@ -474,47 +441,49 @@ public class HomeController : Controller
 
         try
         {
+            // Thu tuc cu LocDanhSachBN vua xac thuc doi tac vua loc benh nhan theo
+            // chuoi MaDT. Cot MaDT do lan HAI he ma (ma co so + ma doi tac) cong rac
+            // nen da bi bo (C-01). Nay tach doi: xac thuc o day, loc o DM_BenhNhan_Loc.
+            var doiTac = _db.DoiTacs.AsNoTracking()
+                .FirstOrDefault(x => x.TenDT == model.TenDT);
+
+            if (doiTac is null || !string.Equals(doiTac.MatKhauDoiTac, model.Password, StringComparison.Ordinal))
+                return Json(new { success = false, message = "Tên đối tác hoặc mật khẩu không đúng." });
+
+            // @IDCoSo de NULL = lay moi co so. DM_DoiTac va DM_CSKCB hien KHONG co
+            // cot nao noi voi nhau (do that: MaDT la '1','2' con MaCoSo la '79423',
+            // 'CS2'... — 0 dong trung), nen khong the loc theo doi tac duoc nua.
+            // Muon loc lai thi phai dung quan he doi tac <-> co so truoc da.
             var conn = _db.Database.GetDbConnection();
             if (conn.State != System.Data.ConnectionState.Open)
                 conn.Open();
 
             using var cmd = conn.CreateCommand();
             cmd.CommandType = System.Data.CommandType.StoredProcedure;
-            cmd.CommandText = "LocDanhSachBN";
+            cmd.CommandText = "DM_BenhNhan_Loc";
 
-            var pTenDT = cmd.CreateParameter();
-            pTenDT.ParameterName = "@TenDT";
-            pTenDT.Value = model.TenDT;
-            cmd.Parameters.Add(pTenDT);
-
-            var pPassword = cmd.CreateParameter();
-            pPassword.ParameterName = "@Password";
-            pPassword.Value = model.Password;
-            cmd.Parameters.Add(pPassword);
+            foreach (var (ten, giaTri) in new (string, object?)[]
+                     { ("@TuKhoa", null), ("@IDCoSo", null), ("@Trang", 1), ("@CoTrang", 1000) })
+            {
+                var p = cmd.CreateParameter();
+                p.ParameterName = ten;
+                p.Value = giaTri ?? DBNull.Value;
+                cmd.Parameters.Add(p);
+            }
 
             using var reader = cmd.ExecuteReader();
 
-            // Kiểm tra kết quả đầu tiên â€“ có thể là lỗi xác thực
-            if (reader.FieldCount == 2 && reader.GetName(0) == "Success")
-            {
-                if (reader.Read())
-                {
-                    bool ok = reader.GetBoolean(0);
-                    string msg = reader.GetString(1);
-                    return Json(new { success = ok, message = msg });
-                }
-            }
-
-            // Kết quả bình thường â€“ danh sách bệnh nhân
+            // Ten khoa JSON giu nguyen — JS phia trinh duyet dang doc theo do.
+            // Rieng maDT nay tra ve MA CO SO, vi ho so benh nhan gio treo vao co so.
             var list = new List<object>();
             while (reader.Read())
             {
                 list.Add(new
                 {
-                    id    = reader["ID"],
+                    id    = reader["IDBenhNhan"],
                     maBN  = reader["MaBN"].ToString(),
-                    maDT  = reader["MaDT"].ToString(),
-                    sdt   = reader["SDT"].ToString(),
+                    maDT  = reader["MaCoSo"].ToString(),
+                    sdt   = reader["SDT"]?.ToString() ?? "",
                     tenBN = reader["TenBN"].ToString(),
                     diaChi = reader["DiaChi"]?.ToString() ?? "",
                     email  = reader["Email"]?.ToString() ?? ""
@@ -525,7 +494,7 @@ public class HomeController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Lỗi khi gọi stored procedure LocDanhSachBN");
+            _logger.LogError(ex, "Lỗi khi gọi stored procedure DM_BenhNhan_Loc");
             return Json(new { success = false, message = "Lỗi hệ thống: " + ex.Message });
         }
     }
@@ -571,33 +540,20 @@ public class HomeController : Controller
         if (string.IsNullOrEmpty(sdt) || string.IsNullOrEmpty(model.Endpoint))
             return Json(new { success = false });
 
-        // Kiểm tra đã có endpoint này chưa (tránh lưu trùng)
-        var existing = await _db.PushDangKys
-            .FirstOrDefaultAsync(p => p.Endpoint == model.Endpoint);
+        var idTaiKhoan = await LayIdTaiKhoanAsync(sdt);
+        if (idTaiKhoan is null)
+            return Json(new { success = false });
 
-        if (existing != null)
-        {
-            // Cập nhật SDT nếu đã có (thiết bị đổi tài khoản)
-            existing.SDT = sdt;
-            existing.P256dh = model.P256dh ?? "";
-            existing.Auth = model.Auth ?? "";
-            existing.IdThietBi = model.DeviceId;
-            existing.ThoiGian = DateTime.Now;
-        }
-        else
-        {
-            await _db.PushDangKys.AddAsync(new PushDangKy
-            {
-                SDT = sdt,
-                Endpoint = model.Endpoint,
-                P256dh = model.P256dh ?? "",
-                Auth = model.Auth ?? "",
-                IdThietBi = model.DeviceId,
-                ThoiGian = DateTime.Now
-            });
-        }
+        // Thu tuc tu lo phan "da co endpoint nay chua" (ADR 0008).
+        var ketQua = await _thuTuc.SavePushDangKyAsync(
+            idTaiKhoan.Value,
+            model.Endpoint,
+            model.P256dh ?? "",
+            model.Auth ?? "",
+            model.DeviceId);
 
-        await _db.SaveChangesAsync();
+        if (!ketQua.KetQua.Succeeded)
+            return Json(new { success = false, message = ketQua.KetQua.Message });
         _logger.LogInformation("Đăng ký push thành công cho {SDT}", sdt);
         return Json(new { success = true });
     }
@@ -621,17 +577,20 @@ public class HomeController : Controller
 
         var now = DateTime.Now;
 
-        // 1) Lưu ThongBao vào DB
-        var thongBaos = danhSachNhan.Select(sdt => new ThongBao
+        var idNguoiGui = await LayIdTaiKhoanAsync(nguoiGui);
+        if (idNguoiGui is null)
+            return Json(new { success = false, message = "Không tìm thấy tài khoản người gửi!" });
+
+        // 1) Luu ThongBao — moi dong mot lan goi thu tuc (ADR 0008).
+        var idTheoSdt = await _db.TaiKhoans.AsNoTracking()
+            .Where(t => danhSachNhan.Contains(t.SDT))
+            .ToDictionaryAsync(t => t.SDT, t => t.Id);
+
+        foreach (var sdtNhan in danhSachNhan)
         {
-            NoiDung = smsMessage,
-            ThoiGian = now,
-            NguoiGui = nguoiGui,
-            NguoiNhan = sdt,
-            DaDoc = false
-        }).ToList();
-        await _db.ThongBaos.AddRangeAsync(thongBaos);
-        await _db.SaveChangesAsync();
+            if (idTheoSdt.TryGetValue(sdtNhan, out var idNhan))
+                await _thuTuc.SaveThongBaoAsync(idNguoiGui.Value, idNhan, smsMessage);
+        }
 
         // 2) Gửi Web Push tới tất cả thiết bị đã đăng ký của từng bệnh nhân
         var vapidPublicKey = _config["Vapid:PublicKey"] ?? "";
@@ -641,15 +600,18 @@ public class HomeController : Controller
         var webPushClient = new WebPushClient();
         webPushClient.SetVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
 
-        var danhSachSubscription = await _db.PushDangKys
-            .Where(p => danhSachNhan.Contains(p.SDT))
-            .ToListAsync();
+        var danhSachSubscription = await (
+            from p in _db.PushDangKys.AsNoTracking()
+            join t in _db.TaiKhoans.AsNoTracking() on p.IdTaiKhoan equals t.Id
+            where danhSachNhan.Contains(t.SDT)
+            select new { Sub = p, t.SDT }).ToListAsync();
 
         int pushOk = 0, pushFail = 0;
-        foreach (var sub in danhSachSubscription)
+        foreach (var item in danhSachSubscription)
         {
             try
             {
+                var sub = item.Sub;
                 var subscription = new PushSubscription(sub.Endpoint, sub.P256dh, sub.Auth);
                 var payload = System.Text.Json.JsonSerializer.Serialize(new
                 {
@@ -666,18 +628,16 @@ public class HomeController : Controller
             catch (WebPushException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Gone
                                            || ex.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
-                // Subscription hết hạn â€“ xoá khỏi DB
-                _db.PushDangKys.Remove(sub);
+                // Subscription het han — don ngay qua thu tuc (ADR 0008).
+                await _thuTuc.XoaPushDangKyAsync(item.Sub.Endpoint);
                 pushFail++;
             }
             catch (Exception ex)
             {
-                _logger.LogWarning("Lỗi gửi push cho {SDT}: {Message}", sub.SDT, ex.Message);
+                _logger.LogWarning("Lỗi gửi push cho {SDT}: {Message}", item.SDT, ex.Message);
                 pushFail++;
             }
         }
-
-        if (pushFail > 0) await _db.SaveChangesAsync(); // Lưu xoá subscription lỗi
 
         _logger.LogInformation("Gửi {Total} thông báo: {Ok} push thành công, {Fail} lỗi",
             danhSachNhan.Count, pushOk, pushFail);
@@ -701,19 +661,21 @@ public class HomeController : Controller
         if (string.IsNullOrEmpty(sdt))
             return Json(new { success = false, soMoi = 0, danhSach = Array.Empty<object>() });
 
-        var danhSach = await _db.ThongBaos
-            .Where(t => t.NguoiNhan == sdt)
-            .OrderByDescending(t => t.ThoiGian)
-            .Take(20)
-            .Select(t => new
+        // Ten khoa JSON giu nguyen (NguoiGui la so dien thoai) — JS dang doc theo do.
+        var danhSach = await (
+            from tb in _db.ThongBaos.AsNoTracking()
+            join nhan in _db.TaiKhoans.AsNoTracking() on tb.IdNguoiNhan equals nhan.Id
+            join gui in _db.TaiKhoans.AsNoTracking() on tb.IdNguoiGui equals gui.Id
+            where nhan.SDT == sdt
+            orderby tb.ThoiGian descending
+            select new
             {
-                t.Id,
-                t.NoiDung,
-                t.NguoiGui,
-                t.DaDoc,
-                ThoiGian = t.ThoiGian.ToString("HH:mm dd/MM/yyyy")
-            })
-            .ToListAsync();
+                tb.Id,
+                tb.NoiDung,
+                NguoiGui = gui.SDT,
+                tb.DaDoc,
+                ThoiGian = tb.ThoiGian.ToString("HH:mm dd/MM/yyyy")
+            }).Take(20).ToListAsync();
 
         var soMoi = danhSach.Count(t => !t.DaDoc);
         return Json(new { success = true, soMoi, danhSach });
@@ -729,12 +691,10 @@ public class HomeController : Controller
         if (string.IsNullOrEmpty(sdt))
             return Json(new { success = false });
 
-        var chuaDoc = await _db.ThongBaos
-            .Where(t => t.NguoiNhan == sdt && !t.DaDoc)
-            .ToListAsync();
+        var idNhan = await LayIdTaiKhoanAsync(sdt);
+        if (idNhan is null) return Json(new { success = false });
 
-        chuaDoc.ForEach(t => t.DaDoc = true);
-        await _db.SaveChangesAsync();
+        await _thuTuc.DanhDauThongBaoDaDocAsync(idNhan.Value);
         return Json(new { success = true });
     }
 
@@ -752,18 +712,16 @@ public class HomeController : Controller
             return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
 
         var now = DateTime.Now;
+        var noiDungTraLoi = model.Message.Trim();
 
-        // Lưu vào DB
-        var msg = new ThongBao
-        {
-            NoiDung = model.Message.Trim(),
-            ThoiGian = now,
-            NguoiGui = nguoiGui,
-            NguoiNhan = model.NguoiNhan,
-            DaDoc = false
-        };
-        await _db.ThongBaos.AddAsync(msg);
-        await _db.SaveChangesAsync();
+        var idGui = await LayIdTaiKhoanAsync(nguoiGui);
+        var idNhanTraLoi = await LayIdTaiKhoanAsync(model.NguoiNhan);
+        if (idGui is null || idNhanTraLoi is null)
+            return Json(new { success = false, message = "Không tìm thấy tài khoản." });
+
+        var luu = await _thuTuc.SaveThongBaoAsync(idGui.Value, idNhanTraLoi.Value, noiDungTraLoi);
+        if (!luu.KetQua.Succeeded)
+            return Json(new { success = false, message = luu.KetQua.Message });
 
         // Gửi Push (Tái sử dụng logic gửi)
         var vapidPublicKey = _config["Vapid:PublicKey"] ?? "";
@@ -776,8 +734,8 @@ public class HomeController : Controller
             webPushClient.SetVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
         }
 
-        var danhSachSubscription = await _db.PushDangKys
-            .Where(p => p.SDT == model.NguoiNhan)
+        var danhSachSubscription = await _db.PushDangKys.AsNoTracking()
+            .Where(p => p.IdTaiKhoan == idNhanTraLoi.Value)
             .ToListAsync();
 
         foreach (var sub in danhSachSubscription)
@@ -798,19 +756,19 @@ public class HomeController : Controller
             }
             catch (Exception ex)
             {
-                _logger.LogWarning("Lỗi gửi push cho {SDT}: {Message}", sub.SDT, ex.Message);
+                _logger.LogWarning("Lỗi gửi push cho {SDT}: {Message}", model.NguoiNhan, ex.Message);
             }
         }
 
-        return Json(new { 
-            success = true, 
+        return Json(new {
+            success = true,
             message = "Đã gửi phản hồi thành công.",
             data = new {
-                id = msg.Id,
-                noiDung = msg.NoiDung,
-                nguoiGui = msg.NguoiGui,
-                nguoiNhan = msg.NguoiNhan,
-                thoiGian = msg.ThoiGian.ToString("HH:mm dd/MM/yyyy")
+                id = luu.Id,
+                noiDung = noiDungTraLoi,
+                nguoiGui = nguoiGui,
+                nguoiNhan = model.NguoiNhan,
+                thoiGian = now.ToString("HH:mm dd/MM/yyyy")
             }
         });
     }
@@ -826,16 +784,21 @@ public class HomeController : Controller
         if (string.IsNullOrEmpty(adminId) || string.IsNullOrEmpty(sdtBenhNhan))
             return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
 
-        var messages = await _db.ThongBaos
-            .Where(t => (t.NguoiGui == adminId && t.NguoiNhan == sdtBenhNhan) || 
-                        (t.NguoiGui == sdtBenhNhan && t.NguoiNhan == adminId))
+        var idAdmin = await LayIdTaiKhoanAsync(adminId);
+        var idBenhNhan = await LayIdTaiKhoanAsync(sdtBenhNhan);
+        if (idAdmin is null || idBenhNhan is null)
+            return Json(new { success = true, data = Array.Empty<object>() });
+
+        var messages = await _db.ThongBaos.AsNoTracking()
+            .Where(t => (t.IdNguoiGui == idAdmin.Value && t.IdNguoiNhan == idBenhNhan.Value) ||
+                        (t.IdNguoiGui == idBenhNhan.Value && t.IdNguoiNhan == idAdmin.Value))
             .OrderBy(t => t.ThoiGian)
             .Select(t => new
             {
                 id = t.Id,
                 noiDung = t.NoiDung,
                 thoiGian = t.ThoiGian.ToString("HH:mm dd/MM/yyyy"),
-                isSender = t.NguoiGui == adminId,
+                isSender = t.IdNguoiGui == idAdmin.Value,
                 daDoc = t.DaDoc
             })
             .ToListAsync();
@@ -853,15 +816,20 @@ public class HomeController : Controller
         if (string.IsNullOrEmpty(me) || string.IsNullOrEmpty(doiTac))
             return Json(new { success = false });
 
-        var messages = await _db.ThongBaos
-            .Where(t => (t.NguoiGui == me && t.NguoiNhan == doiTac) || 
-                        (t.NguoiGui == doiTac && t.NguoiNhan == me))
+        var idToi = await LayIdTaiKhoanAsync(me);
+        var idDoiTac = await LayIdTaiKhoanAsync(doiTac);
+        if (idToi is null || idDoiTac is null)
+            return Json(new { success = true, messages = Array.Empty<object>() });
+
+        var messages = await _db.ThongBaos.AsNoTracking()
+            .Where(t => (t.IdNguoiGui == idToi.Value && t.IdNguoiNhan == idDoiTac.Value) ||
+                        (t.IdNguoiGui == idDoiTac.Value && t.IdNguoiNhan == idToi.Value))
             .OrderBy(t => t.ThoiGian)
             .Select(t => new {
                 t.Id,
                 t.NoiDung,
-                t.NguoiGui,
-                t.NguoiNhan,
+                NguoiGui = t.IdNguoiGui == idToi.Value ? me : doiTac,
+                NguoiNhan = t.IdNguoiNhan == idToi.Value ? me : doiTac,
                 t.DaDoc,
                 ThoiGian = t.ThoiGian.ToString("HH:mm dd/MM/yyyy")
             })

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using SixosPwa.Data;
 using SixosPwa.Models;
+using SixosPwa.Services;
 
 namespace SixosPwa.Services.Partner;
 
@@ -80,16 +81,26 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
     private readonly ApplicationDbContext _db;
     private readonly IPartnerGatewayFactory _cuaFactory;
     private readonly ILogger<LuongCongBenhNhan> _logger;
+    private readonly AdminStoredProcedureService _thuTuc;
 
     public LuongCongBenhNhan(
         ApplicationDbContext db,
         IPartnerGatewayFactory cuaFactory,
-        ILogger<LuongCongBenhNhan> logger)
+        ILogger<LuongCongBenhNhan> logger,
+        AdminStoredProcedureService thuTuc)
     {
         _db = db;
         _cuaFactory = cuaFactory;
         _logger = logger;
+        _thuTuc = thuTuc;
     }
+
+    /// <summary>Doi ma co so (chuoi) sang khoa chinh DM_CSKCB.</summary>
+    private Task<long?> LayIdCoSoAsync(string maCoSo, CancellationToken ct) =>
+        _db.DMCSKCBs.AsNoTracking()
+            .Where(x => x.MaCoSo == maCoSo)
+            .Select(x => (long?)x.Id)
+            .FirstOrDefaultAsync(ct);
 
     // ------------------------------------------------------------------
     //  Cay quyet dinh sau OTP
@@ -296,8 +307,7 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
         // duong dang nhap thuan, khong con OTP.
         if (!string.IsNullOrWhiteSpace(lienKet.MaXacNhanTam))
         {
-            lienKet.MaXacNhanTam = null;
-            await _db.SaveChangesAsync(ct);
+            await _thuTuc.XoaMaXacNhanAsync(lienKet.IdTaiKhoan, lienKet.IdCoSo);
         }
 
         return thongTin;
@@ -307,8 +317,15 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
     //  Ho so noi bo
     // ------------------------------------------------------------------
 
+    /// <summary>
+    /// CCCD nay thuoc DM_BenhNhan chu khong con nam tren tai khoan — 5/18 tai khoan
+    /// la Admin/DoiTac, khong co CCCD la DUNG chu khong phai du lieu thieu.
+    /// </summary>
     private Task<TaiKhoan?> TimTaiKhoanAsync(string cccd, CancellationToken ct)
-        => _db.TaiKhoans.FirstOrDefaultAsync(x => x.CCCD == cccd, ct);
+        => (from t in _db.TaiKhoans
+            join p in _db.BenhNhans on t.IdBenhNhan equals p.Id
+            where p.CCCD == cccd
+            select t).FirstOrDefaultAsync(ct);
 
     /// <summary>
     /// Lien ket cua benh nhan tai mot co so. Neu co so nay chua co, tim sang cac
@@ -318,49 +335,47 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
     /// </summary>
     private async Task<TaiKhoanDoiTac?> TimLienKetAsync(long idTaiKhoan, string maCoSo, CancellationToken ct)
     {
+        var idCoSo = await LayIdCoSoAsync(maCoSo, ct);
+        if (idCoSo is null) return null;
+
         var lienKet = await _db.TaiKhoanDoiTacs
-            .FirstOrDefaultAsync(x => x.IdTaiKhoan == idTaiKhoan && x.MaCoSo == maCoSo, ct);
+            .FirstOrDefaultAsync(x => x.IdTaiKhoan == idTaiKhoan && x.IdCoSo == idCoSo.Value, ct);
 
         if (lienKet is not null) return lienKet;
 
         var trangChu = await _db.DoiTacApis
             .AsNoTracking()
-            .Where(x => x.MaCoSo == maCoSo)
+            .Where(x => x.IdCoSo == idCoSo.Value)
             .Select(x => x.TrangChu)
             .FirstOrDefaultAsync(ct);
 
         if (string.IsNullOrWhiteSpace(trangChu)) return null;
 
-        var maCoSoAnhEm = await _db.DoiTacApis
+        var idCoSoAnhEm = await _db.DoiTacApis
             .AsNoTracking()
-            .Where(x => x.TrangChu == trangChu && x.MaCoSo != maCoSo)
-            .Select(x => x.MaCoSo)
+            .Where(x => x.TrangChu == trangChu && x.IdCoSo != idCoSo.Value)
+            .Select(x => x.IdCoSo)
             .ToListAsync(ct);
 
-        if (maCoSoAnhEm.Count == 0) return null;
+        if (idCoSoAnhEm.Count == 0) return null;
 
         return await _db.TaiKhoanDoiTacs
             .FirstOrDefaultAsync(x => x.IdTaiKhoan == idTaiKhoan
-                                   && maCoSoAnhEm.Contains(x.MaCoSo)
+                                   && idCoSoAnhEm.Contains(x.IdCoSo)
                                    && x.MatKhau != null, ct);
     }
 
     private async Task LuuLienKetAsync(long idTaiKhoan, string maCoSo, string matKhau, string? maXacNhan, CancellationToken ct)
     {
-        var lienKet = await TimLienKetAsync(idTaiKhoan, maCoSo, ct);
-
-        if (lienKet is null)
+        var idCoSo = await LayIdCoSoAsync(maCoSo, ct);
+        if (idCoSo is null)
         {
-            lienKet = new TaiKhoanDoiTac { IdTaiKhoan = idTaiKhoan, MaCoSo = maCoSo };
-            await _db.TaiKhoanDoiTacs.AddAsync(lienKet, ct);
+            _logger.LogWarning("Khong tim thay co so {MaCoSo} de luu lien ket", maCoSo);
+            return;
         }
 
-        lienKet.MatKhau = matKhau;
-        lienKet.MaXacNhanTam = maXacNhan;
-        lienKet.DaLienKet = true;
-        lienKet.NgayLienKet = DateTime.Now;
-
-        await _db.SaveChangesAsync(ct);
+        // Thu tuc tu lo them-hay-cap-nhat; UK_HT_TaiKhoanDoiTac chan trung (ADR 0008).
+        await _thuTuc.SaveTaiKhoanDoiTacAsync(idTaiKhoan, idCoSo.Value, matKhau, maXacNhan, true);
     }
 
     private async Task<TaiKhoan> TaoHoSoNoiBoAsync(string maCoSo, string cccd, string dinhDanh, string hoTen, CancellationToken ct)
@@ -369,42 +384,40 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
         var sdt = laEmail ? string.Empty : dinhDanh;
         var email = laEmail ? dinhDanh : null;
 
+        var idCoSo = await LayIdCoSoAsync(maCoSo, ct);
+
+        // Con nguoi truoc (khoa CCCD), roi moi den ho so tai co so.
+        var luuNguoi = await _thuTuc.SaveBenhNhanAsync(
+            cccd,
+            string.IsNullOrWhiteSpace(hoTen) ? dinhDanh : hoTen,
+            sdt,
+            email,
+            null);
+
+        if (idCoSo is not null && luuNguoi.Id > 0)
+        {
+            var daCoHoSo = await _db.BenhNhanCoSos
+                .AnyAsync(x => x.IdBenhNhan == luuNguoi.Id && x.IdCoSo == idCoSo.Value, ct);
+
+            if (!daCoHoSo)
+                await _thuTuc.SaveBenhNhanCoSoAsync(luuNguoi.Id, idCoSo.Value, SinhMaBenhNhan());
+        }
+
         var taiKhoan = await TimTaiKhoanAsync(cccd, ct)
                        ?? await _db.TaiKhoans.FirstOrDefaultAsync(x => x.SDT == dinhDanh, ct);
 
-        if (taiKhoan is null)
-        {
-            taiKhoan = new TaiKhoan { SDT = sdt, Email = email, CCCD = cccd, Role = "BenhNhan" };
-            await _db.TaiKhoans.AddAsync(taiKhoan, ct);
-        }
-        else
-        {
-            taiKhoan.CCCD ??= cccd;
-            if (!laEmail && string.IsNullOrWhiteSpace(taiKhoan.SDT)) taiKhoan.SDT = sdt;
-            if (laEmail && string.IsNullOrWhiteSpace(taiKhoan.Email)) taiKhoan.Email = email;
-        }
+        // MatKhauNoiBo de null: dot nay chua thi hanh phan bam (Dinh chinh ADR 0009).
+        var luuTaiKhoan = await _thuTuc.SaveTaiKhoanAsync(
+            taiKhoan?.Id ?? 0,
+            string.IsNullOrWhiteSpace(sdt) ? (taiKhoan?.SDT ?? dinhDanh) : sdt,
+            email ?? taiKhoan?.Email,
+            taiKhoan?.Role ?? "BenhNhan",
+            null,
+            luuNguoi.Id > 0 ? luuNguoi.Id : taiKhoan?.IdBenhNhan);
 
-        await _db.SaveChangesAsync(ct);
+        var idTaiKhoan = luuTaiKhoan.Id > 0 ? luuTaiKhoan.Id : (taiKhoan?.Id ?? 0);
 
-        // MaDT ghi bang MaCoSo (V7): DMCSKCB va DMDoiTac hien khong co cot nao noi
-        // voi nhau, va MaCoSo moi la thu ca luong nay mang theo.
-        var daCoHoSo = await _db.BenhNhans.AnyAsync(x => x.SDT == dinhDanh && x.MaDT == maCoSo, ct);
-
-        if (!daCoHoSo)
-        {
-            await _db.BenhNhans.AddAsync(new BenhNhan
-            {
-                MaBN = SinhMaBenhNhan(),
-                MaDT = maCoSo,
-                SDT = sdt,
-                Email = email,
-                TenBN = string.IsNullOrWhiteSpace(hoTen) ? dinhDanh : hoTen
-            }, ct);
-
-            await _db.SaveChangesAsync(ct);
-        }
-
-        return taiKhoan;
+        return await _db.TaiKhoans.FirstAsync(x => x.Id == idTaiKhoan, ct);
     }
 
     /// <summary>
@@ -416,8 +429,14 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
         // Khong duoc dung o "da co tai khoan": tai khoan la mot, nhung ho so thi
         // MOI CO SO MOT CAI. Benh nhan tung dung co so A sang co so B ma chi kiem
         // tai khoan thi B khong co ho so nao, va trang benh nhan khong biet chao ai.
-        var daCoHoSo = await _db.BenhNhans
-            .AnyAsync(x => (x.SDT == dinhDanh || x.Email == dinhDanh) && x.MaDT == maCoSo, ct);
+        var idCoSo = await LayIdCoSoAsync(maCoSo, ct);
+        if (idCoSo is null) return;
+
+        var daCoHoSo = await (
+            from p in _db.BenhNhans
+            join h in _db.BenhNhanCoSos on p.Id equals h.IdBenhNhan
+            where (p.SDT == dinhDanh || p.Email == dinhDanh) && h.IdCoSo == idCoSo.Value
+            select p.Id).AnyAsync(ct);
 
         if (daCoHoSo) return;
 

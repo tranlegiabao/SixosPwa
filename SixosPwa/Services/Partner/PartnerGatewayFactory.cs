@@ -44,17 +44,31 @@ public class PartnerGatewayFactory : IPartnerGatewayFactory
     {
         if (string.IsNullOrWhiteSpace(maCoSo)) return null;
 
-        var cauHinh = await _db.DoiTacApis
+        // Dang ky API nay khoa theo IDCoSo (khoa ngoai), khong con theo chuoi MaCoSo.
+        var idCoSo = await _db.DMCSKCBs
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.MaCoSo == maCoSo, ct);
+            .Where(x => x.MaCoSo == maCoSo)
+            .Select(x => (long?)x.Id)
+            .FirstOrDefaultAsync(ct);
+
+        var cauHinh = idCoSo is null
+            ? null
+            : await _db.DoiTacApis
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.IdCoSo == idCoSo.Value, ct);
 
         // Co so chua co dong nao trong DM_DoiTacApi: coi nhu khong co API rieng.
         // Dung mot ban ghi tam de luong phia sau khong phai kiem null khap noi.
-        cauHinh ??= new DoiTacApi { MaCoSo = maCoSo, KieuApi = KieuApiDoiTac.KhongCo, Active = 1 };
+        cauHinh ??= new DoiTacApi
+        {
+            IdCoSo = idCoSo ?? 0,
+            KieuApi = KieuApiDoiTac.KhongCo,
+            Active = true
+        };
 
         // Tat mot co so bang UPDATE Active = 0 thi no rot ve nhanh noi bo,
         // khong phai build lai app (tieu chi nghiem thu so 7).
-        var kieu = cauHinh.Active == 1 ? cauHinh.KieuApi : KieuApiDoiTac.KhongCo;
+        var kieu = cauHinh.Active ? cauHinh.KieuApi : KieuApiDoiTac.KhongCo;
 
         var cua = _cacCua.FirstOrDefault(x => string.Equals(x.KieuApi, kieu, StringComparison.OrdinalIgnoreCase));
 

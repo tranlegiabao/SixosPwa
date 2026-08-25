@@ -55,8 +55,8 @@ public sealed class DoiTacController : AdminControllerBase
     public async Task<IActionResult> Create(DoiTacEditViewModel model)
     {
         Normalize(model);
-        if (string.IsNullOrWhiteSpace(model.Password))
-            ModelState.AddModelError(nameof(model.Password), "Vui lòng nhập mật khẩu đối tác.");
+        if (string.IsNullOrWhiteSpace(model.MatKhauDoiTac))
+            ModelState.AddModelError(nameof(model.MatKhauDoiTac), "Vui lòng nhập mật khẩu đối tác.");
         if (ModelState.IsValid && await _db.DoiTacs.AnyAsync(x => x.MaDT == model.MaDT))
             ModelState.AddModelError(nameof(model.MaDT), "Mã đối tác đã tồn tại.");
 
@@ -96,7 +96,7 @@ public sealed class DoiTacController : AdminControllerBase
 
         var result = await _adminStoredProcedures.SaveDoiTacAsync(
             model,
-            updatePassword: !string.IsNullOrWhiteSpace(model.Password));
+            updatePassword: !string.IsNullOrWhiteSpace(model.MatKhauDoiTac));
         if (!result.Succeeded)
         {
             if (result.Code == 3) return NotFound();
@@ -116,7 +116,7 @@ public sealed class DoiTacController : AdminControllerBase
         model.SDT = model.SDT?.Trim();
         model.Email = model.Email?.Trim();
         model.BrandName = model.BrandName?.Trim();
-        model.Password = model.Password?.Trim();
+        model.MatKhauDoiTac = model.MatKhauDoiTac?.Trim();
     }
 
     private static DoiTacEditViewModel ToViewModel(DoiTac entity) => new()

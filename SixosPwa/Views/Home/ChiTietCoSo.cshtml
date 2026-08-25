@@ -6,20 +6,10 @@
     var img = Uri.UnescapeDataString(ViewData["Img"]?.ToString() ?? "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80");
     var logo = Uri.UnescapeDataString(ViewData["Logo"]?.ToString() ?? "https://tse1.mm.bing.net/th/id/OIP.JgUNpJPll-8BkzE3XN6LggHaHa?r=0&pid=Api&P=0&h=180");
     var coSoYTe = ViewData["CoSoYTe"] as DMCSKCB;
+    // Gio lam viec nay do controller nap tu bang con DM_CSKCB_GioLamViec roi ma hoa
+    // san vao ViewData["TGLamViec"] — bang co so khong con giu cot gio nao.
     OperatingHours? parsedOperatingHours = null;
-    if (coSoYTe != null
-        && !string.IsNullOrWhiteSpace(coSoYTe.NgayLamViec)
-        && coSoYTe.GioMoCua.HasValue
-        && coSoYTe.GioDongCua.HasValue)
-    {
-        parsedOperatingHours = new OperatingHours(
-            coSoYTe.NgayLamViec!,
-            coSoYTe.GioMoCua.Value.ToString(@"hh\:mm"),
-            coSoYTe.GioDongCua.Value.ToString(@"hh\:mm"));
-    }
-
-    if (parsedOperatingHours == null)
-        OperatingHours.TryParse(ViewData["TGLamViec"]?.ToString(), out parsedOperatingHours);
+    OperatingHours.TryParse(ViewData["TGLamViec"]?.ToString(), out parsedOperatingHours);
 
     var operatingHours = parsedOperatingHours ?? OperatingHours.Default;
     var noiDungCskcb = ViewData["NoiDungCskcb"] as IReadOnlyDictionary<string, string>
@@ -38,12 +28,12 @@
 <style>
     .app-nav { display: none !important; }
     .bottom-nav { display: none !important; }
-    body { 
-        background: #ffffff !important; 
-        padding-top: 74px !important; 
-        padding-bottom: 130px !important; 
-        margin: 0 !important; 
-        font-family: 'Inter', system-ui, sans-serif; 
+    body {
+        background: #ffffff !important;
+        padding-top: 74px !important;
+        padding-bottom: 130px !important;
+        margin: 0 !important;
+        font-family: 'Inter', system-ui, sans-serif;
     }
     @@media (min-width: 993px) {
         body.co-chan-trang {
@@ -72,7 +62,7 @@
     .ytv-header-title h1 { margin: 0; font-size: 20px; font-weight: 700; color: #ffffff; }
     .ytv-header-title p { margin: 4px 0 0; font-size: 14px; opacity: 0.9; color: #ffffff; }
     .ytv-header-menu { font-size: 24px; cursor: pointer; color: #ffffff; position: relative; }
-    
+
     .ytv-dropdown { display: none; position: absolute; top: 100%; right: 0; background: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); min-width: 240px; z-index: 9999; animation: fadeDown 0.2s ease; margin-top: 15px; }
     .ytv-dropdown.open { display: block; }
     @@keyframes fadeDown {
@@ -219,7 +209,7 @@
         margin-bottom: 16px;
     }
     .verified-badge i { color: #10b981; }
-    
+
     .hospital-title {
         font-size: 32px;
         font-weight: 700;
@@ -320,7 +310,7 @@
         display: inline-block;
         animation: status-pulse 2s infinite;
     }
-    
+
     @@keyframes status-pulse {
         0% {
             box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.4);
@@ -448,14 +438,14 @@
         font-size: 28px; color: #94a3b8; cursor: pointer; transition: color 0.2s; line-height: 1;
     }
     .ytv-modal-close:hover { color: #0f172a; }
-    
+
     .login-step { display: none; }
     .login-step.active { display: block; animation: fadeIn 0.4s; }
     @@keyframes fadeIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
 
     .login-title { font-size: 24px; font-weight: 800; color: #0f172a; margin: 0 0 10px 0; text-align: center; }
     .login-desc { font-size: 14px; color: #64748b; margin-bottom: 30px; text-align: center; line-height: 1.6; }
-    
+
     .input-group { margin-bottom: 24px; position: relative; }
     .input-group i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 18px; }
     .ytv-input {
@@ -464,14 +454,14 @@
         box-sizing: border-box; font-family: inherit; font-weight: 500;
     }
     .ytv-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
-    
+
     .btn-submit {
         width: 100%; background: #1d4ed8; color: #0f172a; border: none; border-radius: 12px;
         padding: 16px; font-size: 16px; font-weight: 700; cursor: pointer; transition: background 0.2s;
         box-shadow: 0 4px 12px rgba(29, 78, 216, 0.2);
     }
     .btn-submit:hover { background: #1e40af; transform: translateY(-1px); }
-    
+
     .otp-inputs { display: flex; gap: 12px; justify-content: center; margin-bottom: 30px; }
     .otp-input {
         width: 50px; height: 60px; border: 2px solid #e2e8f0; border-radius: 12px;
@@ -479,17 +469,17 @@
         outline: none; transition: all 0.2s; background: #f8fafc;
     }
     .otp-input:focus { border-color: #3b82f6; background: white; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
-    
+
     .resend-text { text-align: center; margin-top: 24px; font-size: 14px; color: #64748b; }
     .resend-link { color: #3b82f6; font-weight: 600; text-decoration: none; cursor: pointer; transition: color 0.2s; }
     .resend-link:hover { color: #1d4ed8; text-decoration: underline; }
 
     @@media (max-width: 992px) {
         .ytv-main { flex-direction: column; padding-left: 0; }
-        .ytv-sidebar { 
-            position: relative; top: 0; left: 0; height: auto; z-index: 1; width: 100%; 
+        .ytv-sidebar {
+            position: relative; top: 0; left: 0; height: auto; z-index: 1; width: 100%;
             flex-direction: column; overflow: hidden; padding: 10px 16px;
-            border-right: none; border-bottom: 1px solid #e2e8f0; 
+            border-right: none; border-bottom: 1px solid #e2e8f0;
             align-items: stretch; gap: 0;
         }
         .sidebar-scroll-area {
@@ -499,11 +489,11 @@
             overflow-x: hidden;
             overflow-y: auto;
         }
-        .ytv-menu-item { 
-            margin: 0 !important; 
+        .ytv-menu-item {
+            margin: 0 !important;
             padding: 8px 16px !important;
             border-radius: 8px !important;
-            white-space: nowrap; 
+            white-space: nowrap;
         }
         .sidebar-logo-container {
             margin-bottom: 0 !important;
@@ -521,21 +511,21 @@
         .intro-section { flex-direction: column; text-align: left; }
         .intro-image { margin-top: 24px; width: 100%; max-width: 400px; }
         .hospital-title-row { flex-direction: column; gap: 16px; }
-        .operating-hours-box { 
-            width: auto !important; 
-            margin: 0 !important; 
-            padding: 10px 16px !important; 
-            flex-shrink: 0 !important; 
+        .operating-hours-box {
+            width: auto !important;
+            margin: 0 !important;
+            padding: 10px 16px !important;
+            flex-shrink: 0 !important;
         }
-        .hospital-actions { 
-            padding: 0 !important; 
-            margin: 0 !important; 
-            flex-shrink: 0 !important; 
+        .hospital-actions {
+            padding: 0 !important;
+            margin: 0 !important;
+            flex-shrink: 0 !important;
         }
-        .btn-outline { 
-            padding: 8px 16px !important; 
-            border-radius: 8px !important; 
-            font-size: 13px !important; 
+        .btn-outline {
+            padding: 8px 16px !important;
+            border-radius: 8px !important;
+            font-size: 13px !important;
             width: auto !important;
         }
         .oh-header { margin-bottom: 4px !important; }
@@ -1083,7 +1073,7 @@
         <a class="ytv-menu-item @(activeLoaiND == NDCSKCB.LienHe ? "active" : string.Empty)" onclick="showTab('lien-he', this, event)" href="#lien-he">
             <i class="fas fa-headset"></i> Liên hệ
         </a>
-        
+
         </div>
         @{
             // Hai nut di chung MOT cong dang nhap, chi khac cho ha canh
@@ -1119,7 +1109,7 @@
             <div class="oh-status"><span class="status-dot"></span> Đang mở cửa</div>
         </div>
     </div>
-    
+
 
     <div class="ytv-content">
         <!-- Intro Sections (Tabs) -->
@@ -1260,7 +1250,7 @@
 </div>
 
 
-<!-- Floating Action Button (Đăng ký khám) 
+<!-- Floating Action Button (Đăng ký khám)
 <a href="/DangNhap/Login" class="fab-btn">
     <i class="far fa-calendar-plus"></i>
     <span class="fab-text">ĐĂNG<br>KÝ<br>KHÁM</span>

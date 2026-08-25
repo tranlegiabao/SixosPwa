@@ -93,6 +93,39 @@ _Tránh_: kết nối, đồng bộ tài khoản
 Trang chủ dành cho bệnh nhân của cơ sở **không có** API riêng. Đợt 2026-08 mới chỉ có giao diện.
 _Tránh_: dashboard, trang chủ (chung chung)
 
+### Nền dữ liệu (chốt 2026-08-24)
+
+**Con người**:
+Một dòng `DM_BenhNhan`, định danh bằng **CCCD** — khoá tự nhiên, tồn tại đúng một nơi trong cả cơ sở dữ
+liệu. Một con người có thể khám ở nhiều cơ sở nhưng vẫn chỉ là một dòng.
+_Tránh_: bệnh nhân (mơ hồ — xem *Hồ sơ tại cơ sở*), user, tài khoản
+
+**Hồ sơ tại cơ sở**:
+Một dòng `DM_BenhNhanCoSo` — việc một *con người* có mặt tại một *cơ sở*, mang mã bệnh nhân do chính cơ
+sở đó cấp. Cùng một người ở hai cơ sở là **hai hồ sơ, một con người**. Thực đo 2026-08-24: 13 con người
+ứng với 15 hồ sơ.
+_Tránh_: bệnh nhân, bản ghi BN
+
+**Mã BN**:
+`DM_BenhNhanCoSo.MaBN` — do **từng cơ sở** cấp, nên chỉ duy nhất *trong phạm vi một cơ sở*. Hai cơ sở
+khác nhau hoàn toàn có thể cấp trùng một chuỗi. Không bao giờ dùng `MaBN` trần làm khoá nối.
+_Tránh_: mã bệnh nhân toàn hệ, ID bệnh nhân
+
+**Mật khẩu nội bộ**:
+`HT_TaiKhoan.MatKhauNoiBo` — để Admin và Đối tác đăng nhập vào SixosPwa. **Có băm**. Bệnh nhân không
+dùng cột này (họ đi bằng OTP).
+_Tránh_: mật khẩu (chung chung — dễ lẫn với *Mật khẩu đối tác*)
+
+**Mật khẩu đối tác**:
+`HT_TaiKhoanDoiTac.MatKhau` — do máy sinh, dùng để POST nguyên văn sang hệ đối tác lúc bàn giao. **Cố ý
+không băm**, bắt buộc theo ADR 0005. Không bao giờ dùng để đăng nhập vào SixosPwa.
+_Tránh_: mật khẩu, mật khẩu UB
+
+**Phòng khám**:
+**Không tồn tại.** Bảng `PhongKham` từng có 3 dòng dữ liệu bịa, đã bỏ ở đợt 2026-08-24. Mọi "nơi khám"
+đều là *Cơ sở*.
+_Tránh_: dùng lại từ này dưới bất kỳ dạng nào
+
 ## Quyết định
 
 Xem [`docs/adr/`](docs/adr/). Hai quyết định định hình khuôn mẫu này:
@@ -102,3 +135,8 @@ Xem [`docs/adr/`](docs/adr/). Hai quyết định định hình khuôn mẫu nà
 - [0003](docs/adr/0003-vao-ub-qua-cua-an-danh.md) — vì sao bàn giao bằng cửa ẩn danh sẵn có của đối tác thay vì mở SSO.
 - [0004](docs/adr/0004-ban-giao-thay-vi-dung-lai-man.md) — vì sao không dựng lại màn của đối tác trong PWA.
 - [0005](docs/adr/0005-luu-mat-khau-khong-bam.md) — vì sao mật khẩu lưu đọc lại được thay vì băm.
+- [0006](docs/adr/0006-chan-dang-nhap-cheo-co-so.md) — vì sao chặn phiên đang đứng ở cơ sở khác ngay tại lối vào.
+- [0007](docs/adr/0007-moi-truong-thu-that-qua-cloudflare-tunnel.md) — vì sao môi trường thử đi qua Cloudflare tunnel.
+- [0008](docs/adr/0008-moi-duong-ghi-qua-stored-procedure.md) — vì sao mọi đường ghi đi qua stored procedure.
+- [0009](docs/adr/0009-bam-mat-khau-noi-bo-tach-khoi-mat-khau-doi-tac.md) — vì sao tách mật khẩu nội bộ khỏi mật khẩu đối tác.
+- [0010](docs/adr/0010-doi-ten-lan-toi-javascript.md) — vì sao đổi tên lan tới tận JavaScript dù ràng buộc ban đầu cấm.

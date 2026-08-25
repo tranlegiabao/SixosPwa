@@ -99,12 +99,15 @@ public sealed class DoiTacEditViewModel
     public string? BrandName { get; set; }
 
     [StringLength(255, ErrorMessage = "Mật khẩu đối tác tối đa 255 ký tự.")]
-    public string? Password { get; set; }
+    public string? MatKhauDoiTac { get; set; }
 }
 
 public sealed class CoSoYTeListViewModel
 {
     public IReadOnlyList<DMCSKCB> Items { get; init; } = Array.Empty<DMCSKCB>();
+
+    /// <summary>Ma nhom co so tra cuu theo IDNhomCS — nhom nay la khoa ngoai, khong con la chuoi tren bang co so.</summary>
+    public IReadOnlyDictionary<long, string> MaNhomTheoId { get; init; } = new Dictionary<long, string>();
     public string? Query { get; init; }
     public string? LoaiCS { get; init; }
     public int Page { get; init; }
@@ -154,6 +157,18 @@ public sealed class CoSoYTeEditViewModel
 
     public bool XacMinh { get; set; }
 
+    public bool Active { get; set; } = true;
+
+    [StringLength(20)]
+    public string? SDT { get; set; }
+
+    [EmailAddress(ErrorMessage = "Email không hợp lệ.")]
+    [StringLength(100)]
+    public string? Email { get; set; }
+
+    [StringLength(100)]
+    public string? TenTM { get; set; }
+
     [StringLength(500)]
     public string? Img { get; set; }
 
@@ -200,6 +215,11 @@ public sealed class CoSoYTeEditViewModel
 
 public sealed class BenhNhanListViewModel
 {
+    /// <summary>Ma co so cua tung ho so benh nhan — ho so nay nam o DM_BenhNhanCoSo.</summary>
+    public IReadOnlyDictionary<long, string> MaCoSoTheoBenhNhan { get; init; } = new Dictionary<long, string>();
+
+    /// <summary>Ma ho so (MaBN) cua tung benh nhan — cung nam o DM_BenhNhanCoSo.</summary>
+    public IReadOnlyDictionary<long, string> MaBNTheoBenhNhan { get; init; } = new Dictionary<long, string>();
     public IReadOnlyList<BenhNhan> Items { get; init; } = Array.Empty<BenhNhan>();
     public string? Query { get; init; }
     public string? MaDT { get; init; }

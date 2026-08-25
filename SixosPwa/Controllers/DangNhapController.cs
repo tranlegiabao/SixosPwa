@@ -20,16 +20,20 @@ public class DangNhapController : Controller
     private readonly ApplicationDbContext _dbContext;
     private readonly ILuongCongBenhNhan _luong;
 
+    private readonly AdminStoredProcedureService _thuTuc;
+
     public DangNhapController(
         IMemoryCache cache,
         ITaiKhoanService taiKhoanService,
         ApplicationDbContext dbContext,
-        ILuongCongBenhNhan luong)
+        ILuongCongBenhNhan luong,
+        AdminStoredProcedureService thuTuc)
     {
         _cache = cache;
         _taiKhoanService = taiKhoanService;
         _dbContext = dbContext;
         _luong = luong;
+        _thuTuc = thuTuc;
     }
 
     [HttpGet]
@@ -126,11 +130,11 @@ public class DangNhapController : Controller
             taiKhoan = _dbContext.TaiKhoans.AsNoTracking().FirstOrDefault(tk => tk.SDT == term);
         }
 
-        if (taiKhoan != null && (string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase) 
+        if (taiKhoan != null && (string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase)
                                  || string.Equals(taiKhoan.Role, "DoiTac", StringComparison.OrdinalIgnoreCase)))
         {
-            return Json(new { 
-                success = true, 
+            return Json(new {
+                success = true,
                 isPassword = true,
                 message = "Vui lòng nhập mật khẩu của bạn để đăng nhập."
             });
@@ -142,12 +146,12 @@ public class DangNhapController : Controller
         // Luu vao cache trong 5 phut
         _cache.Set($"OTP_{input}", otpCode, TimeSpan.FromMinutes(5));
 
-        var displayMessage = input.Contains('@') 
+        var displayMessage = input.Contains('@')
             ? $"Mã OTP đã gửi thành công tới email {input}!"
             : $"Mã OTP đã gửi thành công tới số {input}!";
 
-        return Json(new { 
-            success = true, 
+        return Json(new {
+            success = true,
             message = displayMessage,
             otpDemo = otpCode
         });
@@ -181,11 +185,15 @@ public class DangNhapController : Controller
         // Tìm tài khoản từ database theo SĐT hoặc Email trước để kiểm tra role
         var taiKhoan = await _taiKhoanService.DangNhapAsync(input, "");
 
-        if (taiKhoan != null && (string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase) 
+        if (taiKhoan != null && (string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase)
                                  || string.Equals(taiKhoan.Role, "DoiTac", StringComparison.OrdinalIgnoreCase)))
         {
             // Kiểm tra mật khẩu trong database
-            if (string.IsNullOrEmpty(taiKhoan.MatKhau) || !string.Equals(taiKhoan.MatKhau, otpInput, StringComparison.Ordinal))
+            // Cot nay la MatKhauNoiBo (ADR 0009). Sau migration no dang NULL vi phan
+            // BAM chua thi hanh — xem muc Dinh chinh cua ADR 0009 — nen hai tai khoan
+            // Admin/DoiTac tam thoi roi vao nhanh "mat khau khong chinh xac".
+            if (string.IsNullOrEmpty(taiKhoan.MatKhauNoiBo)
+                || !string.Equals(taiKhoan.MatKhauNoiBo, otpInput, StringComparison.Ordinal))
             {
                 return Json(new { success = false, message = "Mật khẩu không chính xác!" });
             }
@@ -209,9 +217,9 @@ public class DangNhapController : Controller
                 message = "Tài khoản quản trị vui lòng đăng nhập tại khu vực Admin."
             });
         }
-        
+
         string role = "BenhNhan";
-            
+
             if (taiKhoan != null)
             {
                 // Chỉ duy trì hai vai trò công khai. Dữ liệu cũ User/DoiTac được quy về bệnh nhân.
@@ -634,30 +642,16 @@ public class DangNhapController : Controller
 
         try
         {
-            var existingDevice = await _dbContext.ThietBis
-                .FirstOrDefaultAsync(tb => tb.SDT == soDienThoai && tb.IdThietBi == deviceId);
+            // Thiet bi nay khoa theo IDTaiKhoan chu khong con theo chuoi so dien thoai,
+            // va moi duong ghi di qua thu tuc (ADR 0008). Thu tuc tu lo them-hay-cap-nhat.
+            var idTaiKhoan = await _dbContext.TaiKhoans.AsNoTracking()
+                .Where(t => t.SDT == soDienThoai)
+                .Select(t => (long?)t.Id)
+                .FirstOrDefaultAsync();
 
-            if (existingDevice != null)
-            {
-                existingDevice.TenThietBi = deviceName;
-                existingDevice.TrangThai = true;
-                existingDevice.MaBN = soDienThoai;
-                _dbContext.ThietBis.Update(existingDevice);
-            }
-            else
-            {
-                var newDevice = new ThietBi
-                {
-                    SDT = soDienThoai,
-                    MaBN = soDienThoai,
-                    IdThietBi = deviceId,
-                    TrangThai = true,
-                    TenThietBi = deviceName
-                };
-                await _dbContext.ThietBis.AddAsync(newDevice);
-            }
+            if (idTaiKhoan is null) return;
 
-            await _dbContext.SaveChangesAsync();
+            await _thuTuc.SaveThietBiAsync(idTaiKhoan.Value, deviceId, deviceName, true);
         }
         catch (Exception)
         {

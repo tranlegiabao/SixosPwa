@@ -72,7 +72,9 @@ public sealed class TaiKhoanController : AdminControllerBase
 
         if (!ModelState.IsValid) return View(model);
 
-        var result = await _adminStoredProcedures.SaveTaiKhoanAsync(0, model.SDT, model.Role);
+        // MatKhauNoiBo de null — phan bam chua thi hanh (Dinh chinh ADR 0009).
+        var (result, _) = await _adminStoredProcedures.SaveTaiKhoanAsync(
+            0, model.SDT, null, model.Role, null, null);
         if (!result.Succeeded)
         {
             ModelState.AddModelError(nameof(model.SDT), result.Message ?? "Không thể tạo tài khoản.");
@@ -112,10 +114,13 @@ public sealed class TaiKhoanController : AdminControllerBase
 
         if (!ModelState.IsValid) return View(model);
 
-        var result = await _adminStoredProcedures.SaveTaiKhoanAsync(
+        var (result, _) = await _adminStoredProcedures.SaveTaiKhoanAsync(
             model.Id,
             entity.SDT,
-            NormalizeRole(model.Role));
+            entity.Email,
+            NormalizeRole(model.Role),
+            null,
+            entity.IdBenhNhan);
         if (!result.Succeeded)
         {
             if (result.Code == 3) return NotFound();

@@ -58,8 +58,8 @@ public sealed class DangNhapController : Controller
             return Json(new { success = false, message = "Tài khoản không có quyền truy cập khu vực Admin." });
         }
 
-        return Json(new { 
-            success = true, 
+        return Json(new {
+            success = true,
             isPassword = true,
             message = "Vui lòng nhập mật khẩu Admin để đăng nhập."
         });
@@ -84,8 +84,11 @@ public sealed class DangNhapController : Controller
             });
         }
 
-        // So khớp mật khẩu từ cột MatKhau trong bảng TaiKhoan
-        if (string.IsNullOrEmpty(taiKhoan.MatKhau) || !string.Equals(taiKhoan.MatKhau, otpInput, StringComparison.Ordinal))
+        // Cot nay la MatKhauNoiBo (ADR 0009). Sau migration no dang NULL vi phan
+        // BAM chua duoc thi hanh — xem muc Dinh chinh cua ADR 0009. Tai khoan
+        // Admin/DoiTac vi vay tam thoi khong dang nhap duoc, va roi vao nhanh duoi.
+        if (string.IsNullOrEmpty(taiKhoan.MatKhauNoiBo)
+            || !string.Equals(taiKhoan.MatKhauNoiBo, otpInput, StringComparison.Ordinal))
         {
             return Json(new { success = false, message = "Mật khẩu không chính xác." });
         }

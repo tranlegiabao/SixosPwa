@@ -3,7 +3,7 @@ namespace SixosPwa.Models;
 /// <summary>
 /// Lien ket mot tai khoan SixosPwa voi mot co so doi tac, kem credential ben do.
 /// Tach rieng thay vi nhet them cot vao TaiKhoan, vi mot benh nhan co the co
-/// nhieu co so doi tac voi mat khau khac nhau (giai doan 2 tro di).
+/// nhieu co so doi tac voi mat khau khac nhau.
 /// </summary>
 public class TaiKhoanDoiTac
 {
@@ -11,7 +11,8 @@ public class TaiKhoanDoiTac
 
     public long IdTaiKhoan { get; set; }
 
-    public string MaCoSo { get; set; } = "";
+    /// <summary>Khoa ngoai sang <see cref="DMCSKCB"/> — truoc day la chuoi MaCoSo.</summary>
+    public long IdCoSo { get; set; }
 
     /// <summary>
     /// Mat khau ben doi tac. Luu DOC LAI DUOC, khong bam — bat buoc de POST

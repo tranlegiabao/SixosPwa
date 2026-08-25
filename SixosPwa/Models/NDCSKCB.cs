@@ -2,6 +2,7 @@ namespace SixosPwa.Models;
 
 public sealed class NDCSKCB
 {
+    /// <summary>Ma chu de — nay la DM_ChuDe.MaChuDe, truoc day la chuoi LoaiND.</summary>
     public const string GioiThieu = "gioithieu";
     public const string DichVu = "dichvu";
     public const string DoiNgu = "doingu";
@@ -18,8 +19,9 @@ public sealed class NDCSKCB
     };
 
     public long Id { get; set; }
-    public string? MaCoSo { get; set; }
-    public string? TenCoSo { get; set; }
+    public long IdCoSo { get; set; }
+    public long IdChuDe { get; set; }
     public string? NoiDung { get; set; }
-    public string? LoaiND { get; set; }
+    public DateTime NgayTao { get; set; } = DateTime.Now;
+    public DateTime? NgayCapNhat { get; set; }
 }

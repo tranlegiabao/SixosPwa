@@ -43,41 +43,40 @@ public sealed class DashboardController : AdminControllerBase
         var selectedTopic = topicId.HasValue
             ? chuDeList.FirstOrDefault(x => x.ID == topicId.Value)
             : null;
-        var selectedNhom = selectedFacility == null
+        var selectedNhom = selectedFacility?.IdNhomCS is null
             ? null
-            : nhomCSList.FirstOrDefault(x =>
-                string.Equals(x.LoaiCS, selectedFacility.LoaiCS, StringComparison.OrdinalIgnoreCase));
+            : nhomCSList.FirstOrDefault(x => x.ID == selectedFacility.IdNhomCS);
         var noiDung = selectedFacility != null && selectedTopic != null
-            ? await _adminStoredProcedures.GetNoiDungCskcbAsync(
-                selectedFacility.MaCoSo,
-                selectedFacility.TenCoSo,
-                selectedTopic.ID)
+            ? await _adminStoredProcedures.GetNoiDungCskcbAsync(selectedFacility.Id, selectedTopic.ID)
             : null;
 
-        
+
         // Count of patient accounts by MaCoSo
-        var facilityPatients = await _db.TaiKhoanDoiTacs
-            .Join(_db.TaiKhoans, 
-                  td => td.IdTaiKhoan, 
-                  tk => tk.Id, 
-                  (td, tk) => new { td.MaCoSo, tk.SDT, tk.Id, tk.CCCD })
+        // CCCD nay thuoc DM_BenhNhan, va co so thi khoa theo IDCoSo.
+        var facilityPatients = await (
+            from td in _db.TaiKhoanDoiTacs.AsNoTracking()
+            join tk in _db.TaiKhoans.AsNoTracking() on td.IdTaiKhoan equals tk.Id
+            join cs in _db.DMCSKCBs.AsNoTracking() on td.IdCoSo equals cs.Id
+            join p in _db.BenhNhans.AsNoTracking() on tk.IdBenhNhan equals p.Id into hoSo
+            from p in hoSo.DefaultIfEmpty()
+            select new { MaCoSo = cs.MaCoSo, tk.SDT, tk.Id, CCCD = p != null ? p.CCCD : null })
             .ToListAsync();
-            
+
         var patientsByFacility = facilityPatients
             .GroupBy(x => x.MaCoSo)
             .ToDictionary(
-                g => g.Key, 
+                g => g.Key,
                 g => g.Select(x => new PatientAccountStat { Id = x.Id, SDT = x.SDT ?? "", CCCD = x.CCCD ?? "" }).ToList()
             );
 
         var groups = nhomCSList
-            .Where(x => new[] { "benhvien", "nhakhoa", "pkdk", "nhathuoc" }.Contains(x.LoaiCS?.ToLower()))
+            .Where(x => new[] { "benhvien", "nhakhoa", "pkdk", "nhathuoc" }.Contains(x.MaNhom.ToLower()))
             .Select(n => new FacilityGroupStat
             {
-                TenLoaiCS = n.TenLoaiCS ?? "",
-                LoaiCS = n.LoaiCS ?? "",
+                TenLoaiCS = n.TenNhom,
+                LoaiCS = n.MaNhom,
                 Facilities = facilityList
-                    .Where(f => string.Equals(f.LoaiCS, n.LoaiCS, StringComparison.OrdinalIgnoreCase))
+                    .Where(f => f.IdNhomCS == n.ID)
                     .Select(f => new FacilityStat
                     {
                         Id = f.Id,
@@ -98,7 +97,7 @@ public sealed class DashboardController : AdminControllerBase
             PartnerCount = await _db.DoiTacs.CountAsync(),
             PatientCount = await _db.BenhNhans.CountAsync(),
             FacilityCount = await _db.DMCSKCBs.CountAsync(),
-            VerifiedFacilityCount = await _db.DMCSKCBs.CountAsync(x => x.XacMinh == 1),
+            VerifiedFacilityCount = await _db.DMCSKCBs.CountAsync(x => x.XacMinh),
             NotificationCount = await _db.ThongBaos.CountAsync(),
             PushSubscriptionCount = await _db.PushDangKys.CountAsync(),
             UnreadNotificationCount = await _db.ThongBaos.CountAsync(x => !x.DaDoc),
@@ -154,8 +153,7 @@ public sealed class DashboardController : AdminControllerBase
         }
 
         var result = await _adminStoredProcedures.SaveNoiDungCskcbAsync(
-            facility.MaCoSo,
-            facility.TenCoSo,
+            facility.Id,
             topic.ID,
             SanitizeHtml(model.NoiDung));
         if (!result.Succeeded)
@@ -178,10 +176,7 @@ public sealed class DashboardController : AdminControllerBase
         if (facility == null || topic == null)
             return NotFound();
 
-        var noiDung = await _adminStoredProcedures.GetNoiDungCskcbAsync(
-            facility.MaCoSo,
-            facility.TenCoSo,
-            topic.ID);
+        var noiDung = await _adminStoredProcedures.GetNoiDungCskcbAsync(facility.Id, topic.ID);
         return Json(new { noiDung = noiDung ?? string.Empty });
     }
 

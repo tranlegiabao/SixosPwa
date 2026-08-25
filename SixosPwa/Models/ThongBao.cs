@@ -4,18 +4,15 @@ public class ThongBao
 {
     public long Id { get; set; }
 
-    /// <summary>Nội dung tin nhắn</summary>
+    /// <summary>Khoa ngoai sang HT_TaiKhoan — truoc day la chuoi so dien thoai.</summary>
+    public long IdNguoiGui { get; set; }
+
+    /// <summary>Khoa ngoai sang HT_TaiKhoan — truoc day la chuoi so dien thoai.</summary>
+    public long IdNguoiNhan { get; set; }
+
     public string NoiDung { get; set; } = "";
 
-    /// <summary>Thời gian gửi</summary>
     public DateTime ThoiGian { get; set; } = DateTime.Now;
 
-    /// <summary>SĐT / tên người gửi (Admin)</summary>
-    public string NguoiGui { get; set; } = "";
-
-    /// <summary>SĐT tài khoản nhận thông báo (bệnh nhân)</summary>
-    public string NguoiNhan { get; set; } = "";
-
-    /// <summary>Đã đọc hay chưa</summary>
-    public bool DaDoc { get; set; } = false;
+    public bool DaDoc { get; set; }
 }
