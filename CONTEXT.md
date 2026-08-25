@@ -160,6 +160,20 @@ _Tránh_: dùng lại từ này dưới bất kỳ dạng nào
 
 Xem [`docs/adr/`](docs/adr/). Hai quyết định định hình khuôn mẫu này:
 
+**Kho ảnh**:
+Máy chủ FTP dùng chung với HisSoft, nơi đặt mọi ảnh của phần mềm. Không phải ổ đĩa của máy đang chạy —
+đĩa máy chạy chỉ là chỗ tạm, mất khi dựng lại.
+_Tránh_: thư mục ảnh, wwwroot, ổ đĩa
+
+**Đường đọc ảnh**:
+Địa chỉ mà trình duyệt dùng để xin một tấm ảnh trong *kho ảnh*. Đây là địa chỉ được lưu trong cơ sở dữ
+liệu, không phải vị trí thật của tệp.
+_Tránh_: link ảnh, url ảnh, đường dẫn tệp
+
+**Ảnh mồ côi**:
+Tấm ảnh còn nằm trong *kho ảnh* nhưng không còn chỗ nào trỏ tới. Là rác — chiếm chỗ và không ai đọc.
+_Tránh_: ảnh thừa, ảnh rác, file cũ
+
 - [0001](docs/adr/0001-chon-net7-du-het-ho-tro.md) — vì sao nền là .NET 7 dù đã hết hỗ trợ.
 - [0002](docs/adr/0002-service-worker-khong-cache.md) — vì sao service worker cố ý không cache gì.
 - [0003](docs/adr/0003-vao-ub-qua-cua-an-danh.md) — vì sao bàn giao bằng cửa ẩn danh sẵn có của đối tác thay vì mở SSO.
@@ -171,3 +185,4 @@ Xem [`docs/adr/`](docs/adr/). Hai quyết định định hình khuôn mẫu nà
 - [0009](docs/adr/0009-bam-mat-khau-noi-bo-tach-khoi-mat-khau-doi-tac.md) — vì sao tách mật khẩu nội bộ khỏi mật khẩu đối tác.
 - [0010](docs/adr/0010-doi-ten-lan-toi-javascript.md) — vì sao đổi tên lan tới tận JavaScript dù ràng buộc ban đầu cấm.
 - [0011](docs/adr/0011-co-so-thuoc-doi-tac-mot-nhieu.md) — vì sao cơ sở thuộc đối tác theo quan hệ một–nhiều thay vì bảng nối.
+- [0012](docs/adr/0012-anh-luu-tren-ftp-dung-chung.md) — vì sao ảnh lưu trên FTP dùng chung và đọc lại qua route proxy.

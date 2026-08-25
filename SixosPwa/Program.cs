@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using SixosPwa.Data;
+using SixosPwa.Models;
 using SixosPwa.Security;
 using SixosPwa.Services;
 using SixosPwa.Services.Partner;
@@ -25,6 +26,11 @@ builder.Services.AddScoped<IPartnerGateway, NoApiGateway>();
 builder.Services.AddScoped<IPartnerGateway, UbGateway>();
 builder.Services.AddScoped<IPartnerGatewayFactory, PartnerGatewayFactory>();
 builder.Services.AddScoped<ILuongCongBenhNhan, LuongCongBenhNhan>();
+
+// Kho anh tren FTP dung chung voi HisSoft (xem docs/adr/0012).
+builder.Services.Configure<FtpSettings>(builder.Configuration.GetSection("FtpServer"));
+builder.Services.AddScoped<IFtpService, FtpService>();
+builder.Services.AddScoped<IDonAnhService, DonAnhService>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>

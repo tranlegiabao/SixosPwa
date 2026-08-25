@@ -12,9 +12,9 @@ public sealed class DashboardController : AdminControllerBase
 {
     private readonly ApplicationDbContext _db;
     private readonly AdminStoredProcedureService _adminStoredProcedures;
-    private readonly IWebHostEnvironment _environment;
+    private readonly IFtpService _ftp;
+    private readonly IDonAnhService _donAnh;
 
-    private const string ContentImageFolder = "static/img_nd";
     private const long MaxContentImageSize = 5 * 1024 * 1024;
     private static readonly HashSet<string> AllowedContentImageExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -25,11 +25,13 @@ public sealed class DashboardController : AdminControllerBase
     public DashboardController(
         ApplicationDbContext db,
         AdminStoredProcedureService adminStoredProcedures,
-        IWebHostEnvironment environment)
+        IFtpService ftp,
+        IDonAnhService donAnh)
     {
         _db = db;
         _adminStoredProcedures = adminStoredProcedures;
-        _environment = environment;
+        _ftp = ftp;
+        _donAnh = donAnh;
     }
 
     public async Task<IActionResult> Index(long? facilityId = null, long? topicId = null)
@@ -152,15 +154,24 @@ public sealed class DashboardController : AdminControllerBase
             return RedirectToAction(nameof(Index), redirectValues);
         }
 
+        // Ban HTML truoc khi sua — doc TRUOC khi luu, neu khong thi khong con
+        // cach nao biet admin vua go bo the <img> nao.
+        var noiDungCu = await _adminStoredProcedures.GetNoiDungCskcbAsync(facility.Id, topic.ID);
+        var noiDungMoi = SanitizeHtml(model.NoiDung);
+
         var result = await _adminStoredProcedures.SaveNoiDungCskcbAsync(
             facility.Id,
             topic.ID,
-            SanitizeHtml(model.NoiDung));
+            noiDungMoi);
         if (!result.Succeeded)
         {
             Error(result.Message ?? "Không thể lưu nội dung.");
             return RedirectToAction(nameof(Index), redirectValues);
         }
+
+        // Luu xong roi moi don: DB da giu ban MOI nen phep do cheo trong
+        // DonAnhService khong con thay anh vua bi go.
+        await _donAnh.DonTheoHtmlAsync(noiDungCu, noiDungMoi);
 
         Success("Đã lưu nội dung HTML cho cơ sở y tế.");
         return RedirectToAction(nameof(Index), redirectValues);
@@ -194,17 +205,18 @@ public sealed class DashboardController : AdminControllerBase
         if (string.IsNullOrWhiteSpace(extension) || !AllowedContentImageExtensions.Contains(extension))
             return Json(new { error = "Chỉ hỗ trợ ảnh JPG, PNG, WEBP hoặc GIF." });
 
-        var directory = Path.Combine(
-            _environment.WebRootPath,
-            ContentImageFolder.Replace('/', Path.DirectorySeparatorChar));
-        Directory.CreateDirectory(directory);
+        try
+        {
+            var duongDanFtp = await _ftp.UploadFileAsync(file, KhoAnh.ThuMucFtp(KhoAnh.ThuMucNoiDung));
+            var url = KhoAnh.UrlTuDuongDanFtp(duongDanFtp);
+            if (url == null) return Json(new { error = "Không tải được ảnh lên máy chủ FTP." });
 
-        var fileName = $"{Guid.NewGuid():N}{extension.ToLowerInvariant()}";
-        var path = Path.Combine(directory, fileName);
-        await using var stream = new FileStream(path, FileMode.CreateNew);
-        await file.CopyToAsync(stream);
-
-        return Json(new { location = $"/{ContentImageFolder}/{fileName}" });
+            return Json(new { location = url });
+        }
+        catch (Exception)
+        {
+            return Json(new { error = "Không tải được ảnh lên máy chủ FTP." });
+        }
     }
 
     private static HtmlSanitizer CreateHtmlFilter()

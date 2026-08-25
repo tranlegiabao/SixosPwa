@@ -12,18 +12,31 @@ public sealed class CoSoYTeController : AdminControllerBase
 {
     private static readonly string[] AllowedTypes = { "benhvien", "pkdk", "nhakhoa", "phongmach", "nhathuoc" };
     private readonly ApplicationDbContext _db;
-    private readonly IWebHostEnvironment _environment;
     private readonly AdminStoredProcedureService _adminStoredProcedures;
+    private readonly IFtpService _ftp;
+    private readonly IDonAnhService _donAnh;
+
+    /// <summary>
+    /// Canh bao KHONG chan viec Luu — vd FTP hong dung luc tai anh. Noi vao cuoi
+    /// cau thong bao thanh cong nen hien duoc o ca nhanh AJAX lan nhanh thuong,
+    /// khong phai dung toi .js nao.
+    /// </summary>
+    private readonly List<string> _canhBao = new();
 
     public CoSoYTeController(
         ApplicationDbContext db,
-        IWebHostEnvironment environment,
-        AdminStoredProcedureService adminStoredProcedures)
+        AdminStoredProcedureService adminStoredProcedures,
+        IFtpService ftp,
+        IDonAnhService donAnh)
     {
         _db = db;
-        _environment = environment;
         _adminStoredProcedures = adminStoredProcedures;
+        _ftp = ftp;
+        _donAnh = donAnh;
     }
+
+    private string KemCanhBao(string thongBao) =>
+        _canhBao.Count == 0 ? thongBao : $"{thongBao} {string.Join(" ", _canhBao)}";
 
     private bool IsAjaxRequest() =>
         string.Equals(Request.Headers["X-Requested-With"].ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
@@ -110,22 +123,21 @@ public sealed class CoSoYTeController : AdminControllerBase
             ModelState.AddModelError(nameof(model.Slug), "Vui lòng nhập đường dẫn cố định.");
 
         if (model.ImageFile != null)
-            model.Img = await SaveImageAsync(model.ImageFile, "static/img_cs", "/static/img_cs", nameof(model.ImageFile));
+            model.Img = await SaveImageAsync(model.ImageFile, KhoAnh.ThuMucCoSo, nameof(model.ImageFile));
         model.Logo = await ResolveImageAsync(
             model.LogoFile,
             model.LogoUrlInput,
             model.Logo,
-            "static/logo_cs",
-            "/static/logo_cs",
+            KhoAnh.ThuMucLogo,
             nameof(model.LogoFile));
         var advertisingImageUrl = await ResolveAdvertisingImageAsync(model, null);
         model.QuangCaoImg = advertisingImageUrl;
         ApplyOperatingHours(model);
         ValidateType(model.LoaiCS);
         ValidateAdvertisingAmount(model.QuangCao);
-        ValidateImageUrl(model.Img, nameof(model.Img), "/static/img_cs/", "/uploads/co-so-y-te/");
-        ValidateImageUrl(model.Logo, nameof(model.Logo), "/static/logo_cs/", "/uploads/co-so-y-te/logo/");
-        ValidateImageUrl(advertisingImageUrl, nameof(model.QuangCaoImgUrlInput), "/static/img_qc_kcb/");
+        ValidateImageUrl(model.Img, nameof(model.Img), "/anh/img_cs/", "/static/img_cs/", "/uploads/co-so-y-te/");
+        ValidateImageUrl(model.Logo, nameof(model.Logo), "/anh/logo_cs/", "/static/logo_cs/", "/uploads/co-so-y-te/logo/");
+        ValidateImageUrl(advertisingImageUrl, nameof(model.QuangCaoImgUrlInput), "/anh/img_qc_kcb/", "/static/img_qc_kcb/");
         if (ModelState.IsValid && !string.IsNullOrWhiteSpace(model.MaCoSo)
             && await _db.DMCSKCBs.AnyAsync(x => x.MaCoSo == model.MaCoSo))
             ModelState.AddModelError(nameof(model.MaCoSo), "Mã cơ sở đã tồn tại.");
@@ -204,14 +216,14 @@ public sealed class CoSoYTeController : AdminControllerBase
             return Json(new
             {
                 success = true,
-                message = "Đã thêm cơ sở y tế.",
+                message = KemCanhBao("Đã thêm cơ sở y tế."),
                 id = createdFacilityForAdvertising?.Id ?? 0,
                 editUrl = createdFacilityForAdvertising == null
                     ? null
                     : Url.Action(nameof(Edit), new { id = createdFacilityForAdvertising.Id, topicId = model.TopicId })
             });
         }
-        Success("Đã thêm cơ sở y tế.");
+        Success(KemCanhBao("Đã thêm cơ sở y tế."));
         return RedirectToAction(nameof(Index));
     }
 
@@ -241,27 +253,34 @@ public sealed class CoSoYTeController : AdminControllerBase
         if (entity == null) return NotFound();
 
         var existingAdvertising = await GetAdvertisingAsync(entity.Id);
+
+        // Ghi nho anh cu de don SAU KHI luu thanh cong. Khong duoc xoa som: doan
+        // giai quyet anh nam truoc SaveCoSoYTeAsync, thu tuc do van co the that
+        // bai — xoa truoc la mat anh trong khi DB con tro toi no.
+        var logoCu = entity.Logo;
+        var anhCoSoCu = entity.Img;
+        var anhQuangCaoCu = existingAdvertising?.Img;
+
         Normalize(model);
         await ApDungLoaiCoSoAsync(model);
         if (model.ImageFile != null)
-            model.Img = await SaveImageAsync(model.ImageFile, "static/img_cs", "/static/img_cs", nameof(model.ImageFile));
+            model.Img = await SaveImageAsync(model.ImageFile, KhoAnh.ThuMucCoSo, nameof(model.ImageFile)) ?? entity.Img;
         else
             model.Img = entity.Img;
         model.Logo = await ResolveImageAsync(
             model.LogoFile,
             model.LogoUrlInput,
             entity.Logo,
-            "static/logo_cs",
-            "/static/logo_cs",
+            KhoAnh.ThuMucLogo,
             nameof(model.LogoFile));
         var advertisingImageUrl = await ResolveAdvertisingImageAsync(model, existingAdvertising?.Img);
         model.QuangCaoImg = advertisingImageUrl;
         ApplyOperatingHours(model);
         ValidateType(model.LoaiCS);
         ValidateAdvertisingAmount(model.QuangCao);
-        ValidateImageUrl(model.Img, nameof(model.Img), "/static/img_cs/", "/uploads/co-so-y-te/");
-        ValidateImageUrl(model.Logo, nameof(model.Logo), "/static/logo_cs/", "/uploads/co-so-y-te/logo/");
-        ValidateImageUrl(advertisingImageUrl, nameof(model.QuangCaoImgUrlInput), "/static/img_qc_kcb/");
+        ValidateImageUrl(model.Img, nameof(model.Img), "/anh/img_cs/", "/static/img_cs/", "/uploads/co-so-y-te/");
+        ValidateImageUrl(model.Logo, nameof(model.Logo), "/anh/logo_cs/", "/static/logo_cs/", "/uploads/co-so-y-te/logo/");
+        ValidateImageUrl(advertisingImageUrl, nameof(model.QuangCaoImgUrlInput), "/anh/img_qc_kcb/", "/static/img_qc_kcb/");
 
         if (ModelState.IsValid && !string.IsNullOrWhiteSpace(model.MaCoSo)
             && await _db.DMCSKCBs.AnyAsync(x => x.Id != model.Id && x.MaCoSo == model.MaCoSo))
@@ -303,6 +322,9 @@ public sealed class CoSoYTeController : AdminControllerBase
             return RedirectToAction(nameof(Edit), new { id = model.Id, topicId = model.TopicId, section = model.ActiveSection });
         }
 
+        // Ban HTML truoc khi sua — dung de biet anh nao vua bi admin xoa khoi bai.
+        var noiDungCu = new List<(string? Cu, string? Moi)>();
+
         if (string.Equals(model.ActiveSection, "noiDungChiTiet", StringComparison.OrdinalIgnoreCase)
             || !string.IsNullOrWhiteSpace(model.TopicContentsJson))
         {
@@ -314,6 +336,10 @@ public sealed class CoSoYTeController : AdminControllerBase
 
             foreach (var topicContent in topicContents)
             {
+            noiDungCu.Add((
+                await _adminStoredProcedures.GetNoiDungCskcbAsync(model.Id, topicContent.Key),
+                topicContent.Value));
+
             var contentResult = await SaveContentAsync(
                 model.Id,
                 topicContent.Key,
@@ -327,17 +353,25 @@ public sealed class CoSoYTeController : AdminControllerBase
         }
         }
 
+        // Toi day moi ba thu tuc luu deu da thanh cong => DB dang giu gia tri MOI,
+        // nen anh cu nao khong con dong nao tro toi thi don duoc.
+        await _donAnh.DonAsync(logoCu, model.Logo);
+        await _donAnh.DonAsync(anhCoSoCu, model.Img);
+        await _donAnh.DonAsync(anhQuangCaoCu, advertisingImageUrl);
+        foreach (var (cu, moi) in noiDungCu)
+            await _donAnh.DonTheoHtmlAsync(cu, moi);
+
         if (IsAjaxRequest())
         {
             return Json(new
             {
                 success = true,
-                message = "Đã cập nhật cơ sở y tế.",
+                message = KemCanhBao("Đã cập nhật cơ sở y tế."),
                 id = model.Id,
                 editUrl = Url.Action(nameof(Edit), new { id = model.Id, topicId = model.TopicId, section = model.ActiveSection })
             });
         }
-        Success("Đã cập nhật cơ sở y tế.");
+        Success(KemCanhBao("Đã cập nhật cơ sở y tế."));
         return RedirectToAction(nameof(Edit), new { id = model.Id, topicId = model.TopicId, section = model.ActiveSection });
     }
 
@@ -468,8 +502,7 @@ public sealed class CoSoYTeController : AdminControllerBase
             model.QuangCaoImageFile,
             model.QuangCaoImgUrlInput,
             existingImage,
-            "static/img_qc_kcb",
-            "/static/img_qc_kcb",
+            KhoAnh.ThuMucQuangCao,
             nameof(model.QuangCaoImageFile));
     }
 
@@ -477,12 +510,12 @@ public sealed class CoSoYTeController : AdminControllerBase
         IFormFile? imageFile,
         string? urlInput,
         string? fallback,
-        string storageFolder,
-        string publicPrefix,
+        string thuMuc,
         string propertyName)
     {
+        // Tai len that bai (FTP hong) thi GIU anh cu, dung de cot ve null.
         if (imageFile != null)
-            return await SaveImageAsync(imageFile, storageFolder, publicPrefix, propertyName);
+            return await SaveImageAsync(imageFile, thuMuc, propertyName) ?? fallback;
 
         return string.IsNullOrWhiteSpace(urlInput) ? fallback : urlInput.Trim();
     }
@@ -550,10 +583,19 @@ public sealed class CoSoYTeController : AdminControllerBase
             ModelState.AddModelError(nameof(CoSoYTeEditViewModel.QuangCao), "Số tiền quảng cáo phải là số nguyên VNĐ.");
     }
 
+    /// <summary>
+    /// Tai anh len kho FTP dung chung, tra ve URL de cat vao cot DB.
+    ///
+    /// Hai loai that bai KHAC HAN nhau, dung gop lam mot:
+    ///  - Sai kich thuoc / sai duoi tep la LOI NGUOI DUNG  -> ModelState, chan Luu.
+    ///  - FTP hong la SU CO HA TANG                        -> canh bao, VAN Luu,
+    ///    va nguoi goi phai giu lai gia tri cu (xem ResolveImageAsync). Truoc ban
+    ///    va, ham nay tra null khi loi con noi goi thi gan thang vao cot => FTP
+    ///    hong mot lan la XOA TRANG logo trong DB.
+    /// </summary>
     private async Task<string?> SaveImageAsync(
         IFormFile imageFile,
-        string storageFolder,
-        string publicPrefix,
+        string thuMuc,
         string propertyName)
     {
         const long maxFileSize = 5 * 1024 * 1024;
@@ -575,14 +617,16 @@ public sealed class CoSoYTeController : AdminControllerBase
             return null;
         }
 
-        var uploadDirectory = Path.Combine(_environment.WebRootPath, storageFolder.Replace('/', Path.DirectorySeparatorChar));
-        Directory.CreateDirectory(uploadDirectory);
-        var fileName = $"{Guid.NewGuid():N}{extension.ToLowerInvariant()}";
-        var filePath = Path.Combine(uploadDirectory, fileName);
-
-        await using var stream = new FileStream(filePath, FileMode.CreateNew);
-        await imageFile.CopyToAsync(stream);
-        return $"{publicPrefix.TrimEnd('/')}/{fileName}";
+        try
+        {
+            var duongDanFtp = await _ftp.UploadFileAsync(imageFile, KhoAnh.ThuMucFtp(thuMuc));
+            return KhoAnh.UrlTuDuongDanFtp(duongDanFtp);
+        }
+        catch (Exception)
+        {
+            _canhBao.Add("Chưa tải được ảnh lên máy chủ FTP, ảnh cũ được giữ nguyên.");
+            return null;
+        }
     }
 
     private static void Normalize(CoSoYTeEditViewModel model)
@@ -818,10 +862,17 @@ public sealed class CoSoYTeController : AdminControllerBase
             return BadRequest("Không có file nào được tải lên.");
         }
 
-        var url = await SaveImageAsync(file, "static/img_cs", "/static/img_cs", "file");
+        var url = await SaveImageAsync(file, KhoAnh.ThuMucCoSo, "file");
         if (url == null)
         {
-            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+            // Gom ca hai nguon loi: ModelState (sai kich thuoc / sai duoi tep) va
+            // _canhBao (FTP hong). Chi lay ModelState thi luc FTP hong se tra ve
+            // chuoi RONG, TinyMCE bao "Tai anh that bai" ma khong noi vi sao.
+            var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)
+                .Concat(_canhBao)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToList();
+            if (errors.Count == 0) errors.Add("Không tải được ảnh lên máy chủ FTP.");
             return BadRequest(string.Join("\n", errors));
         }
 
