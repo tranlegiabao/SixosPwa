@@ -385,9 +385,36 @@ public sealed class CoSoYTeController : AdminControllerBase
             return RedirectToAction(nameof(Index), new { q, loaiCS, page = SafePage(page) });
         }
 
+        // Doc anh cua co so TRUOC khi xoa. DM_CSKCB_Delete xoa ca dong cua co so
+        // lan moi dong DM_CSKCB_QuangCao / DM_CSKCB_NoiDung cua no, nen sau khi
+        // goi thu tuc thi khong con cach nao biet no da dung nhung anh gi.
+        var coSo = await _db.DMCSKCBs.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+        var quangCao = coSo == null ? null : await GetAdvertisingAsync(id);
+        var baiViet = coSo == null
+            ? new List<string?>()
+            : await _db.NDCSKCBs.AsNoTracking()
+                .Where(x => x.IdCoSo == id)
+                .Select(x => x.NoiDung)
+                .ToListAsync();
+
         var result = await _adminStoredProcedures.DeleteCoSoYTeAsync(id);
         if (result.Succeeded)
+        {
+            // Xoa co so xong ma khong don thi logo, anh quang cao va moi anh nhung
+            // trong bai viet cua no deu thanh anh mo coi tren kho — dung loai rac
+            // ma DonAnhService sinh ra de dep, chi la o mot cua khac.
+            //
+            // Chay SAU khi thu tuc thanh cong, y nhu duong Sua: luc nay dong cua co
+            // so da bien khoi DB nen phep do cheo trong DonAnhService tra dung ket
+            // qua — anh nao con co so KHAC dung thi van duoc giu lai.
+            await _donAnh.DonAsync(coSo?.Logo, null);
+            await _donAnh.DonAsync(coSo?.Img, null);
+            await _donAnh.DonAsync(quangCao?.Img, null);
+            foreach (var noiDung in baiViet)
+                await _donAnh.DonTheoHtmlAsync(noiDung, null);
+
             Success("Đã xóa cơ sở y tế.");
+        }
         else
             Error(result.Message ?? "Không thể xóa cơ sở y tế.");
 
