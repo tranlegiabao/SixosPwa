@@ -138,26 +138,64 @@
         background: #f8fafc;
     }
 
-    /* Desktop: keep the company block content-sized so the main slideshow
-       can use the remaining vertical space. Column widths stay unchanged. */
+    /* Desktop: bố cục theo bảng vẽ: đối tác | slideshow + dịch vụ | sản phẩm. */
     @media (min-width: 993px) {
         .ytv-main {
             display: grid;
-            grid-template-columns: 300px minmax(0, 1fr);
+            grid-template-columns: 220px minmax(0, 1fr) 190px;
             grid-template-rows: minmax(0, 1fr) auto;
         }
         .ytv-sidebar {
             grid-column: 1;
-            grid-row: 1;
+            grid-row: 1 / -1;
+            width: auto;
         }
         .ytv-content {
             grid-column: 2;
             grid-row: 1;
         }
         .ytv-company-info {
-            grid-column: 1 / -1;
+            display: contents;
+        }
+        .ytv-company-info > .sixos-card.primary {
+            display: none;
+        }
+        .ytv-company-info > .sixos-card:not(.primary) {
+            grid-column: 2;
             grid-row: 2;
-            align-self: start;
+        }
+        .ytv-company-info > .ytv-company-4th-col {
+            grid-column: 3;
+            grid-row: 1 / -1;
+            min-width: 0;
+            height: auto !important;
+            padding: 8px !important;
+        }
+
+        .ytv-company-info > .ytv-company-4th-col .ytv-company-rolling {
+            height: 100% !important;
+            min-height: 0 !important;
+        }
+
+        .ytv-company-info > .ytv-company-4th-col .ytv-company-service.is-active {
+            flex-direction: column !important;
+            gap: 12px !important;
+            padding: 8px !important;
+        }
+
+        .ytv-company-info > .ytv-company-4th-col .ytv-company-service.is-active > a {
+            width: 100%;
+            min-height: 0;
+            padding: 8px !important;
+            border: 1px solid #dbe4ef;
+            border-radius: 10px;
+            box-sizing: border-box;
+        }
+
+        .ytv-company-info > .ytv-company-4th-col .ytv-company-service.is-active > div {
+            width: 70% !important;
+            height: 1px !important;
+            min-height: 1px;
         }
     }
 
@@ -520,7 +558,7 @@
         }
     }
 
-    @media (max-width: 576px) {
+@media (max-width: 576px) {
         html, body, .container, main.container { height: auto !important; overflow: auto !important; display: block; }
         .ytv-main { flex: none; overflow: visible; }
         .ytv-content { overflow: visible; }
@@ -536,6 +574,80 @@
     overflow: hidden;
     z-index: 1;
     background-color: white; /* Ensure white background */
+}
+
+/* Bố cục Home theo bảng vẽ */
+.ytv-sidebar-company {
+    margin: auto 12px 0;
+    padding: 10px 6px;
+    border: 1px solid #dbe4ef;
+    border-radius: 10px;
+    background: #fff;
+    text-align: center;
+    color: #12345b;
+}
+
+.ytv-sidebar-company img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    border-radius: 50%;
+    margin-bottom: 4px;
+}
+
+.ytv-sidebar-company-name {
+    color: #1e40af;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: .4px;
+}
+
+.ytv-sidebar-company-subtitle {
+    margin-top: 3px;
+    color: #0f172a;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+/* Bỏ dải xanh cũ; các card được đặt trực tiếp vào grid 3 cột ở desktop. */
+.ytv-company-info {
+    background: transparent !important;
+    padding: 6px 12px !important;
+}
+
+.ytv-slider .para-card,
+.ytv-slider .para-card-wrapper .para-card {
+    border-radius: 0 !important;
+}
+
+.ytv-company-info > .sixos-card:not(.primary) .sixos-list {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: center;
+    width: 100% !important;
+    gap: 4px 18px !important;
+}
+
+@media (max-width: 992px) {
+    .ytv-sidebar-company {
+        flex: 0 0 160px;
+        margin: 10px 12px;
+    }
+
+    .ytv-company-info {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .ytv-sidebar-company {
+        flex-basis: 140px;
+    }
+
+    .ytv-company-info {
+        grid-template-columns: 1fr !important;
+    }
 }
 
 
@@ -614,4 +726,143 @@
 
     /* menu tha rong cho de cham */
     .ytv-dropdown { min-width: 244px; max-height: 78vh; overflow-y: auto; }
+}
+
+/* ========================================================================
+   Trang chu desktop - khung 3 cot dung theo ban ve:
+   [doi tac + logo] [slideshow / dich vu] [san pham xep doc]
+   ======================================================================== */
+@media (min-width: 993px) {
+    .ytv-main {
+        position: relative;
+        display: grid;
+        grid-template-columns: 220px minmax(0, 1fr) 190px;
+        grid-template-rows: minmax(0, 1fr);
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .ytv-sidebar {
+        grid-column: 1;
+        grid-row: 1;
+        width: auto;
+    }
+
+    .ytv-content {
+        grid-column: 2;
+        grid-row: 1;
+        box-sizing: border-box;
+        min-width: 0;
+        padding: 20px 20px 142px;
+    }
+
+    .ytv-company-info {
+        position: absolute;
+        inset: 0;
+        display: block !important;
+        width: auto;
+        margin: 0;
+        padding: 0 !important;
+        background: transparent !important;
+        border: 0;
+        border-radius: 0;
+        overflow: visible;
+        pointer-events: none;
+    }
+
+    .ytv-company-info > .sixos-card.primary {
+        display: none;
+    }
+
+    .ytv-company-info > .sixos-card:not(.primary) {
+        position: absolute;
+        right: 190px;
+        bottom: 0;
+        left: 220px;
+        height: 122px;
+        margin: 0;
+        padding: 12px 20px;
+        border-radius: 0;
+        border-top: 1px solid #dbe4ef;
+        box-shadow: none;
+        pointer-events: auto;
+    }
+
+    .ytv-company-info > .sixos-card:not(.primary) .sixos-list {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-content: center;
+        width: 100% !important;
+        height: 100%;
+        margin: 0 !important;
+        gap: 8px 24px !important;
+    }
+
+    .ytv-company-info > .sixos-card:not(.primary) .sixos-item {
+        min-width: 0;
+        margin: 0;
+        padding: 7px 8px;
+    }
+
+    .ytv-company-info > .ytv-company-4th-col {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 190px;
+        min-width: 0;
+        margin: 0;
+        padding: 12px !important;
+        border-width: 0 0 0 1px !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        pointer-events: auto;
+    }
+
+    .ytv-company-info > .ytv-company-4th-col .ytv-company-rolling {
+        height: 100% !important;
+        min-height: 0 !important;
+        border-radius: 0;
+    }
+
+    .ytv-company-info > .ytv-company-4th-col .ytv-company-rolling::after {
+        display: none;
+    }
+
+    .ytv-company-info > .ytv-company-4th-col .ytv-company-service,
+    .ytv-company-info > .ytv-company-4th-col .ytv-company-service.is-active {
+        flex-direction: column !important;
+        justify-content: space-evenly !important;
+        gap: 12px !important;
+        padding: 0 !important;
+        transform: none !important;
+        font-size: inherit;
+    }
+
+    .ytv-company-info > .ytv-company-4th-col .ytv-company-service > a {
+        width: 100%;
+        flex: 0 0 156px !important;
+        min-height: 156px;
+        padding: 10px 6px !important;
+        border: 1px solid #dbe4ef;
+        border-radius: 10px;
+        box-sizing: border-box;
+    }
+
+    .ytv-company-info > .ytv-company-4th-col .ytv-company-service > a img {
+        max-height: 76px !important;
+    }
+
+    .ytv-company-info > .ytv-company-4th-col .ytv-company-service > div {
+        width: 70% !important;
+        height: 1px !important;
+        min-height: 1px;
+        flex: 0 0 1px;
+    }
+}
+
+/* Footer Home tach rieng voi khung noi dung, khong con dai xanh cua 3 khoi cu. */
+body.co-chan-trang .ytv-footer.ctc {
+    background: #fff;
+    border-top: 1px solid #dbe4ef;
 }
