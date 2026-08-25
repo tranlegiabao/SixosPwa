@@ -22,11 +22,13 @@
     <div class="admin-app">
         <div class="offcanvas-lg offcanvas-start admin-sidebar" tabindex="-1" id="adminSidebar" aria-labelledby="adminSidebarTitle">
             <div class="admin-brand">
-                <img class="brand-logo-image" src="~/static/icon-512.png" asp-append-version="true" alt="Y TẾ VIỆT" />
-                <div>
-                    <div class="brand-name">Y TẾ VIỆT</div>
-                    <div class="brand-caption">Trung tâm quản trị</div>
-                </div>
+                <a class="admin-brand-home" href="/Home/ThongTinBenhNhan" aria-label="Về trang chủ Y TẾ VIỆT">
+                    <img class="brand-logo-image" src="~/static/icon-512.png" asp-append-version="true" alt="Y TẾ VIỆT" />
+                    <div>
+                        <div class="brand-name">Y TẾ VIỆT</div>
+                        <div class="brand-caption">Trung tâm quản trị</div>
+                    </div>
+                </a>
                 <button type="button" class="btn-close d-lg-none ms-auto" data-bs-dismiss="offcanvas" data-bs-target="#adminSidebar" aria-label="Đóng menu"></button>
             </div>
                 
@@ -51,15 +53,18 @@
                 <a href="/Home/GuiTinNhan" class="admin-nav-link">
                     <span class="nav-symbol">↗</span><span>Gửi thông báo</span>
                 </a>
-                <a href="/Home/ThongTinBenhNhan" class="admin-nav-link">
-                    <span class="nav-symbol">↩</span><span>Về ứng dụng</span>
+                <a href="/Admin/DangNhap/Logout" class="admin-nav-link admin-nav-logout">
+                    <span class="nav-symbol">
+                        <svg class="admin-logout-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8"></path>
+                            <path d="M10 12h11"></path>
+                            <path d="m18 9 3 3-3 3"></path>
+                        </svg>
+                    </span>
+                    <span>&#272;&#259;ng xu&#7845;t</span>
                 </a>
             </nav>
 
-            <div class="admin-sidebar-footer">
-                @* <div class="admin-security-note"><span class="status-dot"></span> Kết nối an toàn</div> *@
-                <a href="/Admin/DangNhap/Logout" class="admin-logout"><span>Đăng xuất</span><svg class="admin-logout-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7"></path><path d="M10 12h10"></path><path d="m16 8 4 4-4 4"></path></svg></a>
-            </div>
         </div>
 
         <main class="admin-main">
