@@ -222,7 +222,11 @@ public sealed class BenhNhanListViewModel
     public IReadOnlyDictionary<long, string> MaBNTheoBenhNhan { get; init; } = new Dictionary<long, string>();
     public IReadOnlyList<BenhNhan> Items { get; init; } = Array.Empty<BenhNhan>();
     public string? Query { get; init; }
-    public string? MaDT { get; init; }
+    /// <summary>
+    /// Bo loc theo MA CO SO. Truoc day ten la MaDT nhung than ham van loc theo
+    /// DM_CSKCB.MaCoSo — ten cu NOI DOI ve nghia. Doi ten o Dot 3.
+    /// </summary>
+    public string? MaCoSo { get; init; }
     public int Page { get; init; }
     public int PageSize { get; init; }
     public int TotalItems { get; init; }
@@ -236,7 +240,7 @@ public sealed class PaginationViewModel
     public string? Query { get; init; }
     public string? Role { get; init; }
     public string? LoaiCS { get; init; }
-    public string? MaDT { get; init; }
+    public string? MaCoSo { get; init; }
 }
 
 public sealed class FacilityGroupStat

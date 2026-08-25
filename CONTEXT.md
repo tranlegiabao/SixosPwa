@@ -112,14 +112,22 @@ khác nhau hoàn toàn có thể cấp trùng một chuỗi. Không bao giờ d�
 _Tránh_: mã bệnh nhân toàn hệ, ID bệnh nhân
 
 **Mật khẩu nội bộ**:
-`HT_TaiKhoan.MatKhauNoiBo` — để Admin và Đối tác đăng nhập vào SixosPwa. **Có băm**. Bệnh nhân không
-dùng cột này (họ đi bằng OTP).
+`HT_TaiKhoan.MatKhauNoiBo` — để Admin và Đối tác đăng nhập vào SixosPwa. Bệnh nhân không dùng cột này
+(họ đi bằng OTP). **Hiện CHƯA băm** — phần băm đã hoãn, xem mục Đính chính của ADR 0009; cột này đang
+được đối chiếu bằng chuỗi thường.
 _Tránh_: mật khẩu (chung chung — dễ lẫn với *Mật khẩu đối tác*)
 
 **Mật khẩu đối tác**:
 `HT_TaiKhoanDoiTac.MatKhau` — do máy sinh, dùng để POST nguyên văn sang hệ đối tác lúc bàn giao. **Cố ý
 không băm**, bắt buộc theo ADR 0005. Không bao giờ dùng để đăng nhập vào SixosPwa.
 _Tránh_: mật khẩu, mật khẩu UB
+
+**Đối tác**:
+Một dòng `DM_DoiTac` — một **tổ chức**, mang `BrandName` để gửi SMS. Từ 2026-08-25 một đối tác quản
+nhiều *Cơ sở* qua `DM_CSKCB.IDDoiTac` (ADR 0011). 🔴 Đừng lẫn với chữ "đối tác" trong tên
+`DM_DoiTacApi` và `HT_TaiKhoanDoiTac`: ở hai bảng đó nó khoá theo `IDCoSo`, tức là nói về một **Cơ sở**
+chứ không phải tổ chức.
+_Tránh_: dùng "đối tác" trần khi đang nói về `DM_DoiTacApi`/`HT_TaiKhoanDoiTac` — ở đó phải nói *Cơ sở*
 
 **Phòng khám**:
 **Không tồn tại.** Bảng `PhongKham` từng có 3 dòng dữ liệu bịa, đã bỏ ở đợt 2026-08-24. Mọi "nơi khám"
@@ -140,3 +148,4 @@ Xem [`docs/adr/`](docs/adr/). Hai quyết định định hình khuôn mẫu nà
 - [0008](docs/adr/0008-moi-duong-ghi-qua-stored-procedure.md) — vì sao mọi đường ghi đi qua stored procedure.
 - [0009](docs/adr/0009-bam-mat-khau-noi-bo-tach-khoi-mat-khau-doi-tac.md) — vì sao tách mật khẩu nội bộ khỏi mật khẩu đối tác.
 - [0010](docs/adr/0010-doi-ten-lan-toi-javascript.md) — vì sao đổi tên lan tới tận JavaScript dù ràng buộc ban đầu cấm.
+- [0011](docs/adr/0011-co-so-thuoc-doi-tac-mot-nhieu.md) — vì sao cơ sở thuộc đối tác theo quan hệ một–nhiều thay vì bảng nối.

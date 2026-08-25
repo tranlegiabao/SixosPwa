@@ -450,10 +450,10 @@ public class HomeController : Controller
             if (doiTac is null || !string.Equals(doiTac.MatKhauDoiTac, model.Password, StringComparison.Ordinal))
                 return Json(new { success = false, message = "Tên đối tác hoặc mật khẩu không đúng." });
 
-            // @IDCoSo de NULL = lay moi co so. DM_DoiTac va DM_CSKCB hien KHONG co
-            // cot nao noi voi nhau (do that: MaDT la '1','2' con MaCoSo la '79423',
-            // 'CS2'... — 0 dong trung), nen khong the loc theo doi tac duoc nua.
-            // Muon loc lai thi phai dung quan he doi tac <-> co so truoc da.
+            // Loc theo DOI TAC qua cot DM_CSKCB.IDDoiTac (V010 + ADR 0011).
+            // Truoc V010 hai bang khong co duong noi nao nen cho nay buoc phai
+            // tra MOI co so — bo loc chet am tham. Nay di dung duong:
+            // doi tac -> cac co so cua doi tac -> ho so benh nhan.
             var conn = _db.Database.GetDbConnection();
             if (conn.State != System.Data.ConnectionState.Open)
                 conn.Open();
@@ -463,7 +463,8 @@ public class HomeController : Controller
             cmd.CommandText = "DM_BenhNhan_Loc";
 
             foreach (var (ten, giaTri) in new (string, object?)[]
-                     { ("@TuKhoa", null), ("@IDCoSo", null), ("@Trang", 1), ("@CoTrang", 1000) })
+                     { ("@TuKhoa", null), ("@IDCoSo", null), ("@IDDoiTac", doiTac.Id),
+                       ("@Trang", 1), ("@CoTrang", 1000) })
             {
                 var p = cmd.CreateParameter();
                 p.ParameterName = ten;
@@ -473,8 +474,10 @@ public class HomeController : Controller
 
             using var reader = cmd.ExecuteReader();
 
-            // Ten khoa JSON giu nguyen — JS phia trinh duyet dang doc theo do.
-            // Rieng maDT nay tra ve MA CO SO, vi ho so benh nhan gio treo vao co so.
+            // Khoa JSON doi ten maDT -> maCoSo. Day la NGOAI LE co chu y cua luat
+            // "giu nguyen ten khoa": gia tri o day la MA CO SO (ho so benh nhan
+            // treo vao co so), nen khoa cu dang NOI DOI ve nghia. gui-tin-nhan.js
+            // da sua theo.
             var list = new List<object>();
             while (reader.Read())
             {
@@ -482,7 +485,8 @@ public class HomeController : Controller
                 {
                     id    = reader["IDBenhNhan"],
                     maBN  = reader["MaBN"].ToString(),
-                    maDT  = reader["MaCoSo"].ToString(),
+                    maCoSo = reader["MaCoSo"].ToString(),
+                    tenCoSo = reader["TenCoSo"]?.ToString() ?? "",
                     sdt   = reader["SDT"]?.ToString() ?? "",
                     tenBN = reader["TenBN"].ToString(),
                     diaChi = reader["DiaChi"]?.ToString() ?? "",

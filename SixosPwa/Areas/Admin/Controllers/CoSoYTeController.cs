@@ -149,6 +149,14 @@ public sealed class CoSoYTeController : AdminControllerBase
             .FirstOrDefaultAsync();
         if (createdFacilityForAdvertising != null)
         {
+            var loiGio = await LuuGioLamViecAsync(createdFacilityForAdvertising.Id, model);
+            if (loiGio != null)
+            {
+                if (IsAjaxRequest()) return AjaxFailure(loiGio);
+                Error(loiGio);
+                return RedirectToAction(nameof(Edit), new { id = createdFacilityForAdvertising.Id, topicId = model.TopicId });
+            }
+
             var advertisingResult = await SaveAdvertisingAsync(
                 createdFacilityForAdvertising.Id,
                 model,
@@ -208,7 +216,11 @@ public sealed class CoSoYTeController : AdminControllerBase
     {
         var entity = await _db.DMCSKCBs.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
         if (entity == null) return NotFound();
-        var model = ToViewModel(entity);
+        // Ban ASYNC moi nap LoaiCS + gio lam viec tu bang con DM_CSKCB_GioLamViec.
+        // Ban dong bo de ca bon truong nay NULL, ma man Sua co bind ca bon =>
+        // o gio trang va "Loai hinh" tut ve "Chua phan loai", bam Luu la XOA MAT
+        // loai co so. Da dinh o Dot 3.
+        var model = await ToViewModelAsync(entity);
         model.ActiveSection = section;
         var advertising = await GetAdvertisingAsync(entity.Id);
         model.NoiDungQuangCao = advertising?.NoiDung;
@@ -268,6 +280,14 @@ public sealed class CoSoYTeController : AdminControllerBase
             ModelState.AddModelError(nameof(model.MaCoSo), result.Message ?? "Không thể cập nhật cơ sở y tế.");
             await PopulateContentEditorAsync(model, model.TopicId > 0 ? model.TopicId : null, loadSelectedContent: false);
             return View(model);
+        }
+
+        var loiGioLamViec = await LuuGioLamViecAsync(model.Id, model);
+        if (loiGioLamViec != null)
+        {
+            if (IsAjaxRequest()) return AjaxFailure(loiGioLamViec);
+            Error(loiGioLamViec);
+            return RedirectToAction(nameof(Edit), new { id = model.Id, topicId = model.TopicId, section = model.ActiveSection });
         }
 
         var advertisingResult = await SaveAdvertisingAsync(model.Id, model, advertisingImageUrl);
@@ -640,6 +660,85 @@ public sealed class CoSoYTeController : AdminControllerBase
         return string.IsNullOrWhiteSpace(urlInput) ? fallback : urlInput.Trim();
     }
 
+    // ------------------------------------------------------------------
+    //  Gio lam viec — dich giua CUM CHU cua form va SO THU cua bang con
+    // ------------------------------------------------------------------
+    //  Man hinh cho chon 4 cum chu co san (xem _CoSoYTeOperatingHoursFields),
+    //  con DM_CSKCB_GioLamViec luu tung ngay mot bang so Thu 0..6 (0 = Chu
+    //  nhat). Hai the gioi nay phai co bo dich, neu khong thi luu xong doc lai
+    //  se ra chuoi "0,1,2,..." khong khop <option> nao va o chon tut ve rong.
+
+    private static readonly Dictionary<string, byte[]> CumNgayChuan = new()
+    {
+        ["Thứ 2 - Chủ nhật"] = new byte[] { 1, 2, 3, 4, 5, 6, 0 },
+        ["Thứ 2 - Thứ 7"]    = new byte[] { 1, 2, 3, 4, 5, 6 },
+        ["Thứ 2 - Thứ 6"]    = new byte[] { 1, 2, 3, 4, 5 },
+        ["Thứ 7 - Chủ nhật"] = new byte[] { 6, 0 },
+    };
+
+    /// <summary>Cum chu tren form -> danh sach so Thu. Khong khop = ca tuan.</summary>
+    private static byte[] SoThuTuCumNgay(string? cumNgay)
+    {
+        if (string.IsNullOrWhiteSpace(cumNgay)) return Array.Empty<byte>();
+        if (CumNgayChuan.TryGetValue(cumNgay.Trim(), out var thu)) return thu;
+
+        // Du lieu cu co the da luu dang "0,1,2" — van doc duoc.
+        var tach = cumNgay.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(x => byte.TryParse(x, out var v) && v <= 6 ? (byte?)v : null)
+            .Where(x => x.HasValue)
+            .Select(x => x!.Value)
+            .Distinct()
+            .ToArray();
+        return tach.Length > 0 ? tach : CumNgayChuan["Thứ 2 - Chủ nhật"];
+    }
+
+    /// <summary>Danh sach so Thu doc tu DB -> dung cum chu de form chon lai duoc.</summary>
+    private static string? CumNgayTuSoThu(IEnumerable<byte> soThu)
+    {
+        var tap = soThu.Distinct().OrderBy(x => x).ToArray();
+        if (tap.Length == 0) return null;
+
+        foreach (var (cum, thu) in CumNgayChuan)
+            if (thu.OrderBy(x => x).SequenceEqual(tap))
+                return cum;
+
+        return OperatingHours.Default.Days;   // khong khop cum nao: lay ca tuan
+    }
+
+    /// <summary>
+    /// Ghi gio lam viec cua mot co so: xoa ngay khong con chon, roi upsert tung
+    /// ngay con lai. Tra ve thong diep loi dau tien, null neu dat.
+    /// </summary>
+    private async Task<string?> LuuGioLamViecAsync(long idCoSo, CoSoYTeEditViewModel model)
+    {
+        // Khong chon gi = xoa sach gio cua co so do.
+        if (string.IsNullOrWhiteSpace(model.TGLamViec))
+        {
+            var xoaHet = await _adminStoredProcedures.XoaGioLamViecAsync(idCoSo, null);
+            return xoaHet.Succeeded ? null : (xoaHet.Message ?? "Không thể xoá giờ làm việc.");
+        }
+
+        var danhSachThu = SoThuTuCumNgay(model.NgayLamViec);
+        if (danhSachThu.Length == 0
+            || !OperatingHours.TryParseTime(model.GioMoCua, out var moCua)
+            || !OperatingHours.TryParseTime(model.GioDongCua, out var dongCua))
+            return null;   // ApplyOperatingHours da bat truong hop nay roi
+
+        var xoa = await _adminStoredProcedures.XoaGioLamViecAsync(
+            idCoSo, string.Join(",", danhSachThu));
+        if (!xoa.Succeeded) return xoa.Message ?? "Không thể dọn giờ làm việc cũ.";
+
+        // Goi lap tung ngay. Khong nguyen tu qua ca tuan, nhung moi lan la
+        // upsert idempotent theo UNIQUE (IDCoSo, Thu) nen chay lai an toan.
+        foreach (var thu in danhSachThu)
+        {
+            var kq = await _adminStoredProcedures.SaveGioLamViecAsync(
+                idCoSo, thu, moCua.ToTimeSpan(), dongCua.ToTimeSpan());
+            if (!kq.Succeeded) return kq.Message ?? "Không thể lưu giờ làm việc.";
+        }
+        return null;
+    }
+
     private void ApplyOperatingHours(CoSoYTeEditViewModel model)
     {
         var hasSelection = !string.IsNullOrWhiteSpace(model.NgayLamViec)
@@ -793,9 +892,13 @@ public sealed class CoSoYTeController : AdminControllerBase
         {
             model.GioMoCua = gio[0].GioMoCua.ToString(@"hh\:mm");
             model.GioDongCua = gio[0].GioDongCua.ToString(@"hh\:mm");
-            model.NgayLamViec = string.Join(",", gio.Select(x => x.Thu));
+            // Phai tra ve CUM CHU ("Thu 2 - Chu nhat"), khong phai "0,1,2,...":
+            // form la mot <select> bon lua chon co san, chuoi so khong khop
+            // <option> nao nen o chon se tut ve rong va bam Luu la mat gio.
+            model.NgayLamViec = CumNgayTuSoThu(gio.Select(x => x.Thu));
             model.TGLamViec = OperatingHours.Encode(
-                model.NgayLamViec, model.GioMoCua, model.GioDongCua);
+                model.NgayLamViec ?? OperatingHours.Default.Days,
+                model.GioMoCua, model.GioDongCua);
         }
 
         return model;

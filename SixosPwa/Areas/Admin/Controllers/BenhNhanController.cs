@@ -12,7 +12,7 @@ public sealed class BenhNhanController : AdminControllerBase
     public BenhNhanController(ApplicationDbContext db) => _db = db;
 
     [HttpGet]
-    public async Task<IActionResult> Index(string? q, string? maDT, int page = 1)
+    public async Task<IActionResult> Index(string? q, string? maCoSo, int page = 1)
     {
         page = SafePage(page);
         var query = _db.BenhNhans.AsNoTracking().AsQueryable();
@@ -26,9 +26,9 @@ public sealed class BenhNhanController : AdminControllerBase
                 || x.CCCD.Contains(q)
                 || _db.BenhNhanCoSos.Any(h => h.IdBenhNhan == x.Id && h.MaBN.Contains(q)));
         }
-        if (!string.IsNullOrWhiteSpace(maDT))
+        if (!string.IsNullOrWhiteSpace(maCoSo))
         {
-            var maCoSoLoc = maDT.Trim();
+            var maCoSoLoc = maCoSo.Trim();
             query = query.Where(x => _db.BenhNhanCoSos.Any(h => h.IdBenhNhan == x.Id
                 && _db.DMCSKCBs.Any(cs => cs.Id == h.IdCoSo && cs.MaCoSo == maCoSoLoc)));
         }
@@ -58,7 +58,7 @@ public sealed class BenhNhanController : AdminControllerBase
             MaBNTheoBenhNhan = maBNTheoBN,
             Items = items,
             Query = q,
-            MaDT = maDT,
+            MaCoSo = maCoSo,
             Page = page,
             PageSize = DefaultPageSize,
             TotalItems = total

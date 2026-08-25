@@ -165,8 +165,39 @@ public sealed class AdminStoredProcedureService
             AddParameter(command, "@NoiDung", DbType.String, noiDung, size: -1);
         });
 
+    /// <summary>
+    /// Ghi gio lam viec cua MOT ngay. Man Sua goi lap 7 lan (Thu 0..6).
+    /// Goi lap KHONG nguyen tu qua ca tuan, nhung moi lan la upsert idempotent
+    /// theo khoa UNIQUE (IDCoSo, Thu) nen chay lai an toan.
+    /// </summary>
+    public Task<AdminStoredProcedureResult> SaveGioLamViecAsync(
+        long idCoSo,
+        byte thu,
+        TimeSpan gioMoCua,
+        TimeSpan gioDongCua) =>
+        ExecuteAsync("dbo.DM_CSKCB_GioLamViec_Save", command =>
+        {
+            AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
+            AddParameter(command, "@Thu", DbType.Byte, thu);
+            AddParameter(command, "@GioMoCua", DbType.Time, gioMoCua);
+            AddParameter(command, "@GioDongCua", DbType.Time, gioDongCua);
+        });
+
+    /// <summary>
+    /// Xoa cac ngay KHONG con duoc chon. <paramref name="danhSachThuGiuLai"/>
+    /// rong = xoa het gio cua co so do.
+    /// </summary>
+    public Task<AdminStoredProcedureResult> XoaGioLamViecAsync(
+        long idCoSo,
+        string? danhSachThuGiuLai) =>
+        ExecuteAsync("dbo.DM_CSKCB_GioLamViec_Xoa", command =>
+        {
+            AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
+            AddParameter(command, "@DanhSachThu", DbType.AnsiString, danhSachThuGiuLai, 50);
+        });
+
     public Task<string?> GetNoiDungCskcbAsync(long idCoSo, long idChuDe) =>
-        QueryStringAsync("dbo.DM_CSKCB_NoiDung_Get", command =>
+        QueryStringAsync("dbo.DM_CSKCB_NoiDung_Get", "NoiDung", command =>
         {
             AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
             AddParameter(command, "@IDChuDe", DbType.Int64, idChuDe);
@@ -319,8 +350,15 @@ public sealed class AdminStoredProcedureService
         }
     }
 
+    /// <summary>
+    /// Chay mot thu tuc tra ve bang, lay MOT chuoi.
+    /// <paramref name="tenCot"/> BAT BUOC doc theo TEN chu khong theo thu tu:
+    /// DM_CSKCB_NoiDung_Get tra ca dong (cot 0 la ID bigint), doc theo thu tu
+    /// la nem InvalidCastException => HTTP 500. Da dinh o Dot 3.
+    /// </summary>
     private async Task<string?> QueryStringAsync(
         string procedureName,
+        string tenCot,
         Action<DbCommand> configure)
     {
         var connection = _db.Database.GetDbConnection();
@@ -336,9 +374,11 @@ public sealed class AdminStoredProcedureService
             configure(command);
 
             await using var reader = await command.ExecuteReaderAsync();
-            return await reader.ReadAsync() && !await reader.IsDBNullAsync(0)
-                ? reader.GetString(0)
-                : null;
+            if (!await reader.ReadAsync())
+                return null;
+
+            var thuTu = reader.GetOrdinal(tenCot);
+            return await reader.IsDBNullAsync(thuTu) ? null : reader.GetString(thuTu);
         }
         finally
         {
