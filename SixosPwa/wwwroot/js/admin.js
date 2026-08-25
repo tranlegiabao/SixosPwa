@@ -30,6 +30,19 @@
             });
         });
 
+        document.querySelectorAll('[data-confirm-facility-delete]').forEach((form) => {
+            form.addEventListener('submit', (event) => {
+                const message = form.getAttribute('data-confirm-facility-delete');
+                if (message && !window.confirm(message)) {
+                    event.preventDefault();
+                    return;
+                }
+
+                const confirmed = form.querySelector('input[name="confirmed"]');
+                if (confirmed) confirmed.value = 'true';
+            });
+        });
+
         const firstInput = document.querySelector('.admin-form input:not([type="hidden"]):not([readonly])');
         if (firstInput && window.matchMedia('(min-width: 768px)').matches) firstInput.focus();
     });

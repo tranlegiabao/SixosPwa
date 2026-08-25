@@ -143,6 +143,10 @@ public sealed class AdminStoredProcedureService
             AddParameter(command, "@QuangCao", DbType.Decimal, model.QuangCao, precision: 15, scale: 0);
         });
 
+    public Task<AdminStoredProcedureResult> DeleteCoSoYTeAsync(long id) =>
+        ExecuteAsync("dbo.DM_CSKCB_Delete", command =>
+            AddParameter(command, "@ID", DbType.Int64, id));
+
     public Task<AdminStoredProcedureResult> SaveQCKCBAsync(
         long idCoSo,
         string? noiDung,
