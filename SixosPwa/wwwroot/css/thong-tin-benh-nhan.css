@@ -866,3 +866,74 @@ body.co-chan-trang .ytv-footer.ctc {
     background: #fff;
     border-top: 1px solid #dbe4ef;
 }
+
+/* Hiển thị đồng thời bốn sản phẩm, thay cho việc luân phiên từng cặp. */
+.ytv-company-info > .ytv-company-4th-col .ytv-company-rolling {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ytv-company-info > .ytv-company-4th-col .ytv-company-service,
+.ytv-company-info > .ytv-company-4th-col .ytv-company-service.is-active {
+    position: relative !important;
+    inset: auto !important;
+    display: flex !important;
+    flex: 1 1 0;
+    min-height: 0;
+    height: auto !important;
+    opacity: 1 !important;
+    transform: none !important;
+    pointer-events: auto !important;
+}
+
+.ytv-company-info > .ytv-company-4th-col .ytv-company-service > a {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+}
+
+/* Điện thoại: slideshow -> sản phẩm -> dịch vụ -> logo công ty. */
+@media (max-width: 767.98px) {
+    .ytv-company-info {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+
+    .ytv-company-info > .ytv-company-4th-col {
+        order: 1;
+        width: 100%;
+    }
+
+    .ytv-company-info > .sixos-card:not(.primary) {
+        order: 2;
+    }
+
+    .ytv-company-info > .sixos-card.primary {
+        display: flex;
+        order: 3;
+    }
+
+    .ytv-company-info > .ytv-company-4th-col .ytv-company-rolling {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        height: auto !important;
+    }
+
+    .ytv-company-info > .ytv-company-4th-col .ytv-company-service,
+    .ytv-company-info > .ytv-company-4th-col .ytv-company-service.is-active {
+        display: contents !important;
+    }
+
+    .ytv-company-info > .ytv-company-4th-col .ytv-company-service > div {
+        display: none !important;
+    }
+
+    .ytv-company-info > .ytv-company-4th-col .ytv-company-service > a {
+        min-height: 132px !important;
+        padding: 10px 6px !important;
+        border: 1px solid #dbe4ef;
+        border-radius: 10px;
+    }
+}

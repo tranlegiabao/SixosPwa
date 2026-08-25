@@ -33,19 +33,6 @@
             });
         }
 
-        var serviceItems = document.querySelectorAll('.ytv-company-service');
-        if (serviceItems.length > 1) {
-            var activeServiceIndex = 0;
-            window.setInterval(function() {
-                serviceItems[activeServiceIndex].classList.remove('is-active');
-                serviceItems[activeServiceIndex].setAttribute('aria-hidden', 'true');
-                serviceItems[activeServiceIndex].setAttribute('tabindex', '-1');
-                activeServiceIndex = (activeServiceIndex + 1) % serviceItems.length;
-                serviceItems[activeServiceIndex].classList.add('is-active');
-                serviceItems[activeServiceIndex].setAttribute('aria-hidden', 'false');
-                serviceItems[activeServiceIndex].setAttribute('tabindex', '0');
-            }, 5000);
-        }
     });
 
     // Close the dropdown menu if the user clicks outside of it

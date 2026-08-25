@@ -377,6 +377,25 @@ public sealed class CoSoYTeController : AdminControllerBase
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(long id, bool confirmed, string? q, string? loaiCS, int page = 1)
+    {
+        if (!confirmed)
+        {
+            Error("Cần xác nhận trước khi xóa cơ sở y tế.");
+            return RedirectToAction(nameof(Index), new { q, loaiCS, page = SafePage(page) });
+        }
+
+        var result = await _adminStoredProcedures.DeleteCoSoYTeAsync(id);
+        if (result.Succeeded)
+            Success("Đã xóa cơ sở y tế.");
+        else
+            Error(result.Message ?? "Không thể xóa cơ sở y tế.");
+
+        return RedirectToAction(nameof(Index), new { q, loaiCS, page = SafePage(page) });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Preview(CoSoYTeEditViewModel model)
     {
         var storedFacility = model.Id > 0
