@@ -87,67 +87,39 @@
     display: flex;
     flex-direction: column;
 
-    padding: 24px 0 0;
+    padding: 12px 0 0;
 
     position: fixed;
     top: 74px;
     left: 0;
 
-    bottom: 65px; /* đổi 110 -> khoảng chiều cao footer */
-
-    overflow: hidden;
+    /* Sidebar tự co giãn theo nội dung, không cuộn */
+    height: auto;
+    overflow: visible;
     z-index: 100;
 }
 
+    /* Không cuộn gì cả, hiện toàn bộ nội dung */
     .sidebar-scroll-area {
-        flex: 1 1 auto;
-        min-height: 0;
-        overflow-x: hidden;
-        overflow-y: auto;
-    }
-    .sidebar-scroll-area::-webkit-scrollbar {
-        width: 5px;
-    }
-    .sidebar-scroll-area::-webkit-scrollbar-track {
-        background: transparent;
-    }
-    .sidebar-scroll-area::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 10px;
-    }
-    .sidebar-scroll-area::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
+        flex: none;
+        overflow: visible;
     }
     .operating-hours-box {
         flex-shrink: 0;
         margin-bottom: 0;
     }
-
-    .ytv-sidebar::-webkit-scrollbar {
-        width: 5px;
-    }
-    .ytv-sidebar::-webkit-scrollbar-track {
-        background: transparent;
-    }
-    .ytv-sidebar::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 10px;
-    }
-    .ytv-sidebar::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
-    }
     .sidebar-logo-container {
         text-align: left;
-        margin-bottom: 24px;
+        margin-bottom: 12px;
         padding: 0 16px;
         flex: 0 0 auto;
     }
     .sidebar-logo {
-        width: 100px;
-        height: 100px;
+        width: 68px;
+        height: 68px;
         object-fit: contain;
         border-radius: 50%;
-        border: 3px solid #f1f5f9;
+        border: 2px solid #f1f5f9;
         box-shadow: 0 4px 12px rgba(0,0,0,0.06);
         background: white;
         transition: transform 0.3s ease;
@@ -158,14 +130,14 @@
     .ytv-sidebar-title {
         font-size: 11px; font-weight: 700; color: #94a3b8;
         text-transform: uppercase; letter-spacing: 1px;
-        padding: 0 20px 10px; border-bottom: 1px solid #f1f5f9; margin-bottom: 0px;
+        padding: 0 20px 8px; border-bottom: 1px solid #f1f5f9; margin-bottom: 0px;
     }
     .ytv-menu-item {
-        display: flex; align-items: center; padding: 12px 16px; margin: 4px 16px; gap: 12px;
-        color: #475569; font-size: 14px; font-weight: 600; text-decoration: none;
-        transition: all 0.2s ease; border-radius: 12px; cursor: pointer;
+        display: flex; align-items: center; padding: 8px 16px; margin: 2px 16px; gap: 10px;
+        color: #475569; font-size: 13px; font-weight: 600; text-decoration: none;
+        transition: all 0.2s ease; border-radius: 10px; cursor: pointer;
     }
-    .ytv-menu-item i { font-size: 16px; width: 20px; text-align: center; color: #64748b; transition: color 0.2s ease; }
+    .ytv-menu-item i { font-size: 15px; width: 18px; text-align: center; color: #64748b; transition: color 0.2s ease; }
     .ytv-menu-item:hover {
         background: #f1f5f9; color: #0f172a;
     }
@@ -257,9 +229,9 @@
 
     .operating-hours-box {
         background: #f8fafc;
-        border-radius: 16px;
-        padding: 16px;
-        margin: 12px 16px 0;
+        border-radius: 12px;
+        padding: 10px 12px;
+        margin: 8px 16px 12px;
         border: 1px solid #e2e8f0;
         box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
     }
@@ -323,7 +295,9 @@
         }
     }
 
-    .hospital-actions { padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; flex: 0 0 auto; }
+
+    .hospital-actions { padding: 8px 16px; display: flex; flex-direction: column; gap: 8px; flex: 0 0 auto; }
+    .hospital-actions .btn-outline { padding: 8px 12px; font-size: 13px; border-radius: 8px; }
     .btn-primary { background: #1d4ed8; color: #0f172a; padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; border: none; cursor: pointer; transition: background 0.2s; flex: 1; }
     .btn-primary:hover { background: #1e40af; color: #0f172a; }
     .btn-outline {
@@ -1074,7 +1048,8 @@
             <i class="fas fa-headset"></i> Liên hệ
         </a>
 
-        </div>
+        </div><!-- đóng sidebar-scroll-area -->
+
         @{
             // Hai nut di chung MOT cong dang nhap, chi khac cho ha canh
             // (returnUrl). Ca hai phai mang theo slug co so — thieu no thi man
