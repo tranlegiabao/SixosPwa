@@ -93,6 +93,28 @@ _Tránh_: kết nối, đồng bộ tài khoản
 Trang chủ dành cho bệnh nhân của cơ sở **không có** API riêng. Đợt 2026-08 mới chỉ có giao diện.
 _Tránh_: dashboard, trang chủ (chung chung)
 
+### Xác thực & vé bàn giao (chốt 2026-08-25)
+
+**OTP**:
+Mã 6 chữ số do **chính SixosPwa** sinh và giữ (`IMemoryCache`, khoá `OTP_{sđt}`, hạn 5 phút) để xác
+thực **danh tính bệnh nhân**. Đây là trục xác thực duy nhất của cổng bệnh nhân. Hiện còn kê tạm một
+giá trị cố định lúc phát triển.
+_Tránh_: mã xác nhận, mã đối tác
+
+**Vé bàn giao**:
+Trường `code` do hệ đối tác trả về trong thân phản hồi lúc mở tài khoản, cất ở
+`HT_TaiKhoanDoiTac.MaXacNhanTam`, dùng **đúng một lần** để POST kèm lúc bàn giao cho bên họ đặt cookie.
+Bệnh nhân **không bao giờ nhìn thấy và không bao giờ gõ** nó — họ đã qua *OTP* từ trước. 🔴 Nó **không
+phải** một bước xác thực danh tính; xếp nhầm nó thành "OTP thay thế" từng dẫn tới một kết luận sai về
+lỗ hổng (2026-08-24).
+_Tránh_: OTP của đối tác, mã xác thực, mã xác nhận trần
+
+**Kênh**:
+Tham số `xacthuc` gửi kèm khi nhờ đối tác mở tài khoản, quyết định họ gửi *Vé bàn giao* đi đường nào:
+1 = Zalo, 2 = Email, 3 = SMS, 4 = **chỉ sinh vé, không gửi gì**. Cổng bệnh nhân luôn dùng kênh 4 —
+bệnh nhân không cần nhận vé, nên gửi tin là vừa tốn tiền vừa làm họ hoang mang.
+_Tránh_: phương thức xác thực, hình thức gửi OTP
+
 ### Nền dữ liệu (chốt 2026-08-24)
 
 **Con người**:
