@@ -94,6 +94,9 @@ public sealed class CoSoYTeController : AdminControllerBase
     public async Task<IActionResult> Create(CoSoYTeEditViewModel model)
     {
         Normalize(model);
+        if (string.IsNullOrWhiteSpace(model.Slug))
+            ModelState.AddModelError(nameof(model.Slug), "Vui lòng nhập đường dẫn cố định.");
+
         if (model.ImageFile != null)
             model.Img = await SaveImageAsync(model.ImageFile, "static/img_cs", "/static/img_cs", nameof(model.ImageFile));
         model.Logo = await ResolveImageAsync(
