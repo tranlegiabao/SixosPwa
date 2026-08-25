@@ -105,6 +105,7 @@ public sealed class CoSoYTeController : AdminControllerBase
     public async Task<IActionResult> Create(CoSoYTeEditViewModel model)
     {
         Normalize(model);
+        await ApDungLoaiCoSoAsync(model);
         if (model.ImageFile != null)
             model.Img = await SaveImageAsync(model.ImageFile, "static/img_cs", "/static/img_cs", nameof(model.ImageFile));
         model.Logo = await ResolveImageAsync(
@@ -238,6 +239,7 @@ public sealed class CoSoYTeController : AdminControllerBase
 
         var existingAdvertising = await GetAdvertisingAsync(entity.Id);
         Normalize(model);
+        await ApDungLoaiCoSoAsync(model);
         if (model.ImageFile != null)
             model.Img = await SaveImageAsync(model.ImageFile, "static/img_cs", "/static/img_cs", nameof(model.ImageFile));
         else
@@ -498,6 +500,36 @@ public sealed class CoSoYTeController : AdminControllerBase
     {
         if (!string.IsNullOrWhiteSpace(type) && !AllowedTypes.Contains(type))
             ModelState.AddModelError(nameof(CoSoYTeEditViewModel.LoaiCS), "Loại cơ sở không hợp lệ.");
+    }
+
+    /// <summary>
+    /// Bac cau o "Loai hinh" tren form sang khoa ngoai ma thu tuc luu doc.
+    ///
+    /// O do bind vao <c>LoaiCS</c> (chuoi ma nhom, vd "pkdk"), nhung
+    /// <c>SaveCoSoYTeAsync</c> lai gui <c>@IDNhomCS</c> lay tu
+    /// <c>SelectedNhomCSId</c> — ma KHONG co o nao tren form dat gia tri do, nen
+    /// no luon ve null sau model binding. Thu tuc <c>DM_CSKCB_Save</c> thi
+    /// <c>SET IDNhomCS = @IDNhomCS</c> VO DIEU KIEN, khong bo qua null.
+    ///
+    /// Hau qua truoc ban va: MOI lan bam Luu deu xoa trang Loai hinh cua co so,
+    /// ke ca khi khong ai dung toi o do. Dau vet con lai trong DB: nhung co so
+    /// tung sua qua man nay (ID 1, 8, 11, 15, 18) deu co IDNhomCS = NULL, con
+    /// nhung co so chua ai sua thi van giu nguyen gia tri seed.
+    /// Nam sua
+    /// </summary>
+    private async Task ApDungLoaiCoSoAsync(CoSoYTeEditViewModel model)
+    {
+        if (string.IsNullOrWhiteSpace(model.LoaiCS))
+        {
+            // "Chua phan loai" — o day null moi la y dinh that cua nguoi dung.
+            model.SelectedNhomCSId = null;
+            return;
+        }
+
+        model.SelectedNhomCSId = await _db.DMNhomCSs.AsNoTracking()
+            .Where(x => x.MaNhom == model.LoaiCS)
+            .Select(x => (long?)x.ID)
+            .FirstOrDefaultAsync();
     }
 
     private void ValidateImageUrl(string? imageUrl, string propertyName, params string[] localPrefixes)
