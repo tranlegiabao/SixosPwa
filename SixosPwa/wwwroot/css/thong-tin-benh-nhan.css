@@ -142,7 +142,7 @@
     @media (min-width: 993px) {
         .ytv-main {
             display: grid;
-            grid-template-columns: 220px minmax(0, 1fr) 190px;
+            grid-template-columns: 360px minmax(0, 1fr) 190px;
             grid-template-rows: minmax(0, 1fr) auto;
         }
         .ytv-sidebar {
@@ -579,10 +579,10 @@
 /* Bố cục Home theo bảng vẽ */
 .ytv-sidebar-company {
     margin: auto 12px 0;
-    padding: 10px 6px;
-    border: 1px solid #dbe4ef;
-    border-radius: 10px;
-    background: #fff;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     text-align: center;
     color: #12345b;
 }
@@ -736,7 +736,7 @@
     .ytv-main {
         position: relative;
         display: grid;
-        grid-template-columns: 220px minmax(0, 1fr) 190px;
+        grid-template-columns: 360px minmax(0, 1fr) 190px;
         grid-template-rows: minmax(0, 1fr);
         min-height: 0;
         overflow: hidden;
@@ -778,7 +778,7 @@
         position: absolute;
         right: 190px;
         bottom: 0;
-        left: 220px;
+        left: 360px;
         height: 122px;
         margin: 0;
         padding: 12px 20px;
