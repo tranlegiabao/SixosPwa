@@ -863,7 +863,7 @@
 
 /* Footer Home tach rieng voi khung noi dung, khong con dai xanh cua 3 khoi cu. */
 body.co-chan-trang .ytv-footer.ctc {
-    background: #fff;
+    background: #e0f2fe;
     border-top: 1px solid #dbe4ef;
 }
 
@@ -935,5 +935,88 @@ body.co-chan-trang .ytv-footer.ctc {
         padding: 10px 6px !important;
         border: 1px solid #dbe4ef;
         border-radius: 10px;
+    }
+}
+
+/* Trang chu: uu tien dien tich slideshow, dich vu gon hon va nhan dien Sixos ro hon. */
+.ytv-main,
+.ytv-content,
+.ytv-slider,
+.para-card-wrapper {
+    background: #fff;
+}
+
+.para-card-wrapper {
+    padding: 0;
+}
+
+.ytv-slider .para-card,
+.ytv-slider .para-card-wrapper .para-card {
+    width: 100%;
+}
+
+@media (min-width: 993px) {
+    .ytv-content {
+        padding: 0 16px 106px;
+    }
+
+    .ytv-company-info > .sixos-card:not(.primary) {
+        height: 90px;
+        padding: 8px 16px;
+    }
+
+    .ytv-company-info > .sixos-card:not(.primary) .sixos-list {
+        gap: 3px 18px !important;
+    }
+
+    .ytv-company-info > .sixos-card:not(.primary) .sixos-item {
+        padding: 3px 6px;
+    }
+
+    .ytv-sidebar-company {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: auto 22px 18px;
+        text-align: center;
+    }
+
+    .ytv-sidebar-company img {
+        /* File logo chi 68 x 75 px; giu kich thuoc gan native de khong bi mo. */
+        width: 68px;
+        height: 75px;
+        margin: 0 0 8px;
+    }
+
+    .ytv-sidebar-company-name {
+        font-size: 22px;
+        line-height: 1.1;
+    }
+
+    .ytv-sidebar-company-subtitle {
+        margin-top: 5px;
+        font-size: 18px;
+        font-weight: 600;
+        line-height: 1.35;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .sixos-card.primary {
+        padding: 16px;
+    }
+
+    .sixos-card.primary .sixos-logo-box img {
+        width: 72px !important;
+        height: 72px !important;
+    }
+
+    .sixos-card.primary .sixos-title {
+        font-size: 21px;
+    }
+
+    .sixos-card.primary .sixos-subtitle {
+        font-size: 14px;
+        line-height: 1.4;
     }
 }
