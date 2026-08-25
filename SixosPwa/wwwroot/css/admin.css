@@ -325,3 +325,22 @@
     .dashboard-activity-list::-webkit-scrollbar { width: 5px; }
     .dashboard-activity-list::-webkit-scrollbar-thumb { border-radius: 99px; background: #d6deef; }
 }
+
+
+/* --- Hop xac nhan trong app, thay cho window.confirm cua trinh duyet -------
+   Dat o cap <body> (admin.js tu chen vao document.body): .admin-panel co
+   overflow: hidden nen moi position: fixed long ben trong no deu bi ghim.    */
+.ytv-nen-mo { position: fixed; inset: 0; z-index: 1080; display: grid; place-items: center; padding: 20px; background: rgba(23, 35, 63, .48); backdrop-filter: blur(2px); opacity: 0; transition: opacity .15s ease; }
+.ytv-nen-mo.hien { opacity: 1; }
+.ytv-hop-xac-nhan { width: 100%; max-width: 420px; padding: 24px; border-radius: 16px; background: #fff; box-shadow: 0 24px 60px rgba(23, 35, 63, .22); transform: translateY(8px) scale(.98); transition: transform .15s ease; }
+.ytv-nen-mo.hien .ytv-hop-xac-nhan { transform: none; }
+.ytv-hop-dau { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.ytv-hop-bieu-tuong { display: grid; place-items: center; width: 40px; height: 40px; flex: 0 0 40px; border-radius: 12px; color: #d53f52; background: #fff1f3; }
+.ytv-hop-bieu-tuong svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.ytv-hop-tieu-de { margin: 0; color: var(--admin-ink); font-size: 15px; font-weight: 800; }
+.ytv-hop-noi-dung { margin: 0 0 20px; color: var(--admin-muted); font-size: 12.5px; line-height: 1.6; }
+.ytv-hop-nut { display: flex; justify-content: flex-end; gap: 9px; }
+.ytv-hop-nut .btn { border-radius: 9px; padding: 9px 16px; font-size: 12px; font-weight: 750; }
+.ytv-nut-nguy-hiem { color: #fff; background: #d53f52; border-color: #d53f52; box-shadow: 0 5px 13px rgba(213, 63, 82, .2); }
+.ytv-nut-nguy-hiem:hover, .ytv-nut-nguy-hiem:focus { color: #fff; background: #b93447; border-color: #b93447; }
+body.ytv-khoa-cuon { overflow: hidden; }

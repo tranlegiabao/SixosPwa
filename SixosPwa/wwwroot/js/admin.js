@@ -1,6 +1,83 @@
 (() => {
     'use strict';
 
+    /**
+     * Hop xac nhan trong app, thay cho window.confirm cua trinh duyet.
+     *
+     * Vi sao khong dung window.confirm: no hien hop den mang ten mien
+     * (".trycloudflare.com says") nam ngoai giao dien, khong theo bang mau nao
+     * cua minh, va khong the doi chu tren nut cho ro dang lam gi.
+     *
+     * Hop duoc chen thang vao <body>: .admin-panel co overflow: hidden nen moi
+     * position: fixed long ben trong no deu bi ghim lai trong khung panel.
+     */
+    function hoiXacNhan({ tieuDe, noiDung, nutXacNhan }) {
+        return new Promise((traLoi) => {
+            const nen = document.createElement('div');
+            nen.className = 'ytv-nen-mo';
+            nen.innerHTML = `
+                <div class="ytv-hop-xac-nhan" role="alertdialog" aria-modal="true"
+                     aria-labelledby="ytvHopTieuDe" aria-describedby="ytvHopNoiDung">
+                    <div class="ytv-hop-dau">
+                        <span class="ytv-hop-bieu-tuong">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12 9v4"></path><path d="M12 17h.01"></path>
+                                <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"></path>
+                            </svg>
+                        </span>
+                        <h2 class="ytv-hop-tieu-de" id="ytvHopTieuDe"></h2>
+                    </div>
+                    <p class="ytv-hop-noi-dung" id="ytvHopNoiDung"></p>
+                    <div class="ytv-hop-nut">
+                        <button type="button" class="btn admin-btn-secondary" data-ytv-huy>Hủy</button>
+                        <button type="button" class="btn ytv-nut-nguy-hiem" data-ytv-dong-y></button>
+                    </div>
+                </div>`;
+
+            // Dat bang textContent chu khong noi vao chuoi HTML: noi dung den tu
+            // thuoc tinh tren form, coi nhu du lieu chu khong phai ma.
+            nen.querySelector('#ytvHopTieuDe').textContent = tieuDe;
+            nen.querySelector('#ytvHopNoiDung').textContent = noiDung;
+            nen.querySelector('[data-ytv-dong-y]').textContent = nutXacNhan;
+
+            const dong = (ketQua) => {
+                document.removeEventListener('keydown', khiGoPhim);
+                nen.remove();
+                document.body.classList.remove('ytv-khoa-cuon');
+                traLoi(ketQua);
+            };
+            const khiGoPhim = (e) => { if (e.key === 'Escape') dong(false); };
+
+            nen.querySelector('[data-ytv-huy]').addEventListener('click', () => dong(false));
+            nen.querySelector('[data-ytv-dong-y]').addEventListener('click', () => dong(true));
+            nen.addEventListener('click', (e) => { if (e.target === nen) dong(false); });
+            document.addEventListener('keydown', khiGoPhim);
+
+            document.body.classList.add('ytv-khoa-cuon');
+            document.body.appendChild(nen);
+            requestAnimationFrame(() => nen.classList.add('hien'));
+            // Chon san nut Huy — go Enter theo quan tinh se KHONG xoa nham.
+            nen.querySelector('[data-ytv-huy]').focus();
+        });
+    }
+
+    function noiHopXacNhan(form, noiDung, tieuDe, nutXacNhan, truocKhiGui) {
+        if (!noiDung) return;
+
+        form.addEventListener('submit', async (event) => {
+            if (form.dataset.ytvDaXacNhan === 'true') return;   // luot gui that
+            event.preventDefault();
+
+            if (!await hoiXacNhan({ tieuDe, noiDung, nutXacNhan })) return;
+
+            if (truocKhiGui) truocKhiGui();
+            form.dataset.ytvDaXacNhan = 'true';
+            // requestSubmit (khong phai submit) de con chay qua cac listener khac
+            // dang gan tren form nay; co dataset o tren chan lap vo han.
+            if (form.requestSubmit) form.requestSubmit(); else form.submit();
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         if (window.TomSelect) {
             document.querySelectorAll('select.form-select:not([data-address-province]):not([data-address-ward])').forEach((select) => {
@@ -24,23 +101,19 @@
         }
 
         document.querySelectorAll('[data-confirm]').forEach((form) => {
-            form.addEventListener('submit', (event) => {
-                const message = form.getAttribute('data-confirm');
-                if (message && !window.confirm(message)) event.preventDefault();
-            });
+            noiHopXacNhan(form, form.getAttribute('data-confirm'), 'Xác nhận', 'Tiếp tục');
         });
 
         document.querySelectorAll('[data-confirm-facility-delete]').forEach((form) => {
-            form.addEventListener('submit', (event) => {
-                const message = form.getAttribute('data-confirm-facility-delete');
-                if (message && !window.confirm(message)) {
-                    event.preventDefault();
-                    return;
-                }
-
-                const confirmed = form.querySelector('input[name="confirmed"]');
-                if (confirmed) confirmed.value = 'true';
-            });
+            noiHopXacNhan(
+                form,
+                form.getAttribute('data-confirm-facility-delete'),
+                'Xóa cơ sở y tế?',
+                'Xóa cơ sở',
+                () => {
+                    const confirmed = form.querySelector('input[name="confirmed"]');
+                    if (confirmed) confirmed.value = 'true';
+                });
         });
 
         const firstInput = document.querySelector('.admin-form input:not([type="hidden"]):not([readonly])');
