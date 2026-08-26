@@ -627,6 +627,10 @@ width: 70px;
                             </div>
                         </div>
                     </form>
+
+                    @* Nut cai PWA — phai co o CA luong doi tac, khong chi luong OTP.
+                       CSS nam san trong site.css; pwa-install.js quyet dinh an/hien. *@
+                    <partial name="_PwaInstall" />
                 </div>
                 <div class="form-footer mt-0">
                     <div class="row g-3 align-items-center">
@@ -703,6 +707,7 @@ width: 70px;
 </div>
 
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/pwa-install.js" asp-append-version="true"></script>
 <script>
     (function () {
         const maCoSo = @Html.Raw(System.Text.Json.JsonSerializer.Serialize((string)ViewBag.MaCoSo));
