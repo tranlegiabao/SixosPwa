@@ -12,6 +12,42 @@
  * Xem ADR 0014.
  */
 
+/* --- THANG CO CHU (quan trong nhat) -----------------------------------
+ * Doi tac viet markup theo thang cua Tabler, ma thang do NHO HON Bootstrap
+ * nhieu. Khong bu thi moi chu deu phinh to ~1,5 lan tren dien thoai:
+ *
+ *      lop      Tabler        Bootstrap 5            ti le
+ *      .fs-4    0.875rem      calc(1.275rem+.3vw)    ~1,53x
+ *      .fs-3    1rem          calc(1.3rem+.6vw)      ~1,44x
+ *      body     0.875rem      1rem                   1,14x
+ *      h2       1.25rem       2rem                   1,60x
+ *
+ * Markup cua ho rai .fs-4 khap nhan va lien ket, nen day la cho lech nang nhat.
+ * Chep NGUYEN VAN tu tabler.css cua ho.
+ */
+body {
+    font-size: 0.875rem;
+}
+
+.fs-1 { font-size: 1.5rem !important; }
+.fs-2 { font-size: 1.25rem !important; }
+.fs-3 { font-size: 1rem !important; }
+.fs-4 { font-size: 0.875rem !important; }
+.fs-5 { font-size: 0.75rem !important; }
+.fs-6 { font-size: 0.625rem !important; }
+
+/* Nut: Tabler --tblr-btn-font-size = 0.875rem, Bootstrap .btn = 1rem. */
+.btn {
+    font-size: 0.875rem;
+}
+
+h1, .h1 { font-size: 1.5rem; }
+h2, .h2 { font-size: 1.25rem; }
+h3, .h3 { font-size: 1rem; }
+h4, .h4 { font-size: 0.875rem; }
+h5, .h5 { font-size: 0.75rem; }
+h6, .h6 { font-size: 0.625rem; }
+
 /* --- O nhap co icon ben trong (man Dang ky) --------------------------- */
 .input-icon {
     position: relative;
