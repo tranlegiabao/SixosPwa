@@ -4,26 +4,33 @@ namespace SixosPwa.Services.Partner;
 
 /// <summary>
 /// Co so KHONG co API rieng. Khong goi ra ngoai gi ca, khong ban giao —
-/// benh nhan o lai trang benh nhan noi bo cua SixosPwa.
+/// benh nhan o lai trang benh nhan noi bo cua SixosPwa va dung luong OTP cua
+/// chinh SixosPwa.
 /// </summary>
 public class NoApiGateway : IPartnerGateway
 {
+    private const string KhongCoDoiTac = "Cơ sở này không liên kết với hệ thống bên ngoài";
+
     public string KieuApi => KieuApiDoiTac.KhongCo;
 
     public bool CoBanGiao => false;
 
-    public Task<TinhTrangTaiKhoan> TinhTrangTaiKhoanAsync(DoiTacApi cauHinh, string cccd, CancellationToken ct = default)
-        // Khong co he ngoai de hoi; tai khoan noi bo do SixosPwa tu quan.
-        => Task.FromResult(TinhTrangTaiKhoan.ChuaCo);
+    public bool DungManDoiTac => false;
 
-    public Task<KetQuaMoTaiKhoan> MoTaiKhoanAsync(DoiTacApi cauHinh, YeuCauMoTaiKhoan yeuCau, CancellationToken ct = default)
-        => Task.FromResult(new KetQuaMoTaiKhoan(true, "Tạo tài khoản nội bộ thành công", null));
+    public Task<KetQuaThaoTac> DangNhapAsync(DoiTacApi cauHinh, string cccd, string matKhau, CancellationToken ct = default)
+        => Task.FromResult(new KetQuaThaoTac(false, KhongCoDoiTac));
 
-    public Task<KetQuaThaoTac> GuiMaLienKetAsync(DoiTacApi cauHinh, string cccd, string dienThoai, CancellationToken ct = default)
-        => Task.FromResult(new KetQuaThaoTac(false, "Cơ sở này không cần liên kết tài khoản"));
+    public Task<KetQuaThaoTac> MoTaiKhoanAsync(DoiTacApi cauHinh, YeuCauMoTaiKhoan yeuCau, CancellationToken ct = default)
+        => Task.FromResult(new KetQuaThaoTac(true, "Tạo tài khoản nội bộ thành công"));
 
-    public Task<KetQuaThaoTac> DatLaiMatKhauAsync(DoiTacApi cauHinh, string cccd, string dienThoai, string ma, string matKhauMoi, CancellationToken ct = default)
-        => Task.FromResult(new KetQuaThaoTac(false, "Cơ sở này không cần liên kết tài khoản"));
+    public Task<KetQuaThaoTac> XacThucMaAsync(DoiTacApi cauHinh, string cccd, string? email, string dienThoai, string ma, CancellationToken ct = default)
+        => Task.FromResult(new KetQuaThaoTac(false, KhongCoDoiTac));
+
+    public Task<KetQuaThaoTac> QuenMatKhauAsync(DoiTacApi cauHinh, string cccd, string emailHoacSdt, CancellationToken ct = default)
+        => Task.FromResult(new KetQuaThaoTac(false, KhongCoDoiTac));
+
+    public Task<IReadOnlyList<ChiNhanhDoiTac>> LayChiNhanhAsync(DoiTacApi cauHinh, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<ChiNhanhDoiTac>>(Array.Empty<ChiNhanhDoiTac>());
 
     public ThongTinBanGiao? DungThongTinBanGiao(DoiTacApi cauHinh, YeuCauBanGiao yeuCau) => null;
 }

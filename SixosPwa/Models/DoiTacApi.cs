@@ -16,7 +16,18 @@ public class DoiTacApi
     /// <summary>Chon ban cai cua IPartnerGateway. Xem <see cref="KieuApiDoiTac"/>.</summary>
     public string KieuApi { get; set; } = KieuApiDoiTac.KhongCo;
 
-    /// <summary>Goc dia chi API cua doi tac (vd SixOSDatKhamAPI). Rong voi kieu NONE.</summary>
+    /// <summary>
+    /// Goc dia chi API rieng cua doi tac (vd SixOSDatKhamAPI). Rong voi kieu NONE.
+    ///
+    /// HIEN KHONG CON AI DOC — dung tim cach goi qua day. Voi Ung Buou, dia chi
+    /// nay la IP NOI BO benh vien (10.85.9.34) nen SixosPwa chay tren internet
+    /// khong bao gio goi toi duoc; ca ba cua tung nam sau no da chuyen sang
+    /// TrangChu cong khai (ADR 0014).
+    ///
+    /// Giu cot lai vi IPartnerGateway phuc vu NHIEU doi tac: ban cai sau co the
+    /// co Web API rieng that su goi duoc. Xoa di la bat nguoi sau them lai cot
+    /// tren DB that cua khach, va mat luon dia chi API noi bo cua Ung Buou.
+    /// </summary>
     public string? BaseUrl { get; set; }
 
     /// <summary>Trang chu web cua doi tac — dich den sau khi ban giao phien.</summary>

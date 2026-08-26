@@ -1,4 +1,3 @@
-﻿using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -7,18 +6,33 @@ using SixosPwa.Models;
 namespace SixosPwa.Services.Partner;
 
 /// <summary>
-/// Ban cai cho Benh vien Ung Buou (DangKyOnlineUB + SixOSDatKhamAPI).
+/// Ban cai cho Benh vien Ung Buou (DangKyOnlineUB).
 ///
-/// KHONG sua mot dong nao trong repo cua doi tac — chi dung cac cua DA CO SAN
-/// va da la [AllowAnonymous]. Toan bo thiet ke treo len 4 diem tua trong code
-/// cua ho; doc ADR 0003 (SixosPwa/docs/adr/) truoc khi sua file nay.
+/// SixosPwa dung lai BO MAN cua ho (Dang nhap / Dang ky / Quen mat khau) va goi
+/// dung cac cua DA CO SAN tren TrangChu cong khai. Doi tac la NGUON SU THAT cua
+/// mat khau — ta khong tu phan xu dung/sai bao gio.
+///
+/// KHONG con cot BaseUrl: dia chi do la IP noi bo benh vien (10.85.9.34), goi tu
+/// internet la "connection refused". Doc ADR 0014 (THAY ADR 0003) truoc khi sua.
 /// </summary>
 public class UbGateway : IPartnerGateway
 {
-    // Trang MVC cua doi tac (dat cookie DKOnline_auth). Khac BaseUrl cua Web API.
-    private const string DuongDanDangKy = "/HeThong/HT_DangNhap/register";
-    private const string DuongDanXacThuc = "/api/HT_DangNhap/XacThucMaXacNhan";
+    // Trang MVC cua doi tac (dat cookie DKOnline_auth). Tat ca deu la
+    // [AllowAnonymous] va deu nam duoi TrangChu cong khai.
     private const string DuongDanDangNhap = "/HeThong/HT_DangNhap/login";
+    private const string DuongDanDangKy = "/HeThong/HT_DangNhap/register";
+    private const string DuongDanQuenMatKhau = "/HeThong/HT_QuenMatKhau/QuenMatKhau";
+    private const string DuongDanChiNhanh = "/HeThong/HT_DangNhap/branches";
+
+    /// <summary>
+    /// Ban XacThucMaXacNhan o Controllers/ — chi tra JSON, KHONG dat cookie.
+    ///
+    /// ⚠️ Doi tac co HAI action trung ten. Ban o Area/API/Controllers/ vua dat
+    /// cookie vua Redirect; goi ban do o tang may chu la vo nghia (cookie roi vao
+    /// HttpClient cua ta chu khong phai trinh duyet benh nhan) va con TIEU THU
+    /// mat ma. Ta can biet ma dung/sai de bao ngay trong app, nen dung ban nay.
+    /// </summary>
+    private const string DuongDanXacThuc = "/HeThong/HT_DangNhap/XacThucMaXacNhan";
 
     /// <summary>
     /// Nut benh nhan bam -> man tuong ung ben Ung Buou. Doi tac khac se co bang
@@ -34,28 +48,23 @@ public class UbGateway : IPartnerGateway
             ["ho-so"] = "/QuanLy/QL_HoSoBenhNhan"
         };
 
-    // 1 = Zalo, 2 = Email, 3 = SMS, 4 = chi sinh ma — khop switch trong
-    // RegisterAsync cua doi tac.
-    // Hai kenh nay hien KHONG duoc dung nua (xem KenhChiSinhMa). Giu lai de doi
-    // ve mot dong neu co so nao con chay ban UB cu chua co kenh 4.
-    private const int KenhEmail = 2;
-    private const int KenhSms = 3;
-
     /// <summary>
-    /// Kenh 4 — doi tac CHI sinh ma xac nhan, KHONG gui SMS/Zalo/Email.
+    /// Cac kenh gui ma cua doi tac, khop switch trong RegisterAsync cua ho:
+    /// 1 = Zalo, 2 = Email, 3 = SMS, 4 = chi sinh ma khong gui tin.
     ///
-    /// Benh nhan da xac thuc bang OTP cua SixosPwa truoc do roi; ma cua doi tac
-    /// chi la VE BAN GIAO de dat cookie phien ben ho, benh nhan khong bao gio
-    /// phai go. Truoc day ta phai muon kenh SMS (3) chi de lay duoc ma trong than
-    /// phan hoi ⇒ MOI lan mo tai khoan la mot tin nhan that bi gui di: ton tien
-    /// va lam benh nhan hoang mang vi nhan ma khong dung toi.
+    /// Chi mo 1 va 3 cho benh nhan chon. KHONG mo kenh 2 (Email): cuoi SendCode
+    /// ben ho chi tra thongTinBenhNhan khi SoDienThoai khac rong roi gan MaXacNhan
+    /// vo dieu kien, nen nhanh Email nem NullReferenceException va tra "Gui ma xac
+    /// thuc that bai". KHONG mo kenh 4: no khong gui tin nen man nhap ma 4 o cua ho
+    /// mat ly do ton tai.
     ///
-    /// ⚠️ Kenh nay CHI ton tai tu ban va d57d081+ ben DangKyOnlineUB. Neu co so
-    /// nao con chay ban UB cu thi switch cua ho roi vao nhanh mac dinh, tra
-    /// statusCode 500 va KHONG co truong "code" ⇒ khong ban giao duoc. Phai deploy
-    /// UB truoc, roi moi deploy SixosPwa.
+    /// Cai gia da biet cua ca hai kenh mo: moi lan dang ky la mot tin nhan that.
     /// </summary>
-    private const int KenhChiSinhMa = 4;
+    public const int KenhZalo = 1;
+    public const int KenhSms = 3;
+
+    /// <summary>Kenh benh nhan chon; khong nhan ra thi ve SMS cho chac.</summary>
+    private static int ChonKenh(int kenh) => kenh == KenhZalo ? KenhZalo : KenhSms;
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<UbGateway> _logger;
@@ -70,111 +79,136 @@ public class UbGateway : IPartnerGateway
 
     public bool CoBanGiao => true;
 
-    public async Task<TinhTrangTaiKhoan> TinhTrangTaiKhoanAsync(DoiTacApi cauHinh, string cccd, CancellationToken ct = default)
-    {
-        if (string.IsNullOrWhiteSpace(cauHinh.BaseUrl) || string.IsNullOrWhiteSpace(cccd))
-        {
-            return TinhTrangTaiKhoan.KhongXacDinh;
-        }
+    public bool DungManDoiTac => true;
 
-        try
-        {
-            var client = TaoClient();
-            var url = $"{CatDauGach(cauHinh.BaseUrl)}/api/TaiKhoan/cccd/{Uri.EscapeDataString(cccd)}";
-            using var phanHoi = await client.GetAsync(url, ct);
-
-            // Doi tac tra 404 kem message khi khong tim thay — day la ca binh thuong,
-            // khong phai loi he thong.
-            if (phanHoi.StatusCode == HttpStatusCode.NotFound) return TinhTrangTaiKhoan.ChuaCo;
-            if (phanHoi.IsSuccessStatusCode) return TinhTrangTaiKhoan.DaCo;
-
-            _logger.LogWarning("Tra tai khoan doi tac tra ve {StatusCode}", phanHoi.StatusCode);
-            return TinhTrangTaiKhoan.KhongXacDinh;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Khong hoi duoc tinh trang tai khoan ben doi tac");
-            return TinhTrangTaiKhoan.KhongXacDinh;
-        }
-    }
-
-    public async Task<KetQuaMoTaiKhoan> MoTaiKhoanAsync(DoiTacApi cauHinh, YeuCauMoTaiKhoan yeuCau, CancellationToken ct = default)
+    public async Task<KetQuaThaoTac> DangNhapAsync(DoiTacApi cauHinh, string cccd, string matKhau, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(cauHinh.TrangChu))
         {
-            return new KetQuaMoTaiKhoan(false, "Chưa cấu hình địa chỉ trang của cơ sở này", null);
+            return new KetQuaThaoTac(false, "Chưa cấu hình địa chỉ trang của cơ sở này");
         }
 
-        // Khong nho doi tac gui gi ca — benh nhan da qua OTP cua SixosPwa roi,
-        // ta chi can truong "code" trong than phan hoi de tu xac thuc (diem tua
-        // so 2, ADR 0003). Xem chu thich cua KenhChiSinhMa.
-        var kenh = KenhChiSinhMa;
+        // Doi tac nhan form-urlencoded (tham so roi cua action, khong phai [FromBody]).
+        return await GoiFormAsync(cauHinh, DuongDanDangNhap,
+            new Dictionary<string, string> { ["username"] = cccd, ["password"] = matKhau },
+            "Đăng nhập thành công", "Thông tin đăng nhập không chính xác", ct);
+    }
 
+    public async Task<KetQuaThaoTac> MoTaiKhoanAsync(DoiTacApi cauHinh, YeuCauMoTaiKhoan yeuCau, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(cauHinh.TrangChu))
+        {
+            return new KetQuaThaoTac(false, "Chưa cấu hình địa chỉ trang của cơ sở này");
+        }
+
+        // register nhan [FromBody] JSON — khac ba cua kia.
         var than = new
         {
             SoCccd = yeuCau.Cccd,
             Email = yeuCau.Email,
             DienThoai = yeuCau.DienThoai,
             MatKhau = yeuCau.MatKhau,
-            xacthuc = kenh
+            xacthuc = ChonKenh(yeuCau.Kenh)
         };
+
+        return await GoiJsonAsync(cauHinh, DuongDanDangKy, than,
+            "Đã gửi mã xác thực", "Không tạo được tài khoản tại cơ sở", ct);
+    }
+
+    public async Task<KetQuaThaoTac> XacThucMaAsync(DoiTacApi cauHinh, string cccd, string? email, string dienThoai, string ma, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(cauHinh.TrangChu))
+        {
+            return new KetQuaThaoTac(false, "Chưa cấu hình địa chỉ trang của cơ sở này");
+        }
+
+        return await GoiFormAsync(cauHinh, DuongDanXacThuc,
+            new Dictionary<string, string>
+            {
+                ["cccd"] = cccd,
+                ["Email"] = email ?? string.Empty,
+                ["sdt"] = dienThoai,
+                ["code"] = ma
+            },
+            "Xác thực tài khoản thành công", "Mã xác thực không đúng hoặc đã hết hạn", ct);
+    }
+
+    public async Task<KetQuaThaoTac> QuenMatKhauAsync(DoiTacApi cauHinh, string cccd, string emailHoacSdt, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(cauHinh.TrangChu))
+        {
+            return new KetQuaThaoTac(false, "Chưa cấu hình địa chỉ trang của cơ sở này");
+        }
+
+        // Doi tac tach san Email va SDT thanh hai truong, tu quyet gui qua kenh nao.
+        var laEmail = emailHoacSdt.Contains('@');
+        var than = new
+        {
+            CCCD = cccd,
+            Email = laEmail ? emailHoacSdt : null,
+            SDT = laEmail ? null : emailHoacSdt
+        };
+
+        return await GoiJsonAsync(cauHinh, DuongDanQuenMatKhau, than,
+            "Đã gửi đường dẫn đặt lại mật khẩu", "Không gửi được đường dẫn đặt lại mật khẩu", ct);
+    }
+
+    public async Task<IReadOnlyList<ChiNhanhDoiTac>> LayChiNhanhAsync(DoiTacApi cauHinh, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(cauHinh.TrangChu))
+        {
+            return Array.Empty<ChiNhanhDoiTac>();
+        }
 
         try
         {
             var client = TaoClient();
-            var url = $"{CatDauGach(cauHinh.TrangChu)}{DuongDanDangKy}";
-            using var noiDung = new StringContent(JsonSerializer.Serialize(than), Encoding.UTF8, "application/json");
-            using var phanHoi = await client.PostAsync(url, noiDung, ct);
-            var chuoi = await phanHoi.Content.ReadAsStringAsync(ct);
-
+            var url = $"{CatDauGach(cauHinh.TrangChu)}{DuongDanChiNhanh}";
+            using var phanHoi = await client.GetAsync(url, ct);
             if (!phanHoi.IsSuccessStatusCode)
             {
-                _logger.LogWarning("Mo tai khoan doi tac that bai {StatusCode}: {Than}", phanHoi.StatusCode, chuoi);
-                return new KetQuaMoTaiKhoan(false, DocThongBao(chuoi) ?? "Không tạo được tài khoản tại cơ sở", null);
+                _logger.LogWarning("Lay chi nhanh doi tac tra ve {StatusCode}", phanHoi.StatusCode);
+                return Array.Empty<ChiNhanhDoiTac>();
             }
 
-            using var tep = JsonDocument.Parse(chuoi);
-            var goc = tep.RootElement;
-
-            // Doi tac tra { statusCode, message } ngay ca khi HTTP 200 — phai doc them.
-            if (goc.TryGetProperty("statusCode", out var ma) && ma.TryGetInt32(out var so) && so != 200)
+            using var tep = JsonDocument.Parse(await phanHoi.Content.ReadAsStringAsync(ct));
+            if (!tep.RootElement.TryGetProperty("data", out var mang) || mang.ValueKind != JsonValueKind.Array)
             {
-                return new KetQuaMoTaiKhoan(false, DocThongBao(chuoi) ?? "Không tạo được tài khoản tại cơ sở", null);
+                return Array.Empty<ChiNhanhDoiTac>();
             }
 
-            // DIEM TUA #2 (ADR 0003): SendCode tra thang truong "code" trong than
-            // phan hoi, va RegisterAsync tra ket qua do ra ngoai. Nho vay benh nhan
-            // KHONG bao gio phai go ma cua doi tac.
-            var maXacNhan = goc.TryGetProperty("code", out var c) ? c.GetString() : null;
-
-            if (string.IsNullOrWhiteSpace(maXacNhan))
+            var ds = new List<ChiNhanhDoiTac>();
+            foreach (var o in mang.EnumerateArray())
             {
-                _logger.LogError("Doi tac khong tra truong code — diem tua so 2 cua ADR 0003 da doi");
-                return new KetQuaMoTaiKhoan(false, "Cơ sở không trả về mã xác nhận, vui lòng liên hệ hỗ trợ", null);
+                var ten = Chuoi(o, "tenDoiTac");
+                if (string.IsNullOrWhiteSpace(ten)) continue;
+
+                ds.Add(new ChiNhanhDoiTac(ten, Chuoi(o, "diaChi"), Chuoi(o, "hotline"), Chuoi(o, "thoiGianLamViec")));
             }
 
-            return new KetQuaMoTaiKhoan(true, "Đã tạo tài khoản tại cơ sở", maXacNhan);
+            return ds;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Loi khi mo tai khoan ben doi tac");
-            return new KetQuaMoTaiKhoan(false, "Không kết nối được tới cơ sở, vui lòng thử lại", null);
+            // Khoi nay chi de TRANG TRI man dang nhap — hong thi bo qua, tuyet doi
+            // khong duoc chan benh nhan dang nhap.
+            _logger.LogWarning(ex, "Khong lay duoc danh sach chi nhanh doi tac");
+            return Array.Empty<ChiNhanhDoiTac>();
         }
     }
 
-    public async Task<KetQuaThaoTac> GuiMaLienKetAsync(DoiTacApi cauHinh, string cccd, string dienThoai, CancellationToken ct = default)
-        => await GoiApiAsync(cauHinh, "/api/Auth/forgot-password/send-otp",
-            new { Cccd = cccd, DienThoai = dienThoai },
-            "Đã gửi mã xác thực", "Không gửi được mã xác thực", ct);
-
-    public async Task<KetQuaThaoTac> DatLaiMatKhauAsync(DoiTacApi cauHinh, string cccd, string dienThoai, string ma, string matKhauMoi, CancellationToken ct = default)
-        => await GoiApiAsync(cauHinh, "/api/Auth/forgot-password/reset",
-            new { Cccd = cccd, DienThoai = dienThoai, Otp = ma, MatKhauMoi = matKhauMoi, XacNhanMatKhau = matKhauMoi },
-            "Đã liên kết tài khoản", "Mã xác thực không đúng hoặc đã hết hạn", ct);
+    private static string? Chuoi(JsonElement o, string ten)
+        => o.TryGetProperty(ten, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
 
     public ThongTinBanGiao? DungThongTinBanGiao(DoiTacApi cauHinh, YeuCauBanGiao yeuCau)
     {
         if (string.IsNullOrWhiteSpace(cauHinh.TrangChu)) return null;
+
+        // Ban giao luon di duong dang nhap thuan: den day thi mat khau da duoc
+        // CHINH doi tac xac nhan la dung (DangNhapAsync), hoac benh nhan vua tu
+        // dat no o man Dang ky. LoginAsync ben ho so chuoi thuan nen phai gui
+        // nguyen van mat khau (ADR 0005).
+        if (string.IsNullOrWhiteSpace(yeuCau.MatKhau)) return null;
 
         var goc = CatDauGach(cauHinh.TrangChu);
 
@@ -187,69 +221,47 @@ public class UbGateway : IPartnerGateway
             dichCuoi = goc + man;
         }
 
-        var cacBuoc = new List<BuocBanGiao>();
-
-        // Buoc 1 — dat cookie. Tai khoan vua mo thi dung ma xac nhan (doi tac vua
-        // bat DaXacThuc vua dat cookie trong cung mot lan POST — diem tua so 3 va
-        // so 4, ADR 0003). Nhung lan sau thi dang nhap thuan, khong OTP; LoginAsync
-        // ben ho so chuoi thuan nen phai gui nguyen van mat khau (ADR 0005).
-        if (!string.IsNullOrWhiteSpace(yeuCau.MaXacNhan))
+        // CHI MOT BUOC. Cookie DKOnline_auth cua ho la SameSite=Lax: Lax cho phep
+        // NHAN Set-Cookie, nhung chi GUI cookie kem dieu huong top-level bang GET.
+        // POST lien site khong mang cookie, nen chuoi nhieu buoc (chon chi nhanh,
+        // chon ho so) KHONG THE chay — da do bang Playwright, xem ADR 0003.
+        var cacBuoc = new List<BuocBanGiao>
         {
-            cacBuoc.Add(new BuocBanGiao($"{goc}{DuongDanXacThuc}", new Dictionary<string, string>
-            {
-                ["cccd"] = yeuCau.Cccd,
-                ["Email"] = yeuCau.Email ?? "",
-                ["sdt"] = yeuCau.DienThoai,
-                ["code"] = yeuCau.MaXacNhan
-            }));
-        }
-        else if (!string.IsNullOrWhiteSpace(yeuCau.MatKhau))
-        {
-            cacBuoc.Add(new BuocBanGiao($"{goc}{DuongDanDangNhap}", new Dictionary<string, string>
+            new($"{goc}{DuongDanDangNhap}", new Dictionary<string, string>
             {
                 ["username"] = yeuCau.Cccd,
                 ["password"] = yeuCau.MatKhau
-            }));
-        }
-        else
-        {
-            return null;
-        }
+            })
+        };
 
-        // CHI MOT BUOC. Truoc day o day con hai buoc nua (chon chi nhanh, chon ho
-        // so) de benh nhan khoi phai qua hai man cua doi tac. Playwright cho thay
-        // chung KHONG THE chay, va con lam hong them:
-        //
-        //   Cookie DKOnline_auth cua ho la SameSite=Lax. Lax cho phep NHAN
-        //   Set-Cookie, nhung chi GUI cookie kem dieu huong top-level bang GET.
-        //   POST lien site khong mang cookie. Hau qua:
-        //     - select-branch: AddClaimsAsync doc User de cong don claim, ma User
-        //       rong => ghi de, LAM MAT claim IdTK vua cap o buoc dang nhap.
-        //     - chon ho so: doi xac thuc => bi da ve man dang nhap.
-        //   Mat IdTK con keo theo: man chon ho so cua ho doc IdTK de liet ke, nen
-        //   se hien danh sach RONG va benh nhan ket han.
-        //
-        // Vi vay chi dang nhap, roi de doi tac tu dan benh nhan qua hai man cua
-        // ho. Muon di thang toi dich thi phai co mot cua GET ben ho (xem ADR 0003).
-        //
-        // DichCuoi van giu nguyen y nghia: lan ban giao sau trong ngay, cookie cua
-        // ho da du claim nen dieu huong GET toi dich se vao thang, khong bi da.
         return new ThongTinBanGiao(cacBuoc, dichCuoi);
     }
 
-    private async Task<KetQuaThaoTac> GoiApiAsync(DoiTacApi cauHinh, string duongDan, object than,
+    // ------------------------------------------------------------------
+    //  Goi doi tac
+    // ------------------------------------------------------------------
+
+    private async Task<KetQuaThaoTac> GoiJsonAsync(DoiTacApi cauHinh, string duongDan, object than,
         string thongBaoDat, string thongBaoHong, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(cauHinh.BaseUrl))
-        {
-            return new KetQuaThaoTac(false, "Chưa cấu hình địa chỉ API của cơ sở này");
-        }
+        using var noiDung = new StringContent(JsonSerializer.Serialize(than), Encoding.UTF8, "application/json");
+        return await GuiAsync(cauHinh, duongDan, noiDung, thongBaoDat, thongBaoHong, ct);
+    }
 
+    private async Task<KetQuaThaoTac> GoiFormAsync(DoiTacApi cauHinh, string duongDan, IDictionary<string, string> truong,
+        string thongBaoDat, string thongBaoHong, CancellationToken ct)
+    {
+        using var noiDung = new FormUrlEncodedContent(truong);
+        return await GuiAsync(cauHinh, duongDan, noiDung, thongBaoDat, thongBaoHong, ct);
+    }
+
+    private async Task<KetQuaThaoTac> GuiAsync(DoiTacApi cauHinh, string duongDan, HttpContent noiDung,
+        string thongBaoDat, string thongBaoHong, CancellationToken ct)
+    {
         try
         {
             var client = TaoClient();
-            var url = $"{CatDauGach(cauHinh.BaseUrl)}{duongDan}";
-            using var noiDung = new StringContent(JsonSerializer.Serialize(than), Encoding.UTF8, "application/json");
+            var url = $"{CatDauGach(cauHinh.TrangChu)}{duongDan}";
             using var phanHoi = await client.PostAsync(url, noiDung, ct);
             var chuoi = await phanHoi.Content.ReadAsStringAsync(ct);
 
@@ -259,14 +271,13 @@ public class UbGateway : IPartnerGateway
                 return new KetQuaThaoTac(false, DocThongBao(chuoi) ?? thongBaoHong);
             }
 
-            // API doi tac dung { success, message } cho nhom forgot-password.
-            using var tep = JsonDocument.Parse(chuoi);
-            if (tep.RootElement.TryGetProperty("success", out var ok) && ok.ValueKind == JsonValueKind.False)
+            // Doi tac tra { statusCode, message } ngay ca khi HTTP 200 — phai doc them.
+            if (DocMaTrangThai(chuoi) is int ma && ma != 200)
             {
                 return new KetQuaThaoTac(false, DocThongBao(chuoi) ?? thongBaoHong);
             }
 
-            return new KetQuaThaoTac(true, thongBaoDat);
+            return new KetQuaThaoTac(true, DocThongBao(chuoi) ?? thongBaoDat);
         }
         catch (Exception ex)
         {
@@ -279,11 +290,47 @@ public class UbGateway : IPartnerGateway
     {
         var client = _httpClientFactory.CreateClient(nameof(UbGateway));
         client.Timeout = TimeSpan.FromSeconds(30);
+
+        // 🔴 BAT BUOC. Doi tac da them nhanh non-AJAX (commit f653f96): thieu header
+        // nay thi login tra 302 Redirect thay vi JSON, va ta se doc nham thanh
+        // "sai mat khau". Header do jQuery $.ajax tu gan cho MOI request AJAX, nen
+        // gan no o day = tu xung "toi la lenh goi AJAX, tra JSON cho toi".
+        //
+        // ⚠️ Buoc BAN GIAO thi NGUOC LAI — form POST top-level KHONG duoc co header
+        // nay, chinh nho vay doi tac moi Redirect thay vi hien JSON tran cho benh nhan.
+        client.DefaultRequestHeaders.Remove("X-Requested-With");
+        client.DefaultRequestHeaders.Add("X-Requested-With", "XMLHttpRequest");
+
         return client;
     }
 
     private static string CatDauGach(string? duongDan)
         => (duongDan ?? string.Empty).TrimEnd('/');
+
+    /// <summary>Lay statusCode trong than phan hoi; null neu doi tac khong tra truong do.</summary>
+    private static int? DocMaTrangThai(string chuoiJson)
+    {
+        try
+        {
+            using var tep = JsonDocument.Parse(chuoiJson);
+            if (tep.RootElement.ValueKind != JsonValueKind.Object) return null;
+
+            foreach (var ten in new[] { "statusCode", "StatusCode" })
+            {
+                if (tep.RootElement.TryGetProperty(ten, out var ma) && ma.TryGetInt32(out var so))
+                {
+                    return so;
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            // Doi tac tra HTML trang loi thay vi JSON — coi nhu khong ro, de
+            // GuiAsync xu theo ma HTTP.
+        }
+
+        return null;
+    }
 
     /// <summary>Lay message tieng Viet cua doi tac de hien lai cho benh nhan.</summary>
     private static string? DocThongBao(string chuoiJson)
@@ -291,6 +338,8 @@ public class UbGateway : IPartnerGateway
         try
         {
             using var tep = JsonDocument.Parse(chuoiJson);
+            if (tep.RootElement.ValueKind != JsonValueKind.Object) return null;
+
             foreach (var ten in new[] { "message", "Message" })
             {
                 if (tep.RootElement.TryGetProperty(ten, out var m) && m.ValueKind == JsonValueKind.String)

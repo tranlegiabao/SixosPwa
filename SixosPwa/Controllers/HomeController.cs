@@ -18,17 +18,20 @@ public class HomeController : Controller
     private readonly ApplicationDbContext _db;
     private readonly IConfiguration _config;
     private readonly AdminStoredProcedureService _thuTuc;
+    private readonly ILuongCongBenhNhan _luong;
 
     public HomeController(
         ILogger<HomeController> logger,
         ApplicationDbContext db,
         IConfiguration config,
-        AdminStoredProcedureService thuTuc)
+        AdminStoredProcedureService thuTuc,
+        ILuongCongBenhNhan luong)
     {
         _logger = logger;
         _db = db;
         _config = config;
         _thuTuc = thuTuc;
+        _luong = luong;
     }
 
     /// <summary>
@@ -190,6 +193,11 @@ public class HomeController : Controller
         ViewBag.DienThoai = User.FindFirst(System.Security.Claims.ClaimTypes.MobilePhone)?.Value ?? benhNhan?.SDT;
         ViewBag.CccdCheBot = CheBotCccd(cccd);
         ViewBag.CoLoiKetNoi = loi == "khong-ket-noi-duoc";
+
+        // Co so dung bo man cua doi tac: mat khau la CUA HO, benh nhan doi tren
+        // trang cua co so. An muc "Doi mat khau" di cho khoi dan toi ngo cut. ADR 0014.
+        var cuaCoSo = await _luong.LayCuaAsync(maCoSo);
+        ViewBag.DungManDoiTac = cuaCoSo?.DungManDoiTac == true;
 
         return View();
     }

@@ -22,6 +22,9 @@ public interface IPartnerGatewayFactory
 public record CuaCoSo(DoiTacApi CauHinh, IPartnerGateway Cua)
 {
     public bool CoBanGiao => Cua.CoBanGiao;
+
+    /// <summary>Co so nay dung bo man cua doi tac thay cho luong OTP cua SixosPwa.</summary>
+    public bool DungManDoiTac => Cua.DungManDoiTac;
 }
 
 public class PartnerGatewayFactory : IPartnerGatewayFactory

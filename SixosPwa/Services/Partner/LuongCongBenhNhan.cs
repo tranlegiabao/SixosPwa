@@ -25,11 +25,24 @@ public interface ILuongCongBenhNhan
     /// <summary>Tao ho so noi bo + mo tai khoan ben doi tac (neu co).</summary>
     Task<KetQuaBuoc> MoTaiKhoanAsync(string maCoSo, string cccd, string dinhDanh, string hoTen, string matKhau, string? returnUrl = null, CancellationToken ct = default);
 
-    /// <summary>Buoc 1 cua man Lien ket: xin doi tac gui ma xac thuc.</summary>
-    Task<KetQuaThaoTac> GuiMaLienKetAsync(string maCoSo, string cccd, string dienThoai, CancellationToken ct = default);
+    // --- Bo man cua doi tac (ADR 0014) -------------------------------------
+    //  Chi chay khi CuaCoSo.DungManDoiTac = true. Doi tac la NGUON SU THAT cua
+    //  mat khau; SixosPwa khong tu phan xu dung/sai bao gio.
 
-    /// <summary>Buoc 2 cua man Lien ket: dat mat khau moi ca hai phia.</summary>
-    Task<KetQuaBuoc> XacNhanLienKetAsync(string maCoSo, string cccd, string dienThoai, string ma, string matKhau, CancellationToken ct = default);
+    /// <summary>Man Dang nhap kieu doi tac: doi tac kiem mat khau, ta tao ho so + cho dich Ban giao.</summary>
+    Task<KetQuaBuoc> DangNhapDoiTacAsync(string maCoSo, string cccd, string matKhau, string? returnUrl = null, CancellationToken ct = default);
+
+    /// <summary>Buoc 1 man Dang ky kieu doi tac: xin doi tac mo tai khoan va tu gui ma xac thuc (SMS).</summary>
+    Task<KetQuaThaoTac> DangKyDoiTacAsync(string maCoSo, string cccd, string dienThoai, string? email, string matKhau, int kenh, CancellationToken ct = default);
+
+    /// <summary>Buoc 2 man Dang ky kieu doi tac: doi ma benh nhan vua go, roi cho dich Ban giao.</summary>
+    Task<KetQuaBuoc> XacThucMaDoiTacAsync(string maCoSo, string cccd, string ma, string? returnUrl = null, CancellationToken ct = default);
+
+    /// <summary>Chi nhanh cua doi tac — de man dang nhap hien thong tin cua ho o kho may tinh.</summary>
+    Task<IReadOnlyList<ChiNhanhDoiTac>> LayChiNhanhDoiTacAsync(string maCoSo, CancellationToken ct = default);
+
+    /// <summary>Man Quen mat khau kieu doi tac: xin doi tac gui duong dan dat lai mat khau.</summary>
+    Task<KetQuaThaoTac> QuenMatKhauDoiTacAsync(string maCoSo, string cccd, string emailHoacSdt, CancellationToken ct = default);
 
     /// <summary>Doi mat khau, ghi sang CA HAI phia (V9).</summary>
     Task<KetQuaThaoTac> DoiMatKhauAsync(string maCoSo, ClaimsPrincipal nguoiDung, string matKhauMoi, CancellationToken ct = default);
@@ -145,9 +158,18 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
             return "/benh-nhan";
         }
 
-        // Da lien ket va da biet mat khau thi KHONG hoi doi tac nua: ta biet thua
-        // la benh nhan co tai khoan ben do. Vua do mot lan goi mang moi lan dang
-        // nhap, vua khong chet theo khi API doi tac sap.
+        // Co so dung bo man cua doi tac thi benh nhan KHONG duoc di duong nay:
+        // ho phai go mat khau that cua ho o man Dang nhap kieu doi tac. Day cung
+        // la chot chan cho XacNhanOtp — action do goi tran duoc, va qua duoc guard
+        // la chay tiep toi tan BaoDamHoSoNoiBoAsync (tao that DM_BenhNhan,
+        // DM_BenhNhanCoSo, HT_TaiKhoan). ADR 0014.
+        if (coSo.DungManDoiTac)
+        {
+            _logger.LogWarning("Co so {MaCoSo} dung man doi tac — tu choi duong OTP cua SixosPwa", maCoSo);
+            return "/DangNhap/Login" + thamSo;
+        }
+
+        // Da lien ket va da biet mat khau thi ban giao thang, khong hoi doi tac.
         var taiKhoanDaCo = await TimTaiKhoanAsync(cccd, ct);
         if (taiKhoanDaCo is not null)
         {
@@ -158,25 +180,9 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
             }
         }
 
-        var tinhTrang = await coSo.Cua.TinhTrangTaiKhoanAsync(coSo.CauHinh, cccd, ct);
-
-        // Khong hoi duoc doi tac thi khong doan bua: dua ve trang noi bo, man do
-        // se noi ro la chua ket noi duoc voi co so.
-        if (tinhTrang == TinhTrangTaiKhoan.KhongXacDinh)
-        {
-            _logger.LogWarning("Khong hoi duoc tinh trang tai khoan tai {MaCoSo}", maCoSo);
-            await BaoDamHoSoNoiBoAsync(maCoSo, cccd, dinhDanh, ct);
-            return "/benh-nhan?loi=khong-ket-noi-duoc";
-        }
-
-        if (tinhTrang == TinhTrangTaiKhoan.ChuaCo)
-        {
-            return "/DangNhap/DangKy" + thamSo;
-        }
-
-        // Doi tac bao da co tai khoan, ma o tren ta chua tim thay lien ket nao
-        // => benh nhan phai qua man Lien ket dung MOT lan (V9).
-        return "/DangNhap/LienKet" + thamSo;
+        // Doi tac co ban giao nhung KHONG dung man cua ho (chua co ban cai nao nhu
+        // vay, de danh cho doi tac tuong lai): chua co lien ket thi di man Dang ky.
+        return "/DangNhap/DangKy" + thamSo;
     }
 
     public Task<CuaCoSo?> LayCuaAsync(string? maCoSo, CancellationToken ct = default)
@@ -195,8 +201,17 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
             return new KetQuaBuoc(false, "Cơ sở này đang tạm ngưng tiếp nhận đăng ký trực tuyến.", null);
         }
 
-        var taiKhoan = await TaoHoSoNoiBoAsync(maCoSo, cccd, dinhDanh, hoTen, ct);
         var coSo = await _cuaFactory.LayAsync(maCoSo, ct);
+
+        // Co so dung bo man cua doi tac thi khong di duong nay: benh nhan tu dat
+        // mat khau o man Dang ky kieu doi tac, va chinh doi tac gui ma xac thuc.
+        // Xem DangKyDoiTacAsync + ADR 0014.
+        if (coSo is not null && coSo.DungManDoiTac)
+        {
+            return new KetQuaBuoc(false, "Cơ sở này đăng ký tài khoản tại trang của cơ sở", null);
+        }
+
+        var taiKhoan = await TaoHoSoNoiBoAsync(maCoSo, cccd, dinhDanh, hoTen, ct);
 
         // Co so noi bo: xong o day, khong goi ra ngoai.
         if (coSo is null || !coSo.CoBanGiao)
@@ -208,65 +223,167 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
         var dienThoai = LayDienThoai(dinhDanh, taiKhoan);
         var email = LayEmail(dinhDanh, taiKhoan);
 
-        // Nhanh co API: mat khau ben doi tac do may chu sinh ngau nhien, khong
-        // hoi benh nhan (man Dang ky cung khong con o nhap nua).
+        // Doi tac co ban giao nhung KHONG dung man cua ho (de danh cho doi tac
+        // tuong lai): mat khau ben do do may chu sinh, khong hoi benh nhan.
         matKhau = SinhMatKhauChoDoiTac();
 
+        // Duong nay danh cho doi tac co ban giao nhung KHONG dung man cua ho, nen
+        // benh nhan khong duoc chon kenh — de ban cai tu quyet bang mac dinh.
         var ketQua = await coSo.Cua.MoTaiKhoanAsync(
-            coSo.CauHinh, new YeuCauMoTaiKhoan(hoTen, cccd, dienThoai, email, matKhau), ct);
+            coSo.CauHinh, new YeuCauMoTaiKhoan(hoTen, cccd, dienThoai, email, matKhau, 0), ct);
 
         if (!ketQua.ThanhCong)
         {
             return new KetQuaBuoc(false, ketQua.ThongBao, null);
         }
 
-        // Ma xac nhan do doi tac tra ve trong than phan hoi — benh nhan khong
-        // nhin thay no. Cat lai de man Ban giao POST kem (diem tua #2, ADR 0003).
-        await LuuLienKetAsync(taiKhoan.Id, maCoSo, matKhau, ketQua.MaXacNhan, ct);
+        await LuuLienKetAsync(taiKhoan.Id, maCoSo, matKhau, null, ct);
 
         return new KetQuaBuoc(true, ketQua.ThongBao, ThemDichCuoi($"/DangNhap/BanGiao?coSo={Uri.EscapeDataString(maCoSo)}", returnUrl));
     }
 
     // ------------------------------------------------------------------
-    //  Man Lien ket (benh nhan da co san tai khoan ben doi tac)
+    //  Bo man cua doi tac — Dang nhap / Dang ky / Quen mat khau (ADR 0014)
     // ------------------------------------------------------------------
 
-    public async Task<KetQuaThaoTac> GuiMaLienKetAsync(string maCoSo, string cccd, string dienThoai, CancellationToken ct = default)
+    /// <summary>
+    /// Co so nay co dung bo man cua doi tac khong. Dung de chan tu xa: cac duong
+    /// duoi day khong duoc chay cho co so noi bo, va nguoc lai luong OTP cua
+    /// SixosPwa khong duoc chay cho co so doi tac.
+    /// </summary>
+    private async Task<CuaCoSo?> LayCuaDoiTacAsync(string maCoSo, CancellationToken ct)
     {
         var coSo = await _cuaFactory.LayAsync(maCoSo, ct);
-        if (coSo is null || !coSo.CoBanGiao)
-        {
-            return new KetQuaThaoTac(false, "Cơ sở này không cần liên kết tài khoản");
-        }
-
-        return await coSo.Cua.GuiMaLienKetAsync(coSo.CauHinh, cccd, dienThoai, ct);
+        return coSo is not null && coSo.DungManDoiTac ? coSo : null;
     }
 
-    public async Task<KetQuaBuoc> XacNhanLienKetAsync(string maCoSo, string cccd, string dienThoai, string ma, string matKhau, CancellationToken ct = default)
+    public async Task<KetQuaBuoc> DangNhapDoiTacAsync(string maCoSo, string cccd, string matKhau, string? returnUrl = null, CancellationToken ct = default)
     {
-        var coSo = await _cuaFactory.LayAsync(maCoSo, ct);
-        if (coSo is null || !coSo.CoBanGiao)
+        var coSo = await LayCuaDoiTacAsync(maCoSo, ct);
+        if (coSo is null)
         {
-            return new KetQuaBuoc(false, "Cơ sở này không cần liên kết tài khoản", null);
+            return new KetQuaBuoc(false, "Cơ sở này không dùng tài khoản của đối tác", null);
         }
 
-        // Dat lai mat khau ben doi tac bang mot chuoi ngau nhien moi, dong bo
-        // voi luong Dang ky. Benh nhan khong can biet no la gi.
-        matKhau = SinhMatKhauChoDoiTac();
+        // Co so dang an thi khong cho vao — giong het cua ngo cua luong OTP. ADR 0013.
+        if (!await CoSoDangHienThiAsync(maCoSo, ct))
+        {
+            return new KetQuaBuoc(false, "Cơ sở này đang tạm ngưng tiếp nhận đăng ký trực tuyến.", null);
+        }
 
-        var ketQua = await coSo.Cua.DatLaiMatKhauAsync(coSo.CauHinh, cccd, dienThoai, ma, matKhau, ct);
+        // Doi tac phan xu mat khau, khong phai ta. Ho tu bao loi tieng Viet gi thi
+        // hien lai nguyen van cho benh nhan.
+        var ketQua = await coSo.Cua.DangNhapAsync(coSo.CauHinh, cccd, matKhau, ct);
         if (!ketQua.ThanhCong)
         {
             return new KetQuaBuoc(false, ketQua.ThongBao, null);
         }
 
-        var taiKhoan = await TimTaiKhoanAsync(cccd, ct)
-                       ?? await TaoHoSoNoiBoAsync(maCoSo, cccd, dienThoai, string.Empty, ct);
+        return new KetQuaBuoc(true, ketQua.ThongBao,
+            await GhiHoSoRoiChoBanGiaoAsync(maCoSo, cccd, matKhau, returnUrl, ct));
+    }
 
+    public async Task<KetQuaThaoTac> DangKyDoiTacAsync(string maCoSo, string cccd, string dienThoai, string? email, string matKhau, int kenh, CancellationToken ct = default)
+    {
+        var coSo = await LayCuaDoiTacAsync(maCoSo, ct);
+        if (coSo is null)
+        {
+            return new KetQuaThaoTac(false, "Cơ sở này không dùng tài khoản của đối tác");
+        }
+
+        if (!await CoSoDangHienThiAsync(maCoSo, ct))
+        {
+            return new KetQuaThaoTac(false, "Cơ sở này đang tạm ngưng tiếp nhận đăng ký trực tuyến.");
+        }
+
+        var ketQua = await coSo.Cua.MoTaiKhoanAsync(
+            coSo.CauHinh, new YeuCauMoTaiKhoan(string.Empty, cccd, dienThoai, email, matKhau, kenh), ct);
+
+        if (!ketQua.ThanhCong)
+        {
+            return ketQua;
+        }
+
+        // Cat mat khau NGAY o buoc nay, truoc khi benh nhan go ma. Nho vay buoc 2
+        // khong phai bat client gui lai mat khau qua mang lan nua. Ho so noi bo
+        // luc nay giong ben doi tac: da tao nhung chua xac thuc.
+        var taiKhoan = await TaoHoSoNoiBoAsync(maCoSo, cccd, string.IsNullOrWhiteSpace(email) ? dienThoai : email, string.Empty, ct);
         await LuuLienKetAsync(taiKhoan.Id, maCoSo, matKhau, null, ct);
 
-        return new KetQuaBuoc(true, ketQua.ThongBao, $"/DangNhap/BanGiao?coSo={Uri.EscapeDataString(maCoSo)}");
+        return ketQua;
     }
+
+    public async Task<KetQuaBuoc> XacThucMaDoiTacAsync(string maCoSo, string cccd, string ma, string? returnUrl = null, CancellationToken ct = default)
+    {
+        var coSo = await LayCuaDoiTacAsync(maCoSo, ct);
+        if (coSo is null)
+        {
+            return new KetQuaBuoc(false, "Cơ sở này không dùng tài khoản của đối tác", null);
+        }
+
+        var taiKhoan = await TimTaiKhoanAsync(cccd, ct);
+        var lienKet = taiKhoan is null ? null : await TimLienKetAsync(taiKhoan.Id, maCoSo, ct);
+
+        // Mat khau da cat o buoc 1. Khong con no thi khong ban giao duoc, va cung
+        // khong nen doan bua — bat benh nhan lam lai tu dau con hon.
+        if (lienKet is null || string.IsNullOrWhiteSpace(lienKet.MatKhau))
+        {
+            return new KetQuaBuoc(false, "Phiên đăng ký đã hết hạn, vui lòng đăng ký lại", null);
+        }
+
+        var dienThoai = taiKhoan!.SDT;
+        var ketQua = await coSo.Cua.XacThucMaAsync(coSo.CauHinh, cccd, taiKhoan.Email, dienThoai, ma, ct);
+        if (!ketQua.ThanhCong)
+        {
+            return new KetQuaBuoc(false, ketQua.ThongBao, null);
+        }
+
+        return new KetQuaBuoc(true, ketQua.ThongBao,
+            await GhiHoSoRoiChoBanGiaoAsync(maCoSo, cccd, lienKet.MatKhau, returnUrl, ct));
+    }
+
+    public async Task<IReadOnlyList<ChiNhanhDoiTac>> LayChiNhanhDoiTacAsync(string maCoSo, CancellationToken ct = default)
+    {
+        var coSo = await LayCuaDoiTacAsync(maCoSo, ct);
+        return coSo is null
+            ? Array.Empty<ChiNhanhDoiTac>()
+            : await coSo.Cua.LayChiNhanhAsync(coSo.CauHinh, ct);
+    }
+
+    public async Task<KetQuaThaoTac> QuenMatKhauDoiTacAsync(string maCoSo, string cccd, string emailHoacSdt, CancellationToken ct = default)
+    {
+        var coSo = await LayCuaDoiTacAsync(maCoSo, ct);
+        if (coSo is null)
+        {
+            return new KetQuaThaoTac(false, "Cơ sở này không dùng tài khoản của đối tác");
+        }
+
+        // KHONG tao ho so noi bo o day: duong dan dat lai mat khau do doi tac gui
+        // va tro ve TRANG CUA HO (HT_QuenMatKhauServices dung {request.Host}), nen
+        // ta khong biet benh nhan co hoan tat hay khong. Ho so sinh ra o lan dang
+        // nhap sau. Xem ADR 0014.
+        return await coSo.Cua.QuenMatKhauAsync(coSo.CauHinh, cccd, emailHoacSdt, ct);
+    }
+
+    /// <summary>
+    /// Dam bao co ho so + lien ket noi bo (co mat khau de ban giao), roi tra ve
+    /// duong dan man Ban giao. Dung chung cho ca duong Dang nhap lan Dang ky.
+    /// </summary>
+    private async Task<string> GhiHoSoRoiChoBanGiaoAsync(string maCoSo, string cccd, string matKhau, string? returnUrl, CancellationToken ct)
+    {
+        var taiKhoan = await TimTaiKhoanAsync(cccd, ct);
+
+        // Lan dau vao tu co so nay: chua co ho so noi bo nao. Dinh danh de trong
+        // vi ta chi biet CCCD — doi tac giu ten/dien thoai that cua benh nhan.
+        taiKhoan ??= await TaoHoSoNoiBoAsync(maCoSo, cccd, string.Empty, string.Empty, ct);
+
+        // maXacNhan = null: ban giao di duong dang nhap thuan bang mat khau that
+        // cua benh nhan, khong con dung ma xac nhan cua doi tac nua (ADR 0014).
+        await LuuLienKetAsync(taiKhoan.Id, maCoSo, matKhau, null, ct);
+
+        return ThemDichCuoi($"/DangNhap/BanGiao?coSo={Uri.EscapeDataString(maCoSo)}", returnUrl);
+    }
+
 
     // ------------------------------------------------------------------
     //  Man Doi mat khau — ghi CA HAI phia
@@ -288,21 +405,13 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
 
         var coSo = await _cuaFactory.LayAsync(maCoSo, ct);
 
-        // Co so co API: doi ben ho TRUOC. Ho khong nhan thi khong ghi ben minh,
-        // de hai phia khong lech nhau.
-        if (coSo is not null && coSo.CoBanGiao)
+        // Co so dung man cua doi tac: mat khau la CUA HO, ta khong duoc ghi de.
+        // Benh nhan doi mat khau tren trang cua doi tac. Man nay cung da duoc an
+        // khoi menu cho nhom co so do — day chi la chot chan cuoi. ADR 0014.
+        if (coSo is not null && coSo.DungManDoiTac)
         {
-            var dienThoai = LayClaim(nguoiDung, ClaimTypes.MobilePhone) ?? taiKhoan.SDT;
-            var guiMa = await coSo.Cua.GuiMaLienKetAsync(coSo.CauHinh, cccd, dienThoai, ct);
-
-            if (!guiMa.ThanhCong)
-            {
-                return new KetQuaThaoTac(false,
-                    "Không đổi được mật khẩu tại cơ sở. Vui lòng dùng màn Liên kết hồ sơ.");
-            }
-
             return new KetQuaThaoTac(false,
-                "Cơ sở vừa gửi mã xác thực cho bạn. Vui lòng nhập mã ở màn Liên kết hồ sơ để hoàn tất.");
+                "Mật khẩu của bạn do cơ sở quản lý. Vui lòng đổi mật khẩu trên trang của cơ sở.");
         }
 
         await LuuLienKetAsync(taiKhoan.Id, maCoSo, matKhauMoi, null, ct);

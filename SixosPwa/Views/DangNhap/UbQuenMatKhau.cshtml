@@ -1,0 +1,1079 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "Quên mật khẩu";
+}
+@*
+    Man QUEN MAT KHAU cua co so dung bo man doi tac (Ung Buou) — CHI BUOC 1.
+
+    Khuon lay NGUYEN VAN tu repo doi tac:
+      DangKyOnlineUB/PhongMach/Views/HT_QuenMatKhau/Dm_TTBenhNhan_QuenMatKhau.cshtml
+    Lay dung COT FORM (the div col-md-6 chua card "QUEN MAT KHAU"). Co Y bo panel
+    trai: do la ban DESKTOP cua khoi thong tin benh vien, ma ban MOBILE cua chinh
+    khoi do (side-info-mobile d-md-none) da nam san trong cot form nay. Panel trai
+    con chua mot the hong san trong nguon cua ho (`<di   v ...>`) va mot vong foreach
+    can ViewBag.doiTacs ma ta khong co.
+
+    BUOC 2 (dat mat khau moi bang token) KHONG clone duoc: doi tac dung link bang
+    {request.Scheme}://{request.Host} (HT_QuenMatKhauServices:90) nen duong dan gui
+    cho benh nhan luon tro ve trang cua ho. Benh nhan dat mat khau moi ben do roi
+    quay lai app dang nhap. Doc ADR 0014.
+*@
+
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Quên mật khẩu — @ViewBag.TenCoSo</title>
+
+    <partial name="_PwaHead" />
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/ub-tabler-bu.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/show-toast.css" asp-append-version="true" />
+    <script src="~/js/show-toast.js" asp-append-version="true"></script>
+<style>
+
+    html, body {
+        overflow-x: hidden; 
+    }
+
+    body {
+        background-image: url('/static/ub/BG_BVUB.jpg');
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        overflow-y: auto; 
+    }
+
+    body::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(32, 107, 196, 0.75);
+        backdrop-filter: blur(8px);
+        z-index: -1;
+    }
+
+    /* Animate */
+
+    .animate__animated {
+        animation-duration: 1s;
+    }
+
+    .animate__fadeInLeft {
+        animation-duration: 1.2s;
+    }
+
+    .animate__fadeInRight {
+        animation-duration: 1s;
+        animation-delay: 0.3s;
+    }
+
+    .animate__zoomIn {
+        animation-duration: 0.8s;
+    }
+
+    /**/
+
+    .auth-container-wrap {
+        display: flex;
+        align-items: stretch;
+        justify-content: center;
+        width: 100vw;
+        max-width: 100vw;
+        padding: 0;
+        margin: 0;
+        box-sizing: border-box;
+        min-height: 100vh;
+        padding-left: 32px;
+        padding-right: 32px;
+        box-sizing: border-box;
+    }
+
+    .auth-row {
+        max-width: 1400px;
+        margin-left: auto;
+        margin-right: auto;
+        width: 100vw;
+        max-width: 100vw;
+        margin: 0;
+        align-items: flex-start; 
+    }
+
+    /* Custom CSS */
+
+    .login_flex_992px {
+        flex-direction: row;
+    }
+
+    .login_width100_992px {
+        width: 50% !important;
+    }
+
+    .card.card-md {
+        background: rgba(255, 255, 255, 0.98);
+        border-radius: 20px;
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+        padding: 0;
+        width: 100%;
+        max-width: 100vw;
+        margin: 0;
+    }
+
+    .card-header {
+        background: linear-gradient(90deg, #206bc4, #004085);
+        color: white;
+        border-top-left-radius: 20px;
+        border-top-right-radius: 20px;
+        padding: 1.5rem 1rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .card-header h2 {
+        font-weight: 700;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        margin: 0;
+    }
+
+    .card-body {
+        padding: 2rem !important;
+        overflow-y: auto; 
+        max-height: calc(100vh - 150px); 
+    }
+
+    .form-control, .form-select {
+        border-radius: 8px;
+        border: 1px solid #ced4da;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #206bc4;
+        box-shadow: 0 0 0 0.25rem rgba(32, 107, 196, 0.25);
+        background-color: #f8faff;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+
+    .btn-primary {
+        background: linear-gradient(90deg, #206bc4, #004085);
+        border: none;
+        font-weight: 600;
+        padding: 0.8rem 1.5rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        opacity: 0.9;
+    }
+
+    .btn-secondary {
+        font-weight: 600;
+        padding: 0.8rem 1.5rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-secondary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        opacity: 0.9;
+    }
+
+    .text-primary {
+        color: #206bc4 !important;
+        font-weight: 700 !important;
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .text-primary:hover {
+        color: #004085 !important;
+        text-decoration: underline;
+    }
+
+    .fw-semibold.text-primary {
+        color: #fff !important;
+    }
+
+    .fw-semibold.text-primary a,
+    a.fw-semibold.text-primary,
+    a.text-primary {
+        color: #206bc4 !important;
+        background: none !important;
+        text-shadow: none !important;
+    }
+
+    .form-footer {
+        margin-top: 1.5rem;
+    }
+
+    .side-image-col {
+        background: linear-gradient(rgba(32, 107, 196, 0.8), rgba(0, 64, 133, 0.8)), url('https://benhvienungbuou.vn/wp-content/uploads/2023/02/DSC04179-scaled.jpg') no-repeat center center;
+        background-size: cover;
+        border-radius: 20px 0 0 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        position: relative;
+        min-width: 0;
+        max-width: 100%;
+        width: 100%;
+        height: auto;
+        max-height: 97vh;
+        overflow-y: auto;
+        margin-right: 8px;
+        padding: 0;
+        flex: 1 1 0;
+    }
+
+    .row.g-3 {
+        --bs-gutter-x: 1.5rem;
+        --bs-gutter-y: 1rem;
+    }
+
+    .form-control.password-input-style {
+        background-color: #e6f0ff; 
+        border-color: #a0c3f5; 
+    }
+
+    .form-control.password-input-style:focus {
+        background-color: #d9e7ff; 
+        border-color: #0056b3; 
+        box-shadow: 0 0 0 0.25rem rgba(0, 86, 179, 0.25); 
+    }
+
+    .form-label.password-label-style {
+        color: #004085;
+        font-weight: 700;
+    }
+
+    .text-white.p-4 {
+        padding: 6px 2px 6px 2px !important;
+        width: 100%;
+        max-width: 1070px;
+        margin: 0 auto;
+        background: rgba(32,107,196,0.10);
+        border-radius: 18px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+        display: block;
+        max-height: 97vh;
+        overflow-y: auto;
+    }
+
+    .mb-2, .mb-3 {
+        margin-bottom: 6px !important;
+    }
+
+    .display-6 {
+        margin-bottom: 8px !important;
+    }
+
+    ul[style*="list-style:none"] li {
+        margin-bottom: 2px !important;
+    }
+
+    .lich-time-row {
+        white-space: nowrap;
+        font-weight: 500;
+        text-align: center;
+        line-height: 1.5;
+    }
+
+    .lich-time-row-group {
+        font-weight: 500;
+        line-height: 1.7;
+    }
+
+    .lich-time-sang, .lich-time-chieu {
+        background: #e6f4ff;
+        color: #206bc4;
+        border-radius: 6px;
+        padding: 2px 7px;
+        margin: 0 2px;
+        display: inline-block;
+    }
+
+    .lich-dot {
+        color: #bbb;
+        margin: 0 3px;
+    }
+
+    .lich-note {
+        color: #206bc4;
+        font-style: italic;
+        margin-left: 2px;
+    }
+
+    .lich-note,
+    .lich-time-row-group .lich-note,
+    .card-lich .lich-note,
+    .lich-buoi-row .lich-note {
+        color: #d35400 !important;
+        font-style: italic !important;
+        margin-left: 8px !important;
+        font-weight: 500 !important;
+        background: none !important;
+        text-align: left !important;
+        display: inline !important;
+    }
+
+    .lich-buoi-row {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0 4px;
+        margin-bottom: 2px;
+    }
+
+    .lich-label-sang,
+    .lich-label-chieu {
+        color: #206bc4;
+        font-weight: 600;
+        margin-right: 4px;
+        background: #dbeafe;
+        border-radius: 5px;
+        padding: 2px 8px;
+    }
+
+    .fw-semibold.text-primary {
+        color: #fff !important;
+    }
+
+    .mb-2.d-flex.flex-row.flex-wrap.align-items-start.gap-3 {
+        gap: 0 !important;
+        min-height: unset;
+    }
+
+    .mb-2.d-flex.flex-row.flex-wrap.align-items-start.gap-3 > div {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        flex: 1 1 0 !important;
+        min-width: 0;
+        max-width: 100%;
+        width: 100%;
+        box-sizing: border-box;
+        min-height: unset;
+        height: unset;
+        padding: 0 !important;
+    }
+
+    .mb-2.d-flex.flex-row.flex-wrap.align-items-start.gap-3 > div:first-child {
+        flex: 7 7 0 !important;
+    }
+
+    .mb-2.d-flex.flex-row.flex-wrap.align-items-start.gap-3 > div:last-child {
+        flex: 5 5 0 !important;
+    }
+
+    .lich-diachi-title {
+        display: inline-block;
+        font-weight: 700;
+        color: #fff;
+        border-bottom: 2.5px solid #fff;
+        padding-bottom: 2px;
+        margin-bottom: 8px;
+        background: none;
+        border-radius: 0;
+        text-shadow: none;
+        box-shadow: none;
+        letter-spacing: 0.2px;
+        line-height: 1.2;
+    }
+
+    .lich-buoi-row.chieu-row {
+        background: #e6f4ff !important;
+        border-radius: 8px;
+    }
+
+    .lich-buoi-row.chieu-row .lich-label-chieu {
+        color: #206bc4 !important;
+        background: none !important;
+    }
+
+    .diachi-block {
+        text-align: left !important;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        width: 100%;
+        height: 100%;
+        min-height: unset;
+        padding: 0;
+        margin: 0;
+    }
+
+    .diachi-phone-title i.fa {
+        color: #fff;
+        margin-right: 6px;
+    }
+
+    .mb-2.d-flex.flex-row.flex-wrap.align-items-start.gap-3 > div:first-child {
+        flex: 7 7 0 !important;
+        min-width: 380px !important;
+        max-width: 100% !important;
+        width: auto !important;
+    }
+    
+    .mb-2.d-flex.flex-row.flex-wrap.align-items-start.gap-3 > div:last-child,
+    .diachi-block {
+        flex: 5 5 0 !important;
+        min-width: 320px;
+        max-width: 600px;
+    }
+
+    .side-image-col {
+        flex: 7 7 0 !important;
+        min-width: 380px;
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .col-md-6.d-none.d-md-flex.side-image-col {
+        flex: 7 7 0 !important;
+        max-width: 70% !important;
+        min-width: 380px !important;
+    }
+
+    .col-md-6.col-12.d-flex.align-items-center.justify-content-center.animate__animated.animate__fadeInRight {
+        flex: 5 5 0 !important;
+        max-width: 50% !important;
+        min-width: 300px !important;
+    }
+
+    .mb-2.d-flex.flex-row.flex-wrap.align-items-start.gap-3 {
+        align-items: stretch !important;
+        min-height: 320px;
+    }
+
+    .mb-2.d-flex.flex-row.flex-wrap.align-items-start.gap-3 > div {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        min-height: 320px;
+        box-sizing: border-box;
+    }
+
+    .diachi-block {
+        justify-content: center !important;
+        align-items: center !important;
+        text-align: center !important;
+        height: 100%;
+        min-height: 320px;
+    }
+
+    .diachi-block ul {
+        margin-left: auto;
+        margin-right: auto;
+        text-align: left;
+    }
+
+    /*Responsive*/
+
+    @@media (max-width: 767.98px) {
+        html, body {
+            overflow-y: auto;
+            overflow-x: hidden;
+            height: auto; 
+            min-height: 100vh; 
+        }
+        .auth-container-wrap {
+            height: auto; 
+            align-items: flex-start; 
+            padding: 15px;
+            min-height: 100vh; 
+        }
+        .auth-row {
+            height: auto;
+            margin-left: 0;
+            margin-right: 0;
+            flex-grow: 1; 
+        }
+        .col-md-6.col-12.d-flex.align-items-center.justify-content-center.animate__animated.animate__fadeInRight {
+            min-width: 100% !important;
+        }
+        .card.card-md {
+            margin: 0;
+            max-width: none;
+            border-radius: 15px;
+        }
+        .text-center.mb-4.d-md-none {
+            margin-bottom: 1.5rem !important;
+            margin-top: 0.5rem !important;
+        }
+        .card-header {
+            padding: 1rem 1rem;
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+        }
+        .card-body {
+            padding: 1.25rem !important;
+            overflow-y: unset !important;
+            max-height: unset !important;
+        }
+        .row.g-3 {
+            --bs-gutter-x: 1rem;
+            --bs-gutter-y: 0.75rem;
+        }
+        .row.g-3 + .row.g-3 { 
+            margin-top: 0.75rem !important; 
+        }
+        .form-label {
+            margin-bottom: 0.3rem;
+        }
+        .form-control, .form-select {
+            padding: 0.6rem 0.8rem;
+        }
+        .form-footer {
+            margin-top: 1rem;
+        }
+        .form-footer .text-center.my-3 {
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+        }
+        .form-footer .btn {
+            padding: 0.7rem 1.2rem;
+            margin-bottom: 1rem !important;
+        }
+        .form-footer .btn.btn-secondary {
+            margin-bottom: 0.5rem !important;
+        }
+        .form-footer .col-md-6.justify-content-md-end {
+            margin-top: 0 !important;
+        }
+        .side-image-col {
+            display: none !important;
+        }
+        .side-info-mobile {
+            display: block !important;
+            background: none;
+            border-radius: 0;
+            box-shadow: none;
+            padding: 0;
+            margin-top: 18px;
+        }
+        .card-mobile {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(32,107,196,0.07);
+            padding: 14px 12px 10px 12px;
+            margin-bottom: 14px;
+        }
+        .side-info-title {
+            font-weight: 700;
+            color: #206bc4;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 7px;
+        }
+        .side-info-title i {
+            color: #206bc4;
+        }
+        .side-info-li {
+            margin-left: 0;
+            color: #333;
+            margin-bottom: 2px;
+            padding-left: 16px;
+            position: relative;
+        }
+        .side-info-li:before {
+            content: '\2022';
+            color: #206bc4;
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1em;
+        }
+        .side-info-branch {
+            display: inline-block;
+            background: #e6f4ff;
+            color: #206bc4;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 7px;
+            margin-bottom: 4px;
+            margin-top: 6px;
+        }
+        .side-info-branch.mt-2 {
+            margin-top: 12px;
+        }
+        .card-body {
+            padding: 1.25rem !important;
+            overflow-y: unset !important;
+            max-height: unset !important;
+        }
+    }
+    @@media (min-width: 768px) {
+        .side-info-mobile {
+            display: none !important;
+        }
+    }
+
+    @@media (max-width: 991.98px) {
+        .auth-container-wrap {
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        .login_flex_992px {
+            flex-direction: column !important;
+        }
+
+        .login_width100_992px {
+            width: 100% !important;
+        }
+
+        .login_padding_992px {
+            padding: 0 3rem;
+        }
+
+        .mb-2.d-flex.flex-row.flex-wrap.align-items-start.gap-3 > div {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+
+        .mb-2.d-flex.flex-row.flex-wrap.align-items-start.gap-3 {
+            flex-direction: column !important;
+            gap: 18px !important;
+        }
+        .mb-2.d-flex.flex-row.flex-wrap.align-items-start.gap-3 > div {
+            max-width: 100% !important;
+            width: 100% !important;
+        }
+
+        .mb-2.d-flex.flex-row.flex-wrap.align-items-start.gap-3 > div,
+        .diachi-block {
+            align-items: flex-start !important;
+            justify-content: flex-start !important;
+            text-align: left !important;
+            min-height: unset;
+        }
+    }
+
+    @@media (min-width: 1200px) {
+        .side-image-col {
+            min-width: 380px;
+            max-width: 48%;
+        }
+    }
+
+    .card-mobile {
+        background: rgba(255, 255, 255, 0.98);
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        padding: 16px;
+        margin-bottom: 1.5rem;
+    }
+
+    .side-info-title {
+        font-weight: 600;
+        color: #206bc4;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .side-info-title i {
+        color: #004085;
+    }
+
+    .lich-lam-viec-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .card-lich {
+        border: 2px solid #e6f4ff;
+        box-shadow: 0 2px 10px rgba(32,107,196,0.07);
+        margin-bottom: 8px;
+        padding: 10px 14px;
+        border-radius: 14px;
+        background: #fafdff;
+        transition: box-shadow 0.2s;
+    }
+
+    .card-lich .fw-bold {
+        font-weight: 800;
+        padding: 7px 0 7px 0;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        display: block;
+        text-align: center;
+    }
+
+    .card-lich .fw-bold.text-primary {
+        background: none !important;
+        color: inherit !important;
+        font-weight: 800;
+        padding: 7px 0 7px 0;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        display: block;
+        text-align: center;
+    }
+
+    .card-lich .fw-bold.text-success {
+        background: none !important;
+        color: inherit !important;
+        font-weight: 800;
+        padding: 7px 0 7px 0;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        display: block;
+        text-align: center;
+    }
+
+    .card-lich .fw-bold.text-danger {
+        background: none !important;
+        color: inherit !important;
+        font-weight: 800;
+        padding: 7px 0 7px 0;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        display: block;
+        text-align: center;
+    }
+
+    /* Responsive: giảm padding trên mobile */
+    @@media (max-width: 767.98px) {
+        .card-lich {
+            padding: 12px 8px 10px 8px;
+            margin-bottom: 14px;
+        }
+        .card-lich .fw-bold {
+            padding: 6px 0 6px 0;
+        }
+        .card-lich .fw-bold.text-primary,
+        .card-lich .fw-bold.text-success,
+        .card-lich .fw-bold.text-danger {
+            background: none !important;
+            color: inherit !important;
+        }
+    }
+
+    .card-mobile {
+        background: rgba(255, 255, 255, 0.98);
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        padding: 16px;
+        margin-bottom: 1.5rem;
+    }
+
+    .side-info-title {
+        font-weight: 600;
+        color: #206bc4;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .side-info-title i {
+        color: #004085;
+    }
+
+    .lich-lam-viec-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .card-lich {
+        background: #f8faff;
+        border-radius: 10px;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .card-lich .fw-bold {
+        margin-bottom: 8px;
+    }
+
+    .lich-time-row-group {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .lich-buoi-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 8px;
+        border-radius: 8px;
+        background: #e6f4ff;
+    }
+
+    .lich-label-sang {
+        font-weight: 500;
+        color: #004085;
+        margin-right: 8px;
+    }
+
+    .lich-time-sang, .lich-time-chieu {
+        font-weight: 500;
+        color: #206bc4;
+    }
+
+    .lich-note {
+        color: #d35400;
+        font-style: italic;
+        margin-left: 8px;
+    }
+
+    .side-info-li {
+        margin-left: 12px;
+        color: #333;
+        font-weight: 500;
+        line-height: 1.4;
+    }
+
+    .side-info-phone {
+        font-weight: 500;
+        color: #333;
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .side-info-phone i {
+        color: #206bc4;
+    }
+
+    .side-info-qr {
+        max-width: 100%;
+        height: auto;
+        margin: 0 auto;
+        display: block;
+    }
+
+    .side-info-partners {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        margin-top: 8px;
+    }
+
+    .side-info-partners img {
+        height: 40px;
+        width: 40px;
+        object-fit: contain;
+        background: transparent;
+        border-radius: 10px;
+        filter: drop-shadow(0 2px 6px rgba(0,0,0,0.1));
+    }
+
+    @@media (max-width: 767.98px) {
+        .text-center.mb-4.d-md-none {
+            background: linear-gradient(90deg, #206bc4, #004085);
+            border-radius: 14px 14px 0 0;
+            margin-bottom: 0rem !important;
+            margin-top: 0rem !important;
+            padding-bottom: 0 !important;
+            padding-top: 8px !important;
+            box-shadow: 0 4px 16px rgba(32,107,196,0.18);
+        }
+        .text-center.mb-4.d-md-none img {
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            padding: 6px 6px 0 6px;
+            margin-bottom: 0 !important;
+            display: block;
+        }
+        .card-header {
+            background: linear-gradient(90deg, #206bc4, #004085) !important;
+            border-top-left-radius: 0 !important;
+            border-top-right-radius: 0 !important;
+        }
+    }
+
+    @@media (max-width: 767.98px) {
+        .text-center.mb-4.d-md-none img {
+            padding-top: 10px !important;
+            padding-bottom: 10px !important;
+        }
+
+        .card.card-md{
+			margin-top: 645px;
+        }
+    }
+
+    /* --- Sua cho ban dien thoai (SixosPwa la PWA cai tren may) -------------
+       Khuon goc can giua theo chieu doc bang min-height:100vh + align-items:center.
+       Tren dien thoai the nay cao hon man hinh, nen phan can giua day noi dung
+       xuong va mo dau trang bang mot khoang trang ~500px.
+       Luu y: trong .cshtml, truy van media phai viet HAI dau a-cong. Razor coi
+       mot dau la bieu thuc C#, ke ca khi no nam trong comment CSS nhu the nay. */
+    @@media (max-width: 767.98px) {
+        body {
+            display: block;
+            min-height: auto;
+            background-attachment: scroll;
+        }
+
+        .container-fluid > .row {
+            min-height: auto;
+        }
+    }
+
+    /* --- Don cho gon o kho dien thoai (dot 2) -----------------------------
+       Khac han muc bu thang Tabler: day la sua HINH THAI, khong phai bu lech
+       framework. Nguoi dung chot "giu nhan dien UB nhung phai dep hon".
+       Luu y: trong .cshtml, truy van media phai viet HAI dau a-cong. */
+    @@media (max-width: 767.98px) {
+        /* Anh nen BG_BVUB.jpg nang 937 KB. Tren dien thoai no chi lam mot mang
+           xanh loang o dau trang va ton ~1 MB tai ve qua 3G/4G. Ban may tinh
+           van giu. */
+        body {
+            background-image: none !important;
+            background: #f4f7fb !important;
+        }
+
+        /* Rule goc chua 645px cho anh hero — ma hero vua tat o tren. */
+        .card.card-md {
+            margin-top: 0 !important;
+        }
+    }
+</style>
+</head>
+<body>
+<div class="container-fluid">
+<div class="row">
+<div class="col-12 d-flex align-items-center justify-content-center">
+            <div class="card card-md">
+                @* MOT khoi header duy nhat. Ban goc de logo NGOAI .card-header roi nhuom
+                   cung gradient bang media query de gia lam mot khoi — do la nguon cua
+                   khoang trong lon va cua viec logo lech trai. *@
+                <div class="card-header ub-header">
+                    <div class="ub-header__logo">
+                        <img src="@(ViewBag.LogoCoSo ?? "/static/icon-192.png")" alt="@ViewBag.TenCoSo">
+                    </div>
+                    <div class="ub-header__ten">@ViewBag.TenCoSo</div>
+                    <h2 class="ub-header__tieude">QUÊN MẬT KHẨU</h2>
+                </div>
+                <div class="card-body">
+                    <form id="quenMk_form" onsubmit="return false;">
+                        <div class="row g-3">
+                             <div class="col-12">
+                                <label for="SoCccd" class="form-label required mb-1 mt-1">Số căn cước công dân/Hộ chiếu</label>
+                                <input type="text" class="form-control text-start" id="SoCccd" name="SoCccd" placeholder="Nhập số căn cước công dân/Hộ chiếu" required />
+                            </div> 
+                            <div class="col-12">
+                                <label for="EmailOrSdt" class="form-label mb-1 required mt-1">Email hoặc Số điện thoại</label>
+                                <input type="text" class="form-control" id="EmailOrSdt" name="EmailOrSdt" placeholder="Nhập Email hoặc Số điện thoại" required />
+                            </div>
+                        </div>
+                        <div class="form-footer ub-nut">
+                            <a href="/DangNhap/Login?coSo=@ViewBag.SlugCoSo"
+                               class="btn btn-link ub-nut__quaylai">Quay lại đăng nhập</a>
+                            <button type="submit" id="btn_ForgotPassword"
+                                    class="btn btn-primary ub-nut__gui">Gửi xác nhận</button>
+                        </div>
+                    </form>
+
+                    @* Nut cai PWA — phai co o CA luong doi tac, khong chi luong OTP.
+                       CSS nam san trong site.css; pwa-install.js quyet dinh an/hien. *@
+                    <partial name="_PwaInstall" />
+                    
+                </div>
+            </div>
+        </div>
+</div>
+</div>
+
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/pwa-install.js" asp-append-version="true"></script>
+<script>
+    (function () {
+        const maCoSo = @Html.Raw(System.Text.Json.JsonSerializer.Serialize((string)ViewBag.MaCoSo));
+
+        const form = document.getElementById('quenMk_form');
+        const nut = document.getElementById('btn_ForgotPassword');
+
+        async function gui() {
+            const cccd = document.getElementById('SoCccd').value.trim();
+            const emailHoacSdt = document.getElementById('EmailOrSdt').value.trim();
+
+            if (!cccd || !emailHoacSdt) {
+                showToast('Vui lòng nhập đầy đủ thông tin!', 400);
+                return;
+            }
+
+            const chuCu = nut.innerHTML;
+            nut.disabled = true;
+            nut.innerHTML = 'Đang gửi...';
+
+            try {
+                const res = await fetch('/DangNhap/UbGuiQuenMatKhau', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        maCoSo: maCoSo,
+                        cccd: cccd,
+                        emailHoacSdt: emailHoacSdt
+                    })
+                });
+                const data = await res.json();
+
+                // Thong bao la cua CHINH doi tac tra ve — hien nguyen van.
+                showToast(data.message || (data.success ? 'Đã gửi' : 'Không gửi được'),
+                          data.success ? 200 : 400);
+
+                if (data.success) {
+                    // Buoc 2 nam TREN TRANG CUA DOI TAC: duong dan ho gui tro ve
+                    // host cua ho, khong tro ve day duoc (ADR 0014). Noi that de
+                    // benh nhan biet phai lam gi tiep.
+                    form.querySelectorAll('input, button').forEach(function (o) { o.disabled = true; });
+                    const bao = document.createElement('div');
+                    bao.className = 'alert alert-success mt-3 mb-0 text-start';
+                    bao.textContent = 'Vui lòng kiểm tra tin nhắn hoặc email để mở đường dẫn '
+                        + 'đặt lại mật khẩu. Đặt xong, quay lại đây đăng nhập bằng mật khẩu mới.';
+                    form.appendChild(bao);
+                }
+            } catch (err) {
+                showToast('Không kết nối được, vui lòng thử lại', 500);
+            } finally {
+                nut.disabled = false;
+                nut.innerHTML = chuCu;
+            }
+        }
+
+        nut.addEventListener('click', gui);
+        form.addEventListener('submit', function (e) { e.preventDefault(); gui(); });
+    })();
+</script>
+</body>
+</html>
