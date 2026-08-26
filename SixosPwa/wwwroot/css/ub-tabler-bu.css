@@ -263,3 +263,45 @@ h6, .h6 { font-size: 0.625rem; }
     padding: 8px;
     margin: 0 !important;
 }
+
+/* --- Nut con mat trong o mat khau ------------------------------------
+ * Khung boc do ub-hien-mat-khau.js tu dung quanh moi input[type=password].
+ * Nut nam de len o nhap ben phai, nen phai chua chan cho no.
+ */
+.ub-mk {
+    position: relative;
+    display: block;
+}
+
+.ub-mk .form-control {
+    padding-right: 2.75rem !important;
+}
+
+.ub-mk__nut {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 2.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #7c8f93;
+    cursor: pointer;
+    /* De khong bi .btn o muc tren keo cao len */
+    min-height: 0;
+}
+
+.ub-mk__nut:hover,
+.ub-mk__nut:focus-visible {
+    color: #206bc4;
+}
+
+.ub-mk__nut:focus-visible {
+    outline: 2px solid #206bc4;
+    outline-offset: -2px;
+    border-radius: 6px;
+}
