@@ -28,12 +28,39 @@ body.co-chan-trang { padding-bottom: calc(var(--ctc-cao) + env(safe-area-inset-b
     margin: 0;
     background: #e0f2fe;
     color: #334155;
-    border-top: 3px solid var(--ytv-primary, #3b82f6);
+    border-top: 4px solid #1d4ed8;
     padding: 9px 12px calc(9px + env(safe-area-inset-bottom, 0px)) 12px;
     max-width: none;   /* DanhSachCoSo dat body > * { width:100% !important } - dung keo gian */
 }
 
 .ytv-footer.ctc a { text-decoration: none; }
+
+/* Logo SIXOS trong footer */
+.fb2-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 2px;
+}
+
+.fb2-logo-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.3;
+}
+
+.fb2-logo-text strong {
+    font-size: 15px;
+    font-weight: 800;
+    color: #0b4ea2;
+    letter-spacing: 0.5px;
+}
+
+.fb2-logo-text span {
+    font-size: 11px;
+    color: #334155;
+}
 
 .fb2-top {
     display: flex;

@@ -750,7 +750,29 @@
             }
         });
 
+        // Lưu danh sách wards hiện tại để có thể mở lại
+        let _savedWards = [];
+
+        function collapseWardList(selectedName, selectedCode) {
+            // Thu gọn: chỉ hiện dòng đã chọn + nút Đổi
+            districtList.innerHTML = `
+                <li class="active" data-code="${selectedCode}" style="justify-content:space-between;">
+                    <span><i class="fas fa-check text-primary me-1"></i>${selectedName}</span>
+                    <button onclick="expandWardList()" style="
+                        background:none; border:1px solid #3b82f6; color:#3b82f6;
+                        border-radius:6px; padding:2px 8px; font-size:12px; cursor:pointer;
+                    ">Đổi</button>
+                </li>`;
+        }
+
+        function expandWardList() {
+            renderWards(_savedWards);
+        }
+        // Expose ra ngoài scope để onclick gọi được
+        window.expandWardList = expandWardList;
+
         function renderWards(wards) {
+            _savedWards = wards; // lưu lại để dùng khi mở lại
             districtList.innerHTML = `<li class="active" data-code="">Tất cả phường/xã <i class="fas fa-check text-primary"></i></li>`;
             if (Array.isArray(wards) && wards.length > 0) {
                 wards.forEach(w => {
@@ -758,14 +780,17 @@
                     li.dataset.code = w.code;
                     li.textContent = w.name;
                     li.addEventListener("click", function() {
+                        const wardName = w.name;
+                        const wardCode = w.code;
                         districtList.querySelectorAll("li").forEach(item => {
                             item.classList.remove("active");
                             const icon = item.querySelector("i");
                             if (icon) icon.remove();
                         });
                         this.classList.add("active");
-                        this.innerHTML += ' <i class="fas fa-check text-primary"></i>';
                         applyFilter();
+                        // Thu gọn lại sau khi chọn
+                        collapseWardList(wardName, wardCode);
                     });
                     districtList.appendChild(li);
                 });

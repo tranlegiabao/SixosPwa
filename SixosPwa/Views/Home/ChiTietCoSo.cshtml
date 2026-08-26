@@ -252,17 +252,28 @@
         font-size: 14px;
         color: #94a3b8;
     }
+    .oh-row {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin-top: 4px;
+        margin-bottom: 2px;
+    }
     .oh-days {
-        font-size: 13px;
+        font-size: 16px;
         color: #334155;
         font-weight: 600;
+        white-space: nowrap;
+        padding-left: 22px;
     }
     .oh-time {
         font-size: 16px;
         color: #0f172a;
         font-weight: 700;
-        margin-top: 4px;
+        margin-top: 0;
         margin-bottom: 0px;
+        white-space: nowrap;
+        padding-left: 22px;
     }
     .oh-status {
         display: inline-flex;
@@ -272,7 +283,7 @@
         color: #16a34a;
         font-weight: 700;
         background: #f0fdf4;
-        padding: 4px 8px;
+        padding: 4px 8px 4px 22px;
         border-radius: 20px;
         border: 1px solid #bbf7d0;
     }
@@ -511,6 +522,7 @@
             width: auto !important;
         }
         .oh-header { margin-bottom: 4px !important; }
+        .oh-days { font-size: 14px !important; }
         .oh-time { font-size: 14px !important; margin-bottom: 4px !important; }
         .oh-status { padding: 2px 6px !important; }
 
@@ -1044,9 +1056,6 @@
 
 <div class="ytv-main">
     <div class="ytv-sidebar">
-        <div class="sidebar-logo-container">
-            <img src="@logo" alt="Logo" class="sidebar-logo" />
-        </div>
         <div class="sidebar-scroll-area">
         <a class="ytv-menu-item @(activeLoaiND == NDCSKCB.GioiThieu ? "active" : string.Empty)" onclick="showTab('gioi-thieu', this, event)" href="#gioi-thieu">
             <i class="fas fa-info-circle"></i> Giới thiệu
