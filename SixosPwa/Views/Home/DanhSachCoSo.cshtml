@@ -174,7 +174,14 @@
        Chinh cho khop dang cua sidebar (bo goc 10px, vien nhat, nen trang)
        thay vi de dang bootstrap5 mac dinh. */
     .ytv-khu-vuc .ts-wrapper {
-        margin-bottom: 12px;
+        margin-bottom: 10px;
+    }
+
+    /* O chon phuong/xa bi khoa khi chua chon tinh — noi ro bang mau nhat. */
+    .ytv-khu-vuc .ts-wrapper.disabled .ts-control {
+        background: #f8fafc;
+        color: #94a3b8;
+        cursor: not-allowed;
     }
 
     .ytv-khu-vuc .ts-control {
@@ -398,9 +405,13 @@
                     placeholder="-- Chọn Tỉnh / TP --" autocomplete="off">
                 <option value="">-- Chọn Tỉnh / TP --</option>
             </select>
-            <ul class="ytv-district-list" id="districtList">
-                <li class="active" data-code="">Tất cả phường/xã <i class="fas fa-check"></i></li>
-            </ul>
+            @* Truoc day cho la <ul> nhoi ca 169 phuong/xa vao mot o cao 200px, KHONG
+               co o tim — muon chon mot phuong phai cuon ca tram muc, trong khi
+               dropdown Tinh ngay tren lai tim duoc. Doi sang Tom Select cho dong bo. *@
+            <select class="ytv-district-select" id="districtSelect"
+                    placeholder="Tất cả phường/xã" autocomplete="off">
+                <option value="">Tất cả phường/xã</option>
+            </select>
         </div>
     </div>
     <div class="ytv-content">
@@ -428,7 +439,7 @@
         let currentWards = [];
         let wardFetchId = 0;
         const provinceSelect = document.getElementById("provinceSelect");
-        const districtList = document.getElementById("districtList");
+        const districtSelect = document.getElementById("districtSelect");
         const clinicGrid = document.getElementById("clinicGrid");
         const resultCount = document.getElementById("resultCount");
         const searchInput = document.getElementById("searchInput");
@@ -459,18 +470,14 @@
         // Lọc và hiển thị danh sách
         function applyFilter() {
             const selectedProvinceCode = provinceSelect.value;
-            const activeLi = districtList.querySelector("li.active");
+            const selectedWardCode = districtSelect.value || "";
             let selectedWardName = "";
-            let selectedWardCode = "";
-            
-            if (activeLi) {
-                selectedWardCode = activeLi.dataset.code || "";
-                selectedWardName = activeLi.textContent.replace("Tất cả phường/xã", "").replace("Tất cả quận huyện", "").replace(/✔|check/g, "").trim();
+
+            if (selectedWardCode) {
+                const opt = districtSelect.options[districtSelect.selectedIndex];
+                selectedWardName = opt ? opt.textContent.trim() : "";
             }
-            if (!selectedWardCode || selectedWardName.includes("Tất cả")) {
-                selectedWardName = "";
-                selectedWardCode = "";
-            }
+
             const keyword = searchInput.value.toLowerCase().trim();
 
             let filtered = clinics;
@@ -655,97 +662,116 @@
             .catch(err => console.error("Lỗi lấy dữ liệu tỉnh thành v2: ", err));
 
         // Sự kiện thay đổi tỉnh thành
+        /**
+         * Dropdown Phường/Xã — Tom Select thứ hai, cùng kiểu với Tỉnh/TP.
+         *
+         * Bản cũ đổ 169 thẻ <li> vào một ô cuộn cao 200px trong sidebar rộng 220px
+         * và không có ô tìm: muốn chọn một phường phải cuộn qua cả trăm mục, lại
+         * còn cuộn lồng bên trong trang. Dropdown có tìm kiếm gỡ được cả hai.
+         */
+        let tsChonPhuong = null;
+
+        function khoiTaoChonPhuong() {
+            if (tsChonPhuong) {
+                tsChonPhuong.destroy();
+                tsChonPhuong = null;
+            }
+
+            tsChonPhuong = new TomSelect(districtSelect, {
+                placeholder: "Tất cả phường/xã",
+                allowEmptyOption: true,
+                openOnFocus: true,
+                selectOnTab: true,
+                loadThrottle: 200,
+                searchField: ["text"],
+
+                // Dùng chung logic gõ tắt / gõ chữ cái đầu với dropdown Tỉnh.
+                score: function (search) {
+                    const kw = (search || "").trim();
+                    if (!kw) {
+                        return function () { return 1; };
+                    }
+                    return function (item) {
+                        return matchesKeyword(item.text, kw) ? 1 : 0;
+                    };
+                },
+
+                render: {
+                    no_results: function () {
+                        return '<div class="no-results">Không tìm thấy phường/xã phù hợp</div>';
+                    }
+                },
+
+                onChange: function () {
+                    applyFilter();
+                }
+            });
+        }
+
+        // Dung len ngay tu dau, o trang thai khoa: de trong thi o phuong/xa hien ra
+        // la <select> tran cua trinh duyet, lech han voi o Tinh ngay tren.
+        // Phai dat SAU `let tsChonPhuong` — `let` khong duoc hoist, goi som la
+        // ReferenceError va chet ca khoi script (ke ca dropdown Tinh).
+        khoiTaoChonPhuong();
+        tsChonPhuong.disable();
+
+        /**
+         * Đổ lại danh sách phường/xã. Rỗng = chỉ còn "Tất cả" và khoá ô.
+         *
+         * Dùng API của Tom Select chứ KHÔNG destroy rồi dựng lại: destroy() phục
+         * hồi <select> về đúng HTML lúc nó khởi tạo, nên options vừa thêm bằng
+         * appendChild sẽ bay sạch.
+         *
+         * Thứ tự bắt buộc: clear() xoá giá trị đang hiển thị TRƯỚC, rồi mới
+         * clearOptions() — làm ngược lại thì chữ cũ còn nằm trên ô.
+         */
+        function napPhuongXa(wards) {
+            _savedWards = Array.isArray(wards) ? wards : [];
+
+            tsChonPhuong.clear(true);
+            tsChonPhuong.clearOptions();
+            tsChonPhuong.addOption({ value: "", text: "Tất cả phường/xã" });
+            tsChonPhuong.addOptions(_savedWards.map(w => ({ value: String(w.code), text: w.name })));
+            tsChonPhuong.refreshOptions(false);
+
+            if (_savedWards.length === 0) {
+                tsChonPhuong.disable();
+            } else {
+                tsChonPhuong.enable();
+            }
+        }
+
+        // Sự kiện thay đổi tỉnh thành
         provinceSelect.addEventListener("change", async function () {
             const selectedCode = this.value;
+
             if (!selectedCode) {
-                districtList.innerHTML = `<li class="active" data-code="">Tất cả phường/xã <i class="fas fa-check text-primary"></i></li>`;
                 currentWards = [];
+                napPhuongXa([]);
                 applyFilter();
                 return;
             }
 
-            const currentId = ++wardFetchId;
-            districtList.innerHTML = `<li class="active" data-code="">Tất cả phường/xã <i class="fas fa-check text-primary"></i></li><li style="color:#94a3b8; padding:8px 12px;">Đang tải phường/xã...</li>`;
-            applyFilter();
+            // Báo "đang tải" bằng chính ô chọn, không phải một dòng <li> lạc lõng.
+            if (tsChonPhuong) {
+                tsChonPhuong.disable();
+            }
 
             try {
                 const res = await fetch(`https://provinces.open-api.vn/api/v2/p/${encodeURIComponent(selectedCode)}?depth=2`);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                if (!res.ok) throw new Error("HTTP " + res.status);
+
                 const data = await res.json();
-                if (currentId !== wardFetchId) return;
-
                 currentWards = Array.isArray(data?.wards) ? data.wards : [];
-                renderWards(currentWards);
+                napPhuongXa(currentWards);
             } catch (err) {
-                if (currentId !== wardFetchId) return;
-                console.error("Lỗi lấy danh sách phường/xã v2: ", err);
-                districtList.innerHTML = `<li class="active" data-code="">Tất cả phường/xã <i class="fas fa-check text-primary"></i></li><li style="color:#ef4444; padding:8px 12px;">Không tải được phường/xã</li>`;
+                console.error("Lỗi lấy phường/xã: ", err);
+                currentWards = [];
+                napPhuongXa([]);
             }
+
+            applyFilter();
         });
-
-        // Lưu danh sách wards hiện tại để có thể mở lại
-        let _savedWards = [];
-
-        function collapseWardList(selectedName, selectedCode) {
-            // Thu gọn: chỉ hiện dòng đã chọn + nút Đổi
-            districtList.innerHTML = `
-                <li class="active" data-code="${selectedCode}" style="justify-content:space-between;">
-                    <span><i class="fas fa-check text-primary me-1"></i>${selectedName}</span>
-                    <button onclick="expandWardList()" style="
-                        background:none; border:1px solid #3b82f6; color:#3b82f6;
-                        border-radius:6px; padding:2px 8px; font-size:12px; cursor:pointer;
-                    ">Đổi</button>
-                </li>`;
-        }
-
-        function expandWardList() {
-            renderWards(_savedWards);
-        }
-        // Expose ra ngoài scope để onclick gọi được
-        window.expandWardList = expandWardList;
-
-        function renderWards(wards) {
-            _savedWards = wards; // lưu lại để dùng khi mở lại
-            districtList.innerHTML = `<li class="active" data-code="">Tất cả phường/xã <i class="fas fa-check text-primary"></i></li>`;
-            if (Array.isArray(wards) && wards.length > 0) {
-                wards.forEach(w => {
-                    const li = document.createElement("li");
-                    li.dataset.code = w.code;
-                    li.textContent = w.name;
-                    li.addEventListener("click", function() {
-                        const wardName = w.name;
-                        const wardCode = w.code;
-                        districtList.querySelectorAll("li").forEach(item => {
-                            item.classList.remove("active");
-                            const icon = item.querySelector("i");
-                            if (icon) icon.remove();
-                        });
-                        this.classList.add("active");
-                        applyFilter();
-                        // Thu gọn lại sau khi chọn
-                        collapseWardList(wardName, wardCode);
-                    });
-                    districtList.appendChild(li);
-                });
-            } else {
-                const emptyLi = document.createElement("li");
-                emptyLi.style.color = "#94a3b8";
-                emptyLi.style.padding = "8px 12px";
-                emptyLi.textContent = "Không có dữ liệu phường/xã";
-                districtList.appendChild(emptyLi);
-            }
-
-            districtList.firstElementChild.addEventListener("click", function() {
-                districtList.querySelectorAll("li").forEach(item => {
-                    item.classList.remove("active");
-                    const icon = item.querySelector("i");
-                    if (icon) icon.remove();
-                });
-                this.classList.add("active");
-                this.innerHTML += ' <i class="fas fa-check text-primary"></i>';
-                applyFilter();
-            });
-        }
 
         function renderClinics(list) {
             if (list.length === 0) {
