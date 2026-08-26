@@ -527,8 +527,10 @@
 
 
             <div class="d-flex align-items-center flex-column justify-content-center">
-                <div class="logo">
-                    <img src="@(ViewBag.LogoCoSo ?? "/static/icon-192.png")" alt="@ViewBag.TenCoSo"> <!-- Bạn có thể thay link hình này -->
+                @* Anh trong DM_CSKCB.Logo thuong la anh VUONG co vien san. Boc trong
+                   khung tron de vien do khong lo ra. *@
+                <div class="logo ub-logo">
+                    <img src="@(ViewBag.LogoCoSo ?? "/static/icon-192.png")" alt="@ViewBag.TenCoSo">
                 </div>
                 <h2 class="heading">Chào mừng bạn đến<br> Bệnh Viện Ung Bướu</h2>
 

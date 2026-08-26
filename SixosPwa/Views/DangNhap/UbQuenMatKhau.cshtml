@@ -948,6 +948,25 @@
             min-height: auto;
         }
     }
+
+    /* --- Don cho gon o kho dien thoai (dot 2) -----------------------------
+       Khac han muc bu thang Tabler: day la sua HINH THAI, khong phai bu lech
+       framework. Nguoi dung chot "giu nhan dien UB nhung phai dep hon".
+       Luu y: trong .cshtml, truy van media phai viet HAI dau a-cong. */
+    @@media (max-width: 767.98px) {
+        /* Anh nen BG_BVUB.jpg nang 937 KB. Tren dien thoai no chi lam mot mang
+           xanh loang o dau trang va ton ~1 MB tai ve qua 3G/4G. Ban may tinh
+           van giu. */
+        body {
+            background-image: none !important;
+            background: #f4f7fb !important;
+        }
+
+        /* Rule goc chua 645px cho anh hero — ma hero vua tat o tren. */
+        .card.card-md {
+            margin-top: 0 !important;
+        }
+    }
 </style>
 </head>
 <body>
@@ -955,13 +974,15 @@
 <div class="row">
 <div class="col-12 d-flex align-items-center justify-content-center">
             <div class="card card-md">
-                <div class="text-center mb-4 d-md-none">
-                    <a href="/" class="navbar-brand navbar-brand-autodark">
-                        <img src="@(ViewBag.LogoCoSo ?? "/static/icon-192.png")" height="56" alt="@ViewBag.TenCoSo">
-                    </a>
-                </div>
-                <div class="card-header">
-                    <h2 class="text-center w-100 mb-0 py-2">QUÊN MẬT KHẨU</h2>
+                @* MOT khoi header duy nhat. Ban goc de logo NGOAI .card-header roi nhuom
+                   cung gradient bang media query de gia lam mot khoi — do la nguon cua
+                   khoang trong lon va cua viec logo lech trai. *@
+                <div class="card-header ub-header">
+                    <div class="ub-header__logo">
+                        <img src="@(ViewBag.LogoCoSo ?? "/static/icon-192.png")" alt="@ViewBag.TenCoSo">
+                    </div>
+                    <div class="ub-header__ten">@ViewBag.TenCoSo</div>
+                    <h2 class="ub-header__tieude">QUÊN MẬT KHẨU</h2>
                 </div>
                 <div class="card-body">
                     <form id="quenMk_form" onsubmit="return false;">
@@ -975,74 +996,18 @@
                                 <input type="text" class="form-control" id="EmailOrSdt" name="EmailOrSdt" placeholder="Nhập Email hoặc Số điện thoại" required />
                             </div>
                         </div>
-                        <div class="form-footer">
-                            <div class="row g-3 align-items-center">
-                                <div class="col-md-6 col-12">
-                                    <div class="text-center my-3">
-                                        <a href="/DangNhap/Login?coSo=@ViewBag.SlugCoSo" class="btn btn-secondary w-100 w-md-auto">Quay lại đăng nhập</a>
-                                    </div>
-                                </div>
-                                <div class="col-md-6 col-12 d-flex justify-content-md-end">
-                                    <button type="submit" id="btn_ForgotPassword" class="btn btn-primary w-100 w-md-auto">Gửi xác nhận</button>
-                                </div>
-                            </div>
+                        <div class="form-footer ub-nut">
+                            <a href="/DangNhap/Login?coSo=@ViewBag.SlugCoSo"
+                               class="btn btn-link ub-nut__quaylai">Quay lại đăng nhập</a>
+                            <button type="submit" id="btn_ForgotPassword"
+                                    class="btn btn-primary ub-nut__gui">Gửi xác nhận</button>
                         </div>
                     </form>
 
                     @* Nut cai PWA — phai co o CA luong doi tac, khong chi luong OTP.
                        CSS nam san trong site.css; pwa-install.js quyet dinh an/hien. *@
                     <partial name="_PwaInstall" />
-                    <div class="side-info-mobile d-md-none mt-4">
-                        <div class="mb-3 card-mobile">
-                            <div class="side-info-title"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-calendar-clock"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10.5 21h-4.5a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v3" /><path d="M16 3v4" /><path d="M8 3v4" /><path d="M4 11h10" /><path d="M18 18m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" /><path d="M18 16.5v1.5l.5 .5" /></svg> Lịch làm việc</div>
-                            <div class="lich-lam-viec-cards">
-                                <div class="card-lich mb-2">
-                                <div class="fw-bold text-primary">Thứ 2 - 6</div>
-                                <div class="lich-time-row-group">
-                                    <div class="lich-buoi-row mb-1">
-                                        <span class="lich-label-sang">Sáng:</span>
-                                        <span class="lich-time-sang">5:00–12:00</span>
-                                    </div>
-                                    <div class="lich-buoi-row chieu-row mb-1">
-                                        <span class="lich-label-sang">Chiều:</span>
-                                        <span class="lich-time-chieu">13:00–16:30</span>
-                                        <span class="lich-time-chieu text-end" style="width: 100%">16:30–19:00</span>
-                                        
-                                    </div>
-                                </div>
-                                </div>
-                                <div class="card-lich mb-2">
-                                <div class="fw-bold text-success">Thứ 7</div>
-                                <div class="lich-time-row-group">
-                                    <span class="lich-time-sang">7:30–11:30</span>
-                                    <span class="lich-note d-block">(Cơ sở 2 chỉ khám Thứ 7)</span>
-                                </div>
-                                </div>
-                                <div class="card-lich">
-                                <div class="fw-bold text-danger">Chủ nhật</div>
-                                <div class="lich-time-row-group">
-                                    <span class="lich-time-sang">7:30–11:30</span>
-                                </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-3 card-mobile">
-                            <div class="side-info-title"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-map-pin"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /><path d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z" /></svg> Địa chỉ</div>
-                            <div class="side-info-branch">Cơ sở 1</div>
-                            <ul class="mb-1 mt-2 text-start" style="list-style:none; padding-left:0;">
-                                <li class="side-info-li">6 Nguyễn Huy Lượng, P.14, Q.Bình Thạnh, Tp.HCM.</li>
-                                <li class="side-info-li">47 Nguyễn Huy Lượng, P.14, Q.Bình Thạnh, Tp.HCM.</li>
-                            </ul>
-                            <div class="side-info-branch mt-2">Cơ sở 2</div>
-                            <ul class="mb-1 mt-2 text-start" style="list-style:none; padding-left:0;">
-                                <li class="side-info-li">12 Đường 400, KP3, P.Tân Phú, Tp.Thủ Đức.</li> 
-                            </ul>
-                            <div class="side-info-title side-info-title-phone"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-phone"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2" /></svg> Điện thoại</div>
-                            <div class="side-info-phone">(028) 3841 2637</div>
-                        </div>
-                        
-                        
-                    </div>
+                    
                 </div>
             </div>
         </div>

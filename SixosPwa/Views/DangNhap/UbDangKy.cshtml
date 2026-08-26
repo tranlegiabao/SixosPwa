@@ -515,10 +515,10 @@ width: 70px;
         <div class="register-model col-12 bg-ccc d-flex align-items-center flex-column p-3"
             id="registrationCol">
             <div class="w-100">
-                <a href="/">
-                    <img src="@(ViewBag.LogoCoSo ?? "/static/icon-192.png")"
-                        alt="UNGBUOU logo" class="d-block mx-auto mb-3" style="max-width: 50px;">
-                </a>
+                @* Cung khuon voi man Dang nhap: khung tron che vien vuong cua anh goc. *@
+                <div class="ub-logo mb-3">
+                    <img src="@(ViewBag.LogoCoSo ?? "/static/icon-192.png")" alt="@ViewBag.TenCoSo">
+                </div>
                 <h2 class="text-center fw-bold">Tạo tài khoản UNGBUOU để truy cập vào tất cả các dịch vụ của UNGBUOU
                 </h2>
                 <div class="d-flex justify-content-center mb-5 fs-4">

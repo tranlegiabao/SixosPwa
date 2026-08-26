@@ -58,6 +58,7 @@ public class DangNhapController : Controller
             maCoSoTuUrl = thongTin?.MaCoSo;
             ViewBag.MaCoSo = thongTin?.MaCoSo;
             ViewBag.TenCoSo = thongTin?.TenCoSo;
+            ViewBag.LogoCoSo = LayLogoCoSo(thongTin);
             ViewBag.SlugCoSo = coSo;
         }
 
@@ -782,6 +783,23 @@ public class DangNhapController : Controller
     }
 
     /// <summary>Do ten co so + dinh danh benh nhan ra ViewBag cho bon man tren.</summary>
+    /// <summary>
+    /// Logo cua co so de bo man doi tac hien dung nhan dien cua ho, thay vi logo
+    /// SixosPwa. Cot DM_CSKCB.Logo giu hoac URL tuyet doi, hoac duong dan noi bo
+    /// "/anh/logo_cs/x.jpg" (KhoAnh sinh ra, AnhController phuc vu) — ca hai dang
+    /// deu gan thang vao src duoc.
+    ///
+    /// UnescapeDataString bam theo Views/Home/ChiTietCoSo.cshtml:7: URL trong cot
+    /// nay co the da bi ma hoa mot lan truoc khi luu.
+    ///
+    /// Tra null khi co so chua co logo — view tu roi ve anh mac dinh.
+    /// </summary>
+    private static string? LayLogoCoSo(DMCSKCB? coSo)
+    {
+        var logo = coSo?.Logo;
+        return string.IsNullOrWhiteSpace(logo) ? null : Uri.UnescapeDataString(logo);
+    }
+
     private async Task DoNguCanhRaViewBagAsync(string maCoSo, string? returnUrl)
     {
         var coSo = await _dbContext.DMCSKCBs
@@ -791,6 +809,7 @@ public class DangNhapController : Controller
         ViewBag.MaCoSo = maCoSo;
         ViewBag.TenCoSo = coSo?.TenCoSo ?? "cơ sở khám chữa bệnh";
         ViewBag.SlugCoSo = coSo?.Slug;
+        ViewBag.LogoCoSo = LayLogoCoSo(coSo);
         ViewBag.ReturnUrl = returnUrl;
 
         ViewBag.Cccd = User.FindFirst(LuongCongBenhNhan.ClaimCccd)?.Value;
