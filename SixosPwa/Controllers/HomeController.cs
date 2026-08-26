@@ -203,9 +203,40 @@ public class HomeController : Controller
         if (gio.Count == 0) return null;
 
         return OperatingHours.Encode(
-            string.Join(",", gio.Select(x => x.Thu)),
+            FormatWorkingDays(gio.Select(x => x.Thu)),
             gio[0].GioMoCua.ToString(@"hh\:mm"),
             gio[0].GioDongCua.ToString(@"hh\:mm"));
+    }
+
+    /// <summary>
+    /// DM_CSKCB_GioLamViec luu Thu theo quy uoc 0 = Chu nhat, 1..6 = Thu 2..Thu 7.
+    /// Chuyen danh sach so trong DB thanh nhan de giao dien, khong hien "1,2,3...".
+    /// </summary>
+    private static string FormatWorkingDays(IEnumerable<byte> storedDays)
+    {
+        var days = storedDays
+            .Select(day => day is 7 or 8 ? (byte)0 : day)
+            .Where(day => day <= 6)
+            .Distinct()
+            .OrderBy(day => day)
+            .ToArray();
+
+        if (days.SequenceEqual(new byte[] { 0, 1, 2, 3, 4, 5, 6 })) return "Thứ 2 - Chủ nhật";
+        if (days.SequenceEqual(new byte[] { 1, 2, 3, 4, 5, 6 })) return "Thứ 2 - Thứ 7";
+        if (days.SequenceEqual(new byte[] { 1, 2, 3, 4, 5 })) return "Thứ 2 - Thứ 6";
+        if (days.SequenceEqual(new byte[] { 0, 6 })) return "Thứ 7 - Chủ nhật";
+
+        return string.Join(", ", days.Select(day => day switch
+        {
+            0 => "Chủ nhật",
+            1 => "Thứ 2",
+            2 => "Thứ 3",
+            3 => "Thứ 4",
+            4 => "Thứ 5",
+            5 => "Thứ 6",
+            6 => "Thứ 7",
+            _ => string.Empty
+        }));
     }
 
     /// <summary>Man trong cho ba the chua noi du lieu.</summary>
