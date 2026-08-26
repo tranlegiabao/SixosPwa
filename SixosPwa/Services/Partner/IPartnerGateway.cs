@@ -53,6 +53,12 @@ public interface IPartnerGateway
     Task<KetQuaThaoTac> QuenMatKhauAsync(DoiTacApi cauHinh, string cccd, string emailHoacSdt, CancellationToken ct = default);
 
     /// <summary>
+    /// Danh sach chi nhanh cua doi tac, de man dang nhap hien dung thong tin cua
+    /// ho (dia chi, hotline, gio lam viec) o kho may tinh. Rong = khong hien.
+    /// </summary>
+    Task<IReadOnlyList<ChiNhanhDoiTac>> LayChiNhanhAsync(DoiTacApi cauHinh, CancellationToken ct = default);
+
+    /// <summary>
     /// Dung du lieu cho form ban giao. KHONG goi HTTP o day: cookie phai duoc dat
     /// tren TRINH DUYET benh nhan, nen buoc cuoi bat buoc la form POST top-level.
     /// Xem ADR 0003 (phan SameSite van con hieu luc).
@@ -68,6 +74,9 @@ public interface IPartnerGateway
 public record YeuCauMoTaiKhoan(string HoTen, string Cccd, string DienThoai, string? Email, string MatKhau, int Kenh);
 
 public record KetQuaThaoTac(bool ThanhCong, string ThongBao);
+
+/// <summary>Mot chi nhanh ben he doi tac — chi nhung truong man hinh dung toi.</summary>
+public record ChiNhanhDoiTac(string Ten, string? DiaChi, string? Hotline, string? GioLamViec);
 
 /// <param name="YDinh">
 /// Benh nhan bam nut gi de toi day: "dat-goi-kham", "lich-su-hen",

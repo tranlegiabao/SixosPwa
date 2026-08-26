@@ -59,6 +59,7 @@ public class DangNhapController : Controller
             ViewBag.MaCoSo = thongTin?.MaCoSo;
             ViewBag.TenCoSo = thongTin?.TenCoSo;
             ViewBag.LogoCoSo = LayLogoCoSo(thongTin);
+            ViewBag.TrangChuDoiTac = null as string;
             ViewBag.SlugCoSo = coSo;
         }
 
@@ -111,6 +112,8 @@ public class DangNhapController : Controller
             if (cuaDoiTac?.DungManDoiTac == true)
             {
                 ViewBag.ReturnUrl = returnUrl;
+                ViewBag.TrangChuDoiTac = cuaDoiTac.CauHinh.TrangChu?.TrimEnd('/');
+                ViewBag.ChiNhanh = await LayChiNhanhAsync(maCoSoTuUrl);
                 return View("UbLogin");
             }
         }
@@ -521,6 +524,10 @@ public class DangNhapController : Controller
 
         await DoNguCanhRaViewBagAsync(maCoSo, returnUrl);
         ViewBag.SlugCoSo = coSo;
+
+        var cua = await _luong.LayCuaAsync(maCoSo);
+        ViewBag.TrangChuDoiTac = cua?.CauHinh.TrangChu?.TrimEnd('/');
+        ViewBag.ChiNhanh = await LayChiNhanhAsync(maCoSo);
         return View();
     }
 
@@ -794,6 +801,26 @@ public class DangNhapController : Controller
     ///
     /// Tra null khi co so chua co logo — view tu roi ve anh mac dinh.
     /// </summary>
+    /// <summary>
+    /// Chi nhanh cua doi tac cho panel trai o kho may tinh. Cache 10 phut: day chi
+    /// la khoi TRANG TRI, khong dang de moi lan mo man dang nhap la mot luot goi
+    /// sang trang doi tac. Hong thi tra rong — panel tu an, khong chan dang nhap.
+    /// </summary>
+    private async Task<IReadOnlyList<ChiNhanhDoiTac>> LayChiNhanhAsync(string? maCoSo)
+    {
+        if (string.IsNullOrWhiteSpace(maCoSo)) return Array.Empty<ChiNhanhDoiTac>();
+
+        var khoa = "ChiNhanhDoiTac_" + maCoSo;
+        if (_cache.TryGetValue(khoa, out IReadOnlyList<ChiNhanhDoiTac>? cu) && cu is not null)
+        {
+            return cu;
+        }
+
+        var ds = await _luong.LayChiNhanhDoiTacAsync(maCoSo);
+        _cache.Set(khoa, ds, TimeSpan.FromMinutes(10));
+        return ds;
+    }
+
     private static string? LayLogoCoSo(DMCSKCB? coSo)
     {
         var logo = coSo?.Logo;

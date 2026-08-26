@@ -29,5 +29,8 @@ public class NoApiGateway : IPartnerGateway
     public Task<KetQuaThaoTac> QuenMatKhauAsync(DoiTacApi cauHinh, string cccd, string emailHoacSdt, CancellationToken ct = default)
         => Task.FromResult(new KetQuaThaoTac(false, KhongCoDoiTac));
 
+    public Task<IReadOnlyList<ChiNhanhDoiTac>> LayChiNhanhAsync(DoiTacApi cauHinh, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<ChiNhanhDoiTac>>(Array.Empty<ChiNhanhDoiTac>());
+
     public ThongTinBanGiao? DungThongTinBanGiao(DoiTacApi cauHinh, YeuCauBanGiao yeuCau) => null;
 }

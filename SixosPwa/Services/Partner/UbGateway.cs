@@ -22,6 +22,7 @@ public class UbGateway : IPartnerGateway
     private const string DuongDanDangNhap = "/HeThong/HT_DangNhap/login";
     private const string DuongDanDangKy = "/HeThong/HT_DangNhap/register";
     private const string DuongDanQuenMatKhau = "/HeThong/HT_QuenMatKhau/QuenMatKhau";
+    private const string DuongDanChiNhanh = "/HeThong/HT_DangNhap/branches";
 
     /// <summary>
     /// Ban XacThucMaXacNhan o Controllers/ — chi tra JSON, KHONG dat cookie.
@@ -151,6 +152,53 @@ public class UbGateway : IPartnerGateway
         return await GoiJsonAsync(cauHinh, DuongDanQuenMatKhau, than,
             "Đã gửi đường dẫn đặt lại mật khẩu", "Không gửi được đường dẫn đặt lại mật khẩu", ct);
     }
+
+    public async Task<IReadOnlyList<ChiNhanhDoiTac>> LayChiNhanhAsync(DoiTacApi cauHinh, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(cauHinh.TrangChu))
+        {
+            return Array.Empty<ChiNhanhDoiTac>();
+        }
+
+        try
+        {
+            var client = TaoClient();
+            var url = $"{CatDauGach(cauHinh.TrangChu)}{DuongDanChiNhanh}";
+            using var phanHoi = await client.GetAsync(url, ct);
+            if (!phanHoi.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Lay chi nhanh doi tac tra ve {StatusCode}", phanHoi.StatusCode);
+                return Array.Empty<ChiNhanhDoiTac>();
+            }
+
+            using var tep = JsonDocument.Parse(await phanHoi.Content.ReadAsStringAsync(ct));
+            if (!tep.RootElement.TryGetProperty("data", out var mang) || mang.ValueKind != JsonValueKind.Array)
+            {
+                return Array.Empty<ChiNhanhDoiTac>();
+            }
+
+            var ds = new List<ChiNhanhDoiTac>();
+            foreach (var o in mang.EnumerateArray())
+            {
+                var ten = Chuoi(o, "tenDoiTac");
+                if (string.IsNullOrWhiteSpace(ten)) continue;
+
+                ds.Add(new ChiNhanhDoiTac(ten, Chuoi(o, "diaChi"), Chuoi(o, "hotline"), Chuoi(o, "thoiGianLamViec")));
+            }
+
+            return ds;
+        }
+        catch (Exception ex)
+        {
+            // Khoi nay chi de TRANG TRI man dang nhap — hong thi bo qua, tuyet doi
+            // khong duoc chan benh nhan dang nhap.
+            _logger.LogWarning(ex, "Khong lay duoc danh sach chi nhanh doi tac");
+            return Array.Empty<ChiNhanhDoiTac>();
+        }
+    }
+
+    private static string? Chuoi(JsonElement o, string ten)
+        => o.TryGetProperty(ten, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
 
     public ThongTinBanGiao? DungThongTinBanGiao(DoiTacApi cauHinh, YeuCauBanGiao yeuCau)
     {

@@ -38,6 +38,9 @@ public interface ILuongCongBenhNhan
     /// <summary>Buoc 2 man Dang ky kieu doi tac: doi ma benh nhan vua go, roi cho dich Ban giao.</summary>
     Task<KetQuaBuoc> XacThucMaDoiTacAsync(string maCoSo, string cccd, string ma, string? returnUrl = null, CancellationToken ct = default);
 
+    /// <summary>Chi nhanh cua doi tac — de man dang nhap hien thong tin cua ho o kho may tinh.</summary>
+    Task<IReadOnlyList<ChiNhanhDoiTac>> LayChiNhanhDoiTacAsync(string maCoSo, CancellationToken ct = default);
+
     /// <summary>Man Quen mat khau kieu doi tac: xin doi tac gui duong dan dat lai mat khau.</summary>
     Task<KetQuaThaoTac> QuenMatKhauDoiTacAsync(string maCoSo, string cccd, string emailHoacSdt, CancellationToken ct = default);
 
@@ -337,6 +340,14 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
 
         return new KetQuaBuoc(true, ketQua.ThongBao,
             await GhiHoSoRoiChoBanGiaoAsync(maCoSo, cccd, lienKet.MatKhau, returnUrl, ct));
+    }
+
+    public async Task<IReadOnlyList<ChiNhanhDoiTac>> LayChiNhanhDoiTacAsync(string maCoSo, CancellationToken ct = default)
+    {
+        var coSo = await LayCuaDoiTacAsync(maCoSo, ct);
+        return coSo is null
+            ? Array.Empty<ChiNhanhDoiTac>()
+            : await coSo.Cua.LayChiNhanhAsync(coSo.CauHinh, ct);
     }
 
     public async Task<KetQuaThaoTac> QuenMatKhauDoiTacAsync(string maCoSo, string cccd, string emailHoacSdt, CancellationToken ct = default)

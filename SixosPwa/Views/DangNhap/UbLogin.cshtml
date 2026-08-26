@@ -522,6 +522,93 @@
 </head>
 <body class="bg-ccc">
 <div class="container-fluid">
+<div class="row g-0 ub-khung">
+
+@{
+    var trangChuUb = (string?)ViewBag.TrangChuDoiTac;
+    var chiNhanh = ViewBag.ChiNhanh as IReadOnlyList<SixosPwa.Services.Partner.ChiNhanhDoiTac>
+                   ?? (IReadOnlyList<SixosPwa.Services.Partner.ChiNhanhDoiTac>)Array.Empty<SixosPwa.Services.Partner.ChiNhanhDoiTac>();
+    var hotline = string.Join(" - ", chiNhanh.Select(x => x.Hotline)
+                                             .Where(x => !string.IsNullOrWhiteSpace(x))
+                                             .Distinct());
+}
+@* --------------------------------------------------------------------------
+   Panel quang ba cua doi tac — CHI hien tu kho may tinh (d-none d-lg-flex).
+   Ban dien thoai co y giu mot cot nhu cu.
+
+   Chep dang tu Views/HT_DangNhap/Login.cshtml cua ho (cot col-md-7, nen
+   #393be7). Ba khac biet co chu dich:
+     1. Anh quang ba tro THANG sang trang doi tac ({TrangChu}/Image/ImageLogin/)
+        de ho doi anh thi ben minh tu theo, khong phai chep lai.
+     2. Danh sach chi nhanh do MAY CHU do vao (cache 10 phut) thay vi JS goi
+        /branches moi lan mo man.
+     3. Khong co panel nay thi man van dung — no chi la trang tri.
+   -------------------------------------------------------------------------- *@
+@if (!string.IsNullOrWhiteSpace(trangChuUb))
+{
+    <div class="ub-panel col-lg-7 d-none d-lg-flex flex-column">
+        <div class="ub-panel__dau">
+            <img src="@(trangChuUb)/Image/Logo_DangNhap.png" alt="@ViewBag.TenCoSo" class="ub-panel__logo">
+            @if (!string.IsNullOrWhiteSpace(hotline))
+            {
+                <div class="ub-panel__hotline">TỔNG ĐÀI TƯ VẤN: <span class="fw-bold">@hotline</span></div>
+            }
+        </div>
+
+        <div id="ubCarousel" class="carousel slide ub-panel__anh" data-bs-ride="carousel" data-bs-interval="4000">
+            <div class="carousel-inner">
+                @for (var i = 8; i <= 9; i++)
+                {
+                    <div class="carousel-item @(i == 8 ? "active" : "")">
+                        <img src="@(trangChuUb)/Image/ImageLogin/@(i).png" class="d-block w-100" alt="Chương trình khám">
+                    </div>
+                }
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#ubCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Trước</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#ubCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Sau</span>
+            </button>
+        </div>
+
+        @if (chiNhanh.Count > 0)
+        {
+            <div class="ub-panel__coso">
+                @foreach (var cn in chiNhanh)
+                {
+                    <div class="ub-coso">
+                        <div class="ub-coso__ten">@cn.Ten</div>
+                        @if (!string.IsNullOrWhiteSpace(cn.DiaChi))
+                        {
+                            <div class="ub-coso__dong">@cn.DiaChi</div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(cn.Hotline))
+                        {
+                            <div class="ub-coso__dong">@cn.Hotline</div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(cn.GioLamViec))
+                        {
+                            <div class="ub-coso__dong">@cn.GioLamViec</div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+
+        <footer class="ub-panel__chan">
+            <div class="ub-panel__chan-tieude">LIÊN KẾT</div>
+            <ul>
+                <li><a href="#">Giới thiệu</a></li>
+                <li><a href="#">Chính sách</a></li>
+                <li><a href="#">Điều khoản đăng ký</a></li>
+                <li><a href="#">Bảo mật</a></li>
+            </ul>
+        </footer>
+    </div>
+}
         <div id="login"
              class="login-modal col-12 bg-ccc d-flex align-items-center flex-column p-3">
 
@@ -611,6 +698,7 @@
                 </a>
             </div>
         </div>
+</div>
 </div>
 
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
