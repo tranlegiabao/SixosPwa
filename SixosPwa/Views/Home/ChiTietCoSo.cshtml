@@ -452,6 +452,12 @@
 
     @@media (max-width: 992px) {
         .ytv-main { flex-direction: column; padding-left: 0; }
+        /* Nam sua 2026-08-26: muc ngan (Dich vu, Lien he) lam trang qua thap,
+           trinh duyet het cho cuon truoc khi tieu de cham dinh nen showTab()
+           khong dua len sat header duoc. Chi ap cho dien thoai - o day menu nam
+           TREN noi dung nen moi thieu cho; may tinh von da dat, them vao chi
+           sinh thanh cuon thua. */
+        .ytv-content { min-height: calc(100vh - 98px); }
         .ytv-sidebar {
             position: relative; top: 0; left: 0; height: auto; z-index: 1; width: 100%;
             flex-direction: column; overflow: hidden; padding: 10px 16px;
@@ -1257,6 +1263,18 @@
         var targetSec = document.getElementById(tabId);
         if (targetSec) {
             targetSec.classList.add('active-tab');
+
+            // Nam sua 2026-08-26: doi tab xong phai dua khung nhin ve dau muc.
+            // Truoc day chi doi noi dung nen dang doc cuoi mot muc dai roi bam
+            // sang muc khac la van dung nguyen cho cu - tieu de muc vua bam nam
+            // ngoai man hinh, nhin nhu trang bi treo.
+            // Chieu cao header doc DONG (offsetHeight) chu khong ghim 98, khoi
+            // lech khi header doi chieu cao o kho man khac.
+            var header = document.querySelector('.ytv-header');
+            var caoHeader = header ? header.offsetHeight : 0;
+            var dich = targetSec.getBoundingClientRect().top + window.scrollY - caoHeader - 12;
+            var itDong = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            window.scrollTo({ top: Math.max(0, dich), behavior: itDong ? 'auto' : 'smooth' });
         }
     }
 
