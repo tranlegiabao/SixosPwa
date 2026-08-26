@@ -30,7 +30,7 @@
     .bottom-nav { display: none !important; }
     body {
         background: #ffffff !important;
-        padding-top: 74px !important;
+        padding-top: 98px !important;
         padding-bottom: 130px !important;
         margin: 0 !important;
         font-family: 'Inter', system-ui, sans-serif;
@@ -51,17 +51,19 @@
     /* Header */
     .ytv-header {
         background: linear-gradient(135deg, #4285f4, #60a5fa);
-        color: white; padding: 12px 30px;
+        color: white; padding: 15px 30px;
         display: flex; align-items: center; justify-content: space-between;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border-bottom: 3px solid var(--ytv-secondary);
         position: fixed; top: 0; left: 0; width: 100%; z-index: 1100; box-sizing: border-box;
     }
     .ytv-logo-area { display: flex; align-items: center; gap: 15px; text-decoration: none; color: #ffffff; }
-    .ytv-logo-text { font-family: 'Times New Roman', serif; font-size: 26px; font-weight: 900; line-height: 1.1; }
+    .ytv-logo-area > img { width: 65px !important; height: 65px !important; }
+    .ytv-logo-text { font-family: 'Times New Roman', serif; font-size: 34px; font-weight: 900; line-height: 1.05; letter-spacing: 1px; }
     .ytv-header-title { text-align: center; flex-grow: 1; }
-    .ytv-header-title h1 { margin: 0; font-size: 20px; font-weight: 700; color: #ffffff; }
-    .ytv-header-title p { margin: 4px 0 0; font-size: 14px; opacity: 0.9; color: #ffffff; }
-    .ytv-header-menu { font-size: 24px; cursor: pointer; color: #ffffff; position: relative; }
+    .ytv-header-title h1 { margin: 0 0 5px; font-size: 26px; font-weight: 700; color: #ffffff; }
+    .ytv-header-title p { margin: 0; font-size: 20px; opacity: 0.9; color: #ffffff; font-style: italic; }
+    .ytv-header-menu { padding: 10px; font-size: 32px; cursor: pointer; color: #ffffff; position: relative; }
 
     .ytv-dropdown { display: none; position: absolute; top: 100%; right: 0; background: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); min-width: 240px; z-index: 9999; animation: fadeDown 0.2s ease; margin-top: 15px; }
     .ytv-dropdown.open { display: block; }
@@ -90,7 +92,7 @@
     padding: 12px 0 0;
 
     position: fixed;
-    top: 74px;
+    top: 98px;
     left: 0;
 
     /* Sidebar tự co giãn theo nội dung, không cuộn */
@@ -133,11 +135,11 @@
         padding: 0 20px 8px; border-bottom: 1px solid #f1f5f9; margin-bottom: 0px;
     }
     .ytv-menu-item {
-        display: flex; align-items: center; padding: 8px 16px; margin: 2px 16px; gap: 10px;
-        color: #475569; font-size: 13px; font-weight: 600; text-decoration: none;
+        display: flex; align-items: center; padding: 12px 16px; margin: 2px 16px; gap: 12px;
+        color: #475569; font-size: 18px; font-weight: 600; line-height: 1.3; text-decoration: none;
         transition: all 0.2s ease; border-radius: 10px; cursor: pointer;
     }
-    .ytv-menu-item i { font-size: 15px; width: 18px; text-align: center; color: #64748b; transition: color 0.2s ease; }
+    .ytv-menu-item i { font-size: 20px; width: 24px; text-align: center; color: #64748b; transition: color 0.2s ease; }
     .ytv-menu-item:hover {
         background: #f1f5f9; color: #0f172a;
     }
@@ -296,8 +298,8 @@
     }
 
 
-    .hospital-actions { padding: 8px 16px; display: flex; flex-direction: column; gap: 8px; flex: 0 0 auto; }
-    .hospital-actions .btn-outline { padding: 8px 12px; font-size: 13px; border-radius: 8px; }
+    .hospital-actions { padding: 4px 16px; display: flex; flex-direction: column; gap: 6px; flex: 0 0 auto; }
+    .hospital-actions .btn-outline { padding: 6px 10px; font-size: 12px; border-radius: 8px; }
     .btn-primary { background: #1d4ed8; color: #0f172a; padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; border: none; cursor: pointer; transition: background 0.2s; flex: 1; }
     .btn-primary:hover { background: #1e40af; color: #0f172a; }
     .btn-outline {
@@ -465,7 +467,7 @@
         }
         .ytv-menu-item {
             margin: 0 !important;
-            padding: 8px 16px !important;
+            padding: 12px 16px !important;
             border-radius: 8px !important;
             white-space: nowrap;
         }
@@ -497,9 +499,9 @@
             flex-shrink: 0 !important;
         }
         .btn-outline {
-            padding: 8px 16px !important;
+            padding: 6px 12px !important;
             border-radius: 8px !important;
-            font-size: 13px !important;
+            font-size: 12px !important;
             width: auto !important;
         }
         .oh-header { margin-bottom: 4px !important; }
@@ -680,6 +682,14 @@
     .stats-footer-bar .stat-icon.green { background: #f0fdf4; color: #22c55e; }
     .stats-footer-bar .stat-icon.purple { background: #faf5ff; color: #a855f7; }
     .stats-footer-bar .stat-icon.orange { background: #fff7ed; color: #f97316; }
+    .stats-footer-bar .stat-card.stat-card-blue { background: #eff6ff !important; border-color: #dbeafe !important; }
+    .stats-footer-bar .stat-card.stat-card-green { background: #f0fdf4 !important; border-color: #dcfce7 !important; }
+    .stats-footer-bar .stat-card.stat-card-purple { background: #faf5ff !important; border-color: #f3e8ff !important; }
+    .stats-footer-bar .stat-card.stat-card-orange { background: #fff7ed !important; border-color: #ffedd5 !important; }
+    .stats-footer-bar .stat-card.stat-card-blue .stat-info .value { color: #2563eb !important; }
+    .stats-footer-bar .stat-card.stat-card-green .stat-info .value { color: #16a34a !important; }
+    .stats-footer-bar .stat-card.stat-card-purple .stat-info .value { color: #9333ea !important; }
+    .stats-footer-bar .stat-card.stat-card-orange .stat-info .value { color: #ea580c !important; }
 
     /* Responsive layout for DangKyOnline */
     .ytv-content > *,
@@ -1189,7 +1199,7 @@
 
 <div class="stats-footer-bar">
     <div class="stats-grid">
-        <div class="stat-card">
+        <div class="stat-card stat-card-blue">
             <div class="stat-icon blue"><i class="fas fa-headset"></i></div>
             <div class="stat-info">
                 <div class="value">24/7</div>
@@ -1197,7 +1207,7 @@
                 <div class="desc">Luôn sẵn sàng</div>
             </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card stat-card-green">
             <div class="stat-icon green"><i class="far fa-star"></i></div>
             <div class="stat-info">
                 <div class="value">4.8/5</div>
@@ -1205,7 +1215,7 @@
                 <div class="desc">Từ 1.248 khách hàng</div>
             </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card stat-card-purple">
             <div class="stat-icon purple"><i class="fas fa-user-friends"></i></div>
             <div class="stat-info">
                 <div class="value">50+</div>
@@ -1213,7 +1223,7 @@
                 <div class="desc">Giàu kinh nghiệm</div>
             </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card stat-card-orange">
             <div class="stat-icon orange"><i class="fas fa-briefcase-medical"></i></div>
             <div class="stat-info">
                 <div class="value">20+</div>

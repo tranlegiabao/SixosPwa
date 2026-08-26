@@ -9,7 +9,7 @@ public class CSKCBGioLamViec
     public long Id { get; set; }
     public long IdCoSo { get; set; }
 
-    /// <summary>Thu trong tuan: 2..8 (8 = Chu nhat), theo cach doc quen thuoc o VN.</summary>
+    /// <summary>Thu trong tuan: 0 = Chu nhat, 1..6 = Thu 2..Thu 7.</summary>
     public byte Thu { get; set; }
 
     public TimeSpan GioMoCua { get; set; }
