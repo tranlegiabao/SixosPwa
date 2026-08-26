@@ -87,7 +87,7 @@ public class HomeController : Controller
             .FirstOrDefaultAsync();
 
         var dsCoso = await _db.DMCSKCBs
-            .Where(x => x.IdNhomCS == idNhom)
+            .Where(x => x.IdNhomCS == idNhom && x.Active)
             .OrderByDescending(x => x.QuangCao)
             .ToListAsync();
 
@@ -105,6 +105,7 @@ public class HomeController : Controller
         var coSo = await _db.DMCSKCBs.FirstOrDefaultAsync(x => x.Slug == slug);
 
         if (coSo == null) return NotFound();
+        if (!coSo.Active) return await DayDiKhiCoSoAnAsync(coSo);
 
         await DoDuLieuCoSoAsync(coSo);
         await DoDoiChieuPhienCoSoAsync(coSo.MaCoSo, canhBao == "1");
@@ -129,6 +130,10 @@ public class HomeController : Controller
 
             if (matchedCS != null)
             {
+                // Chan o day chu khong doi nhanh 301 phia duoi lo ho: co so CHUA co
+                // slug se render thang o :142-144, khong di qua /DangKyOnline/{slug}.
+                if (!matchedCS.Active) return await DayDiKhiCoSoAnAsync(matchedCS);
+
                 // Nam sua 2026-08-24: tra lai 301 sang /DangKyOnline/{slug}. Render thang o day
                 // thi ViewData thieu Slug/MaCoSo, keo theo hai nut ben trang co so mat
                 // tham so ?coSo= va luong ban giao sang doi tac chet. Xem ADR 0003.
@@ -309,6 +314,25 @@ public class HomeController : Controller
         var coSoKhac = await _db.DMCSKCBs.AsNoTracking()
             .FirstOrDefaultAsync(x => x.MaCoSo == maCoSoPhien);
         ViewData["PhienCoSoKhac"] = coSoKhac?.TenCoSo ?? "cơ sở khác";
+    }
+
+    /// <summary>
+    /// Co so dang AN (DM_CSKCB.Active = 0) thi day khach ve danh sach cong khai cua
+    /// nhom no — 302 tran, khong bang thong bao. Khong suy duoc nhom (IdNhomCS rong,
+    /// vi du co so ID=11) thi ve trang chu. Xem ADR 0013.
+    /// </summary>
+    private async Task<IActionResult> DayDiKhiCoSoAnAsync(DMCSKCB coSo)
+    {
+        if (coSo.IdNhomCS is not long idNhom) return Redirect("/");
+
+        var maNhom = await _db.DMNhomCSs.AsNoTracking()
+            .Where(nc => nc.ID == idNhom)
+            .Select(nc => nc.MaNhom)
+            .FirstOrDefaultAsync();
+
+        return string.IsNullOrWhiteSpace(maNhom)
+            ? Redirect("/")
+            : Redirect($"/Home/DanhSachCoSo-{maNhom}");
     }
 
     private async Task<IReadOnlyDictionary<string, string>> LoadNoiDungAsync(DMCSKCB coSo)

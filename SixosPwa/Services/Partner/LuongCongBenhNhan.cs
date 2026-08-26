@@ -19,6 +19,9 @@ public interface ILuongCongBenhNhan
     /// <summary>Cua cua mot co so — de man hinh biet co so do co ban giao hay khong.</summary>
     Task<CuaCoSo?> LayCuaAsync(string? maCoSo, CancellationToken ct = default);
 
+    /// <summary>Co so co dang hien thi cong khai khong (DM_CSKCB.Active). ADR 0013.</summary>
+    Task<bool> CoSoDangHienThiAsync(string? maCoSo, CancellationToken ct = default);
+
     /// <summary>Tao ho so noi bo + mo tai khoan ben doi tac (neu co).</summary>
     Task<KetQuaBuoc> MoTaiKhoanAsync(string maCoSo, string cccd, string dinhDanh, string hoTen, string matKhau, string? returnUrl = null, CancellationToken ct = default);
 
@@ -102,6 +105,25 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
             .Select(x => (long?)x.Id)
             .FirstOrDefaultAsync(ct);
 
+    /// <summary>
+    /// Co so co dang hien thi cong khai khong (DM_CSKCB.Active). Day la cong DUY NHAT
+    /// quyet dinh co so co nhan DANG NHAP / DANG KY MOI hay khong. Khong tim thay ma
+    /// co so thi tra false (hong theo huong an toan). Xem ADR 0013.
+    ///
+    /// CANH BAO: dung nham voi DM_DoiTacApi.Active ma PartnerGatewayFactory doc — hai
+    /// co khac nhau, trung ten.
+    /// </summary>
+    public Task<bool> CoSoDangHienThiAsync(string? maCoSo, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(maCoSo)) return Task.FromResult(false);
+
+        var ma = maCoSo.Trim();
+        return _db.DMCSKCBs.AsNoTracking()
+            .Where(x => x.MaCoSo == ma)
+            .Select(x => x.Active)
+            .FirstOrDefaultAsync(ct);
+    }
+
     // ------------------------------------------------------------------
     //  Cay quyet dinh sau OTP
     // ------------------------------------------------------------------
@@ -166,6 +188,13 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
 
     public async Task<KetQuaBuoc> MoTaiKhoanAsync(string maCoSo, string cccd, string dinhDanh, string hoTen, string matKhau, string? returnUrl = null, CancellationToken ct = default)
     {
+        // Co so dang an thi khong mo tai khoan moi. Phien CU van dung binh thuong —
+        // cho nay la duong tao MOI co chu dich, khong phai duong dung lai. ADR 0013.
+        if (!await CoSoDangHienThiAsync(maCoSo, ct))
+        {
+            return new KetQuaBuoc(false, "Cơ sở này đang tạm ngưng tiếp nhận đăng ký trực tuyến.", null);
+        }
+
         var taiKhoan = await TaoHoSoNoiBoAsync(maCoSo, cccd, dinhDanh, hoTen, ct);
         var coSo = await _cuaFactory.LayAsync(maCoSo, ct);
 

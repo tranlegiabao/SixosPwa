@@ -138,7 +138,6 @@ public sealed class AdminStoredProcedureService
             AddParameter(command, "@TenTM", DbType.String, model.TenTM, 100);
             AddParameter(command, "@Img", DbType.String, model.Img, 500);
             AddParameter(command, "@Logo", DbType.String, model.Logo, size: -1);
-            AddParameter(command, "@XacMinh", DbType.Boolean, model.XacMinh);
             AddParameter(command, "@Active", DbType.Boolean, model.Active);
             AddParameter(command, "@QuangCao", DbType.Decimal, model.QuangCao, precision: 15, scale: 0);
         });

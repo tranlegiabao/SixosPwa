@@ -99,7 +99,7 @@ public sealed class DashboardController : AdminControllerBase
             PartnerCount = await _db.DoiTacs.CountAsync(),
             PatientCount = await _db.BenhNhans.CountAsync(),
             FacilityCount = await _db.DMCSKCBs.CountAsync(),
-            VerifiedFacilityCount = await _db.DMCSKCBs.CountAsync(x => x.XacMinh),
+            VisibleFacilityCount = await _db.DMCSKCBs.CountAsync(x => x.Active),
             NotificationCount = await _db.ThongBaos.CountAsync(),
             PushSubscriptionCount = await _db.PushDangKys.CountAsync(),
             UnreadNotificationCount = await _db.ThongBaos.CountAsync(x => !x.DaDoc),

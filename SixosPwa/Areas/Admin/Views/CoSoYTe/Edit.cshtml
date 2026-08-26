@@ -61,7 +61,7 @@
             @await Html.PartialAsync("_CoSoYTeDashboardContentFields", Model)
         </div>
 
-        <div class="form-check form-switch mt-4 mb-4"><input asp-for="XacMinh" class="form-check-input" /><label asp-for="XacMinh" class="form-check-label">Đã xác minh và cho phép hiển thị</label></div>
+        <div class="form-check form-switch mt-4 mb-4"><input asp-for="Active" class="form-check-input" /><label asp-for="Active" class="form-check-label">Cho phép hiển thị công khai</label></div>
 
         <div class="form-actions"><a asp-action="Index" class="btn admin-btn-secondary">Hủy</a><button type="submit" class="btn admin-btn-primary">Lưu thay đổi</button></div>
     </form>

@@ -12,7 +12,7 @@ public sealed class DashboardViewModel
     public int PartnerCount { get; init; }
     public int PatientCount { get; init; }
     public int FacilityCount { get; init; }
-    public int VerifiedFacilityCount { get; init; }
+    public int VisibleFacilityCount { get; init; }
     public int NotificationCount { get; init; }
     public int PushSubscriptionCount { get; init; }
     public int UnreadNotificationCount { get; init; }
@@ -155,9 +155,8 @@ public sealed class CoSoYTeEditViewModel
 
     public string? GioDongCua { get; set; }
 
-    public bool XacMinh { get; set; }
 
-    public bool Active { get; set; } = true;
+    public bool Active { get; set; }
 
     [StringLength(20)]
     public string? SDT { get; set; }

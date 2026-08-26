@@ -50,6 +50,11 @@ public class DangNhapController : Controller
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Slug == coSo);
 
+            // Chan ngay o day thay vi de benh nhan go het OTP roi moi bi tu choi
+            // (va ton mot tin nhan OTP vo ich). Entity da nam trong tay, khong ton
+            // them truy van. Xem ADR 0013.
+            if (thongTin is not null && !thongTin.Active) return Redirect("/");
+
             maCoSoTuUrl = thongTin?.MaCoSo;
             ViewBag.MaCoSo = thongTin?.MaCoSo;
             ViewBag.TenCoSo = thongTin?.TenCoSo;
@@ -181,6 +186,15 @@ public class DangNhapController : Controller
         var input = model.SoDienThoai.Trim();
         var otpInput = model.Otp.Trim();
         var adminReauth = AdminAuthentication.IsAdminReturnUrl(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl);
+
+        // Co so dang an (DM_CSKCB.Active = 0) thi khong sinh phien MOI tai co so do.
+        // Ve !adminReauth la BAT BUOC: action nay phuc vu ca re-auth Admin/DoiTac,
+        // thieu no la khoa luon duong dang nhap quan tri. Xem ADR 0013.
+        if (!adminReauth && !string.IsNullOrWhiteSpace(model.MaCoSo)
+            && !await _luong.CoSoDangHienThiAsync(model.MaCoSo))
+        {
+            return Json(new { success = false, message = "Cơ sở này đang tạm ngưng tiếp nhận đăng ký trực tuyến." });
+        }
 
         // Tìm tài khoản từ database theo SĐT hoặc Email trước để kiểm tra role
         var taiKhoan = await _taiKhoanService.DangNhapAsync(input, "");
@@ -336,6 +350,13 @@ public class DangNhapController : Controller
             });
         }
         var adminReauth = AdminAuthentication.IsAdminReturnUrl(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl);
+
+        // Cung ly le voi XacNhanOtp: day la cua thu hai (va cuoi cung) sinh phien moi.
+        if (!adminReauth && !string.IsNullOrWhiteSpace(model.MaCoSo)
+            && !await _luong.CoSoDangHienThiAsync(model.MaCoSo))
+        {
+            return Json(new { success = false, message = "Cơ sở này đang tạm ngưng tiếp nhận đăng ký trực tuyến." });
+        }
 
         var claims = new List<Claim>
         {

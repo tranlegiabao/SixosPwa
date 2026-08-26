@@ -22,7 +22,6 @@ public class DMCSKCB
     public string? TenTM { get; set; }
     public string? Img { get; set; }
     public string? Logo { get; set; }
-    public bool XacMinh { get; set; }
     public bool Active { get; set; } = true;
 
     /// <summary>So nguyen VND — decimal(15,0) la CO Y, khong phai sai kieu tien te.</summary>

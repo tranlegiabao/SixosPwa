@@ -151,6 +151,19 @@ nhiều *Cơ sở* qua `DM_CSKCB.IDDoiTac` (ADR 0011). 🔴 Đừng lẫn với 
 chứ không phải tổ chức.
 _Tránh_: dùng "đối tác" trần khi đang nói về `DM_DoiTacApi`/`HT_TaiKhoanDoiTac` — ở đó phải nói *Cơ sở*
 
+**Cơ sở đang hiển thị**:
+Cơ sở có `DM_CSKCB.Active = 1`. Đây là cổng **duy nhất** quyết định hai việc: cơ sở có lên cổng công
+khai không, và cơ sở có nhận **đăng nhập / đăng ký mới** không. Ẩn một cơ sở là thôi quảng bá và thôi
+nhận người mới — **không phải khoá tài khoản**: bệnh nhân đã đăng nhập vẫn dùng bình thường. Cột
+`XacMinh` từng giữ vai này nhưng chưa bao giờ được đọc, đã xoá hẳn ở đợt 2026-08-26 (ADR 0013).
+_Tránh_: đã xác minh, kích hoạt, đã duyệt, bật/tắt
+
+**Cờ `Active`**:
+🔴 Có **ba** cột mang tên này với **ba nghĩa khác nhau**, đừng lẫn. `DM_CSKCB.Active` là *Cơ sở đang
+hiển thị* ở trên. `DM_DoiTacApi.Active` nói đăng ký API của một cơ sở còn hiệu lực không.
+`DM_CSKCB_CapQuangCao.Active` nói một cấp quảng cáo còn hiệu lực không. Chỉ cái đầu là cổng hiển thị.
+_Tránh_: nói "cờ Active" trần khi chưa nói rõ bảng nào
+
 **Phòng khám**:
 **Không tồn tại.** Bảng `PhongKham` từng có 3 dòng dữ liệu bịa, đã bỏ ở đợt 2026-08-24. Mọi "nơi khám"
 đều là *Cơ sở*.
@@ -186,3 +199,4 @@ _Tránh_: ảnh thừa, ảnh rác, file cũ
 - [0010](docs/adr/0010-doi-ten-lan-toi-javascript.md) — vì sao đổi tên lan tới tận JavaScript dù ràng buộc ban đầu cấm.
 - [0011](docs/adr/0011-co-so-thuoc-doi-tac-mot-nhieu.md) — vì sao cơ sở thuộc đối tác theo quan hệ một–nhiều thay vì bảng nối.
 - [0012](docs/adr/0012-anh-luu-tren-ftp-dung-chung.md) — vì sao ảnh lưu trên FTP dùng chung và đọc lại qua route proxy.
+- [0013](docs/adr/0013-active-la-cong-hien-thi-duy-nhat.md) — vì sao `Active` là cổng hiển thị duy nhất và `XacMinh` bị xoá.

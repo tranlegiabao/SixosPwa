@@ -108,7 +108,7 @@ public sealed class CoSoYTeController : AdminControllerBase
     [HttpGet]
     public async Task<IActionResult> Create()
     {
-        var model = new CoSoYTeEditViewModel { XacMinh = true };
+        var model = new CoSoYTeEditViewModel();
         await PopulateContentEditorAsync(model);
         return View(model);
     }
@@ -438,7 +438,7 @@ public sealed class CoSoYTeController : AdminControllerBase
             IdNhomCS = model.SelectedNhomCSId ?? storedFacility?.IdNhomCS,
             Img = model.Img ?? storedFacility?.Img,
             Logo = await ReadPreviewImageAsync(model.LogoFile, model.LogoUrlInput, model.Logo ?? storedFacility?.Logo),
-            XacMinh = model.XacMinh
+            Active = model.Active
         };
 
         // Gio lam viec nay nam o bang con DM_CSKCB_GioLamViec, khong con la cot cua
@@ -997,7 +997,6 @@ public sealed class CoSoYTeController : AdminControllerBase
             Email = entity.Email,
             TenTM = entity.TenTM,
             SelectedNhomCSId = entity.IdNhomCS,
-            XacMinh = entity.XacMinh,
             Active = entity.Active,
             Img = entity.Img,
             Logo = entity.Logo,
