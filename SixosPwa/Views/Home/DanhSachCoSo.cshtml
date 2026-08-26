@@ -4,6 +4,11 @@
     ViewData["Title"] = ViewData["Title"];
 }
 
+@* Tom Select ban dia trong wwwroot/lib — KHONG lay tu CDN. Day la PWA cho benh
+   nhan: mang yeu hay CDN chet la o loc mat luon. *@
+<link rel="stylesheet" href="~/lib/tom-select/tom-select.bootstrap5.min.css" />
+<script src="~/lib/tom-select/tom-select.complete.min.js" asp-append-version="true"></script>
+
 <style>
     /* Ẩn Layout mặc định */
     .app-nav { display: none !important; }
@@ -161,94 +166,53 @@
         align-items: center;
         gap: 6px;
     }
-    .ytv-province-select {
-        display: none !important;
+    @* Truoc day .ytv-province-select bi display:none de giau <select> cho bo
+       dropdown tu che. Bo rule do: Tom Select CHEP class cua <select> sang the
+       .ts-wrapper cua no, nen de lai la an luon ca dropdown moi. *@
+
+    /* --- Tom Select trong khoi Khu vuc -------------------------------
+       Chinh cho khop dang cua sidebar (bo goc 10px, vien nhat, nen trang)
+       thay vi de dang bootstrap5 mac dinh. */
+    .ytv-khu-vuc .ts-wrapper {
+        margin-bottom: 12px;
     }
-    
-    /* CUSTOM SEARCHABLE SELECT */
-    .ytv-custom-select-container {
-        position: relative;
-        width: 100%;
-        margin-bottom: 10px;
-    }
-    .ytv-custom-select-trigger {
-        width: 100%;
-        padding: 8px 12px;
-        border: 1.5px solid #cbd5e1;
-        border-radius: 8px;
+
+    .ytv-khu-vuc .ts-control {
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 10px 12px;
+        min-height: 44px;
         font-size: 14px;
-        color: var(--ytv-text);
-        outline: none;
-        background: white;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        transition: border-color 0.3s;
+        box-shadow: none;
     }
-    .ytv-custom-select-trigger:hover, .ytv-custom-select-container.open .ytv-custom-select-trigger {
-        border-color: var(--ytv-primary);
+
+    .ytv-khu-vuc .ts-wrapper.focus .ts-control,
+    .ytv-khu-vuc .ts-control:hover {
+        border-color: #2563eb;
     }
-    .ytv-custom-select-dropdown {
-        display: none;
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        background: white;
-        border: 1.5px solid #cbd5e1;
-        border-radius: 8px;
+
+    .ytv-khu-vuc .ts-dropdown {
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
         margin-top: 4px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-        z-index: 1000;
-        overflow: hidden;
     }
-    .ytv-custom-select-container.open .ytv-custom-select-dropdown {
-        display: block;
-    }
-    .ytv-custom-select-search {
-        position: relative;
-        padding: 8px;
-        border-bottom: 1px solid #f1f5f9;
-        background: #f8fafc;
-    }
-    .ytv-custom-select-search input {
-        width: 100%;
-        padding: 6px 30px 6px 10px;
-        border: 1px solid #cbd5e1;
+
+    .ytv-khu-vuc .ts-dropdown .option {
+        padding: 9px 12px;
+        font-size: 14px;
         border-radius: 6px;
-        font-size: 13px;
-        outline: none;
     }
-    .ytv-custom-select-search input:focus {
-        border-color: var(--ytv-primary);
-    }
-    .ytv-custom-select-search i {
-        position: absolute;
-        right: 18px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #94a3b8;
-        font-size: 12px;
-    }
-    .ytv-custom-select-options {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        max-height: 220px;
-        overflow-y: auto;
-    }
-    .ytv-custom-select-options li {
-        padding: 8px 12px;
-        font-size: 13px;
-        color: #475569;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    .ytv-custom-select-options li:hover, .ytv-custom-select-options li.selected {
+
+    .ytv-khu-vuc .ts-dropdown .active {
         background: #eff6ff;
-        color: var(--ytv-primary);
-        font-weight: 600;
+        color: #1d4ed8;
+    }
+
+    .ytv-khu-vuc .ts-dropdown .no-results {
+        padding: 10px 12px;
+        font-size: 14px;
+        color: #94a3b8;
     }
 
     .ytv-district-list {
@@ -427,27 +391,13 @@
             <div class="ytv-khu-vuc-title">
                 <i class="fas fa-map-marker-alt"></i> Khu vực
             </div>
-            <!-- Hidden original select to maintain JS compatibility -->
-            <select class="ytv-province-select" id="provinceSelect" style="display:none;">
+            @* Tom Select nam thang <select> that — bo bo dropdown tu che (div trigger
+               + ul options + o tim rieng). Theo dung khuon HisSoft: o tim nam san
+               trong control, khong phai dung them tang the nao. *@
+            <select class="ytv-province-select" id="provinceSelect"
+                    placeholder="-- Chọn Tỉnh / TP --" autocomplete="off">
                 <option value="">-- Chọn Tỉnh / TP --</option>
             </select>
-            
-            <!-- Custom Searchable Dropdown -->
-            <div class="ytv-custom-select-container" id="customProvinceContainer">
-                <div class="ytv-custom-select-trigger" id="customProvinceTrigger">
-                    <span>-- Chọn Tỉnh / TP --</span>
-                    <i class="fas fa-chevron-down"></i>
-                </div>
-                <div class="ytv-custom-select-dropdown">
-                    <div class="ytv-custom-select-search">
-                        <input type="text" id="customProvinceSearch" placeholder="Tìm nhanh (hn, hcm, bd, vt...)" autocomplete="off" />
-                        <i class="fas fa-search"></i>
-                    </div>
-                    <ul class="ytv-custom-select-options" id="customProvinceOptions">
-                        <li data-value="" class="selected">-- Chọn Tỉnh / TP --</li>
-                    </ul>
-                </div>
-            </div>
             <ul class="ytv-district-list" id="districtList">
                 <li class="active" data-code="">Tất cả phường/xã <i class="fas fa-check"></i></li>
             </ul>
@@ -565,26 +515,6 @@
         // Sự kiện tìm kiếm tên cơ sở
         searchInput.addEventListener("input", applyFilter);
 
-        // Elements cho custom dropdown chọn tỉnh/thành
-        const customProvinceContainer = document.getElementById("customProvinceContainer");
-        const customProvinceTrigger = document.getElementById("customProvinceTrigger");
-        const customProvinceSearch = document.getElementById("customProvinceSearch");
-        const customProvinceOptions = document.getElementById("customProvinceOptions");
-
-        customProvinceTrigger.addEventListener("click", function(e) {
-            e.stopPropagation();
-            customProvinceContainer.classList.toggle("open");
-            if (customProvinceContainer.classList.contains("open")) {
-                customProvinceSearch.focus();
-            }
-        });
-
-        document.addEventListener("click", function(e) {
-            if (!customProvinceContainer.contains(e.target)) {
-                customProvinceContainer.classList.remove("open");
-            }
-        });
-
         // Loại bỏ dấu tiếng Việt để tìm kiếm không dấu
         function removeAccents(str) {
             if (!str) return "";
@@ -662,49 +592,52 @@
             return false;
         }
 
-        function renderCustomProvinceOptions(dataList) {
-            customProvinceOptions.innerHTML = `<li data-value="" class="${!provinceSelect.value ? 'selected' : ''}">-- Chọn Tỉnh / TP --</li>`;
-            
-            dataList.forEach(p => {
-                const li = document.createElement("li");
-                li.dataset.value = p.code;
-                li.textContent = p.name;
-                if (provinceSelect.value == p.code) {
-                    li.classList.add("selected");
-                }
-                
-                li.addEventListener("click", function() {
-                    customProvinceTrigger.querySelector("span").textContent = p.name;
-                    customProvinceOptions.querySelectorAll("li").forEach(item => item.classList.remove("selected"));
-                    this.classList.add("selected");
-                    
-                    provinceSelect.value = p.code;
-                    provinceSelect.dispatchEvent(new Event("change"));
-                    customProvinceContainer.classList.remove("open");
-                });
-                customProvinceOptions.appendChild(li);
-            });
+        /**
+         * Dropdown Tỉnh/TP bằng Tom Select — thay bộ dropdown tự chế (div trigger +
+         * ul options + ô tìm riêng) trước đây.
+         *
+         * Bám cấu hình chuẩn của HisSoft (skill ui-tom-select): searchField theo
+         * text, no_results tiếng Việt, loadThrottle, mở dropdown khi bấm control.
+         * KHÔNG dùng configCb() của họ được vì hàm đó nạp JSON từ
+         * /dist/data/json/[action].json — SixosPwa không có cấu trúc thư mục đó,
+         * dữ liệu tỉnh/thành ở đây lấy từ API provinces.open-api.vn.
+         *
+         * Giữ nguyên matchesKeyword: nó cho gõ tắt (hn, hcm, bd, vt...) và gõ chữ
+         * cái đầu — Tom Select mặc định không làm được, nên cắm vào qua score().
+         */
+        let tsChonTinh = null;
 
-            customProvinceOptions.firstElementChild.addEventListener("click", function() {
-                customProvinceTrigger.querySelector("span").textContent = "-- Chọn Tỉnh / TP --";
-                customProvinceOptions.querySelectorAll("li").forEach(item => item.classList.remove("selected"));
-                this.classList.add("selected");
-                
-                provinceSelect.value = "";
-                provinceSelect.dispatchEvent(new Event("change"));
-                customProvinceContainer.classList.remove("open");
+        function khoiTaoChonTinh() {
+            if (tsChonTinh) {
+                tsChonTinh.destroy();
+            }
+
+            tsChonTinh = new TomSelect(provinceSelect, {
+                placeholder: "-- Chọn Tỉnh / TP --",
+                allowEmptyOption: true,
+                openOnFocus: true,
+                selectOnTab: true,
+                loadThrottle: 200,
+                searchField: ["text"],
+
+                // Cắm lại logic gõ tắt của bản cũ. Trả 1 = khớp, 0 = loại.
+                score: function (search) {
+                    const kw = (search || "").trim();
+                    if (!kw) {
+                        return function () { return 1; };
+                    }
+                    return function (item) {
+                        return matchesKeyword(item.text, kw) ? 1 : 0;
+                    };
+                },
+
+                render: {
+                    no_results: function () {
+                        return '<div class="no-results">Không tìm thấy tỉnh/thành phù hợp</div>';
+                    }
+                }
             });
         }
-
-        customProvinceSearch.addEventListener("input", function() {
-            const kw = this.value.trim();
-            if (!kw) {
-                renderCustomProvinceOptions(provinceData);
-                return;
-            }
-            const filtered = provinceData.filter(p => matchesKeyword(p.name, kw));
-            renderCustomProvinceOptions(filtered);
-        });
 
         // Lấy danh sách tỉnh thành từ API v2
         fetch("https://provinces.open-api.vn/api/v2/p/")
@@ -717,7 +650,7 @@
                     opt.textContent = p.name;
                     provinceSelect.appendChild(opt);
                 });
-                renderCustomProvinceOptions(provinceData);
+                khoiTaoChonTinh();
             })
             .catch(err => console.error("Lỗi lấy dữ liệu tỉnh thành v2: ", err));
 
