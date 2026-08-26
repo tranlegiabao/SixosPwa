@@ -60,7 +60,12 @@ public interface IPartnerGateway
     ThongTinBanGiao? DungThongTinBanGiao(DoiTacApi cauHinh, YeuCauBanGiao yeuCau);
 }
 
-public record YeuCauMoTaiKhoan(string HoTen, string Cccd, string DienThoai, string? Email, string MatKhau);
+/// <param name="Kenh">
+/// Kenh doi tac gui ma xac thuc cho benh nhan. Y nghia do BAN CAI cua tung doi
+/// tac dinh nghia (voi Ung Buou: 1 = Zalo, 3 = SMS) — tang tren chi chuyen tiep
+/// lua chon cua benh nhan, khong dien giai.
+/// </param>
+public record YeuCauMoTaiKhoan(string HoTen, string Cccd, string DienThoai, string? Email, string MatKhau, int Kenh);
 
 public record KetQuaThaoTac(bool ThanhCong, string ThongBao);
 

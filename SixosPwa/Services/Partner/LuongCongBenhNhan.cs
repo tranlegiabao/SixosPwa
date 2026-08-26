@@ -33,7 +33,7 @@ public interface ILuongCongBenhNhan
     Task<KetQuaBuoc> DangNhapDoiTacAsync(string maCoSo, string cccd, string matKhau, string? returnUrl = null, CancellationToken ct = default);
 
     /// <summary>Buoc 1 man Dang ky kieu doi tac: xin doi tac mo tai khoan va tu gui ma xac thuc (SMS).</summary>
-    Task<KetQuaThaoTac> DangKyDoiTacAsync(string maCoSo, string cccd, string dienThoai, string? email, string matKhau, CancellationToken ct = default);
+    Task<KetQuaThaoTac> DangKyDoiTacAsync(string maCoSo, string cccd, string dienThoai, string? email, string matKhau, int kenh, CancellationToken ct = default);
 
     /// <summary>Buoc 2 man Dang ky kieu doi tac: doi ma benh nhan vua go, roi cho dich Ban giao.</summary>
     Task<KetQuaBuoc> XacThucMaDoiTacAsync(string maCoSo, string cccd, string ma, string? returnUrl = null, CancellationToken ct = default);
@@ -224,8 +224,10 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
         // tuong lai): mat khau ben do do may chu sinh, khong hoi benh nhan.
         matKhau = SinhMatKhauChoDoiTac();
 
+        // Duong nay danh cho doi tac co ban giao nhung KHONG dung man cua ho, nen
+        // benh nhan khong duoc chon kenh — de ban cai tu quyet bang mac dinh.
         var ketQua = await coSo.Cua.MoTaiKhoanAsync(
-            coSo.CauHinh, new YeuCauMoTaiKhoan(hoTen, cccd, dienThoai, email, matKhau), ct);
+            coSo.CauHinh, new YeuCauMoTaiKhoan(hoTen, cccd, dienThoai, email, matKhau, 0), ct);
 
         if (!ketQua.ThanhCong)
         {
@@ -278,7 +280,7 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
             await GhiHoSoRoiChoBanGiaoAsync(maCoSo, cccd, matKhau, returnUrl, ct));
     }
 
-    public async Task<KetQuaThaoTac> DangKyDoiTacAsync(string maCoSo, string cccd, string dienThoai, string? email, string matKhau, CancellationToken ct = default)
+    public async Task<KetQuaThaoTac> DangKyDoiTacAsync(string maCoSo, string cccd, string dienThoai, string? email, string matKhau, int kenh, CancellationToken ct = default)
     {
         var coSo = await LayCuaDoiTacAsync(maCoSo, ct);
         if (coSo is null)
@@ -292,7 +294,7 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
         }
 
         var ketQua = await coSo.Cua.MoTaiKhoanAsync(
-            coSo.CauHinh, new YeuCauMoTaiKhoan(string.Empty, cccd, dienThoai, email, matKhau), ct);
+            coSo.CauHinh, new YeuCauMoTaiKhoan(string.Empty, cccd, dienThoai, email, matKhau, kenh), ct);
 
         if (!ketQua.ThanhCong)
         {

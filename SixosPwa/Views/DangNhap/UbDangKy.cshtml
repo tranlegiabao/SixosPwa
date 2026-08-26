@@ -616,7 +616,7 @@ width: 70px;
                                     <span class="form-check-label fs-4">SMS</span>
                                 </label>
                                 <label class="form-check">
-                                    <input class="form-check-input" type="radio" name="register_xacThuc" disabled
+                                    <input class="form-check-input" type="radio" name="register_xacThuc"
                                         value="1">
                                     <span class="form-check-label fs-4">Zalo</span>
                                 </label>
@@ -732,7 +732,9 @@ width: 70px;
                 dienThoai: form.querySelector('[name="DienThoai"]').value.trim(),
                 email: oEmail ? oEmail.value.trim() : null,
                 matKhau: document.getElementById('password_send').value,
-                nhapLai: document.getElementById('confirm_password_send').value
+                nhapLai: document.getElementById('confirm_password_send').value,
+                // 1 = Zalo, 3 = SMS — khop switch ben doi tac.
+                kenh: Number((form.querySelector('[name="register_xacThuc"]:checked') || {}).value || 3)
             };
         }
 
@@ -760,7 +762,8 @@ width: 70px;
                     cccd: t.cccd,
                     dienThoai: t.dienThoai,
                     email: t.email,
-                    matKhau: t.matKhau
+                    matKhau: t.matKhau,
+                    kenh: t.kenh
                 })
             });
             const data = await res.json();
@@ -778,7 +781,8 @@ width: 70px;
                 cotDangKy.classList.add('d-none');
                 cotOtp.classList.remove('d-none');
                 if (dongBaoMa) {
-                    dongBaoMa.textContent = 'Mã xác thực đã gửi tới số ' + t.dienThoai;
+                    dongBaoMa.textContent = (t.kenh === 1 ? 'Mã xác thực đã gửi qua Zalo tới số '
+                                                          : 'Mã xác thực đã gửi tới số ') + t.dienThoai;
                 }
                 if (oMa.length) oMa[0].focus();
             }

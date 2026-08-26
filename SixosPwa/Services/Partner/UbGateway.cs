@@ -48,14 +48,22 @@ public class UbGateway : IPartnerGateway
         };
 
     /// <summary>
-    /// Kenh 3 = SMS that. Khop switch trong RegisterAsync cua doi tac.
+    /// Cac kenh gui ma cua doi tac, khop switch trong RegisterAsync cua ho:
+    /// 1 = Zalo, 2 = Email, 3 = SMS, 4 = chi sinh ma khong gui tin.
     ///
-    /// Co Y chon kenh nay thay vi kenh 4 (chi sinh ma, khong gui tin): benh nhan
-    /// phai thay dung trai nghiem nhu tren trang cua ho — nhan tin nhan roi go 4
-    /// so vao man xac thuc. Kenh 4 lam man do mat ly do ton tai.
-    /// Cai gia da biet: moi lan dang ky la mot tin nhan that benh vien phai tra tien.
+    /// Chi mo 1 va 3 cho benh nhan chon. KHONG mo kenh 2 (Email): cuoi SendCode
+    /// ben ho chi tra thongTinBenhNhan khi SoDienThoai khac rong roi gan MaXacNhan
+    /// vo dieu kien, nen nhanh Email nem NullReferenceException va tra "Gui ma xac
+    /// thuc that bai". KHONG mo kenh 4: no khong gui tin nen man nhap ma 4 o cua ho
+    /// mat ly do ton tai.
+    ///
+    /// Cai gia da biet cua ca hai kenh mo: moi lan dang ky la mot tin nhan that.
     /// </summary>
-    private const int KenhSms = 3;
+    public const int KenhZalo = 1;
+    public const int KenhSms = 3;
+
+    /// <summary>Kenh benh nhan chon; khong nhan ra thi ve SMS cho chac.</summary>
+    private static int ChonKenh(int kenh) => kenh == KenhZalo ? KenhZalo : KenhSms;
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<UbGateway> _logger;
@@ -99,7 +107,7 @@ public class UbGateway : IPartnerGateway
             Email = yeuCau.Email,
             DienThoai = yeuCau.DienThoai,
             MatKhau = yeuCau.MatKhau,
-            xacthuc = KenhSms
+            xacthuc = ChonKenh(yeuCau.Kenh)
         };
 
         return await GoiJsonAsync(cauHinh, DuongDanDangKy, than,

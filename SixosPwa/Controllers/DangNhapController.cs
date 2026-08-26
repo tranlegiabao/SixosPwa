@@ -542,7 +542,7 @@ public class DangNhapController : Controller
         }
 
         var ketQua = await _luong.DangKyDoiTacAsync(
-            model.MaCoSo.Trim(), model.Cccd.Trim(), model.DienThoai.Trim(), model.Email, model.MatKhau);
+            model.MaCoSo.Trim(), model.Cccd.Trim(), model.DienThoai.Trim(), model.Email, model.MatKhau, model.Kenh);
 
         return Json(new { success = ketQua.ThanhCong, message = ketQua.ThongBao });
     }
@@ -963,6 +963,12 @@ public class UbDangKyRequest
     public string DienThoai { get; set; } = string.Empty;
     public string? Email { get; set; }
     public string MatKhau { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Kenh benh nhan chon o man Dang ky (1 = Zalo, 3 = SMS). Ban cai cua doi tac
+    /// tu kiem lai, khong nhan ra thi ve SMS — nen khong tin thang gia tri nay.
+    /// </summary>
+    public int Kenh { get; set; }
 }
 
 public class UbXacThucMaRequest
