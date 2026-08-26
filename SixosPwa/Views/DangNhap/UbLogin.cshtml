@@ -1,0 +1,667 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "Đăng nhập";
+}
+@*
+    Man DANG NHAP cua co so dung bo man doi tac (Ung Buou).
+
+    Khuon lay NGUYEN VAN tu repo doi tac:
+      DangKyOnlineUB/PhongMach/Views/HT_DangNhap/Login.cshtml  (style 1-491, markup 581-686)
+    Chi doi 4 cho: logo, bo cuc mot cot cho dien thoai, hai lien ket noi bo,
+    va khoi <script> goi API cua SixosPwa thay vi cua ho.
+
+    Doc ADR 0014 truoc khi sua. KHONG "don cho gon" markup — giu giong ho la co y.
+*@
+
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Đăng nhập — @ViewBag.TenCoSo</title>
+
+    <partial name="_PwaHead" />
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/ub-tabler-bu.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/show-toast.css" asp-append-version="true" />
+    <script src="~/js/show-toast.js" asp-append-version="true"></script>
+<style>
+
+    html {
+        overflow-x: hidden !important;
+    }
+
+    .auth-row {
+        height: 100vh;
+    }
+
+    .bg-ccc {
+        background-color: #fff;
+    }
+
+    .logo img {
+        height: 60px;
+        margin-bottom: 10px;
+    }
+
+    .heading {
+        color: #007bff;
+        margin-bottom: 10px;
+        text-align: center;
+        font-weight: bold;
+    }
+
+    .tab {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 15px;
+    }
+
+    .tab a {
+        padding: 10px 10px;
+        min-width: 230px;
+        text-align: center;
+        display: inline-block;
+        text-decoration: none;
+        color: black;
+        font-weight: bold;
+        position: relative;
+        z-index: 1;
+    }
+
+    .tab a.active {
+        color: green;
+    }
+
+    .tab a.active::after {
+        content: "";
+        display: block;
+        height: 2px;
+        background: green;
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -5px;
+    }
+
+    .qr-box {
+        background: #fff;
+        padding: 15px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        display: inline-block;
+
+    }
+
+    .qr-box img {
+        width: 200px;
+        height: 200px;
+    }
+
+    .note {
+        margin-bottom: 10px;
+    }
+
+    .note a {
+        color: #007bff;
+        text-decoration: none;
+    }
+
+    .note a:hover {
+        text-decoration: underline;
+    }
+
+    .login-modal {
+		justify-content: center;
+    }
+
+    .footer a {
+        color: #007bff;
+        text-decoration: none;
+    }
+
+    .footer a:hover {
+        text-decoration: underline;
+    }
+
+    .new-tag {
+        background-color: red;
+        color: white;
+        padding: 1px 4px;
+        border-radius: 4px;
+        vertical-align: top;
+        margin-left: 3px;
+    }
+
+    .container_note {
+        text-align: center;
+    }
+
+    .container_note p {
+        color: black;
+        margin: 10px 0;
+    }
+
+    .container__use {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        width: min(358px, 100%);
+    }
+
+    .container__use p {
+        margin: 0;
+        color: black;
+        width: 220px;
+    }
+
+    .app-download .title {
+        font-weight: 800;
+        margin-bottom: 10px;
+        color: black;
+    }
+
+    .app-download .title a {
+        color: #007bff;
+        text-decoration: none;
+    }
+
+    .app-download .title a:hover {
+        text-decoration: underline;
+    }
+
+    .store-img {
+        width: 150px;
+        height: auto;
+        cursor: pointer;
+    }
+
+    .qr-img {
+        width: 120px;
+        height: auto;
+        margin-top: 10px;
+    }
+
+    .tab-indicator {
+        position: absolute;
+        bottom: -5px;
+        left: 0px;
+        height: 2px;
+        right: 0px;
+        z-index: 0;
+        background-color: #ccc;
+    }
+
+    .login_flex_992px {
+        flex-direction: row;
+    }
+
+    .login_width100_992px {
+        width: 50% !important;
+    }
+
+    .card.card-md {
+        background: rgba(255, 255, 255, 0.98);
+        border-radius: 20px;
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+        padding: 0;
+        width: 100%;
+        max-width: 100vw;
+        margin: 0;
+    }
+
+    .card-header {
+        background: linear-gradient(90deg, #206bc4, #004085);
+        color: white;
+        border-top-left-radius: 20px;
+        border-top-right-radius: 20px;
+        padding: 1.5rem 1rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .card-header h2 {
+        font-weight: 700;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        margin: 0;
+    }
+
+    .card-body {
+        padding: 2rem !important;
+        overflow-y: auto;
+        max-height: calc(100vh - 150px);
+    }
+
+    .form-control,
+    .form-select {
+        border-radius: 8px;
+        border: 1px solid #ced4da;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #206bc4;
+        box-shadow: 0 0 0 0.25rem rgba(32, 107, 196, 0.25);
+        background-color: #f8faff;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+
+    .btn-primary {
+        background: linear-gradient(90deg, #206bc4, #004085);
+        border: none;
+        font-weight: 600;
+        padding: 0.8rem 1.5rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        opacity: 0.9;
+    }
+
+    .btn-primaryForgetPass {
+        background: transparent;
+        border: none;
+        font-weight: 600;
+        padding: 0.8rem 1.5rem;
+        border-radius: 8px;
+        color: #206bc4;
+    }
+
+    .btn-primaryForgetPass:hover {
+        background: linear-gradient(90deg, #206bc4, #004085);
+        border: none;
+        font-weight: 600;
+        padding: 0.8rem 1.5rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        opacity: 0.9;
+        color: #fff;
+    }
+
+    .text-primary {
+        color: #206bc4 !important;
+        font-weight: 700 !important;
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .text-primary:hover {
+        color: #004085 !important;
+        text-decoration: underline;
+    }
+
+    .fw-semibold.text-primary {
+        color: #fff !important;
+    }
+
+    .fw-semibold.text-primary a,
+    a.fw-semibold.text-primary,
+    a.text-primary {
+        color: #206bc4 !important;
+        background: none !important;
+        text-shadow: none !important;
+    }
+
+    .form-footer {
+        margin-top: 1.5rem;
+    }
+
+    .side-image-col {
+        background: linear-gradient(rgba(32, 107, 196, 0.8), rgba(0, 64, 133, 0.8)), url('https://benhvienungbuou.vn/wp-content/uploads/2023/02/DSC04179-scaled.jpg') no-repeat center center;
+        background-size: cover;
+        border-radius: 20px 0 0 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        position: relative;
+        min-width: 0;
+        max-width: 100%;
+        width: 100%;
+        height: auto;
+        max-height: 97vh;
+        overflow-y: auto;
+        margin-right: 8px;
+        padding: 0;
+        flex: 1 1 0;
+    }
+
+    .row.g-3 {
+        --bs-gutter-x: 1.5rem;
+        --bs-gutter-y: 1rem;
+    }
+
+    .form-control.password-input-style {
+        background-color: #e6f0ff;
+        border-color: #a0c3f5;
+    }
+
+    .form-control.password-input-style:focus {
+        background-color: #d9e7ff;
+        border-color: #0056b3;
+        box-shadow: 0 0 0 0.25rem rgba(0, 86, 179, 0.25);
+    }
+
+    .form-label.password-label-style {
+        color: #004085;
+        font-weight: 700;
+    }
+
+    .text-white.p-4 {
+        padding: 6px 2px 6px 2px !important;
+        width: 100%;
+        max-width: 900px;
+        margin: 0 auto;
+        background: rgba(32, 107, 196, 0.10);
+        border-radius: 18px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+        display: block;
+        max-height: 97vh;
+        overflow-y: auto;
+    }
+
+    .mb-2,
+    .mb-3 {
+        margin-bottom: 6px !important;
+    }
+
+    .display-6 {
+        margin-bottom: 8px !important;
+    }
+
+    .info__branch {
+        background-color: #4d72ff;
+        border: 5px solid #a0caef;
+    }
+
+    #autoCarousel .carousel-control-prev,
+    #autoCarousel .carousel-control-next {
+        width: 40px;
+        height: 40px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #fff;
+        border-radius: 50%;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+        opacity: 0.95;
+        border: 1px solid #206bc4;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2;
+    }
+
+    #autoCarousel .carousel-control-prev {
+        right: auto;
+    }
+
+    #autoCarousel .carousel-control-next {
+        left: auto;
+    }
+
+    #autoCarousel .carousel-control-prev-icon,
+    #autoCarousel .carousel-control-next-icon {
+        background-size: 70% 70%;
+        filter: none;
+        background-color: transparent;
+        width: 40px;
+        height: 40px;
+    }
+
+    #autoCarousel .carousel-control-prev-icon {
+        background-image: url('data:image/svg+xml;utf8,<svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-left"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 6l-6 6l6 6" /></svg>');
+    }
+
+    #autoCarousel .carousel-control-next-icon {
+        background-image: url('data:image/svg+xml;utf8,<svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-right"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6l6 6l-6 6" /></svg>');
+    }
+
+    #autoCarousel .carousel-control-prev,
+    #autoCarousel .carousel-control-next {
+        display: none;
+    }
+
+    #autoCarousel:hover .carousel-control-prev,
+    #autoCarousel:hover .carousel-control-next {
+        display: flex;
+    }
+
+    .carousel-inner {
+        width: 90%;
+    }
+
+    .carousel {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #btn__forgotPassword {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 45.6px;
+        text-align: center;
+        background-color: transparent;
+        color: #004aad;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.2s, color 0.2s;
+    }
+
+    #btn__forgotPassword:hover {
+        border: 1px solid #004aad;
+        transition: background-color 0.2s, color 0.2s !important;
+    }
+
+
+    .sticky-top {
+        display: none !important;
+    }
+
+    @@media (max-width: 768px) {
+
+
+        #div_ads {
+            display: none !important;
+        }
+
+
+        #div_tab {
+            margin-left: 25px !important;
+
+        }
+
+        .sticky-top {
+            display: block !important;
+        }
+
+        .custom-header {
+            width: 100%;
+            background: #2d47d4;
+            display: flex;
+			flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            @* padding: 18px 36px 14px 36px; *@
+            box-shadow: 0 4px 24px rgba(44, 71, 212, 0.08);
+            /* height: 15vh; */
+            /* margin-bottom: 2vh; */
+
+        }
+
+        .header-left {
+            display: flex;
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .login-modal {
+			justify-content: flex-start;
+        }
+
+        
+
+
+    }
+</style>
+</head>
+<body class="bg-ccc">
+<div class="container-fluid">
+        <div id="login"
+             class="login-modal col-12 bg-ccc d-flex align-items-center flex-column p-3">
+
+
+            <div class="d-flex align-items-center flex-column justify-content-center">
+                <div class="logo">
+                    <img src="@(ViewBag.LogoCoSo ?? "/static/icon-192.png")" alt="@ViewBag.TenCoSo"> <!-- Bạn có thể thay link hình này -->
+                </div>
+                <h2 class="heading">Chào mừng bạn đến<br> Bệnh Viện Ung Bướu</h2>
+
+            </div>
+
+
+
+            <div class="tab position-relative" id="div_tab">
+
+                <a id="loginWithID" href="#" class="fs-4">Đăng nhập bằng ID</a>
+                <div class="tab-indicator"></div>
+            </div>
+
+            <div id="idLogin" style="min-height: 324px;">
+                <div class="card-body">
+                    <form id="login_formLogin">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label mb-1 mt-1 fs-4">Căn cước công dân/Hộ chiếu:</label>
+                                <input type="text" autocomplete="off" class="form-control" name="username"
+                                    placeholder="Nhập Căn cước/Hộ chiếu ">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label mb-1 fs-4">Mật khẩu:</label>
+                                <input type="password" name="password" class="form-control" placeholder="Nhập mật khẩu"
+                                    autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="form-footer">
+                            <div class="row g-3 align-items-center">
+                                <div class="col-md-6 col-12 d-flex align-items-stretch">
+                                    <div class="text-center flex-grow-1">
+                                        <a id="btn__forgotPassword" href="/DangNhap/UbQuenMatKhau?coSo=@ViewBag.SlugCoSo"
+                                            class="text-primary fw-semibold fs-4">Quên mật
+                                            khẩu</a>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 col-12 d-flex justify-content-md-end">
+                                    <button type="submit" id="login_btnDangNhap"
+                                        class="btn btn-primary w-100 w-md-auto d-md-inline-block">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round"
+                                            class="icon icon-tabler icons-tabler-outline icon-tabler-key">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                            <path
+                                                d="M16.555 3.843l3.602 3.602a2.877 2.877 0 0 1 0 4.069l-2.643 2.643a2.877 2.877 0 0 1 -4.069 0l-.301 -.301l-6.558 6.558a2 2 0 0 1 -1.239 .578l-.175 .008h-1.172a1 1 0 0 1 -.993 -.883l-.007 -.117v-1.172a2 2 0 0 1 .467 -1.284l.119 -.13l.414 -.414h2v-2h2v-2l2.144 -2.144l-.301 -.301a2.877 2.877 0 0 1 0 -4.069l2.643 -2.643a2.877 2.877 0 0 1 4.069 0z" />
+                                            <path d="M15 9h.01" />
+                                        </svg>
+                                        Đăng nhập
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+
+
+            <div class="container_note">
+                <div class="text-center text-black my-3 fs-4">
+                    <span>Bạn chưa có tài khoản?</span>
+                    <a href="/DangNhap/UbDangKy?coSo=@ViewBag.SlugCoSo@(string.IsNullOrWhiteSpace(ViewBag.ReturnUrl as string) ? "" : "&returnUrl=" + Uri.EscapeDataString((string)ViewBag.ReturnUrl))" class="text-primary fw-semibold">Đăng ký miễn phí</a>
+                </div>
+
+            </div>
+            <div class="mt-4 text-center end-0">
+                <a href="https://benhvienungbuou.vn/cac-goi-kham-chuyen-gia"
+                   class="text-primary fw-semibold"
+                   style="font-size: 18px;">
+                    Các gói khám chuyên gia
+                </a>
+            </div>
+        </div>
+</div>
+
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/pwa-install.js" asp-append-version="true"></script>
+<script>
+    (function () {
+        const maCoSo = @Html.Raw(System.Text.Json.JsonSerializer.Serialize((string?)ViewBag.MaCoSo));
+        const returnUrl = @Html.Raw(System.Text.Json.JsonSerializer.Serialize((string?)ViewBag.ReturnUrl));
+
+        const form = document.getElementById('login_formLogin');
+        const nut = document.getElementById('login_btnDangNhap');
+
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const cccd = form.querySelector('[name="username"]').value.trim();
+            const matKhau = form.querySelector('[name="password"]').value;
+
+            if (!cccd || !matKhau) {
+                showToast('Vui lòng nhập đầy đủ thông tin!', 400);
+                return;
+            }
+
+            const chuCu = nut.innerHTML;
+            nut.disabled = true;
+            nut.innerHTML = 'Đang đăng nhập...';
+
+            try {
+                const res = await fetch('/DangNhap/UbDangNhap', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        maCoSo: maCoSo,
+                        cccd: cccd,
+                        matKhau: matKhau,
+                        returnUrl: returnUrl,
+                        deviceId: localStorage.getItem('deviceId'),
+                        deviceName: navigator.userAgent
+                    })
+                });
+                const data = await res.json();
+
+                if (!data.success) {
+                    // Thong bao la cua CHINH doi tac tra ve — hien nguyen van.
+                    showToast(data.message || 'Đăng nhập không thành công', 400);
+                    return;
+                }
+
+                window.location.href = data.redirectUrl;
+            } catch (err) {
+                showToast('Không kết nối được, vui lòng thử lại', 500);
+            } finally {
+                nut.disabled = false;
+                nut.innerHTML = chuCu;
+            }
+        });
+    })();
+</script>
+</body>
+</html>

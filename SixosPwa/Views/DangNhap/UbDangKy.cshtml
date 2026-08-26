@@ -1,0 +1,857 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "Đăng ký";
+}
+@*
+    Man DANG KY cua co so dung bo man doi tac (Ung Buou) — hai buoc trong mot trang.
+
+    Khuon lay NGUYEN VAN tu repo doi tac:
+      DangKyOnlineUB/PhongMach/Views/HT_DangNhap/Register.cshtml (style 1-468, markup 560-764)
+    Doi: logo, bo cuc mot cot, bo chieu cao 50vh, lien ket ve man Dang nhap,
+    va khoi <script> goi API cua SixosPwa.
+
+    Ma xac thuc do CHINH doi tac gui qua SMS (kenh 3) — benh nhan tu go, dung nhu
+    tren trang cua ho. Doc ADR 0014 truoc khi sua.
+*@
+
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Đăng ký — @ViewBag.TenCoSo</title>
+
+    <partial name="_PwaHead" />
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/ub-tabler-bu.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/show-toast.css" asp-append-version="true" />
+    <script src="~/js/show-toast.js" asp-append-version="true"></script>
+<style>
+
+    html {
+        overflow-x: hidden !important;
+    }
+
+    .auth-row {
+        height: 100vh;
+    }
+
+    .mb-2,
+    .mb-3 {
+        margin-bottom: 6px !important;
+    }
+
+    .bg-ccc {
+        background-color: #fff;
+    }
+
+    .logo img {
+        height: 60px;
+        margin-bottom: 10px;
+    }
+
+    .heading {
+        color: #007bff;
+        margin-bottom: 10px;
+        text-align: center;
+        font-weight: bold;
+    }
+
+    .tab {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 15px;
+    }
+
+    .tab a {
+        padding: 10px 10px;
+        min-width: 230px;
+        text-align: center;
+        display: inline-block;
+        text-decoration: none;
+        color: black;
+        font-weight: bold;
+        position: relative;
+        z-index: 1;
+    }
+
+    .tab a.active {
+        color: green;
+    }
+
+    .tab a.active::after {
+        content: "";
+        display: block;
+        height: 2px;
+        background: green;
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -5px;
+    }
+
+    .qr-box {
+        background: #fff;
+        padding: 15px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        display: inline-block;
+
+    }
+
+    .qr-box img {
+        width: 200px;
+        height: 200px;
+    }
+
+    .note {
+        margin-bottom: 10px;
+    }
+
+    .note a {
+        color: #007bff;
+        text-decoration: none;
+    }
+
+    .note a:hover {
+        text-decoration: underline;
+    }
+
+
+
+    .footer a {
+        color: #007bff;
+        text-decoration: none;
+    }
+
+    .footer a:hover {
+        text-decoration: underline;
+    }
+
+    .new-tag {
+        background-color: red;
+        color: white;
+        padding: 1px 4px;
+        border-radius: 4px;
+        vertical-align: top;
+        margin-left: 3px;
+    }
+
+    .container_note {
+        text-align: center;
+    }
+
+    .container_note p {
+        color: black;
+        margin: 10px 0;
+    }
+
+    .container__use {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        padding-left: 9rem;
+        padding-right: 9rem;
+    }
+
+    .container__use p {
+        margin: 0;
+        color: black;
+        width: 220px;
+    }
+
+    .register-model {
+		justify-content: center;
+    }
+
+    .app-download .title {
+        font-weight: 800;
+        margin-bottom: 10px;
+        color: black;
+    }
+
+    .app-download .title a {
+        color: #007bff;
+        text-decoration: none;
+    }
+
+    .app-download .title a:hover {
+        text-decoration: underline;
+    }
+
+    .store-img {
+        width: 150px;
+        height: auto;
+        cursor: pointer;
+    }
+
+    .qr-img {
+        width: 120px;
+        height: auto;
+        margin-top: 10px;
+    }
+
+    .tab-indicator {
+        position: absolute;
+        bottom: -5px;
+        left: 0px;
+        height: 2px;
+        right: 0px;
+        z-index: 0;
+        background-color: #ccc;
+    }
+
+    .login_flex_992px {
+        flex-direction: row;
+    }
+
+    .login_width100_992px {
+        width: 50% !important;
+    }
+
+    .card.card-md {
+        background: rgba(255, 255, 255, 0.98);
+        border-radius: 20px;
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+        padding: 0;
+        width: 100%;
+        max-width: 100vw;
+        margin: 0;
+    }
+
+    .card-header {
+        background: linear-gradient(90deg, #206bc4, #004085);
+        color: white;
+        border-top-left-radius: 20px;
+        border-top-right-radius: 20px;
+        padding: 1.5rem 1rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .card-header h2 {
+        font-weight: 700;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        margin: 0;
+    }
+
+    .card-body {
+        padding: 0.5rem 4.3rem !important;
+        overflow-y: auto;
+        max-height: calc(100vh - 150px);
+    }
+
+    .form-control,
+    .form-select {
+        border-radius: 8px;
+        border: 1px solid #ced4da;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #206bc4;
+        box-shadow: 0 0 0 0.25rem rgba(32, 107, 196, 0.25);
+        background-color: #f8faff;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+
+    .btn-primary {
+        background: linear-gradient(90deg, #206bc4, #004085);
+        border: none;
+        font-weight: 600;
+        padding: 0.8rem 1.5rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+        opacity: 0.9;
+    }
+
+    .text-primary {
+        color: #206bc4 !important;
+        font-weight: 700 !important;
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+
+    .text-primary:hover {
+        color: #004085 !important;
+        text-decoration: underline;
+    }
+
+    .fw-semibold.text-primary {
+        color: #fff !important;
+    }
+
+    .fw-semibold.text-primary a,
+    a.fw-semibold.text-primary,
+    a.text-primary {
+        color: #206bc4 !important;
+        background: none !important;
+        text-shadow: none !important;
+    }
+
+    .form-footer {
+        padding: 10px 68px;
+    }
+
+    .side-image-col {
+        background: linear-gradient(rgba(32, 107, 196, 0.8), rgba(0, 64, 133, 0.8)), url('https://benhvienungbuou.vn/wp-content/uploads/2023/02/DSC04179-scaled.jpg') no-repeat center center;
+        background-size: cover;
+        border-radius: 20px 0 0 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        position: relative;
+        min-width: 0;
+        max-width: 100%;
+        width: 100%;
+        height: auto;
+        max-height: 97vh;
+        overflow-y: auto;
+        margin-right: 8px;
+        padding: 0;
+        flex: 1 1 0;
+    }
+
+    .row.g-3 {
+        --bs-gutter-x: 1.5rem;
+        --bs-gutter-y: 1rem;
+    }
+
+    .form-control.password-input-style {
+        background-color: #e6f0ff;
+        border-color: #a0c3f5;
+    }
+
+    .form-control.password-input-style:focus {
+        background-color: #d9e7ff;
+        border-color: #0056b3;
+        box-shadow: 0 0 0 0.25rem rgba(0, 86, 179, 0.25);
+    }
+
+    .form-label.password-label-style {
+        color: #004085;
+        font-weight: 700;
+    }
+
+    .text-white.p-4 {
+        padding: 6px 2px 6px 2px !important;
+        width: 100%;
+        max-width: 900px;
+        margin: 0 auto;
+        background: rgba(32, 107, 196, 0.10);
+        border-radius: 18px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+        display: block;
+        max-height: 97vh;
+        overflow-y: auto;
+    }
+
+
+
+    .display-6 {
+        margin-bottom: 8px !important;
+    }
+
+    .info__branch {
+        background-color: #4d72ff;
+        border: 5px solid #a0caef;
+    }
+
+    .cbGioiTinh .ts-control {
+        padding-left: 2.5rem !important;
+        padding: 1rem !important;
+    }
+
+    #autoCarousel .carousel-control-prev,
+    #autoCarousel .carousel-control-next {
+        width: 40px;
+        height: 40px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #fff;
+        border-radius: 50%;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+        opacity: 0.95;
+        border: 1px solid #206bc4;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2;
+    }
+
+    #autoCarousel .carousel-control-prev {
+        right: auto;
+    }
+
+    #autoCarousel .carousel-control-next {
+        left: auto;
+    }
+
+    #autoCarousel .carousel-control-prev-icon,
+    #autoCarousel .carousel-control-next-icon {
+        background-size: 70% 70%;
+        filter: none;
+        background-color: transparent;
+        width: 40px;
+        height: 40px;
+    }
+
+    #autoCarousel .carousel-control-prev-icon {
+        background-image: url('data:image/svg+xml;utf8,<svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-left"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 6l-6 6l6 6" /></svg>');
+    }
+
+    #autoCarousel .carousel-control-next-icon {
+        background-image: url('data:image/svg+xml;utf8,<svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-right"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6l6 6l-6 6" /></svg>');
+    }
+
+    #autoCarousel .carousel-control-prev,
+    #autoCarousel .carousel-control-next {
+        display: none;
+    }
+
+    #autoCarousel:hover .carousel-control-prev,
+    #autoCarousel:hover .carousel-control-next {
+        display: flex;
+    }
+
+    .carousel-inner {
+        width: 90%;
+    }
+
+    .carousel {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .input_XacThuc {
+height: 50px;
+width: 50px;
+        }
+
+      .sticky-top {
+            display: none !important;
+        }
+
+    @@media (max-width: 768px) {
+
+
+        #div_ads {
+            display: none !important;
+        }
+
+        #div_date {
+            margin-bottom: 16px;
+        }
+
+       .sticky-top {
+            display: block !important;
+        }
+
+        .custom-header {
+            width: 100%;
+            background: #2d47d4;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            @* padding: 18px 36px 14px 36px; *@
+            box-shadow: 0 4px 24px rgba(44, 71, 212, 0.08);
+            /* height: 15vh; */
+            /* margin-bottom: 2vh; */
+        }
+
+        .header-left {
+            display: flex;
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .card-body {
+            padding: 0.5rem 1.3rem !important;
+        }
+
+     
+
+        .input_XacThuc {
+height: 70px;
+width: 70px;
+        }
+
+        .register-model {
+            justify-content: flex-start;
+        }
+
+    }
+
+    /* --- Sua cho ban dien thoai (SixosPwa la PWA cai tren may) -------------
+       Khuon goc chia hai nut theo ti le 3/9 — vua o kho may tinh, nhung o kho
+       390px thi cot Quay lai chi con ~97px va chu bi vo hai dong. Noi cot thanh
+       4/8 va cam ngat dong; tu breakpoint md tro len giu nguyen ti le cua ho.
+       Luu y: trong .cshtml, truy van media phai viet HAI dau a-cong — Razor coi
+       mot dau la bieu thuc C#, ke ca khi no nam trong comment CSS nhu the nay. */
+    @@media (max-width: 767.98px) {
+        .form-footer .btn {
+            white-space: nowrap;
+        }
+    }
+</style>
+</head>
+<body class="bg-ccc">
+<div class="container-fluid">
+        <div class="register-model col-12 bg-ccc d-flex align-items-center flex-column p-3"
+            id="registrationCol">
+            <div class="w-100">
+                <a href="/">
+                    <img src="@(ViewBag.LogoCoSo ?? "/static/icon-192.png")"
+                        alt="UNGBUOU logo" class="d-block mx-auto mb-3" style="max-width: 50px;">
+                </a>
+                <h2 class="text-center fw-bold">Tạo tài khoản UNGBUOU để truy cập vào tất cả các dịch vụ của UNGBUOU
+                </h2>
+                <div class="d-flex justify-content-center mb-5 fs-4">
+                    <span class="fw-bold me-1">Bạn đã có tài khoản?
+                    </span><a class="fw-bold" href="/DangNhap/Login?coSo=@ViewBag.SlugCoSo" class="text-primary ms-1">Đăng nhập</a>
+                </div>
+
+                <div class="card-body">
+                    <form id="registrationForm">
+                       
+
+
+                <div class="mb-3">
+                            <div class="input-icon">
+                                <span class="input-icon-addon text-primary">
+                                    <svg style="width: 1.5rem !important; height: 1.5rem !important;"
+                                        xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        class="icon icon-tabler icons-tabler-outline icon-tabler-id">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                        <path
+                                            d="M3 4m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v10a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z" />
+                                        <path d="M9 10m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+                                        <path d="M15 8l2 0" />
+                                        <path d="M15 12l2 0" />
+                                        <path d="M7 16l10 0" />
+                                    </svg>
+                                </span>
+                                <input style="padding-left: 2.5rem !important; padding: 1.3rem;" type="text"
+                                    class="form-control p-3" placeholder="Số căn cước/Hộ chiếu" maxlength="12" name="SoCccd"
+                                    autocomplete="off">
+                            </div>
+                        </div>
+
+
+                        
+                        <div class="mb-3">
+                            <div class="input-icon">
+                                <span class="input-icon-addon text-primary">
+                                    <svg style="width: 1.5rem !important; height: 1.5rem !important;"
+                                        xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                        fill="currentColor"
+                                        class="icon icon-tabler icons-tabler-filled icon-tabler-phone">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                        <path
+                                            d="M9 3a1 1 0 0 1 .877 .519l.051 .11l2 5a1 1 0 0 1 -.313 1.16l-.1 .068l-1.674 1.004l.063 .103a10 10 0 0 0 3.132 3.132l.102 .062l1.005 -1.672a1 1 0 0 1 1.113 -.453l.115 .039l5 2a1 1 0 0 1 .622 .807l.007 .121v4c0 1.657 -1.343 3 -3.06 2.998c-8.579 -.521 -15.418 -7.36 -15.94 -15.998a3 3 0 0 1 2.824 -2.995l.176 -.005h4z" />
+                                    </svg>
+                                </span>
+                                <input type="text" class="form-control p-3"
+                                    style="padding-left: 2.5rem !important; padding: 1.3rem;" placeholder="Điện thoại"
+                                    name="DienThoai" autocomplete="off" maxlength="10">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="input-icon">
+                                <span class="input-icon-addon text-primary">
+                                    <svg style="width: 1.5rem !important; height: 1.5rem !important;"
+                                        xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                        fill="currentColor"
+                                        class="icon icon-tabler icons-tabler-filled icon-tabler-shield-lock">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                        <path
+                                            d="M11.998 2l.118 .007l.059 .008l.061 .013l.111 .034a.993 .993 0 0 1 .217 .112l.104 .082l.255 .218a11 11 0 0 0 7.189 2.537l.342 -.01a1 1 0 0 1 1.005 .717a13 13 0 0 1 -9.208 16.25a1 1 0 0 1 -.502 0a13 13 0 0 1 -9.209 -16.25a1 1 0 0 1 1.005 -.717a11 11 0 0 0 7.531 -2.527l.263 -.225l.096 -.075a.993 .993 0 0 1 .217 -.112l.112 -.034a.97 .97 0 0 1 .119 -.021l.115 -.007zm.002 7a2 2 0 0 0 -1.995 1.85l-.005 .15l.005 .15a2 2 0 0 0 .995 1.581v1.769l.007 .117a1 1 0 0 0 1.993 -.117l.001 -1.768a2 2 0 0 0 -1.001 -3.732z" />
+                                    </svg>
+                                </span>
+                                <input type="password" style="padding-left: 2.5rem !important; padding: 1.3rem;"
+                                    class="form-control p-3" placeholder="Mật khẩu*" id="password_send"
+                                    autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <div class="input-icon">
+                                <span class="input-icon-addon text-primary">
+                                    <svg style="width: 1.5rem !important; height: 1.5rem !important;"
+                                        xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                        fill="currentColor"
+                                        class="icon icon-tabler icons-tabler-filled icon-tabler-shield-lock">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                        <path
+                                            d="M11.998 2l.118 .007l.059 .008l.061 .013l.111 .034a.993 .993 0 0 1 .217 .112l.104 .082l.255 .218a11 11 0 0 0 7.189 2.537l.342 -.01a1 1 0 0 1 1.005 .717a13 13 0 0 1 -9.208 16.25a1 1 0 0 1 -.502 0a13 13 0 0 1 -9.209 -16.25a1 1 0 0 1 1.005 -.717a11 11 0 0 0 7.531 -2.527l.263 -.225l.096 -.075a.993 .993 0 0 1 .217 -.112l.112 -.034a.97 .97 0 0 1 .119 -.021l.115 -.007zm.002 7a2 2 0 0 0 -1.995 1.85l-.005 .15l.005 .15a2 2 0 0 0 .995 1.581v1.769l.007 .117a1 1 0 0 0 1.993 -.117l.001 -1.768a2 2 0 0 0 -1.001 -3.732z" />
+                                    </svg>
+                                </span>
+                                <input type="password" style="padding-left: 2.5rem !important; padding: 1.3rem;"
+                                    class="form-control p-3" placeholder="Nhập lại mật khẩu*" id="confirm_password_send"
+                                    autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="fw-bold">
+                            <label class="form-label mb-2 fw-bold fs-4">Gửi mã xác thực qua:</label>
+                            <div>
+                                <label class="form-check">
+                                    <input class="form-check-input" type="radio" name="register_xacThuc" checked
+                                           value="3">
+                                    <span class="form-check-label fs-4">SMS</span>
+                                </label>
+                                <label class="form-check">
+                                    <input class="form-check-input" type="radio" name="register_xacThuc" disabled
+                                        value="1">
+                                    <span class="form-check-label fs-4">Zalo</span>
+                                </label>
+                                <label class="form-check d-none">
+                                    <input class="form-check-input" type="radio" name="register_xacThuc" value="2">
+                                    <span class="form-check-label fs-4">Email</span>
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="form-footer mt-0">
+                    <div class="row g-3 align-items-center">
+                        <!-- Nút Quay lại -->
+                        <div class="col-4 col-md-3 d-flex justify-content-center justify-content-md-start">
+                            <button type="button" class="btn btn-outline-primary fw-bold w-100 w-md-auto"
+                                    style="padding: 10px 0;"
+                                    onclick="history.back()">
+                                Quay lại
+                            </button>
+                        </div>
+
+                        <!-- Nút Tiếp tục -->
+                        <div class="col-8 col-md-9 d-flex justify-content-center justify-content-md-end">
+                            <button type="button" class="btn btn-primary w-100"
+                                    id="register_btnGetCode">
+                                Tiếp tục
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+
+
+            </div>
+        </div>
+        <div class="col-12 p-3 d-none" id="otpCol">
+            <div class="h-100 d-flex justify-content-center">
+                <div class="w-75 text-center">
+                    <img src="@(ViewBag.LogoCoSo ?? "/static/icon-192.png")"
+                        alt="UNGBUOU logo" class="d-block mx-auto mb-3" style="max-width: 50px;">
+                    <h2 class="text-center fw-bold mb-4">Tạo tài khoản UNGBUOU để truy cập vào tất cả các dịch vụ của
+                        UNGBUOU</h2>
+                    <h1 class="text-center mb-md-8 mt-md-10 fw-bold mb-4 mt-5">XÁC THỰC TÀI KHOẢN</h1>
+                    <div class="d-flex justify-content-center mb-4">
+                        <p class="text-center mb-0 me-1" id="register_textNotiCode"></p>
+                    </div>
+                    <div class="d-flex justify-content-center mb-5 gap-3" id="register_otpInputs">
+                        <input type="text" class="form-control text-center input_XacThuc" 
+                            maxlength="1">
+                        <input type="text" class="form-control text-center input_XacThuc" 
+                            maxlength="1">
+                        <input type="text" class="form-control text-center input_XacThuc" 
+                            maxlength="1">
+                        <input type="text" class="form-control text-center input_XacThuc" 
+                            maxlength="1">
+                    </div>
+
+                    <div class="text-center d-flex flex-column align-items-start">
+                        <button class="btn text-primary mb-3 p-2"
+                            style="width: 200px; background-color: transparent; border: none;"
+                            id="register_btnSendCodeAgain">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="icon icon-tabler icons-tabler-outline icon-tabler-refresh">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" />
+                                <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />
+                            </svg>
+                            Gửi lại mã xác thực
+                        </button>
+                    </div>
+
+                    <div class="text-center d-flex flex-column align-items-center">
+                        <button class="btn btn-primary w-50 p-2" id="register_btnCheckCode">Tiếp tục</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    (function () {
+        const maCoSo = @Html.Raw(System.Text.Json.JsonSerializer.Serialize((string)ViewBag.MaCoSo));
+        const returnUrl = @Html.Raw(System.Text.Json.JsonSerializer.Serialize((string)ViewBag.ReturnUrl));
+
+        const form = document.getElementById('registrationForm');
+        const cotDangKy = document.getElementById('registrationCol');
+        const cotOtp = document.getElementById('otpCol');
+        const btnLayMa = document.getElementById('register_btnGetCode');
+        const btnKiemMa = document.getElementById('register_btnCheckCode');
+        const btnGuiLai = document.getElementById('register_btnSendCodeAgain');
+        const dongBaoMa = document.getElementById('register_textNotiCode');
+        const oMa = Array.from(document.querySelectorAll('#register_otpInputs .input_XacThuc'));
+
+        // Giu lai de con gui kem khi bam "Gui lai ma".
+        let hoSo = null;
+
+        function docForm() {
+            const oEmail = form.querySelector('[name="Email"]');
+            return {
+                cccd: form.querySelector('[name="SoCccd"]').value.trim(),
+                dienThoai: form.querySelector('[name="DienThoai"]').value.trim(),
+                email: oEmail ? oEmail.value.trim() : null,
+                matKhau: document.getElementById('password_send').value,
+                nhapLai: document.getElementById('confirm_password_send').value
+            };
+        }
+
+        async function xinMa(hienCotOtp) {
+            const t = hoSo || docForm();
+
+            if (!t.cccd || !t.dienThoai) {
+                showToast('Vui lòng nhập số căn cước và điện thoại!', 400);
+                return;
+            }
+            if (!t.matKhau || t.matKhau.length < 6) {
+                showToast('Mật khẩu phải có ít nhất 6 ký tự!', 400);
+                return;
+            }
+            if (t.matKhau !== t.nhapLai) {
+                showToast('Mật khẩu nhập lại không khớp!', 400);
+                return;
+            }
+
+            const res = await fetch('/DangNhap/UbTaoTaiKhoan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    maCoSo: maCoSo,
+                    cccd: t.cccd,
+                    dienThoai: t.dienThoai,
+                    email: t.email,
+                    matKhau: t.matKhau
+                })
+            });
+            const data = await res.json();
+
+            if (!data.success) {
+                // Thong bao la cua CHINH doi tac tra ve — hien nguyen van.
+                showToast(data.message || 'Không tạo được tài khoản', 400);
+                return;
+            }
+
+            hoSo = t;
+            showToast(data.message || 'Đã gửi mã xác thực', 200);
+
+            if (hienCotOtp) {
+                cotDangKy.classList.add('d-none');
+                cotOtp.classList.remove('d-none');
+                if (dongBaoMa) {
+                    dongBaoMa.textContent = 'Mã xác thực đã gửi tới số ' + t.dienThoai;
+                }
+                if (oMa.length) oMa[0].focus();
+            }
+        }
+
+        btnLayMa.addEventListener('click', async function () {
+            const chuCu = btnLayMa.innerHTML;
+            btnLayMa.disabled = true;
+            btnLayMa.innerHTML = 'Đang gửi...';
+            try { await xinMa(true); }
+            catch (err) { showToast('Không kết nối được, vui lòng thử lại', 500); }
+            finally { btnLayMa.disabled = false; btnLayMa.innerHTML = chuCu; }
+        });
+
+        if (btnGuiLai) {
+            btnGuiLai.addEventListener('click', async function () {
+                btnGuiLai.disabled = true;
+                try { await xinMa(false); }
+                catch (err) { showToast('Không kết nối được, vui lòng thử lại', 500); }
+                finally { btnGuiLai.disabled = false; }
+            });
+        }
+
+        // Bon o mot chu so: go xong nhay o ke tiep, xoa thi lui lai.
+        oMa.forEach(function (o, i) {
+            o.addEventListener('input', function () {
+                o.value = o.value.replace(/[^0-9]/g, '').slice(0, 1);
+                if (o.value && i < oMa.length - 1) oMa[i + 1].focus();
+            });
+            o.addEventListener('keydown', function (e) {
+                if (e.key === 'Backspace' && !o.value && i > 0) oMa[i - 1].focus();
+            });
+        });
+
+        btnKiemMa.addEventListener('click', async function () {
+            const ma = oMa.map(function (o) { return o.value; }).join('');
+            if (ma.length !== 4) {
+                showToast('Vui lòng nhập đủ 4 số!', 400);
+                return;
+            }
+            if (!hoSo) {
+                showToast('Phiên đăng ký đã hết hạn, vui lòng đăng ký lại', 400);
+                return;
+            }
+
+            const chuCu = btnKiemMa.innerHTML;
+            btnKiemMa.disabled = true;
+            btnKiemMa.innerHTML = 'Đang xác thực...';
+
+            try {
+                const res = await fetch('/DangNhap/UbXacThucMa', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        maCoSo: maCoSo,
+                        cccd: hoSo.cccd,
+                        ma: ma,
+                        returnUrl: returnUrl,
+                        deviceId: localStorage.getItem('deviceId'),
+                        deviceName: navigator.userAgent
+                    })
+                });
+                const data = await res.json();
+
+                if (!data.success) {
+                    showToast(data.message || 'Mã xác thực không đúng', 400);
+                    return;
+                }
+
+                window.location.href = data.redirectUrl;
+            } catch (err) {
+                showToast('Không kết nối được, vui lòng thử lại', 500);
+            } finally {
+                btnKiemMa.disabled = false;
+                btnKiemMa.innerHTML = chuCu;
+            }
+        });
+    })();
+</script>
+</body>
+</html>

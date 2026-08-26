@@ -96,6 +96,24 @@ public class DangNhapController : Controller
 
         ViewData["AdminReauth"] = adminReauth;
         ViewData["ReturnUrl"] = adminReauth ? returnUrl : null;
+
+        // DIEM RE DUY NHAT. Co so da biet TRUOC khi vao man dang nhap (benh nhan
+        // di DanhSachCoSo -> ChiTietCoSo -> /DangNhap/Login?coSo={slug}), nen chi
+        // can tra KieuApi o day. Co so dung bo man cua doi tac thi tra man clone;
+        // moi co so khac giu nguyen man OTP cua SixosPwa. ADR 0014.
+        //
+        // Dat SAU moi guard phia tren la co y: re nhanh khong duoc phep bo qua
+        // chan co so an (ADR 0013) hay chan dang nhap cheo co so (ADR 0006).
+        if (!adminReauth && !string.IsNullOrWhiteSpace(maCoSoTuUrl))
+        {
+            var cuaDoiTac = await _luong.LayCuaAsync(maCoSoTuUrl);
+            if (cuaDoiTac?.DungManDoiTac == true)
+            {
+                ViewBag.ReturnUrl = returnUrl;
+                return View("UbLogin");
+            }
+        }
+
         return View();
     }
 
@@ -460,57 +478,200 @@ public class DangNhapController : Controller
         return Json(new { success = true, redirectUrl = ketQua.DichDen });
     }
 
-    [HttpGet]
-    [Authorize]
-    public async Task<IActionResult> LienKet(string coSo, string? returnUrl = null)
-    {
-        var maCoSo = LayMaCoSoPhien(coSo);
-        if (maCoSo is null) return RedirectToAction(nameof(Login));
-
-        await DoNguCanhRaViewBagAsync(maCoSo, returnUrl);
-        return View();
-    }
+    // ==================================================================
+    //  Bo man cua doi tac — Dang nhap / Dang ky / Quen mat khau (ADR 0014)
+    //
+    //  Deu la [AllowAnonymous]: benh nhan CHUA co phien khi go vao day, nen
+    //  khac han cac man o tren (lay danh tinh tu phien). maCoSo nhan tu client
+    //  la CHAP NHAN DUOC — slug co so von cong khai tren trang, va thu quyet
+    //  dinh moi chuyen la mat khau, do CHINH doi tac phan xu.
+    // ==================================================================
 
     [HttpPost]
-    [Authorize]
-    public async Task<IActionResult> GuiMaLienKet([FromBody] GuiMaLienKetRequest model)
+    [AllowAnonymous]
+    public async Task<IActionResult> UbDangNhap([FromBody] UbDangNhapRequest model)
     {
-        var (maCoSo, cccd, _) = LayDanhTinhPhien();
-        if (maCoSo is null || cccd is null)
+        if (string.IsNullOrWhiteSpace(model.MaCoSo)
+            || string.IsNullOrWhiteSpace(model.Cccd)
+            || string.IsNullOrWhiteSpace(model.MatKhau))
         {
-            return Json(new { success = false, message = "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại!" });
+            return Json(new { success = false, message = "Vui lòng nhập đầy đủ thông tin!" });
         }
 
-        // Rieng so dien thoai thi lay tu form: no phai khop so benh nhan da dang
-        // ky BEN CO SO, co the khac so dung de dang nhap SixosPwa.
-        var ketQua = await _luong.GuiMaLienKetAsync(maCoSo, cccd, model.DienThoai);
-        return Json(new { success = ketQua.ThanhCong, message = ketQua.ThongBao });
-    }
-
-    [HttpPost]
-    [Authorize]
-    public async Task<IActionResult> XacNhanLienKet([FromBody] XacNhanLienKetRequest model)
-    {
-        if (string.IsNullOrWhiteSpace(model.Ma))
-        {
-            return Json(new { success = false, message = "Vui lòng nhập mã xác thực!" });
-        }
-
-        var (maCoSo, cccd, _) = LayDanhTinhPhien();
-        if (maCoSo is null || cccd is null)
-        {
-            return Json(new { success = false, message = "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại!" });
-        }
-
-        var ketQua = await _luong.XacNhanLienKetAsync(
-            maCoSo, cccd, model.DienThoai, model.Ma.Trim(), model.MatKhau);
+        var cccd = model.Cccd.Trim();
+        var ketQua = await _luong.DangNhapDoiTacAsync(model.MaCoSo.Trim(), cccd, model.MatKhau, model.ReturnUrl);
 
         if (!ketQua.ThanhCong)
         {
             return Json(new { success = false, message = ketQua.ThongBao });
         }
 
+        await CapPhienBenhNhanAsync(cccd, model.MaCoSo.Trim(), model.DeviceId, model.DeviceName);
+
         return Json(new { success = true, redirectUrl = ketQua.DichDen });
+    }
+
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<IActionResult> UbDangKy(string coSo, string? returnUrl = null)
+    {
+        var maCoSo = await LayMaCoSoDoiTacAsync(coSo);
+        if (maCoSo is null) return RedirectToAction(nameof(Login), new { coSo });
+
+        await DoNguCanhRaViewBagAsync(maCoSo, returnUrl);
+        ViewBag.SlugCoSo = coSo;
+        return View();
+    }
+
+    [HttpPost]
+    [AllowAnonymous]
+    public async Task<IActionResult> UbTaoTaiKhoan([FromBody] UbDangKyRequest model)
+    {
+        if (string.IsNullOrWhiteSpace(model.MaCoSo)
+            || string.IsNullOrWhiteSpace(model.Cccd)
+            || string.IsNullOrWhiteSpace(model.DienThoai))
+        {
+            return Json(new { success = false, message = "Vui lòng nhập đầy đủ thông tin!" });
+        }
+
+        // Doi tac bat toi thieu 6 ky tu; chan ngay o day de khoi ton mot luot goi.
+        if (string.IsNullOrWhiteSpace(model.MatKhau) || model.MatKhau.Length < 6)
+        {
+            return Json(new { success = false, message = "Mật khẩu phải có ít nhất 6 ký tự!" });
+        }
+
+        var ketQua = await _luong.DangKyDoiTacAsync(
+            model.MaCoSo.Trim(), model.Cccd.Trim(), model.DienThoai.Trim(), model.Email, model.MatKhau);
+
+        return Json(new { success = ketQua.ThanhCong, message = ketQua.ThongBao });
+    }
+
+    [HttpPost]
+    [AllowAnonymous]
+    public async Task<IActionResult> UbXacThucMa([FromBody] UbXacThucMaRequest model)
+    {
+        if (string.IsNullOrWhiteSpace(model.MaCoSo)
+            || string.IsNullOrWhiteSpace(model.Cccd)
+            || string.IsNullOrWhiteSpace(model.Ma))
+        {
+            return Json(new { success = false, message = "Vui lòng nhập mã xác thực!" });
+        }
+
+        var cccd = model.Cccd.Trim();
+        var ketQua = await _luong.XacThucMaDoiTacAsync(model.MaCoSo.Trim(), cccd, model.Ma.Trim(), model.ReturnUrl);
+
+        if (!ketQua.ThanhCong)
+        {
+            return Json(new { success = false, message = ketQua.ThongBao });
+        }
+
+        await CapPhienBenhNhanAsync(cccd, model.MaCoSo.Trim(), model.DeviceId, model.DeviceName);
+
+        return Json(new { success = true, redirectUrl = ketQua.DichDen });
+    }
+
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<IActionResult> UbQuenMatKhau(string coSo)
+    {
+        var maCoSo = await LayMaCoSoDoiTacAsync(coSo);
+        if (maCoSo is null) return RedirectToAction(nameof(Login), new { coSo });
+
+        await DoNguCanhRaViewBagAsync(maCoSo, null);
+        ViewBag.SlugCoSo = coSo;
+        return View();
+    }
+
+    [HttpPost]
+    [AllowAnonymous]
+    public async Task<IActionResult> UbGuiQuenMatKhau([FromBody] UbQuenMatKhauRequest model)
+    {
+        if (string.IsNullOrWhiteSpace(model.MaCoSo)
+            || string.IsNullOrWhiteSpace(model.Cccd)
+            || string.IsNullOrWhiteSpace(model.EmailHoacSdt))
+        {
+            return Json(new { success = false, message = "Vui lòng nhập đầy đủ thông tin!" });
+        }
+
+        var ketQua = await _luong.QuenMatKhauDoiTacAsync(
+            model.MaCoSo.Trim(), model.Cccd.Trim(), model.EmailHoacSdt.Trim());
+
+        return Json(new { success = ketQua.ThanhCong, message = ketQua.ThongBao });
+    }
+
+    /// <summary>
+    /// Cap phien SixosPwa cho benh nhan vua duoc DOI TAC xac nhan danh tinh.
+    ///
+    /// Bam theo dung khuon claim cua XacNhanOtp — hai claim ClaimCccd va
+    /// ClaimMaCoSo la cach cac man phia sau (Ban giao, trang benh nhan) biet
+    /// benh nhan la ai va dang o co so nao.
+    ///
+    /// KHONG co nhanh adminReauth o day: bo man doi tac chi phuc vu benh nhan,
+    /// tai khoan quan tri van dang nhap o khu vuc Admin nhu cu.
+    /// </summary>
+    private async Task CapPhienBenhNhanAsync(string cccd, string maCoSo, string? deviceId, string? deviceName)
+    {
+        // Doi tac giu ten/dien thoai that; ta chi chac chan ve CCCD. Ho so noi bo
+        // vua duoc GhiHoSoRoiChoBanGiaoAsync tao xong nen doc lai duoc so dien thoai.
+        var taiKhoan = await (from t in _dbContext.TaiKhoans
+                              join b in _dbContext.BenhNhans on t.IdBenhNhan equals b.Id
+                              where b.CCCD == cccd
+                              select t).FirstOrDefaultAsync();
+
+        var username = string.IsNullOrWhiteSpace(taiKhoan?.SDT) ? cccd : taiKhoan!.SDT;
+
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, username),
+            new Claim(ClaimTypes.Name, username),
+            new Claim(ClaimTypes.Role, "BenhNhan"),
+            new Claim(LuongCongBenhNhan.ClaimCccd, cccd),
+            new Claim(LuongCongBenhNhan.ClaimMaCoSo, maCoSo)
+        };
+
+        if (!string.IsNullOrWhiteSpace(taiKhoan?.SDT))
+        {
+            claims.Add(new Claim(ClaimTypes.MobilePhone, taiKhoan.SDT));
+        }
+        if (!string.IsNullOrWhiteSpace(taiKhoan?.Email))
+        {
+            claims.Add(new Claim(ClaimTypes.Email, taiKhoan.Email));
+        }
+
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var authProperties = new AuthenticationProperties
+        {
+            IsPersistent = true,
+            ExpiresUtc = DateTimeOffset.UtcNow.AddDays(365)
+        };
+
+        await HttpContext.SignOutAsync(AdminAuthentication.Scheme);
+        await HttpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            new ClaimsPrincipal(identity),
+            authProperties);
+
+        await LuuThietBiDangNhapAsync(username, deviceId, deviceName);
+    }
+
+    /// <summary>
+    /// Slug -> ma co so, va chi tra ve khi co so do THAT SU dung man doi tac.
+    /// Go tay URL /DangNhap/UbDangKy?coSo=&lt;co so noi bo&gt; thi bi day ve man
+    /// dang nhap thuong chu khong duoc thay man clone.
+    /// </summary>
+    private async Task<string?> LayMaCoSoDoiTacAsync(string? slug)
+    {
+        if (string.IsNullOrWhiteSpace(slug)) return null;
+
+        var thongTin = await _dbContext.DMCSKCBs
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Slug == slug);
+
+        // Co so dang an thi khong nhan dang ky moi (ADR 0013).
+        if (thongTin is null || !thongTin.Active) return null;
+
+        var cua = await _luong.LayCuaAsync(thongTin.MaCoSo);
+        return cua?.DungManDoiTac == true ? thongTin.MaCoSo : null;
     }
 
     [HttpGet]
@@ -763,18 +924,47 @@ public class TaoTaiKhoanRequest
     public string? ReturnUrl { get; set; }
 }
 
-public class GuiMaLienKetRequest
+// --- Bo man cua doi tac (ADR 0014) ---------------------------------------
+//  Deu mang MaCoSo trong than: benh nhan CHUA co phien khi go vao cac man nay.
+
+public class UbDangNhapRequest
 {
-    /// <summary>So dien thoai da dang ky BEN CO SO — co the khac so dang nhap.</summary>
-    public string DienThoai { get; set; } = string.Empty;
+    public string MaCoSo { get; set; } = string.Empty;
+    public string Cccd { get; set; } = string.Empty;
+    public string MatKhau { get; set; } = string.Empty;
+    public string? ReturnUrl { get; set; }
+    public string? DeviceId { get; set; }
+    public string? DeviceName { get; set; }
 }
 
-public class XacNhanLienKetRequest
+public class UbDangKyRequest
 {
-    /// <summary>So dien thoai da dang ky BEN CO SO — co the khac so dang nhap.</summary>
+    public string MaCoSo { get; set; } = string.Empty;
+    public string Cccd { get; set; } = string.Empty;
     public string DienThoai { get; set; } = string.Empty;
-    public string Ma { get; set; } = string.Empty;
+    public string? Email { get; set; }
     public string MatKhau { get; set; } = string.Empty;
+}
+
+public class UbXacThucMaRequest
+{
+    public string MaCoSo { get; set; } = string.Empty;
+    public string Cccd { get; set; } = string.Empty;
+
+    /// <summary>Ma 4 so doi tac vua gui qua SMS — benh nhan tu go.</summary>
+    public string Ma { get; set; } = string.Empty;
+    public string? ReturnUrl { get; set; }
+    public string? DeviceId { get; set; }
+    public string? DeviceName { get; set; }
+}
+
+public class UbQuenMatKhauRequest
+{
+    public string MaCoSo { get; set; } = string.Empty;
+    public string Cccd { get; set; } = string.Empty;
+
+    /// <summary>Doi tac tu nhan ra la Email hay so dien thoai va chon kenh gui.</summary>
+    public string EmailHoacSdt { get; set; } = string.Empty;
 }
 
 public class DoiMatKhauRequest

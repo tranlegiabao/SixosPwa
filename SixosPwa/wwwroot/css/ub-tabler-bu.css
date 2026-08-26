@@ -1,0 +1,86 @@
+/*
+ * Bu cac lop Tabler ma bo man cua doi tac Ung Buou dua vao.
+ *
+ * SixosPwa chay Bootstrap 5 thuan; DangKyOnlineUB chay Tabler (xay TREN Bootstrap 5)
+ * nen phan lon lop da khop san. Tep nay chi chep lai dung nhung lop CON THIEU,
+ * lay NGUYEN VAN tu wwwroot/dist/css/tabler.css cua ho — khong tu che.
+ *
+ * Do bang cach doi chieu tung lop trong markup voi bootstrap.min.css + site.css:
+ * chi 3 nhom duoi day thuc su anh huong bo cuc, phan con lai (icon-tabler-*,
+ * icons-tabler-*) chi la hook tren the <svg> da co width/height inline.
+ *
+ * Xem ADR 0014.
+ */
+
+/* --- O nhap co icon ben trong (man Dang ky) --------------------------- */
+.input-icon {
+    position: relative;
+}
+
+.input-icon .form-control:not(:last-child),
+.input-icon .form-select:not(:last-child) {
+    padding-right: 2.5rem;
+}
+
+.input-icon .form-control:not(:first-child),
+.input-icon .form-select:not(:last-child) {
+    padding-left: 2.5rem;
+}
+
+.input-icon-addon {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.5rem;
+    color: var(--tblr-icon-color, #667382);
+    pointer-events: none;
+    font-size: 1.2em;
+}
+
+.input-icon-addon:last-child {
+    right: 0;
+    left: auto;
+}
+
+/* --- Dau * do sau nhan bat buoc (man Quen mat khau) -------------------- */
+.required:after,
+.form-label.required:after {
+    content: "*";
+    margin-left: 0.25rem;
+    color: #d63939;
+}
+
+/* --- Lop tien ich con lai --------------------------------------------- */
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.text-small {
+    font-size: 0.875rem;
+}
+
+.text-left {
+    text-align: left;
+}
+
+.blue-text {
+    color: #206bc4;
+}
+
+@media (min-width: 768px) {
+    .w-md-auto {
+        width: auto !important;
+    }
+
+    .mt-md-10 {
+        margin-top: 5rem !important;
+    }
+
+    .mb-md-8 {
+        margin-bottom: 4rem !important;
+    }
+}

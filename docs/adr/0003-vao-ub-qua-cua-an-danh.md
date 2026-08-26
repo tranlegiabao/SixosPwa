@@ -1,5 +1,14 @@
 # Vào trang Ung Bướu bằng cửa ẩn danh sẵn có, không mở SSO
 
+> ⚠️ **BỊ THAY THẾ bởi [0014](0014-co-so-ub-dung-man-cua-khach.md)** (2026-08-26).
+> Cơ chế mô tả ở đây — SixosPwa tự chạy OTP của mình, mật khẩu bên đối tác do máy sinh, bệnh nhân
+> đi qua màn Liên kết — **không còn dùng cho cơ sở Ung Bướu**. Bệnh nhân nay gõ **mật khẩu thật**
+> của họ trên bộ màn dựng lại từ chính trang của khách.
+>
+> **Vẫn còn hiệu lực và phải đọc:** bốn điểm tựa trong code của đối tác, và giới hạn
+> `SameSite=Lax` (bàn giao chỉ POST được **một** bước). Phần *Đính chính 2026-08-24 (muộn hơn)*
+> mô tả hai bản vá `f653f96` / `d57d081` cũng vẫn đúng — chúng là điều kiện để bàn giao chạy.
+
 SixosPwa cần bàn giao phiên bệnh nhân sang `kcg.bvungbuou.vn` (app MVC gác bằng cookie
 `DKOnline_auth`). Phương án sạch nhất là xin repo `DangKyOnlineUB` mở một endpoint SSO — nhưng luật
 của task là **không sửa codebase UB**, và bên đó do nhóm khác giữ. Vì vậy chúng ta dùng đúng các cửa

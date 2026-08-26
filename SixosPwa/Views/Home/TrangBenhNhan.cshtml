@@ -187,8 +187,13 @@
         <footer class="bn-chan">
             <div>Hỗ trợ: <a href="tel:0901878896">0901 87 88 96</a></div>
             <div>
-                <a href="/DangNhap/DoiMatKhau?coSo=@ViewBag.MaCoSo">Đổi mật khẩu</a>
-                &nbsp;·&nbsp;
+                @if (ViewBag.DungManDoiTac != true)
+                {
+                    @* Co so dung man cua doi tac thi mat khau do HO giu — doi o trang
+                       cua co so, khong phai o day. ADR 0014. *@
+                    <a href="/DangNhap/DoiMatKhau?coSo=@ViewBag.MaCoSo">Đổi mật khẩu</a>
+                    <text>&nbsp;·&nbsp;</text>
+                }
                 <a href="/DangNhap/DangXuat">Đăng xuất</a>
             </div>
         </footer>
