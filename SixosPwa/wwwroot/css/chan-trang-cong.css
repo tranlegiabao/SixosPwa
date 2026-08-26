@@ -92,8 +92,32 @@ body.co-chan-trang { padding-bottom: calc(var(--ctc-cao) + env(safe-area-inset-b
     border: 1px solid #bae6fd;
 }
 
-/* Dien thoai: chi hotline chinh + 2 icon tron */
-.fb2-h2, .fb2-lb { display: none; }
+/* ---------------- dien thoai: chi HAI so hotline ----------------------
+   Truoc day mobile an so thu hai (.fb2-h2) va giu hai nut tron mail/website.
+   Nguoi dung chot: bo hai nut do, doi lai hien DU ca hai so tren MOT dong.
+   Desktop khong doi — toan bo phan do nam trong @media (min-width: 768px). */
+
+/* Nhan chu cua mail/website van an o mobile (desktop bat lai ben duoi). */
+.fb2-lb { display: none; }
+
+/* Hai nut tron mail + website: bo han o mobile. */
+.fb2-ic { display: none; }
+
+/* So thu hai hien cung dong voi so dau. */
+.fb2-h2 {
+    display: inline;
+    white-space: nowrap;
+}
+
+/* Ca cum hotline la MOT dong, khong cho ngat giua hai so. */
+.fb2-call {
+    white-space: nowrap;
+    /* 2 so + dau gach ngang ~ 300px; man 360px hep nhat van vua nho co chu nay. */
+    font-size: 16px;
+    gap: 7px;
+}
+
+.fb2-call i { font-size: 17px; }
 
 .fb2-pol {
     display: grid;
@@ -119,6 +143,8 @@ body.co-chan-trang { padding-bottom: calc(var(--ctc-cao) + env(safe-area-inset-b
     .fb2-h2, .fb2-lb { display: inline; }
 
     .fb2-ic {
+        /* Bat lai: mobile o tren da an han hai nut nay. */
+        display: inline-flex;
         width: auto;
         height: auto;
         border: 0;
@@ -129,7 +155,9 @@ body.co-chan-trang { padding-bottom: calc(var(--ctc-cao) + env(safe-area-inset-b
         font-weight: 600;
     }
 
-    .fb2-call { font-size: 17px; }
+    .fb2-call { font-size: 17px; gap: 9px; }
+
+    .fb2-call i { font-size: 20px; }
 
     .fb2-top {
         gap: 26px;
