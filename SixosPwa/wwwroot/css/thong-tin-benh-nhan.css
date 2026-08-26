@@ -946,6 +946,12 @@ body.co-chan-trang .ytv-footer.ctc {
     background: #fff;
 }
 
+/* Chỉ chữ của bốn dịch vụ trong khối giữa, bằng cỡ hotline ở footer. */
+.ytv-company-info > .sixos-card:not(.primary) .sixos-item-title {
+    font-size: 19px !important;
+    line-height: 1.2;
+}
+
 .para-card-wrapper {
     padding: 0;
 }
@@ -957,7 +963,7 @@ body.co-chan-trang .ytv-footer.ctc {
 
 @media (min-width: 993px) {
     .ytv-content {
-        padding: 0 16px 106px;
+        padding: 0 1px 91px;
     }
 
     .ytv-company-info > .sixos-card:not(.primary) {

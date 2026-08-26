@@ -6,7 +6,8 @@
    ============================================================ */
 
 :root { --ctc-cao: 104px; }
-@media (min-width: 768px) { :root { --ctc-cao: 96px; } }
+/* Footer desktop cao xấp xỉ 77px; chừa thêm 1px làm đường ngăn với nội dung. */
+@media (min-width: 768px) { :root { --ctc-cao: 78px; } }
 
 /* !important o day la BAT BUOC, khong phai cau tha:
    thong-tin-benh-nhan.css:3 dat  html, body { padding: 0 !important }  cho app-shell 100dvh.
