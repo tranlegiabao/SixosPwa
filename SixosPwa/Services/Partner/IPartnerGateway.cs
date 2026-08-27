@@ -73,7 +73,18 @@ public interface IPartnerGateway
 /// </param>
 public record YeuCauMoTaiKhoan(string HoTen, string Cccd, string DienThoai, string? Email, string MatKhau, int Kenh);
 
-public record KetQuaThaoTac(bool ThanhCong, string ThongBao);
+/// <param name="DoiTacHong">
+/// true = CHINH he doi tac dang hong (khong noi duoc, hoac tra ve thu khong doc
+/// duoc statusCode), KHONG phai benh nhan sai. Mac dinh false nen moi cho dung
+/// hai tham so cu van bien dich nguyen ven.
+///
+/// Vi sao can co: khi SixosPwa TU dang nhap ho benh nhan bang mat khau da cat
+/// (ADR 0016), benh nhan khong go gi ca — bao nham "thong tin dang nhap khong
+/// chinh xac" luc doi tac chet thi ho ngoi sua mat khau vo ich, con bao nham
+/// "he thong gap su co" luc mat khau that su da doi thi ho cho mai khong bao gio
+/// vao duoc. Huong thu hai moi la huong nguy hiem. Xem ADR 0015 va 0016.
+/// </param>
+public record KetQuaThaoTac(bool ThanhCong, string ThongBao, bool DoiTacHong = false);
 
 /// <summary>Mot chi nhanh ben he doi tac — chi nhung truong man hinh dung toi.</summary>
 public record ChiNhanhDoiTac(string Ten, string? DiaChi, string? Hotline, string? GioLamViec);

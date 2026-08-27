@@ -190,6 +190,25 @@ public class HomeController : Controller
         ViewBag.MaCoSo = maCoSo;
         ViewBag.TenCoSo = coSo?.TenCoSo ?? "Cơ sở khám chữa bệnh";
         ViewBag.TenBenhNhan = benhNhan?.TenBN ?? dinhDanh;
+
+        // Logo + duong ra khoi trang benh nhan. Truoc day man nay khong co loi nao
+        // quay lai phan cong khai, ma tu 2026-08-27 "/" lai day nguoc ve day, nen
+        // thieu no la benh nhan bi nhot. Tro toi DANH SACH co so chu khong tro "/":
+        // tro "/" la thanh nut chet vi "/" se day ve lai day.
+        //
+        // UnescapeDataString bam theo ChiTietCoSo.cshtml:7 — URL trong cot Logo co
+        // the da bi ma hoa mot lan truoc khi luu.
+        ViewBag.LogoCoSo = string.IsNullOrWhiteSpace(coSo?.Logo)
+            ? null
+            : Uri.UnescapeDataString(coSo.Logo);
+
+        ViewBag.MaNhomCS = (coSo?.IdNhomCS is null
+            ? null
+            : await _db.DMNhomCSs.AsNoTracking()
+                .Where(n => n.ID == coSo.IdNhomCS.Value)
+                .Select(n => n.MaNhom)
+                .FirstOrDefaultAsync())
+            ?? "benhvien";
         ViewBag.DienThoai = User.FindFirst(System.Security.Claims.ClaimTypes.MobilePhone)?.Value ?? benhNhan?.SDT;
         ViewBag.CccdCheBot = CheBotCccd(cccd);
         ViewBag.CoLoiKetNoi = loi == "khong-ket-noi-duoc";
@@ -394,6 +413,32 @@ public class HomeController : Controller
     [AllowAnonymous]
     public async Task<IActionResult> ThongTinBenhNhan()
     {
+        // "/" la start_url cua PWA, nen day chinh la cho benh nhan dap xuong moi
+        // lan MO NGUOI app tu bieu tuong. Da dang nhap thi khong con ly do xem
+        // trang quang ba cong khai — di thang trang benh nhan.
+        //
+        // 🔴 CHI day khi MO NGUOI (khoi dong lai app / vao bang bookmark / go thang
+        // URL) — luc do khong co Referer cung host. Bam trong app toi "/" (vi du nut
+        // logo o header trang danh sach co so tro ve day) thi CO Referer cung host,
+        // phai render "/" binh thuong chu KHONG bat nguoc ve /benh-nhan. Day dung
+        // phep thu ma "PWA Last Page Restore" trong _Layout.cshtml dung.
+        //
+        // 🔴 Ve "co claim Cccd" la BAT BUOC. Khu Admin ky CA HAI cookie (xem
+        // _Layout.cshtml), nen admin cung tinh la IsAuthenticated — nhung ho khong
+        // co claim Cccd/MaCoSo, day ho sang /benh-nhan la ra trang rong khong biet
+        // chao ai. Xem ADR 0016.
+        var referer = Request.Headers["Referer"].ToString();
+        var tuTrongApp = !string.IsNullOrEmpty(referer)
+            && Uri.TryCreate(referer, UriKind.Absolute, out var refUri)
+            && string.Equals(refUri.Host, Request.Host.Host, StringComparison.OrdinalIgnoreCase);
+
+        if (!tuTrongApp
+            && User.Identity?.IsAuthenticated == true
+            && !string.IsNullOrWhiteSpace(User.FindFirst(LuongCongBenhNhan.ClaimCccd)?.Value))
+        {
+            return Redirect("/benh-nhan");
+        }
+
         var topCSKCBList = new List<TopCSKCBQC>();
         try
         {
