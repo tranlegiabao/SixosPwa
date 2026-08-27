@@ -10,7 +10,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const compactPreview = sourceControl.querySelector('[data-image-toggle-preview]');
         const compactPreviewImage = compactPreview?.querySelector('img');
         const toggleLabel = sourceControl.querySelector('[data-image-toggle-label]');
-        const existingImage = sourceControl.dataset.existingImage?.trim() || '';
+        const imageKind = sourceControl.dataset.imageKind || 'image';
+        const logoRemovedInput = sourceControl.querySelector('[data-logo-removed]');
+        let existingImage = sourceControl.dataset.existingImage?.trim() || '';
         let previewObjectUrl = null;
 
         if (!toggle || !panel || !dropzone || !fileInput || !urlInput || !preview) return;
@@ -27,12 +29,26 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!value) {
                 compactPreview.classList.add('d-none');
                 compactPreviewImage.removeAttribute('src');
+                if (toggleLabel) toggleLabel.textContent = imageKind === 'logo' ? 'Chọn logo' : 'Chọn ảnh';
                 return;
             }
 
             compactPreviewImage.src = value;
             compactPreview.classList.remove('d-none');
             if (toggleLabel) toggleLabel.textContent = 'Đổi ảnh';
+        };
+
+        const setRemovedState = function (removed) {
+            if (logoRemovedInput) logoRemovedInput.value = removed ? 'true' : 'false';
+        };
+
+        const announceSelection = function (value) {
+            if (!value) return;
+            setRemovedState(false);
+            sourceControl.dispatchEvent(new CustomEvent('cskcb:image-selected', {
+                bubbles: true,
+                detail: { kind: imageKind, url: value }
+            }));
         };
 
         const setPreview = function (value) {
@@ -73,6 +89,7 @@ document.addEventListener('DOMContentLoaded', function () {
             previewObjectUrl = URL.createObjectURL(file);
             setPreview(previewObjectUrl);
             setCompactPreview(previewObjectUrl);
+            announceSelection(previewObjectUrl);
             collapse();
         });
 
@@ -109,7 +126,10 @@ document.addEventListener('DOMContentLoaded', function () {
             const value = urlInput.value.trim();
             setPreview(value || existingImage);
             setCompactPreview(value || existingImage);
-            if (value) collapse();
+            if (value) {
+                announceSelection(value);
+                collapse();
+            }
         });
 
         urlInput.addEventListener('input', function () {
@@ -122,6 +142,20 @@ document.addEventListener('DOMContentLoaded', function () {
         preview.addEventListener('error', function () {
             preview.classList.add('d-none');
             if (typeof showToast === 'function') showToast('Không thể tải ảnh đã chọn.', 'error');
+        });
+
+        document.addEventListener('cskcb:clear-image-source', function (event) {
+            if (event.detail?.kind !== imageKind) return;
+
+            releaseObjectUrl();
+            fileInput.value = '';
+            urlInput.value = '';
+            existingImage = '';
+            sourceControl.dataset.existingImage = '';
+            setPreview('');
+            setCompactPreview('');
+            setRemovedState(true);
+            collapse();
         });
     });
 

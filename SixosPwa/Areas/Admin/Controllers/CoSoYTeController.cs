@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Net;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using SixosPwa.Areas.Admin.Models;
 using SixosPwa.Data;
 using SixosPwa.Models;
@@ -11,6 +13,9 @@ namespace SixosPwa.Areas.Admin.Controllers;
 public sealed class CoSoYTeController : AdminControllerBase
 {
     private static readonly string[] AllowedTypes = { "benhvien", "pkdk", "nhakhoa", "phongmach", "nhathuoc" };
+    private static readonly Regex ManagedFacilityLogoRegex = new(
+        "<div\\b(?=[^>]*\\bdata-cskcb-facility-logo\\s*=\\s*(['\"])true\\1)[^>]*>.*?</div>",
+        RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled);
     private readonly ApplicationDbContext _db;
     private readonly AdminStoredProcedureService _adminStoredProcedures;
     private readonly IFtpService _ftp;
@@ -124,12 +129,17 @@ public sealed class CoSoYTeController : AdminControllerBase
 
         if (model.ImageFile != null)
             model.Img = await SaveImageAsync(model.ImageFile, KhoAnh.ThuMucCoSo, nameof(model.ImageFile));
-        model.Logo = await ResolveImageAsync(
-            model.LogoFile,
-            model.LogoUrlInput,
-            model.Logo,
-            KhoAnh.ThuMucLogo,
-            nameof(model.LogoFile));
+        model.LogoRemoved = model.LogoRemoved
+            && model.LogoFile == null
+            && string.IsNullOrWhiteSpace(model.LogoUrlInput);
+        model.Logo = model.LogoRemoved
+            ? null
+            : await ResolveImageAsync(
+                model.LogoFile,
+                model.LogoUrlInput,
+                model.Logo,
+                KhoAnh.ThuMucLogo,
+                nameof(model.LogoFile));
         var advertisingImageUrl = await ResolveAdvertisingImageAsync(model, null);
         model.QuangCaoImg = advertisingImageUrl;
         ApplyOperatingHours(model);
@@ -185,29 +195,25 @@ public sealed class CoSoYTeController : AdminControllerBase
             }
         }
 
-        if (model.TopicId > 0)
+        if (createdFacilityForAdvertising != null)
         {
-            var createdFacility = await _db.DMCSKCBs.AsNoTracking()
-                .Where(x => x.TenCoSo == model.TenCoSo
-                    && (string.IsNullOrWhiteSpace(model.MaCoSo) || x.MaCoSo == model.MaCoSo))
-                .OrderByDescending(x => x.Id)
-                .FirstOrDefaultAsync();
-            if (createdFacility != null)
+            var topicContents = await BuildLogoSynchronizedContentsAsync(
+                createdFacilityForAdvertising.Id,
+                model,
+                model.Logo,
+                includeActiveEditorContent: model.TopicId > 0);
+            foreach (var topicContent in topicContents)
             {
-                var topicContents = ParseTopicContents(model.TopicContentsJson);
-                if (!topicContents.ContainsKey(model.TopicId))
-                    topicContents[model.TopicId] = model.NoiDung;
-
-                foreach (var topicContent in topicContents)
-                {
-                var contentResult = await SaveContentAsync(createdFacility.Id, topicContent.Key, topicContent.Value);
+                var contentResult = await SaveContentAsync(
+                    createdFacilityForAdvertising.Id,
+                    topicContent.TopicId,
+                    topicContent.Updated);
                 if (!contentResult.Succeeded)
                 {
                     if (IsAjaxRequest()) return AjaxFailure(contentResult.Message ?? "Không thể lưu nội dung HTML.");
                     Error(contentResult.Message ?? "Không thể lưu nội dung HTML.");
-                    return RedirectToAction(nameof(Edit), new { id = createdFacility.Id, topicId = model.TopicId });
+                    return RedirectToAction(nameof(Edit), new { id = createdFacilityForAdvertising.Id, topicId = model.TopicId });
                 }
-            }
             }
         }
 
@@ -267,12 +273,17 @@ public sealed class CoSoYTeController : AdminControllerBase
             model.Img = await SaveImageAsync(model.ImageFile, KhoAnh.ThuMucCoSo, nameof(model.ImageFile)) ?? entity.Img;
         else
             model.Img = entity.Img;
-        model.Logo = await ResolveImageAsync(
-            model.LogoFile,
-            model.LogoUrlInput,
-            entity.Logo,
-            KhoAnh.ThuMucLogo,
-            nameof(model.LogoFile));
+        model.LogoRemoved = model.LogoRemoved
+            && model.LogoFile == null
+            && string.IsNullOrWhiteSpace(model.LogoUrlInput);
+        model.Logo = model.LogoRemoved
+            ? null
+            : await ResolveImageAsync(
+                model.LogoFile,
+                model.LogoUrlInput,
+                entity.Logo,
+                KhoAnh.ThuMucLogo,
+                nameof(model.LogoFile));
         var advertisingImageUrl = await ResolveAdvertisingImageAsync(model, existingAdvertising?.Img);
         model.QuangCaoImg = advertisingImageUrl;
         ApplyOperatingHours(model);
@@ -324,33 +335,28 @@ public sealed class CoSoYTeController : AdminControllerBase
 
         // Ban HTML truoc khi sua — dung de biet anh nao vua bi admin xoa khoi bai.
         var noiDungCu = new List<(string? Cu, string? Moi)>();
-
-        if (string.Equals(model.ActiveSection, "noiDungChiTiet", StringComparison.OrdinalIgnoreCase)
-            || !string.IsNullOrWhiteSpace(model.TopicContentsJson))
+        var topicContents = await BuildLogoSynchronizedContentsAsync(
+            model.Id,
+            model,
+            model.Logo,
+            includeActiveEditorContent: string.Equals(
+                model.ActiveSection,
+                "noiDungChiTiet",
+                StringComparison.OrdinalIgnoreCase));
+        foreach (var topicContent in topicContents)
         {
-            var topicContents = ParseTopicContents(model.TopicContentsJson);
-            if (string.Equals(model.ActiveSection, "noiDungChiTiet", StringComparison.OrdinalIgnoreCase)
-                && model.TopicId > 0
-                && !topicContents.ContainsKey(model.TopicId))
-                topicContents[model.TopicId] = model.NoiDung;
-
-            foreach (var topicContent in topicContents)
-            {
-            noiDungCu.Add((
-                await _adminStoredProcedures.GetNoiDungCskcbAsync(model.Id, topicContent.Key),
-                topicContent.Value));
+            noiDungCu.Add((topicContent.Existing, topicContent.Updated));
 
             var contentResult = await SaveContentAsync(
                 model.Id,
-                topicContent.Key,
-                topicContent.Value);
+                topicContent.TopicId,
+                topicContent.Updated);
             if (!contentResult.Succeeded)
             {
                 if (IsAjaxRequest()) return AjaxFailure(contentResult.Message ?? "Không thể lưu nội dung HTML.");
                 Error(contentResult.Message ?? "Không thể lưu nội dung HTML.");
                 return RedirectToAction(nameof(Edit), new { id = model.Id, topicId = model.TopicId, section = model.ActiveSection });
             }
-        }
         }
 
         // Toi day moi ba thu tuc luu deu da thanh cong => DB dang giu gia tri MOI,
@@ -437,7 +443,9 @@ public sealed class CoSoYTeController : AdminControllerBase
             DiaChi = model.DiaChi ?? storedFacility?.DiaChi,
             IdNhomCS = model.SelectedNhomCSId ?? storedFacility?.IdNhomCS,
             Img = model.Img ?? storedFacility?.Img,
-            Logo = await ReadPreviewImageAsync(model.LogoFile, model.LogoUrlInput, model.Logo ?? storedFacility?.Logo),
+            Logo = model.LogoRemoved
+                ? null
+                : await ReadPreviewImageAsync(model.LogoFile, model.LogoUrlInput, model.Logo ?? storedFacility?.Logo),
             Active = model.Active
         };
 
@@ -471,6 +479,14 @@ public sealed class CoSoYTeController : AdminControllerBase
             var topic = topics.FirstOrDefault(x => x.ID == model.TopicId);
             if (!string.IsNullOrWhiteSpace(topic?.MaChuDe))
                 contents[topic.MaChuDe!] = model.NoiDung ?? string.Empty;
+        }
+
+        foreach (var topic in topics.Where(x =>
+                     !string.IsNullOrWhiteSpace(x.MaChuDe)
+                     && NDCSKCB.AllowedLoaiND.Contains(x.MaChuDe, StringComparer.OrdinalIgnoreCase)))
+        {
+            contents.TryGetValue(topic.MaChuDe!, out var topicContent);
+            contents[topic.MaChuDe!] = SynchronizeManagedFacilityLogo(topicContent, facility.Logo) ?? string.Empty;
         }
 
         ViewData["Title"] = "Xem trước cơ sở y tế";
@@ -714,6 +730,59 @@ public sealed class CoSoYTeController : AdminControllerBase
         {
             return new Dictionary<long, string?>();
         }
+    }
+
+    private static string? SynchronizeManagedFacilityLogo(string? html, string? logoUrl)
+    {
+        var contentWithoutManagedLogo = ManagedFacilityLogoRegex.Replace(html ?? string.Empty, string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(logoUrl))
+            return string.IsNullOrWhiteSpace(contentWithoutManagedLogo) ? null : contentWithoutManagedLogo;
+
+        var encodedUrl = WebUtility.HtmlEncode(logoUrl.Trim());
+        var logoHtml = $"<div data-cskcb-facility-logo=\"true\" style=\"text-align:center;margin:0 0 16px\">"
+            + $"<img data-cskcb-facility-logo-image=\"true\" src=\"{encodedUrl}\" alt=\"Logo cơ sở\" "
+            + "style=\"display:inline-block;max-width:180px;width:auto;height:auto;object-fit:contain\"></div>";
+        return logoHtml + contentWithoutManagedLogo;
+    }
+
+    private async Task<List<(long TopicId, string? Existing, string? Updated)>> BuildLogoSynchronizedContentsAsync(
+        long idCoSo,
+        CoSoYTeEditViewModel model,
+        string? logoUrl,
+        bool includeActiveEditorContent)
+    {
+        var topics = (await _db.DMChuDes.AsNoTracking()
+                .OrderBy(x => x.ID)
+                .ToListAsync())
+            .Where(x => !string.IsNullOrWhiteSpace(x.MaChuDe)
+                && NDCSKCB.AllowedLoaiND.Contains(x.MaChuDe, StringComparer.OrdinalIgnoreCase))
+            .ToList();
+        var topicIds = topics.Select(x => x.ID).ToList();
+        var existingContents = await _db.NDCSKCBs.AsNoTracking()
+            .Where(x => x.IdCoSo == idCoSo && topicIds.Contains(x.IdChuDe))
+            .OrderBy(x => x.Id)
+            .ToListAsync();
+        var existingByTopic = existingContents
+            .GroupBy(x => x.IdChuDe)
+            .ToDictionary(x => x.Key, x => x.First().NoiDung);
+        var submittedContents = ParseTopicContents(model.TopicContentsJson);
+
+        if (includeActiveEditorContent && model.TopicId > 0 && !submittedContents.ContainsKey(model.TopicId))
+            submittedContents[model.TopicId] = model.NoiDung;
+
+        var result = new List<(long TopicId, string? Existing, string? Updated)>();
+        foreach (var topic in topics)
+        {
+            existingByTopic.TryGetValue(topic.ID, out var existing);
+            var hasSubmitted = submittedContents.TryGetValue(topic.ID, out var submitted);
+            if (!hasSubmitted && !existingByTopic.ContainsKey(topic.ID) && string.IsNullOrWhiteSpace(logoUrl))
+                continue;
+
+            var source = hasSubmitted ? submitted : existing;
+            result.Add((topic.ID, existing, SynchronizeManagedFacilityLogo(source, logoUrl)));
+        }
+
+        return result;
     }
 
     private async Task<Dictionary<string, string>> LoadPreviewContentsAsync(

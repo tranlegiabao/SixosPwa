@@ -3,7 +3,8 @@
     var existingImage = Model.Logo?.Trim();
 }
 
-<div class="image-source-control" data-image-source data-existing-image="@existingImage">
+<div class="image-source-control" data-image-source data-image-kind="logo" data-existing-image="@existingImage">
+    <input asp-for="LogoRemoved" type="hidden" data-logo-removed />
     <button type="button" class="image-source-toggle" data-image-toggle aria-expanded="false" aria-label="Mở tùy chọn logo" title="Mở tùy chọn logo">
         <span class="image-source-toggle-preview @(string.IsNullOrWhiteSpace(existingImage) ? "d-none" : string.Empty)" data-image-toggle-preview>
             <img src="@existingImage" alt="Logo đã chọn" />

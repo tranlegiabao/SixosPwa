@@ -178,6 +178,8 @@ public sealed class CoSoYTeEditViewModel
 
     public IFormFile? LogoFile { get; set; }
 
+    public bool LogoRemoved { get; set; }
+
     [StringLength(2000)]
     public string? LogoUrlInput { get; set; }
 

@@ -2,6 +2,37 @@
     var contentDrafts = Object.create(null);
     var contentLoadSequence = 0;
     var activeTopicId = '';
+    var currentLogoUrl = '';
+    var suppressLogoRemovalDetection = 0;
+    var managedLogoWasPresent = false;
+    var managedLogoSelector = '[data-cskcb-facility-logo="true"]';
+    var managedLogoImageSelector = managedLogoSelector + ' img[data-cskcb-facility-logo-image="true"]';
+
+    function buildManagedLogoHtml(logoUrl) {
+        if (!logoUrl) return '';
+        return '<div data-cskcb-facility-logo="true" style="text-align:center;margin:0 0 16px">'
+            + '<img data-cskcb-facility-logo-image="true" src="' + escapePreviewText(logoUrl) + '" '
+            + 'alt="Logo cơ sở" style="display:inline-block;max-width:180px;width:auto;height:auto;object-fit:contain">'
+            + '</div>';
+    }
+
+    function stripManagedLogo(content) {
+        var parsed = document.createElement('div');
+        parsed.innerHTML = content || '';
+        parsed.querySelectorAll(managedLogoSelector).forEach(function (element) { element.remove(); });
+        return parsed.innerHTML;
+    }
+
+    function synchronizeManagedLogo(content, logoUrl) {
+        var body = stripManagedLogo(content);
+        return logoUrl ? buildManagedLogoHtml(logoUrl) + body : body;
+    }
+
+    function hasManagedLogo(content) {
+        var parsed = document.createElement('div');
+        parsed.innerHTML = content || '';
+        return Boolean(parsed.querySelector(managedLogoImageSelector));
+    }
 
     function ensureDefaultBlackHtml(content) {
         var html = (content || '').trim();
@@ -31,7 +62,13 @@
         var id = selector.replace('#', '');
         var ed = typeof tinymce !== 'undefined' ? tinymce.get(id) : null;
         if (ed) {
-            ed.setContent(content || '');
+            suppressLogoRemovalDetection++;
+            try {
+                ed.setContent(content || '');
+                if (id === 'summernote') managedLogoWasPresent = hasManagedLogo(ed.getContent({ format: 'raw' }));
+            } finally {
+                suppressLogoRemovalDetection--;
+            }
         } else {
             editor.value = content || '';
         }
@@ -43,7 +80,8 @@
         var topicId = topicIdOverride || activeTopicId || topic?.value;
         if (!topicId || !editor) return;
 
-        contentDrafts[topicId] = ensureDefaultBlackHtml(editor.getContent({ format: 'raw' }));
+        var content = editor.getContent({ format: 'raw' });
+        contentDrafts[topicId] = ensureDefaultBlackHtml(synchronizeManagedLogo(content, currentLogoUrl));
     }
 
     function syncTopicContents() {
@@ -75,14 +113,51 @@
         return '/static/icon-512.png';
     }
 
-    function getPreviewLogoUrl() {
+    function getSelectedLogoUrl() {
         var logoFieldValue = getFormValue('Logo');
-        if (logoFieldValue) return getPreviewImageUrl(logoFieldValue);
+        if (logoFieldValue) return logoFieldValue;
 
-        var logoControl = document.querySelector('[data-image-source]');
+        var logoControl = document.querySelector('[data-image-source][data-image-kind="logo"]');
         var selectedLogo = logoControl?.querySelector('[data-image-toggle-preview] img')
             || logoControl?.querySelector('[data-image-preview]');
-        return getPreviewImageUrl(selectedLogo?.getAttribute('src') || logoControl?.dataset.existingImage);
+        return (selectedLogo?.getAttribute('src') || logoControl?.dataset.existingImage || '').trim();
+    }
+
+    function getPreviewLogoUrl() {
+        return getPreviewImageUrl(getSelectedLogoUrl());
+    }
+
+    function applyLogoToDrafts(logoUrl) {
+        currentLogoUrl = logoUrl || '';
+        Object.keys(contentDrafts).forEach(function (topicId) {
+            contentDrafts[topicId] = synchronizeManagedLogo(contentDrafts[topicId], currentLogoUrl);
+        });
+
+        var editor = typeof tinymce !== 'undefined' ? tinymce.get('summernote') : null;
+        if (editor) {
+            setEditorContent('#summernote', synchronizeManagedLogo(editor.getContent({ format: 'raw' }), currentLogoUrl));
+        }
+        syncTopicContents();
+    }
+
+    function clearLogoEverywhere() {
+        if (!currentLogoUrl && !managedLogoWasPresent) return;
+        applyLogoToDrafts('');
+        document.dispatchEvent(new CustomEvent('cskcb:clear-image-source', {
+            detail: { kind: 'logo' }
+        }));
+    }
+
+    function detectManagedLogoRemoval(editor) {
+        if (suppressLogoRemovalDetection > 0 || !editor || editor.id !== 'summernote') return;
+
+        var logoExists = Boolean(editor.getBody()?.querySelector(managedLogoImageSelector));
+        if (managedLogoWasPresent && !logoExists) {
+            clearLogoEverywhere();
+            managedLogoWasPresent = false;
+            return;
+        }
+        managedLogoWasPresent = logoExists;
     }
 
     function buildResponsivePreviewDocument(content) {
@@ -310,6 +385,10 @@
             formElement.removeAttribute('method');
             formElement.removeAttribute('onsubmit');
         });
+        previewDocument.querySelectorAll('button, input, select, textarea').forEach(function (control) {
+            control.disabled = true;
+            control.setAttribute('aria-disabled', 'true');
+        });
     }
 
     function openResponsivePreview(editor) {
@@ -335,15 +414,16 @@
             style.id = 'cskcb-responsive-preview-style';
             style.textContent = `
                 .cskcb-responsive-preview { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(15, 23, 42, .62); }
-                .cskcb-preview-dialog { display: flex; flex-direction: column; width: min(1180px, 100%); height: min(860px, 94vh); overflow: hidden; background: #e2e8f0; border-radius: 12px; box-shadow: 0 24px 60px rgba(15, 23, 42, .3); }
+                .cskcb-preview-dialog { display: flex; flex-direction: column; width: min(1600px, calc(100vw - 32px)); height: min(900px, 94vh); overflow: hidden; background: #e2e8f0; border-radius: 12px; box-shadow: 0 24px 60px rgba(15, 23, 42, .3); }
                 .cskcb-preview-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; background: #fff; border-bottom: 1px solid #cbd5e1; color: #0f172a; }
                 .cskcb-preview-actions { display: flex; align-items: center; gap: 8px; }
                 .cskcb-preview-mode, .cskcb-preview-close { border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 12px; background: #fff; color: #334155; cursor: pointer; }
                 .cskcb-preview-mode.active { border-color: #2563eb; background: #2563eb; color: #fff; }
                 .cskcb-preview-close { padding: 2px 10px; font-size: 24px; line-height: 1.2; }
-                .cskcb-preview-stage { display: flex; flex: 1; min-height: 0; align-items: flex-start; justify-content: center; overflow: auto; padding: 24px; }
-                .cskcb-preview-frame { width: 100%; height: 100%; min-height: 620px; border: 1px solid #94a3b8; border-radius: 6px; background: #fff; box-shadow: 0 8px 20px rgba(15, 23, 42, .12); transition: width .2s ease; }
-                .cskcb-preview-frame.mobile { width: 390px; max-width: 100%; }
+                .cskcb-preview-stage { display: flex; flex: 1; min-height: 0; align-items: flex-start; justify-content: flex-start; overflow: auto; padding: 24px; }
+                .cskcb-preview-frame { height: 100%; min-height: 620px; margin: 0 auto; border: 1px solid #94a3b8; border-radius: 6px; background: #fff; box-shadow: 0 8px 20px rgba(15, 23, 42, .12); transition: width .2s ease; }
+                .cskcb-preview-frame.desktop { width: 1440px; max-width: none; flex: 0 0 1440px; }
+                .cskcb-preview-frame.mobile { width: 390px; max-width: 390px; flex: 0 0 390px; }
                 @media (max-width: 576px) {
                     .cskcb-responsive-preview { padding: 0; }
                     .cskcb-preview-dialog { width: 100%; height: 100%; border-radius: 0; }
@@ -362,11 +442,12 @@
         frame.setAttribute('sandbox', 'allow-same-origin');
         frame.srcdoc = '<!doctype html><html lang="vi"><body style="font-family:system-ui;padding:24px">Đang tải bản xem trước...</body></html>';
         renderStaticPreview(frame, editor).catch(function (error) {
-            // Endpoint có thể tạm lỗi khi dữ liệu DB/phiên đăng nhập chưa sẵn sàng;
-            // vẫn cho xem bản tĩnh nội dung đang nhập, không để iframe trắng.
-            var currentContent = ensureDefaultBlackHtml(editor.getContent({ format: 'raw' }));
-            frame.srcdoc = buildResponsivePreviewDocument(currentContent);
-            console.warn('Không tải được bản xem trước đầy đủ:', error);
+            var previewPageName = editor.id === 'summernote' ? 'trang chi tiết cơ sở' : 'trang Home';
+            var previewError = 'Không tải được bản xem trước ' + previewPageName + '.';
+            frame.srcdoc = '<!doctype html><html lang="vi"><meta charset="utf-8">'
+                + '<body style="font-family:system-ui;padding:24px;color:#b42318">' + previewError + '</body></html>';
+            if (typeof showToast === 'function') showToast(previewError, 'error');
+            console.warn(previewError, error);
         });
 
         function closePreview() {
@@ -404,7 +485,7 @@
         if (topicHidden) topicHidden.value = topicId || '';
 
         if (!currentId || !topicId) {
-            setEditorContent('#summernote', '');
+            setEditorContent('#summernote', synchronizeManagedLogo('', currentLogoUrl));
             return;
         }
 
@@ -417,12 +498,12 @@
             var data = await response.json();
             var currentTopicId = document.getElementById('cboChuDe')?.value;
             if (requestSequence !== contentLoadSequence || currentTopicId !== topicId) return;
-            contentDrafts[topicId] = ensureDefaultBlackHtml(data.noiDung || '');
+            contentDrafts[topicId] = ensureDefaultBlackHtml(synchronizeManagedLogo(data.noiDung || '', currentLogoUrl));
             setEditorContent('#summernote', contentDrafts[topicId]);
             syncTopicContents();
         } catch (error) {
             if (requestSequence !== contentLoadSequence) return;
-            setEditorContent('#summernote', '');
+            setEditorContent('#summernote', synchronizeManagedLogo('', currentLogoUrl));
             if (typeof showToast === 'function') showToast(error.message, 'error');
         }
     }
@@ -435,6 +516,7 @@
         if (typeof tinymce !== 'undefined' && tinymce.get(id)) {
             return;
         }
+        if (id === 'summernote') currentLogoUrl = getSelectedLogoUrl();
 
         tinymce.init({
             selector: selector,
@@ -471,6 +553,11 @@
                         loadContent();
                     }
                 });
+                if (selector === '#summernote') {
+                    editor.on('input change undo redo SetContent', function () {
+                        detectManagedLogoRemoval(editor);
+                    });
+                }
             },
             images_upload_handler: function (blobInfo) {
                 return new Promise(function (resolve, reject) {
@@ -498,6 +585,11 @@
             }
         });
     }
+
+    document.addEventListener('cskcb:image-selected', function (event) {
+        if (event.detail?.kind !== 'logo') return;
+        applyLogoToDrafts(event.detail.url || '');
+    });
 
     window.initializeEditor = initializeEditor;
 
@@ -527,6 +619,7 @@
         if (ed) {
             html = ed.getContent();
         }
+        if (id === 'summernote') html = synchronizeManagedLogo(html, currentLogoUrl);
         editor.value = ensureDefaultBlackHtml(html);
     }
 
