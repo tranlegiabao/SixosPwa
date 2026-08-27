@@ -751,8 +751,8 @@ width: 70px;
 
             </div>
         </div>
-        <div class="col-12 p-3 d-none" id="otpCol">
-            <div class="h-100 d-flex justify-content-center">
+        <div class="ub-cot-otp col-12 bg-ccc d-flex flex-column p-3 d-none" id="otpCol">
+            <div class="w-100 d-flex justify-content-center">
                 <div class="w-75 text-center">
                     <a href="@(string.IsNullOrWhiteSpace(ViewBag.SlugCoSo as string) ? "/" : $"/DangKyOnline/{ViewBag.SlugCoSo}")" class="ub-logo mb-3" title="Quay lại @ViewBag.TenCoSo">
                         <img src="@(ViewBag.LogoCoSo ?? "/static/icon-192.png")"
@@ -798,9 +798,6 @@ width: 70px;
             </div>
         </div>
     </div>
-</div>
-
-</div>
 </div>
 
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

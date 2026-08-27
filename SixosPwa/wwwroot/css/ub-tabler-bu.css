@@ -428,8 +428,12 @@ h6, .h6 { font-size: 0.625rem; }
         min-height: 100vh;
     }
 
+    /* Ba cot form phai dung chung mot be ngang. Cot ma xac thuc (#otpCol) la cot
+       THU HAI cua man Dang ky: thieu ten no o day thi no giu col-12 = 100%, cong
+       voi panel 58,3% la qua mot hang, nen bi day XUONG DUOI panel. */
     .ub-khung > .login-modal,
-    .ub-khung > .register-model {
+    .ub-khung > .register-model,
+    .ub-khung > .ub-cot-otp {
         flex: 0 0 auto;
         width: 41.66666667%;
         max-height: 100vh;
