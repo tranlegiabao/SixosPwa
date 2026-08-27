@@ -414,18 +414,26 @@ public class HomeController : Controller
     public async Task<IActionResult> ThongTinBenhNhan()
     {
         // "/" la start_url cua PWA, nen day chinh la cho benh nhan dap xuong moi
-        // lan mo app tu bieu tuong. Da dang nhap thi khong con ly do xem trang
-        // quang ba cong khai — di thang trang benh nhan.
+        // lan MO NGUOI app tu bieu tuong. Da dang nhap thi khong con ly do xem
+        // trang quang ba cong khai — di thang trang benh nhan.
+        //
+        // 🔴 CHI day khi MO NGUOI (khoi dong lai app / vao bang bookmark / go thang
+        // URL) — luc do khong co Referer cung host. Bam trong app toi "/" (vi du nut
+        // logo o header trang danh sach co so tro ve day) thi CO Referer cung host,
+        // phai render "/" binh thuong chu KHONG bat nguoc ve /benh-nhan. Day dung
+        // phep thu ma "PWA Last Page Restore" trong _Layout.cshtml dung.
         //
         // 🔴 Ve "co claim Cccd" la BAT BUOC. Khu Admin ky CA HAI cookie (xem
         // _Layout.cshtml), nen admin cung tinh la IsAuthenticated — nhung ho khong
         // co claim Cccd/MaCoSo, day ho sang /benh-nhan la ra trang rong khong biet
         // chao ai. Xem ADR 0016.
-        //
-        // Khong can co chong vong lap: khong co lien ket nao trong _Layout hay
-        // _ChanTrangCong tro ve "/", va logo tren /benh-nhan tro toi danh sach co
-        // so chu khong tro "/".
-        if (User.Identity?.IsAuthenticated == true
+        var referer = Request.Headers["Referer"].ToString();
+        var tuTrongApp = !string.IsNullOrEmpty(referer)
+            && Uri.TryCreate(referer, UriKind.Absolute, out var refUri)
+            && string.Equals(refUri.Host, Request.Host.Host, StringComparison.OrdinalIgnoreCase);
+
+        if (!tuTrongApp
+            && User.Identity?.IsAuthenticated == true
             && !string.IsNullOrWhiteSpace(User.FindFirst(LuongCongBenhNhan.ClaimCccd)?.Value))
         {
             return Redirect("/benh-nhan");

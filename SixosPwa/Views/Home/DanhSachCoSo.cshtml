@@ -2,6 +2,13 @@
 @{
     ViewData["ChanTrangCong"] = true;
     ViewData["Title"] = ViewData["Title"];
+
+    // Menu 3 gach o header re theo trang thai dang nhap, y het trang "/"
+    // (ThongTinBenhNhan). Admin ky CA HAI cookie nen cung tinh la da dang nhap,
+    // nhung khong co claim Cccd -> "Ho so benh nhan" se ve /benh-nhan rong; phai
+    // re rieng sang khu Admin.
+    var daDangNhap = User.Identity?.IsAuthenticated == true;
+    var laAdmin = daDangNhap && User.IsInRole("Admin");
 }
 
 @* Tom Select ban dia trong wwwroot/lib — KHONG lay tu CDN. Day la PWA cho benh
@@ -84,23 +91,83 @@
         font-size: 19px;
         opacity: 0.9;
     }
-    .ytv-menu-btn {
-        background: rgba(255,255,255,0.2);
-        border: none;
+    /* Menu 3 gach o goc phai header — dung chung khuon voi trang "/"
+       (ThongTinBenhNhan). Chep sang de trang danh sach co so cung co loi ra +
+       khoi Tai khoan, khong con la nut Home cut. */
+    .ytv-header-menu {
+        font-size: 32px;
         color: white;
-        font-size: 24px;
-        width: 45px;
-        height: 45px;
-        border-radius: 50%;
+        cursor: pointer;
+        padding: 10px;
+        position: relative;
+    }
+    .ytv-header-menu:focus-visible { outline: 3px solid #fff; outline-offset: 3px; border-radius: 8px; }
+    .ytv-dropdown {
+        display: none;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        min-width: 240px;
+        z-index: 9999;
+        overflow: hidden;
+        animation: fadeDown 0.2s ease;
+    }
+    .ytv-dropdown.open { display: block; }
+    @@keyframes fadeDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .ytv-dropdown a {
         display: flex;
         align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: background 0.3s;
+        gap: 10px;
+        min-height: 48px;
+        padding: 15px 20px;
+        color: #334155;
+        font-size: 16px;
+        font-weight: 600;
+        text-decoration: none;
+        white-space: nowrap;
+        border-bottom: 1px solid #f1f5f9;
+        transition: all 0.2s;
     }
-    .ytv-menu-btn:hover {
-        background: rgba(255,255,255,0.3);
+    .ytv-dropdown a:last-child { border-bottom: none; }
+    .ytv-dropdown a:hover {
+        background: #eff6ff;
+        color: var(--ytv-primary);
+        padding-left: 28px;
     }
+    .ytv-dropdown a i {
+        font-size: 20px;
+        width: 26px;
+        text-align: center;
+        color: var(--ytv-secondary);
+    }
+    .ytv-dropdown a.ytv-dropdown-thoat,
+    .ytv-dropdown a.ytv-dropdown-thoat i { color: #dc2626; }
+    .ytv-dropdown-title {
+        padding: 10px 16px 6px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+        color: #94a3b8;
+    }
+    /* Nhom "loai co so" trong menu: CHI hien tren dien thoai. Tu 768px tro len
+       5 loai da co san o sidebar than trang -> an di, khoi lap. */
+    .ytv-dropdown-coso { display: none; }
+    @@media (max-width: 767.98px) {
+        .ytv-dropdown-coso { display: block; }
+        .ytv-dropdown-coso + .ytv-dropdown-title { border-top: 1px solid #e2e8f0; margin-top: 4px; padding-top: 12px; }
+    }
+    .bieu-tuong-benh-vien { color: #ef4444 !important; }
+    .bieu-tuong-phong-kham { color: #10b981 !important; }
+    .bieu-tuong-nha-khoa { color: #06b6d4 !important; }
+    .bieu-tuong-phong-mach { color: #8b5cf6 !important; }
+    .bieu-tuong-nha-thuoc { color: #f59e0b !important; }
 
     /* MAIN CONTAINER */
     .ytv-main {
@@ -363,7 +430,7 @@
     /* RESPONSIVE */
     @@media (max-width: 992px) {
         .ytv-header { position: relative; flex-direction: column; gap: 15px; text-align: center; padding-top: 20px; }
-        .ytv-menu-btn { position: absolute; top: 25px; right: 20px; }
+        .ytv-header-menu { position: absolute; top: 15px; right: 20px; }
         .ytv-main { flex-direction: column; }
         .ytv-sidebar { width: 100%; border-right: none; border-bottom: 1px solid #e2e8f0; padding: 15px; }
         .ytv-grid { grid-template-columns: repeat(2, 1fr); }
@@ -386,9 +453,53 @@
         <h1>Dịch Vụ Đăng Ký Khám Bệnh Online</h1>
         <p>Tiện lợi - Nhanh chóng - Chính xác</p>
     </div>
-    <a href="/Home/ThongTinBenhNhan" class="ytv-menu-btn" title="Quay lại">
-        <i class="fas fa-home"></i>
-    </a>
+    <div class="ytv-header-menu" id="menuBtn" onclick="toggleMenu()" role="button" tabindex="0"
+         aria-label="Mở menu" aria-haspopup="true" aria-expanded="false" aria-controls="dropdownMenu">
+        <i class="fas fa-bars" aria-hidden="true"></i>
+        <div class="ytv-dropdown" id="dropdownMenu" role="menu" aria-label="Menu">
+            @* Nhom 1 - loai co so: CHI hien tren dien thoai. Tu tablet tro len da
+               co san o sidebar than trang nen an di, khoi lap. *@
+            <div class="ytv-dropdown-coso">
+                <a href="/Home/DanhSachCoSo-benhvien" role="menuitem">
+                    <i class="fas fa-hospital bieu-tuong-benh-vien" aria-hidden="true"></i> Bệnh viện
+                </a>
+                <a href="/Home/DanhSachCoSo-pkdk" role="menuitem">
+                    <i class="fas fa-clinic-medical bieu-tuong-phong-kham" aria-hidden="true"></i> Phòng khám đa khoa
+                </a>
+                <a href="/Home/DanhSachCoSo-nhakhoa" role="menuitem">
+                    <i class="fas fa-tooth bieu-tuong-nha-khoa" aria-hidden="true"></i> Nha khoa
+                </a>
+                <a href="/Home/DanhSachCoSo-phongmach" role="menuitem">
+                    <i class="fas fa-stethoscope bieu-tuong-phong-mach" aria-hidden="true"></i> Phòng mạch
+                </a>
+                <a href="/Home/DanhSachCoSo-nhathuoc" role="menuitem">
+                    <i class="fas fa-pills bieu-tuong-nha-thuoc" aria-hidden="true"></i> Nhà thuốc
+                </a>
+            </div>
+            @* Nhom 2 - tai khoan: CHI hien khi da dang nhap. Trang nay
+               [AllowAnonymous] nen phai re theo trang thai dang nhap. *@
+            @if (laAdmin)
+            {
+                <div class="ytv-dropdown-title">Tài khoản</div>
+                <a href="/Admin" role="menuitem">
+                    <i class="fas fa-user-shield" aria-hidden="true"></i> Tài khoản
+                </a>
+                <a href="/Admin/DangNhap/Logout" role="menuitem" class="ytv-dropdown-thoat">
+                    <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Đăng xuất
+                </a>
+            }
+            else if (daDangNhap)
+            {
+                <div class="ytv-dropdown-title">Tài khoản</div>
+                <a href="/DangNhap/DiTiep?returnUrl=ho-so" role="menuitem">
+                    <i class="fas fa-user-md" aria-hidden="true"></i> Hồ sơ bệnh nhân
+                </a>
+                <a href="/DangNhap/DangXuat" role="menuitem" class="ytv-dropdown-thoat">
+                    <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Đăng xuất
+                </a>
+            }
+        </div>
+    </div>
 </div>
 
 <div class="ytv-main">
@@ -799,6 +910,35 @@
                         <a href="/Home/DangKyOnline/${toSlug(c.name)}" class="ytv-card-btn">Xem chi tiết</a>
                     </div>
                 </div>`).join("");
+        }
+    });
+
+    // Menu 3 gach — cung hanh vi voi trang "/": bam mo/dong, roi chuot ra thi
+    // dong, bam ra ngoai cung dong.
+    function toggleMenu() {
+        var menu = document.getElementById("dropdownMenu");
+        var btn = document.getElementById("menuBtn");
+        if (!menu) return;
+        var mo = menu.classList.toggle("open");
+        if (btn) btn.setAttribute("aria-expanded", mo ? "true" : "false");
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        var menuBtn = document.getElementById("menuBtn");
+        if (menuBtn) {
+            menuBtn.addEventListener("mouseleave", function () {
+                var menu = document.getElementById("dropdownMenu");
+                if (menu) menu.classList.remove("open");
+            });
+        }
+    });
+
+    window.addEventListener("click", function (event) {
+        if (!event.target.closest('#menuBtn')) {
+            var dropdowns = document.getElementsByClassName("ytv-dropdown");
+            for (var i = 0; i < dropdowns.length; i++) {
+                dropdowns[i].classList.remove('open');
+            }
         }
     });
 

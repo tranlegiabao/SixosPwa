@@ -76,14 +76,20 @@ chặn bằng một dấu ấn nằm trên **chính phiên**, không phải bằ
 `DM_BenhNhan` / `DM_BenhNhanCoSo` / `HT_TaiKhoan`. Vì vậy đường tự động đặt ở **controller** (`DiTiep`,
 `Login`) — nơi đọc được `User` và kiểm được dấu ấn — chứ **không** nới lỏng `ChonDichDenAsync`.
 
-### 5. `/` đã đăng nhập thì về `/benh-nhan`
+### 5. Mở nguội app mà đã đăng nhập thì về `/benh-nhan`
 
-`/` là `start_url` của PWA. Đã đăng nhập **và có claim `Cccd`** thì chuyển thẳng `/benh-nhan`.
-Vế claim là bắt buộc: khu Admin ký **cả hai** cookie nên admin cũng tính là đã xác thực, nhưng họ không
-có `Cccd`/`MaCoSo` — đẩy họ sang trang bệnh nhân là ra trang rỗng không biết chào ai.
+`/` là `start_url` của PWA. **Mở nguội** (khởi động lại app từ biểu tượng, vào bằng bookmark, gõ thẳng
+URL) mà đã đăng nhập **và có claim `Cccd`** thì chuyển thẳng `/benh-nhan`. Vế claim là bắt buộc: khu
+Admin ký **cả hai** cookie nên admin cũng tính là đã xác thực, nhưng họ không có `Cccd`/`MaCoSo` — đẩy
+họ sang trang bệnh nhân là ra trang rỗng không biết chào ai.
+
+🔴 Chỉ đẩy khi **mở nguội**, đo bằng Referer không cùng host — đúng phép thử mà "PWA Last Page Restore"
+trong `_Layout` dùng. Bấm **trong app** tới `/` (ví dụ nút logo ở header trang danh sách cơ sở) thì có
+Referer cùng host, phải render `/` bình thường — nếu không, trang công khai thành không bao giờ xem lại
+được khi đã đăng nhập.
 
 Kèm theo, trang bệnh nhân mọc một **logo bấm được** trỏ tới danh sách cơ sở cùng nhóm. Không trỏ `/`:
-trỏ `/` là nút chết, vì `/` sẽ đẩy ngược về đây.
+lối ra khỏi `/benh-nhan` phải là danh sách cơ sở, còn từ danh sách cơ sở bấm logo mới về `/`.
 
 ## Vì sao không chọn cách khác
 
@@ -104,8 +110,9 @@ không chỉ cơ sở đối tác. Để riêng một đợt.
 - **Nhánh `CoBanGiao && !DungManDoiTac` chưa siết.** Đó là chỗ dành cho đối tác tương lai, mật khẩu do máy
   sinh, và **hiện không cơ sở nào chạy**. Siết luôn ở đó là gãy một đường không ai đi mà chẳng được lợi gì.
   Khi có đối tác thứ hai, phải xét lại mục này trước.
-- **"PWA Last Page Restore" hết tác dụng với bệnh nhân đã đăng nhập.** Vì `/` chuyển hướng phía máy chủ
-  nên trang `/` không bao giờ render, mà `/benh-nhan` để `Layout = null` nên không nạp đoạn script đó.
-  Đây là hành vi được yêu cầu, không phải lỗi — đừng "sửa" mà không đọc dòng này.
+- **"PWA Last Page Restore" chỉ còn chạy khi bấm trong app.** Mở nguội `/` mà đã đăng nhập thì chuyển
+  hướng phía máy chủ về `/benh-nhan` trước khi script kịp chạy — đây là hành vi được yêu cầu. Bấm trong
+  app tới `/` thì `/` render và script đó chạy bình thường. Đừng "sửa" chỗ chuyển hướng mà không đọc
+  dòng này.
 - **Mỗi lần vào là một lượt gọi sang đối tác.** Đối tác chết thì bệnh nhân không đi thẳng được, nhưng sẽ
   đọc được câu báo sự cố đúng nghĩa thay vì rơi xuống một trang trắng bên kia.
