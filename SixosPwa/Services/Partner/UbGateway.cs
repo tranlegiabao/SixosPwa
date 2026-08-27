@@ -293,7 +293,7 @@ public class UbGateway : IPartnerGateway
                 _logger.LogWarning(
                     "Goi {DuongDan}: HTTP {StatusCode} nhung than khong phai JSON co statusCode. Than: {Than}",
                     duongDan, phanHoi.StatusCode, CatBotThan(chuoi));
-                return new KetQuaThaoTac(false, ThongBaoSuCo);
+                return new KetQuaThaoTac(false, ThongBaoSuCo, DoiTacHong: true);
             }
 
             if (ma != 200 || !phanHoi.IsSuccessStatusCode)
@@ -308,7 +308,7 @@ public class UbGateway : IPartnerGateway
         catch (Exception ex)
         {
             _logger.LogError(ex, "Loi khi goi {DuongDan} ben doi tac", duongDan);
-            return new KetQuaThaoTac(false, "Không kết nối được tới cơ sở, vui lòng thử lại");
+            return new KetQuaThaoTac(false, "Không kết nối được tới cơ sở, vui lòng thử lại", DoiTacHong: true);
         }
     }
 

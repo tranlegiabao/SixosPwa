@@ -32,6 +32,13 @@ public interface ILuongCongBenhNhan
     /// <summary>Man Dang nhap kieu doi tac: doi tac kiem mat khau, ta tao ho so + cho dich Ban giao.</summary>
     Task<KetQuaBuoc> DangNhapDoiTacAsync(string maCoSo, string cccd, string matKhau, string? returnUrl = null, CancellationToken ct = default);
 
+    /// <summary>
+    /// Phien SixosPwa con song: dang nhap lai ho benh nhan bang mat khau DA CAT,
+    /// de ho khong phai go CCCD + mat khau lan nua. Van hoi doi tac that su —
+    /// mat khau cat o day co the da cu (benh nhan doi ben trang cua ho). ADR 0016.
+    /// </summary>
+    Task<KetQuaBuoc> DangNhapLaiBangMatKhauDaCatAsync(string maCoSo, string cccd, string? returnUrl = null, CancellationToken ct = default);
+
     /// <summary>Buoc 1 man Dang ky kieu doi tac: xin doi tac mo tai khoan va tu gui ma xac thuc (SMS).</summary>
     Task<KetQuaThaoTac> DangKyDoiTacAsync(string maCoSo, string cccd, string dienThoai, string? email, string matKhau, int kenh, CancellationToken ct = default);
 
@@ -52,7 +59,8 @@ public interface ILuongCongBenhNhan
 }
 
 /// <summary>Ket qua mot buoc co dich den ke tiep.</summary>
-public record KetQuaBuoc(bool ThanhCong, string ThongBao, string? DichDen);
+/// <param name="DoiTacHong">Chuyen tiep tu <see cref="KetQuaThaoTac.DoiTacHong"/> — xem chu thich o do.</param>
+public record KetQuaBuoc(bool ThanhCong, string ThongBao, string? DichDen, bool DoiTacHong = false);
 
 public class LuongCongBenhNhan : ILuongCongBenhNhan
 {
@@ -61,6 +69,18 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
 
     /// <summary>Claim giu ma co so benh nhan dang dung trong phien.</summary>
     public const string ClaimMaCoSo = "MaCoSo";
+
+    /// <summary>
+    /// Dau an: phien nay do CHINH doi tac xac thuc (mat khau that hoac ma SMS cua
+    /// ho), khong phai OTP cua SixosPwa. Chi CapPhienBenhNhanAsync dong dau nay.
+    ///
+    /// 🔴 Day la thu duy nhat phan biet mot phien THAT voi mot phien duc tu
+    /// XacNhanOtp — action do goi tran duoc, ma OTP con dang ke tam mot gia tri co
+    /// dinh, va ca Cccd lan MaCoSo deu lay thang tu than request. Thieu dau an nay
+    /// thi ai biet CCCD cua nguoi khac cung mo duoc man Ban giao va doc duoc mat
+    /// khau that cua ho. Xem ADR 0016.
+    /// </summary>
+    public const string ClaimDoiTacXacThuc = "DoiTacXacThuc";
 
     /// <summary>
     /// Do dai mat khau sinh cho he doi tac. Ben ho bat TOI THIEU 6 ky tu
@@ -276,11 +296,67 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
         var ketQua = await coSo.Cua.DangNhapAsync(coSo.CauHinh, cccd, matKhau, ct);
         if (!ketQua.ThanhCong)
         {
-            return new KetQuaBuoc(false, ketQua.ThongBao, null);
+            return new KetQuaBuoc(false, ketQua.ThongBao, null, ketQua.DoiTacHong);
         }
 
         return new KetQuaBuoc(true, ketQua.ThongBao,
             await GhiHoSoRoiChoBanGiaoAsync(maCoSo, cccd, matKhau, returnUrl, ct));
+    }
+
+    /// <summary>
+    /// Duong "khoi go lai": phien con song va DA CO dau an cua doi tac, nen ta lay
+    /// mat khau da cat ra dang nhap ho.
+    ///
+    /// KHONG tu quyet dung/sai o day — van goi DangNhapDoiTacAsync nhu duong go tay,
+    /// vi mat khau cat trong HT_TaiKhoanDoiTac co the da cu: benh nhan doi mat khau
+    /// TREN TRANG CUA DOI TAC (ke ca qua Quen mat khau — HT_QuenMatKhauServices dung
+    /// {request.Host} nen duong dan dat lai luon tro ve ben ho) ma SixosPwa khong he
+    /// hay biet. Doi tac tu phan xu, ta chi dua cau tra loi cua ho ra man hinh.
+    ///
+    /// Goi LoginAsync ben ho la an toan: do la truy van doc thuan, khong dem lan sai
+    /// va khong khoa tai khoan.
+    /// </summary>
+    public async Task<KetQuaBuoc> DangNhapLaiBangMatKhauDaCatAsync(string maCoSo, string cccd, string? returnUrl = null, CancellationToken ct = default)
+    {
+        // Hai guard nay chay TRUOC va tra cau cua chinh chung, khong duoc de roi
+        // xuong khoi viet de o duoi: "co so dang tam ngung" ma bao thanh "mat khau
+        // da thay doi" thi benh nhan ngoi doi mat khau ca buoi vo ich.
+        var coSo = await LayCuaDoiTacAsync(maCoSo, ct);
+        if (coSo is null)
+        {
+            return new KetQuaBuoc(false, "Cơ sở này không dùng tài khoản của đối tác", null);
+        }
+
+        if (!await CoSoDangHienThiAsync(maCoSo, ct))
+        {
+            return new KetQuaBuoc(false, "Cơ sở này đang tạm ngưng tiếp nhận đăng ký trực tuyến.", null);
+        }
+
+        var taiKhoan = await TimTaiKhoanAsync(cccd, ct);
+        var lienKet = taiKhoan is null ? null : await TimLienKetAsync(taiKhoan.Id, maCoSo, ct);
+
+        // Chua tung ban giao tu may nay thi khong co gi de dung lai — de benh nhan
+        // go nhu binh thuong, khong bia mat khau.
+        if (lienKet is null || string.IsNullOrWhiteSpace(lienKet.MatKhau))
+        {
+            return new KetQuaBuoc(false, "Vui lòng đăng nhập để tiếp tục.", null);
+        }
+
+        var ketQua = await DangNhapDoiTacAsync(maCoSo, cccd, lienKet.MatKhau, returnUrl, ct);
+
+        // Toi day thi chi con hai kha nang: doi tac tu choi MAT KHAU CU, hoac doi
+        // tac hong. Benh nhan khong go gi ca, nen cau "Thong tin dang nhap khong
+        // chinh xac" cua ho doc len la vo nghia — phai noi ro vi sao tu nhien lai
+        // hien man dang nhap. Doi tac hong thi giu NGUYEN VAN cau cua ho (ADR 0015).
+        if (!ketQua.ThanhCong && !ketQua.DoiTacHong)
+        {
+            return ketQua with
+            {
+                ThongBao = "Mật khẩu của bạn tại cơ sở đã thay đổi, vui lòng đăng nhập lại."
+            };
+        }
+
+        return ketQua;
     }
 
     public async Task<KetQuaThaoTac> DangKyDoiTacAsync(string maCoSo, string cccd, string dienThoai, string? email, string matKhau, int kenh, CancellationToken ct = default)

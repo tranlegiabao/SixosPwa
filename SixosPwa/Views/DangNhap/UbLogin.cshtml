@@ -636,6 +636,18 @@
 
             <div id="idLogin" style="min-height: 324px;">
                 <div class="card-body">
+                    @* Benh nhan vua bam MOT nut o trang co so va mong duoc vao thang
+                       (ADR 0016). Ra toi day nghia la khong tu vao duoc — phai noi
+                       ro vi sao, khong de ho doan. Hai cau co the roi vao day:
+                       mat khau ben co so da doi, hoac chinh co so dang hong. *@
+                    @if (!string.IsNullOrWhiteSpace(ViewBag.LoiDangNhapLai as string))
+                    {
+                        @* Khong dung icon Font Awesome o day: man nay KHONG nap FA
+                           (chi _Layout nap tu CDN), gan vao la ra mot o trong. *@
+                        <div class="alert alert-warning mb-3" role="alert">
+                            @ViewBag.LoiDangNhapLai
+                        </div>
+                    }
                     <form id="login_formLogin">
                         <div class="row g-3">
                             <div class="col-12">

@@ -146,9 +146,21 @@ _Tránh_: mã bệnh nhân toàn hệ, ID bệnh nhân
 _Tránh_: mật khẩu (chung chung — dễ lẫn với *Mật khẩu đối tác*)
 
 **Mật khẩu đối tác**:
-`HT_TaiKhoanDoiTac.MatKhau` — do máy sinh, dùng để POST nguyên văn sang hệ đối tác lúc bàn giao. **Cố ý
-không băm**, bắt buộc theo ADR 0005. Không bao giờ dùng để đăng nhập vào SixosPwa.
-_Tránh_: mật khẩu, mật khẩu UB
+`HT_TaiKhoanDoiTac.MatKhau` — dùng để POST nguyên văn sang hệ đối tác lúc bàn giao. **Cố ý không băm**,
+bắt buộc theo ADR 0005. Không bao giờ dùng để đăng nhập vào SixosPwa. 🔴 **Ai đặt ra nó thì tuỳ cơ sở,
+đừng nói "do máy sinh"**: ở cơ sở đi theo ADR 0014 (hiện là Ung Bướu) cột này giữ **mật khẩu THẬT do
+chính bệnh nhân gõ**; `SinhMatKhauChoDoiTac()` chỉ còn chạy ở nhánh đối tác-tương-lai, mà **hiện không
+cơ sở nào đi qua nhánh đó**. Khác biệt này quyết định mức thiệt hại: mật khẩu máy sinh mà lộ thì mất
+đúng một tài khoản, còn mật khẩu bệnh nhân tự đặt mà lộ thì mất cả những nơi họ dùng lại nó — đó là lý
+do *Bàn giao* phải đòi *Phiên đã được cơ sở xác thực* (ADR 0016).
+_Tránh_: mật khẩu, mật khẩu UB, "mật khẩu máy sinh"
+
+**Phiên đã được cơ sở xác thực**:
+Phiên SixosPwa mang claim `DoiTacXacThuc` — đóng khi và chỉ khi **chính đối tác** vừa phán mật khẩu thật
+hoặc mã xác thực của họ là đúng. Phân biệt hẳn với **phiên đã đăng nhập** (chỉ cần qua `[Authorize]`,
+và đúc được từ đường OTP). Chỉ phiên loại này mới được *Bàn giao* — vì bàn giao là đưa ra mật khẩu thật
+của bệnh nhân. Xem ADR 0016.
+_Tránh_: phiên hợp lệ, đã đăng nhập, đã xác thực (trần), authenticated
 
 **Đối tác**:
 Một dòng `DM_DoiTac` — một **tổ chức**, mang `BrandName` để gửi SMS. Từ 2026-08-25 một đối tác quản
@@ -208,3 +220,4 @@ _Tránh_: ảnh thừa, ảnh rác, file cũ
 - [0013](docs/adr/0013-active-la-cong-hien-thi-duy-nhat.md) — vì sao `Active` là cổng hiển thị duy nhất và `XacMinh` bị xoá.
 - [0014](docs/adr/0014-co-so-ub-dung-man-cua-khach.md) — vì sao cơ sở Ung Bướu dùng bộ màn của khách thay vì OTP của SixosPwa.
 - [0015](docs/adr/0015-phan-hoi-doi-tac-phai-co-statuscode-200.md) — vì sao phản hồi của đối tác chỉ tính là thành công khi mang `statusCode == 200`.
+- [0016](docs/adr/0016-phien-con-song-di-thang-va-dau-an-doi-tac.md) — vì sao phiên còn sống thì đi thẳng, và vì sao bàn giao đòi dấu ấn của đối tác chứ không chỉ `[Authorize]`.
