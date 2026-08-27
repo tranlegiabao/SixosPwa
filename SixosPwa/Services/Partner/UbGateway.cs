@@ -66,6 +66,14 @@ public class UbGateway : IPartnerGateway
     /// <summary>Kenh benh nhan chon; khong nhan ra thi ve SMS cho chac.</summary>
     private static int ChonKenh(int kenh) => kenh == KenhZalo ? KenhZalo : KenhSms;
 
+    /// <summary>
+    /// Cau bao khi CHINH he doi tac dang hong (tra ve trang loi HTML, trang dang
+    /// nhap, cong chan giua...). Tach HAN khoi cac cau tu choi nghiep vu kieu
+    /// "CCCD da duoc dung" / "sai mat khau": benh nhan doc cau nay thi biet la cho
+    /// roi thu lai, chu khong ngoi sua ho so cua minh mot cach vo ich.
+    /// </summary>
+    private const string ThongBaoSuCo = "Hệ thống của cơ sở đang gặp sự cố, vui lòng thử lại sau";
+
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<UbGateway> _logger;
 
@@ -255,6 +263,17 @@ public class UbGateway : IPartnerGateway
         return await GuiAsync(cauHinh, duongDan, noiDung, thongBaoDat, thongBaoHong, ct);
     }
 
+    /// <summary>
+    /// 🔴 LUAT PHAN LOAI (ADR 0015). CHI coi la thanh cong khi than tra ve parse
+    /// duoc thanh JSON object, CO truong statusCode, VA statusCode == 200. Da soat
+    /// ca bon cua ta goi — login, register, XacThucMaXacNhan, QuenMatKhau — tat ca
+    /// deu luon tra { statusCode, message }, ke ca luc thanh cong.
+    ///
+    /// Truoc khi co luat nay, mot trang HTML tra kem HTTP 200 (vi du 302 dan ve man
+    /// dang nhap roi HttpClient tu di theo) LOT QUA THANH CONG: benh nhan thay "Da
+    /// gui ma xac thuc" trong khi doi tac khong tao gi, con ta van ghi ho so noi bo
+    /// cho mot tai khoan khong ton tai ben ho.
+    /// </summary>
     private async Task<KetQuaThaoTac> GuiAsync(DoiTacApi cauHinh, string duongDan, HttpContent noiDung,
         string thongBaoDat, string thongBaoHong, CancellationToken ct)
     {
@@ -265,15 +284,22 @@ public class UbGateway : IPartnerGateway
             using var phanHoi = await client.PostAsync(url, noiDung, ct);
             var chuoi = await phanHoi.Content.ReadAsStringAsync(ct);
 
-            if (!phanHoi.IsSuccessStatusCode)
+            var ma = DocMaTrangThai(chuoi);
+
+            // Khong doc noi statusCode ⇒ ben kia dang hong, KHONG phai benh nhan sai.
+            // Muon cau tu choi nghiep vu de bao o day la noi doi voi benh nhan.
+            if (ma is null)
             {
-                _logger.LogWarning("Goi {DuongDan} tra ve {StatusCode}: {Than}", duongDan, phanHoi.StatusCode, chuoi);
-                return new KetQuaThaoTac(false, DocThongBao(chuoi) ?? thongBaoHong);
+                _logger.LogWarning(
+                    "Goi {DuongDan}: HTTP {StatusCode} nhung than khong phai JSON co statusCode. Than: {Than}",
+                    duongDan, phanHoi.StatusCode, CatBotThan(chuoi));
+                return new KetQuaThaoTac(false, ThongBaoSuCo);
             }
 
-            // Doi tac tra { statusCode, message } ngay ca khi HTTP 200 — phai doc them.
-            if (DocMaTrangThai(chuoi) is int ma && ma != 200)
+            if (ma != 200 || !phanHoi.IsSuccessStatusCode)
             {
+                _logger.LogWarning("Goi {DuongDan}: HTTP {StatusCode}, statusCode {Ma}. Than: {Than}",
+                    duongDan, phanHoi.StatusCode, ma, CatBotThan(chuoi));
                 return new KetQuaThaoTac(false, DocThongBao(chuoi) ?? thongBaoHong);
             }
 
@@ -284,6 +310,13 @@ public class UbGateway : IPartnerGateway
             _logger.LogError(ex, "Loi khi goi {DuongDan} ben doi tac", duongDan);
             return new KetQuaThaoTac(false, "Không kết nối được tới cơ sở, vui lòng thử lại");
         }
+    }
+
+    /// <summary>Cat bot than cho log — doi tac hong thi tra ca trang HTML vai chuc KB.</summary>
+    private static string CatBotThan(string chuoi)
+    {
+        if (string.IsNullOrEmpty(chuoi)) return "<rong>";
+        return chuoi.Length <= 300 ? chuoi : chuoi.Substring(0, 300) + $"... (tong {chuoi.Length} ky tu)";
     }
 
     private HttpClient TaoClient()
@@ -307,7 +340,11 @@ public class UbGateway : IPartnerGateway
     private static string CatDauGach(string? duongDan)
         => (duongDan ?? string.Empty).TrimEnd('/');
 
-    /// <summary>Lay statusCode trong than phan hoi; null neu doi tac khong tra truong do.</summary>
+    /// <summary>
+    /// Lay statusCode trong than phan hoi; null neu than khong phai JSON object hoac
+    /// khong co truong do. GuiAsync dung chinh gia tri null nay lam DAU HIEU "ben kia
+    /// dang hong" — doi y nghia ham nay la doi luon luat phan loai, doc ADR 0015 truoc.
+    /// </summary>
     private static int? DocMaTrangThai(string chuoiJson)
     {
         try
@@ -344,7 +381,12 @@ public class UbGateway : IPartnerGateway
             {
                 if (tep.RootElement.TryGetProperty(ten, out var m) && m.ValueKind == JsonValueKind.String)
                 {
-                    return m.GetString();
+                    var thongBao = m.GetString();
+
+                    // Chuoi rong KHONG phai mot thong bao. Tra "" ra ngoai thi toan
+                    // tu ?? cua ben goi khong bat duoc (no chi bat null) va benh nhan
+                    // se thay mot cai toast trong khong.
+                    if (!string.IsNullOrWhiteSpace(thongBao)) return thongBao;
                 }
             }
         }
