@@ -32,8 +32,10 @@
 
     <main class="auth">
         <div class="auth__brand">
-            <img src="~/static/icon-192.png" alt="HisSoft" width="72" height="72" />
-            <h1>HisSoft</h1>
+            <a href="@(string.IsNullOrWhiteSpace(ViewBag.SlugCoSo as string) ? "/" : $"/DangKyOnline/{ViewBag.SlugCoSo}")" class="text-decoration-none text-reset d-inline-block" title="Quay lại @(ViewBag.TenCoSo ?? "Trang chủ")">
+                <img src="@(ViewBag.LogoCoSo ?? "/static/icon-192.png")" alt="@(ViewBag.TenCoSo ?? "HisSoft")" width="72" height="72" />
+                <h1>@(ViewBag.TenCoSo ?? "HisSoft")</h1>
+            </a>
         </div>
 
         <div class="card auth__card">

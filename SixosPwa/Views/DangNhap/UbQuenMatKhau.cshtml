@@ -978,9 +978,9 @@
                    cung gradient bang media query de gia lam mot khoi — do la nguon cua
                    khoang trong lon va cua viec logo lech trai. *@
                 <div class="card-header ub-header">
-                    <div class="ub-header__logo">
+                    <a href="@(string.IsNullOrWhiteSpace(ViewBag.SlugCoSo as string) ? "/" : $"/DangKyOnline/{ViewBag.SlugCoSo}")" class="ub-header__logo" title="Quay lại @ViewBag.TenCoSo">
                         <img src="@(ViewBag.LogoCoSo ?? "/static/icon-192.png")" alt="@ViewBag.TenCoSo">
-                    </div>
+                    </a>
                     <div class="ub-header__ten">@ViewBag.TenCoSo</div>
                     <h2 class="ub-header__tieude">QUÊN MẬT KHẨU</h2>
                 </div>

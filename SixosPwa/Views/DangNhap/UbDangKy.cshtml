@@ -541,7 +541,9 @@ width: 70px;
 {
     <div class="ub-panel col-lg-7 d-none d-lg-flex flex-column">
         <div class="ub-panel__dau">
-            <img src="@(trangChuUb)/Image/Logo_DangNhap.png" alt="@ViewBag.TenCoSo" class="ub-panel__logo">
+            <a href="@(string.IsNullOrWhiteSpace(ViewBag.SlugCoSo as string) ? "/" : $"/DangKyOnline/{ViewBag.SlugCoSo}")" title="Quay lại @ViewBag.TenCoSo">
+                <img src="@(trangChuUb)/Image/Logo_DangNhap.png" alt="@ViewBag.TenCoSo" class="ub-panel__logo">
+            </a>
             @if (!string.IsNullOrWhiteSpace(hotline))
             {
                 <div class="ub-panel__hotline">TỔNG ĐÀI TƯ VẤN: <span class="fw-bold">@hotline</span></div>
@@ -606,8 +608,10 @@ width: 70px;
             id="registrationCol">
             <div class="w-100">
                 @* Cung khuon voi man Dang nhap: khung tron che vien vuong cua anh goc. *@
-                <div class="ub-logo mb-3">
-                    <img src="@(ViewBag.LogoCoSo ?? "/static/icon-192.png")" alt="@ViewBag.TenCoSo">
+                <div class="mb-3 text-center">
+                    <a href="@(string.IsNullOrWhiteSpace(ViewBag.SlugCoSo as string) ? "/" : $"/DangKyOnline/{ViewBag.SlugCoSo}")" class="ub-logo" title="Quay lại @ViewBag.TenCoSo">
+                        <img src="@(ViewBag.LogoCoSo ?? "/static/icon-192.png")" alt="@ViewBag.TenCoSo">
+                    </a>
                 </div>
                 <h2 class="text-center fw-bold">Tạo tài khoản UNGBUOU để truy cập vào tất cả các dịch vụ của UNGBUOU
                 </h2>
@@ -750,8 +754,10 @@ width: 70px;
         <div class="col-12 p-3 d-none" id="otpCol">
             <div class="h-100 d-flex justify-content-center">
                 <div class="w-75 text-center">
-                    <img src="@(ViewBag.LogoCoSo ?? "/static/icon-192.png")"
-                        alt="UNGBUOU logo" class="d-block mx-auto mb-3" style="max-width: 50px;">
+                    <a href="@(string.IsNullOrWhiteSpace(ViewBag.SlugCoSo as string) ? "/" : $"/DangKyOnline/{ViewBag.SlugCoSo}")" class="ub-logo mb-3" title="Quay lại @ViewBag.TenCoSo">
+                        <img src="@(ViewBag.LogoCoSo ?? "/static/icon-192.png")"
+                            alt="UNGBUOU logo">
+                    </a>
                     <h2 class="text-center fw-bold mb-4">Tạo tài khoản UNGBUOU để truy cập vào tất cả các dịch vụ của
                         UNGBUOU</h2>
                     <h1 class="text-center mb-md-8 mt-md-10 fw-bold mb-4 mt-5">XÁC THỰC TÀI KHOẢN</h1>
