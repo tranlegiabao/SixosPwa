@@ -17,7 +17,22 @@
 
     <main class="auth">
         <div class="auth__brand">
-            <img src="~/static/icon-192.png" alt="HisSoft" width="72" height="72" />
+            @*
+                Khuon lay tu Login.cshtml / DangKy.cshtml (nhanh "27"): logo la logo CUA CO SO
+                (ViewBag.LogoCoSo, do DoNguCanhRaViewBagAsync do vao), bam vao thi ve trang cong
+                cua chinh co so do.
+
+                Khac hai man kia mot cho co chu dich: the <a> o day chi boc ANH. Tieu de cua man
+                nay la loi trang thai ("Dang chuyen toi co so"), khong phai ten co so — ten co so
+                nam o the <p> ngay duoi — nen de no ngoai lien ket.
+
+                Lien ket nay con la LOI THOAT khi ban giao treo: view tu POST sang doi tac sau
+                600ms (xem khoi <script> cuoi trang), nen neu doi tac khong tra loi thi benh nhan
+                ket o man nay va can mot duong ve.
+            *@
+            <a href="@(string.IsNullOrWhiteSpace(ViewBag.SlugCoSo as string) ? "/" : $"/DangKyOnline/{ViewBag.SlugCoSo}")" class="text-decoration-none text-reset d-inline-block" title="Quay lại @(ViewBag.TenCoSo ?? "Trang chủ")">
+                <img src="@(ViewBag.LogoCoSo ?? "/static/icon-192.png")" alt="@(ViewBag.TenCoSo ?? "HisSoft")" width="72" height="72" />
+            </a>
             <h1>Đang chuyển tới cơ sở</h1>
             <p>@ViewBag.TenCoSo</p>
         </div>
