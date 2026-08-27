@@ -296,6 +296,225 @@
 </html>`;
     }
 
+    function getStaticPreviewTopic() {
+        var select = document.getElementById('cboChuDe');
+        var label = (select?.selectedOptions?.[0]?.textContent || '').trim().toLowerCase();
+
+        if (label.indexOf('dịch vụ') >= 0) return 'dichvu';
+        if (label.indexOf('đội ngũ') >= 0 || label.indexOf('bác sĩ') >= 0) return 'doingu';
+        if (label.indexOf('trang thiết bị') >= 0 || label.indexOf('thiết bị') >= 0) return 'trangthietbi';
+        if (label.indexOf('liên hệ') >= 0 || label.indexOf('liên lạc') >= 0) return 'lienhe';
+        return 'gioithieu';
+    }
+
+    function buildStaticDetailPreviewDocument(content) {
+        var tenCoSo = escapePreviewText(getFormValue('TenCoSo', 'Cơ sở y tế'));
+        var ngayLamViec = escapePreviewText(getFormValue('NgayLamViec', 'Thứ 2 - Chủ nhật'));
+        var gioMoCua = escapePreviewText(getFormValue('GioMoCua', '07:00'));
+        var gioDongCua = escapePreviewText(getFormValue('GioDongCua', '17:00'));
+        var activeTopic = getStaticPreviewTopic();
+        var topics = [
+            { key: 'gioithieu', id: 'gioi-thieu', icon: 'fa-info-circle', menu: 'Giới thiệu', title: 'Giới thiệu' },
+            { key: 'dichvu', id: 'dich-vu', icon: 'fa-stethoscope', menu: 'Dịch vụ', title: 'Dịch vụ khám chữa bệnh' },
+            { key: 'doingu', id: 'doi-ngu', icon: 'fa-user-md', menu: 'Đội ngũ y bác sĩ', title: 'Đội ngũ bác sĩ chuyên khoa' },
+            { key: 'trangthietbi', id: 'trang-thiet-bi', icon: 'fa-tools', menu: 'Các trang thiết bị', title: 'Trang thiết bị hiện đại' },
+            { key: 'lienhe', id: 'lien-he', icon: 'fa-headset', menu: 'Liên hệ', title: 'Chăm sóc & Hỗ trợ khách hàng' }
+        ];
+
+        var menuHtml = topics.map(function (topic) {
+            return '<a class="ytv-menu-item ' + (topic.key === activeTopic ? 'active' : '') + '" href="#' + topic.id + '">'
+                + '<i class="fas ' + topic.icon + '"></i> ' + topic.menu + '</a>';
+        }).join('');
+
+        var sectionsHtml = topics.map(function (topic) {
+            var sectionContent = topic.key === activeTopic ? (content || '') : '';
+            return '<div class="intro-section ' + (topic.key === activeTopic ? 'active-tab' : '') + '" id="' + topic.id + '">'
+                + '<div class="intro-content">'
+                + '<div class="intro-title"><i class="fas ' + topic.icon + '"></i> ' + topic.title + '</div>'
+                + (sectionContent ? '<div class="nd-cskcb-text">' + sectionContent + '</div>' : '')
+                + '</div></div>';
+        }).join('');
+
+        return `<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; }
+        :root { --ytv-primary: #1d4ed8; --ytv-secondary: #3b82f6; }
+        html, body { margin: 0; min-height: 100%; background: #fff; }
+        body { padding-top: 98px; padding-bottom: 198px; color: #1e293b; font-family: Inter, system-ui, sans-serif; overflow-wrap: anywhere; }
+        a { color: inherit; }
+        .ytv-header {
+            background: linear-gradient(135deg, #4285f4, #60a5fa); color: #fff; padding: 15px 30px;
+            display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(0,0,0,.1);
+            border-bottom: 3px solid var(--ytv-secondary); position: fixed; top: 0; left: 0; width: 100%; z-index: 1100;
+        }
+        .ytv-logo-area { display: flex; align-items: center; gap: 15px; text-decoration: none; color: #fff; }
+        .ytv-logo-area > img { width: 65px; height: 65px; object-fit: cover; background: #fff; border-radius: 50%; padding: 0; }
+        .ytv-logo-text { font-family: 'Times New Roman', serif; font-size: 34px; font-weight: 900; line-height: 1.05; letter-spacing: 1px; }
+        .ytv-header-title { text-align: center; flex-grow: 1; min-width: 0; }
+        .ytv-header-title h1 { margin: 0 0 5px; font-size: 26px; font-weight: 700; color: #fff; overflow-wrap: anywhere; }
+        .ytv-header-title p { margin: 0; font-size: 20px; opacity: .9; color: #fff; font-style: italic; }
+        .ytv-header-menu { padding: 10px; font-size: 32px; color: #fff; position: relative; }
+        .ytv-main { display: flex; width: 100%; min-height: calc(100vh - 184px); align-items: flex-start; padding-left: 250px; }
+        .ytv-sidebar {
+            width: 250px; flex-shrink: 0; background: #fff; border-right: 1px solid #e2e8f0; display: flex;
+            flex-direction: column; padding: 12px 0 0; position: fixed; top: 98px; left: 0; height: auto; overflow: visible; z-index: 100;
+        }
+        .sidebar-scroll-area { flex: none; overflow: visible; }
+        .ytv-menu-item {
+            display: flex; align-items: center; padding: 12px 16px; margin: 2px 16px; gap: 12px; color: #475569;
+            font-size: 18px; font-weight: 600; line-height: 1.3; text-decoration: none; border-radius: 10px;
+        }
+        .ytv-menu-item i { font-size: 20px; width: 24px; text-align: center; color: #64748b; }
+        .ytv-menu-item.active { background: #eff6ff; color: #1d4ed8; }
+        .ytv-menu-item.active i { color: #1d4ed8; }
+        .hospital-actions { padding: 4px 16px; display: flex; flex-direction: column; gap: 6px; flex: 0 0 auto; }
+        .btn-outline {
+            background: #fff; color: #1d4ed8; padding: 6px 10px; border-radius: 8px; font-weight: 600; font-size: 12px;
+            display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; border: 1.5px solid #1d4ed8;
+        }
+        .btn-outline.primary { background: #1d4ed8; color: aliceblue; }
+        .btn-outline.primary i { color: aliceblue; }
+        .operating-hours-box {
+            flex-shrink: 0; background: #f8fafc; border-radius: 12px; padding: 10px 12px; margin: 8px 16px 12px;
+            border: 1px solid #e2e8f0; box-shadow: inset 0 1px 2px rgba(0,0,0,.02);
+        }
+        .oh-header { display: flex; align-items: center; gap: 8px; color: #64748b; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+        .oh-header i { font-size: 14px; color: #94a3b8; }
+        .oh-days { font-size: 16px; color: #334155; font-weight: 600; white-space: nowrap; padding-left: 22px; }
+        .oh-time { font-size: 16px; color: #0f172a; font-weight: 700; white-space: nowrap; padding-left: 22px; }
+        .oh-status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #16a34a; font-weight: 700; background: #f0fdf4; padding: 4px 8px 4px 22px; border-radius: 20px; border: 1px solid #bbf7d0; }
+        .status-dot { width: 6px; height: 6px; background: #16a34a; border-radius: 50%; display: inline-block; }
+        .ytv-content { flex: 1; background: transparent; padding: 30px; display: flex; flex-direction: column; gap: 24px; min-width: 0; max-width: none; margin: 0; }
+        .intro-section {
+            width: 100%; min-width: 0; background: transparent; border-radius: 16px; padding: 32px; display: none;
+            justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,.2); box-shadow: 0 4px 20px rgba(0,0,0,.08);
+        }
+        .intro-section.active-tab { display: flex; }
+        .intro-content { flex: 1; width: 100%; max-width: 100%; min-width: 0; }
+        .intro-title { display: flex; align-items: center; gap: 10px; font-size: 24px; font-weight: 700; color: #38bdf8; margin-bottom: 20px; }
+        .intro-content p { color: #334155; line-height: 1.8; font-size: 17px; margin-bottom: 16px; }
+        .nd-cskcb-text { color: #000; line-height: 1.8; font-size: 17px; width: 100%; max-width: 100%; overflow-x: auto; overflow-wrap: anywhere; word-break: break-word; }
+        .nd-cskcb-text img { max-width: 100%; height: auto; }
+        .nd-cskcb-text table { width: 100%; max-width: 100%; border-collapse: collapse; margin: 12px 0 18px; table-layout: auto; }
+        .nd-cskcb-text th, .nd-cskcb-text td { border: 1px solid #94a3b8; padding: 8px 10px; vertical-align: top; min-width: 48px; }
+        .nd-cskcb-text th { background: #f1f5f9; font-weight: 700; }
+        .stats-footer-bar {
+            background: #fff; border: 0; position: fixed; bottom: 82px; left: 250px; width: calc(100% - 250px); z-index: 999;
+            padding: 6px 30px; box-sizing: border-box; pointer-events: none;
+        }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; max-width: 1200px; margin: 0 auto; }
+        .stat-card { background: #f8fafc; border-radius: 10px; padding: 2px 12px; display: flex; align-items: center; gap: 10px; border: 1px solid #f1f5f9; }
+        .stat-icon { width: 36px; height: 36px; font-size: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .stat-icon.blue { background: #eff6ff; color: #3b82f6; } .stat-icon.green { background: #f0fdf4; color: #22c55e; }
+        .stat-icon.purple { background: #faf5ff; color: #a855f7; } .stat-icon.orange { background: #fff7ed; color: #f97316; }
+        .stat-card-blue { background: #eff6ff; border-color: #dbeafe; } .stat-card-green { background: #f0fdf4; border-color: #dcfce7; }
+        .stat-card-purple { background: #faf5ff; border-color: #f3e8ff; } .stat-card-orange { background: #fff7ed; border-color: #ffedd5; }
+        .stat-info { display: flex; flex-direction: column; line-height: 1.1; }
+        .stat-info .value { margin: 0; font-size: 15px; font-weight: 700; color: #1d4ed8; }
+        .stat-info .title { color: #334155; font-size: 12px; font-weight: 600; margin: 2px 0 1px; }
+        .stat-info .desc { color: #64748b; font-size: 10px; margin: 0; }
+        .stat-card-green .value { color: #16a34a; } .stat-card-purple .value { color: #9333ea; } .stat-card-orange .value { color: #ea580c; }
+        .ytv-footer.ctc, .ytv-footer.ctc * { box-sizing: border-box; }
+        .ytv-footer.ctc {
+            position: fixed; left: 0; right: 0; bottom: 0; z-index: 1000; display: flex; flex-direction: column; gap: 6px;
+            margin: 0; background: #e0f2fe; color: #334155; border-top: 4px solid #1d4ed8; padding: 14px 30px; max-width: none;
+            align-items: center;
+        }
+        .ytv-footer.ctc a { color: inherit; text-decoration: none; }
+        .fb2-top { display: flex; align-items: center; justify-content: center; gap: 26px; flex-wrap: wrap; }
+        .fb2-call { display: flex; align-items: center; gap: 9px; font-size: 17px; font-weight: 800; color: #0b4ea2; white-space: nowrap; }
+        .fb2-call i { font-size: 20px; }
+        .fb2-ic { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: #0b4ea2; }
+        .fb2-pol { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; width: auto; font-size: 14px; gap: 6px 12px; }
+        .fb2-pol a { color: #0f172a; }
+        .fb2-pol .sep { color: #94a3b8; }
+        @media (max-width: 992px) {
+            body { padding-top: 62px; padding-bottom: 104px; overflow-x: hidden; }
+            .ytv-header { min-height: 62px; padding: 8px 16px; }
+            .ytv-logo-area { gap: 8px; min-width: 0; } .ytv-logo-area > img { width: 40px; height: 40px; }
+            .ytv-logo-text { font-size: 20px; line-height: 1; }
+            .ytv-header-title { min-width: 0; padding: 0 8px; }
+            .ytv-header-title h1 { font-size: clamp(14px, 3.5vw, 18px); line-height: 1.2; }
+            .ytv-header-title p { font-size: 11px; margin-top: 2px; }
+            .ytv-header-menu { flex-shrink: 0; font-size: 22px; }
+            .ytv-main { flex-direction: column; padding-left: 0; min-height: auto; }
+            .ytv-sidebar { position: relative; top: 0; left: 0; width: 100%; padding: 10px 16px; border-right: 0; border-bottom: 1px solid #e2e8f0; }
+            .sidebar-scroll-area { max-height: none; overflow-y: visible; }
+            .ytv-menu-item { margin: 0; padding: 12px 16px; border-radius: 8px; white-space: nowrap; }
+            .hospital-actions { padding: 0; margin: 0; }
+            .hospital-actions .btn-outline { width: 100%; }
+            .operating-hours-box { width: 100%; margin: 0; padding: 10px 16px; }
+            .oh-header { margin-bottom: 4px; } .oh-days, .oh-time { font-size: 14px; } .oh-time { margin-bottom: 4px; }
+            .ytv-content { width: 100%; max-width: none; min-height: calc(100vh - 98px); padding: 16px; gap: 16px; }
+            .intro-section { padding: 20px; } .intro-title { font-size: 20px; line-height: 1.3; margin-bottom: 14px; }
+            .intro-content .nd-cskcb-text { font-size: 15px; line-height: 1.65; }
+            .stats-footer-bar { position: relative; inset: auto; width: 100%; padding: 0 16px 12px; background: transparent; pointer-events: auto; }
+            .stats-grid { width: 100%; max-width: none; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+            .stat-card { min-width: 0; padding: 10px; gap: 8px; background: #f8fafc; border: 1px solid #e2e8f0; }
+        }
+        @media (max-width: 576px) {
+            .ytv-header { padding-left: 10px; padding-right: 10px; }
+            .ytv-logo-text { font-size: 17px; } .ytv-header-title h1 { font-size: 14px; } .ytv-header-title p { display: none; }
+            .ytv-content { padding: 12px; } .intro-section { padding: 16px; }
+            .stats-footer-bar { padding-left: 12px; padding-right: 12px; } .stats-grid { grid-template-columns: 1fr; }
+            .stat-card { padding: 8px; } .stat-icon { width: 30px; height: 30px; font-size: 14px; }
+            .stat-info .value { font-size: 14px; } .stat-info .title { font-size: 11px; } .stat-info .desc { font-size: 9px; }
+        }
+        @media (max-width: 767.98px) {
+            .ytv-footer.ctc { align-items: stretch; gap: 6px; padding: 9px 12px; }
+            .fb2-top { gap: 0; }
+            .fb2-call { justify-content: center; width: 100%; font-size: 16px; gap: 7px; }
+            .fb2-call i { font-size: 17px; }
+            .fb2-ic, .fb2-pol .sep { display: none; }
+            .fb2-pol { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; width: 100%; font-size: 13px; line-height: 1.25; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="ytv-header">
+        <div class="ytv-logo-area"><img src="/static/icon-512.png" alt="Logo"><div class="ytv-logo-text">Y TẾ<br>VIỆT</div></div>
+        <div class="ytv-header-title"><h1>${tenCoSo}</h1><p>Hotline: 19008198</p></div>
+        <div class="ytv-header-menu"><i class="fas fa-bars"></i></div>
+    </div>
+    <div class="ytv-main">
+        <div class="ytv-sidebar">
+            <div class="sidebar-scroll-area">${menuHtml}</div>
+            <div class="hospital-actions">
+                <span class="btn-outline primary"><i class="fas fa-sign-in-alt"></i> Đăng ký khám</span>
+                <span class="btn-outline"><i class="fas fa-sign-in-alt"></i> Đăng nhập</span>
+            </div>
+            <div class="operating-hours-box">
+                <div class="oh-header"><i class="far fa-clock"></i> Giờ hoạt động</div>
+                <div class="oh-days">${ngayLamViec}</div>
+                <div class="oh-time">${gioMoCua} - ${gioDongCua}</div>
+                <div class="oh-status"><span class="status-dot"></span> Đang mở cửa</div>
+            </div>
+        </div>
+        <div class="ytv-content">${sectionsHtml}</div>
+    </div>
+    <div class="stats-footer-bar"><div class="stats-grid">
+        <div class="stat-card stat-card-blue"><div class="stat-icon blue"><i class="fas fa-headset"></i></div><div class="stat-info"><div class="value">24/7</div><div class="title">Hỗ trợ</div><div class="desc">Luôn sẵn sàng</div></div></div>
+        <div class="stat-card stat-card-green"><div class="stat-icon green"><i class="far fa-star"></i></div><div class="stat-info"><div class="value">4.8/5</div><div class="title">Đánh giá</div><div class="desc">Từ 1.248 khách hàng</div></div></div>
+        <div class="stat-card stat-card-purple"><div class="stat-icon purple"><i class="fas fa-user-friends"></i></div><div class="stat-info"><div class="value">50+</div><div class="title">Bác sĩ</div><div class="desc">Giàu kinh nghiệm</div></div></div>
+        <div class="stat-card stat-card-orange"><div class="stat-icon orange"><i class="fas fa-briefcase-medical"></i></div><div class="stat-info"><div class="value">20+</div><div class="title">Dịch vụ</div><div class="desc">Đa dạng chuyên khoa</div></div></div>
+    </div></div>
+    <div class="ytv-footer ctc">
+        <div class="fb2-top">
+            <span class="fb2-call"><i class="fas fa-headset"></i><b>0901 87 88 96</b><span class="fb2-h2">&nbsp;-&nbsp;0364 956 007</span></span>
+            <span class="fb2-ic"><i class="fas fa-envelope"></i><span class="fb2-lb">sixossoft@gmail.com</span></span>
+            <span class="fb2-ic"><i class="fas fa-globe"></i><span class="fb2-lb">sixossoft.com</span></span>
+        </div>
+        <div class="fb2-pol"><span>Chính sách bảo mật</span><span class="sep">·</span><span>Điều khoản sử dụng</span><span class="sep">·</span><span>Giải quyết khiếu nại</span><span class="sep">·</span><span>Chính sách bảo hành</span></div>
+    </div>
+</body>
+</html>`;
+    }
+
     function preventPreviewButtonSubmit(editor) {
         var container = editor.getContainer && editor.getContainer();
         var previewButton = container?.querySelector('[data-mce-name="responsivepreview"]');
@@ -314,81 +533,17 @@
         var isDetailEditor = editor.id === 'summernote';
         var currentContent = ensureDefaultBlackHtml(editor.getContent({ format: 'raw' }));
 
-        // Quảng cáo và hiển thị phải xem theo đúng giao diện trang Home,
-        // nên gửi dữ liệu nháp lên endpoint render trang Home tĩnh.
-        if (!isDetailEditor) {
-            syncEditorValue('#advertisingContentEditor');
-            var homeFormData = new FormData(form);
-            homeFormData.set('NoiDungQuangCao', currentContent);
-            var advertisingFileInput = document.querySelector('input[name="QuangCaoImageFile"]');
-            var imageSource = advertisingFileInput?.closest('[data-image-source]');
-            if (imageSource?.dataset.existingImage) {
-                homeFormData.set('QuangCaoImg', imageSource.dataset.existingImage);
-            }
-
-            var homeResponse = await fetch('/Admin/CoSoYTe/PreviewHome', {
-                method: 'POST',
-                body: homeFormData,
-                credentials: 'same-origin',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'RequestVerificationToken': form.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
-                }
-            });
-            if (!homeResponse.ok) throw new Error('Không tải được bản xem trước trang Home.');
-
-            var homeDocument = new DOMParser().parseFromString(await homeResponse.text(), 'text/html');
-            sanitizePreviewDocument(homeDocument);
-            frame.srcdoc = '<!doctype html>' + homeDocument.documentElement.outerHTML;
-            return;
-        }
-
+        // Preview chỉ dựng HTML tĩnh trong iframe. Không POST/fetch trang thật,
+        // nên lỗi 500 hoặc redirect đăng nhập của endpoint không còn ảnh hưởng.
         if (isDetailEditor) {
             syncEditorValue('#summernote');
             syncTopicContents();
-        }
-        var formData = new FormData(form);
-        if (isDetailEditor) {
-            formData.set('NoiDung', ensureDefaultBlackHtml(editor.getContent({ format: 'raw' })));
-            formData.set('TopicId', document.getElementById('cboChuDe')?.value || '');
-            formData.set('TopicContentsJson', document.getElementById('topicContentsJson')?.value || '{}');
+            frame.srcdoc = buildStaticDetailPreviewDocument(currentContent);
+            return;
         }
 
-        var response = await fetch('/Admin/CoSoYTe/Preview', {
-            method: 'POST',
-            body: formData,
-            credentials: 'same-origin',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'RequestVerificationToken': form.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
-            }
-        });
-        if (!response.ok) throw new Error('Không tải được bản xem trước.');
-
-        var previewDocument = new DOMParser().parseFromString(await response.text(), 'text/html');
-        sanitizePreviewDocument(previewDocument);
-        frame.srcdoc = '<!doctype html>' + previewDocument.documentElement.outerHTML;
-    }
-
-    function sanitizePreviewDocument(previewDocument) {
-        previewDocument.querySelectorAll('script').forEach(function (script) { script.remove(); });
-        previewDocument.querySelectorAll('a').forEach(function (link) {
-            link.removeAttribute('href');
-            link.removeAttribute('onclick');
-            link.setAttribute('aria-disabled', 'true');
-        });
-        previewDocument.querySelectorAll('[onclick]').forEach(function (element) {
-            element.removeAttribute('onclick');
-        });
-        previewDocument.querySelectorAll('form').forEach(function (formElement) {
-            formElement.removeAttribute('action');
-            formElement.removeAttribute('method');
-            formElement.removeAttribute('onsubmit');
-        });
-        previewDocument.querySelectorAll('button, input, select, textarea').forEach(function (control) {
-            control.disabled = true;
-            control.setAttribute('aria-disabled', 'true');
-        });
+        syncEditorValue('#advertisingContentEditor');
+        frame.srcdoc = buildResponsivePreviewDocument(currentContent);
     }
 
     function openResponsivePreview(editor) {
@@ -443,11 +598,11 @@
         frame.srcdoc = '<!doctype html><html lang="vi"><body style="font-family:system-ui;padding:24px">Đang tải bản xem trước...</body></html>';
         renderStaticPreview(frame, editor).catch(function (error) {
             var previewPageName = editor.id === 'summernote' ? 'trang chi tiết cơ sở' : 'trang Home';
-            var previewError = 'Không tải được bản xem trước ' + previewPageName + '.';
-            frame.srcdoc = '<!doctype html><html lang="vi"><meta charset="utf-8">'
-                + '<body style="font-family:system-ui;padding:24px;color:#b42318">' + previewError + '</body></html>';
-            if (typeof showToast === 'function') showToast(previewError, 'error');
-            console.warn(previewError, error);
+            var previewWarning = 'Không thể dựng bản xem trước tĩnh ' + previewPageName + '.';
+            frame.srcdoc = '<!doctype html><html lang="vi"><body style="font-family:system-ui;padding:24px">'
+                + escapePreviewText(previewWarning) + '</body></html>';
+            if (typeof showToast === 'function') showToast(previewWarning, 'warning');
+            console.warn(previewWarning, error);
         });
 
         function closePreview() {
