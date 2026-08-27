@@ -76,12 +76,24 @@ chặn bằng một dấu ấn nằm trên **chính phiên**, không phải bằ
 `DM_BenhNhan` / `DM_BenhNhanCoSo` / `HT_TaiKhoan`. Vì vậy đường tự động đặt ở **controller** (`DiTiep`,
 `Login`) — nơi đọc được `User` và kiểm được dấu ấn — chứ **không** nới lỏng `ChonDichDenAsync`.
 
-### 5. Mở nguội app mà đã đăng nhập thì về `/benh-nhan`
+### 5. Mở nguội app mà đã đăng nhập thì về **đúng nhà của bệnh nhân đó**
+
+> **Sửa 2026-08-27 (bản đầu ghi "thì về `/benh-nhan`" cho mọi phiên).** Bản đầu bỏ sót đúng đối tượng
+> mà ADR này sinh ra để phục vụ: bệnh nhân của cơ sở dùng bộ màn đối tác. Với họ, "nhà" là TrangChủ
+> của đối tác chứ không phải trang bệnh nhân nội bộ — mục 1 đã chốt "phiên còn sống thì đi thẳng", mà
+> mục 5 lại chặn đúng lối vào hay dùng nhất (biểu tượng PWA). Hai mục tự mâu thuẫn; mục 5 nhường.
 
 `/` là `start_url` của PWA. **Mở nguội** (khởi động lại app từ biểu tượng, vào bằng bookmark, gõ thẳng
-URL) mà đã đăng nhập **và có claim `Cccd`** thì chuyển thẳng `/benh-nhan`. Vế claim là bắt buộc: khu
-Admin ký **cả hai** cookie nên admin cũng tính là đã xác thực, nhưng họ không có `Cccd`/`MaCoSo` — đẩy
-họ sang trang bệnh nhân là ra trang rỗng không biết chào ai.
+URL) mà đã đăng nhập **và có claim `Cccd`** thì rẽ theo cơ sở của phiên:
+
+- Cơ sở **dùng bộ màn đối tác** *và* phiên **có dấu ấn** `DoiTacXacThuc` → `/DangNhap/DiTiep`, tức là
+  đi thẳng sang TrangChủ đối tác. Uỷ thác chứ **không** chép lại cây quyết định: `DiTiep` đã giữ đủ ba
+  vế và đã hỏi đối tác trước khi bàn giao (mục 2). Mọi nhánh thoát của nó đều là trang cuối
+  (`/benh-nhan`, `/DangNhap/Login?coSo=`, `/DangNhap/BanGiao?coSo=`) nên không thể vòng lại `/`.
+- Còn lại (cơ sở nội bộ, hoặc phiên **chưa** có dấu ấn) → `/benh-nhan` như cũ.
+
+Vế claim `Cccd` là bắt buộc: khu Admin ký **cả hai** cookie nên admin cũng tính là đã xác thực, nhưng
+họ không có `Cccd`/`MaCoSo` — đẩy họ sang trang bệnh nhân là ra trang rỗng không biết chào ai.
 
 🔴 Chỉ đẩy khi **mở nguội**, đo bằng Referer không cùng host — đúng phép thử mà "PWA Last Page Restore"
 trong `_Layout` dùng. Bấm **trong app** tới `/` (ví dụ nút logo ở header trang danh sách cơ sở) thì có
@@ -111,8 +123,13 @@ không chỉ cơ sở đối tác. Để riêng một đợt.
   sinh, và **hiện không cơ sở nào chạy**. Siết luôn ở đó là gãy một đường không ai đi mà chẳng được lợi gì.
   Khi có đối tác thứ hai, phải xét lại mục này trước.
 - **"PWA Last Page Restore" chỉ còn chạy khi bấm trong app.** Mở nguội `/` mà đã đăng nhập thì chuyển
-  hướng phía máy chủ về `/benh-nhan` trước khi script kịp chạy — đây là hành vi được yêu cầu. Bấm trong
+  hướng phía máy chủ đi trước khi script kịp chạy — đây là hành vi được yêu cầu. Bấm trong
   app tới `/` thì `/` render và script đó chạy bình thường. Đừng "sửa" chỗ chuyển hướng mà không đọc
   dòng này.
 - **Mỗi lần vào là một lượt gọi sang đối tác.** Đối tác chết thì bệnh nhân không đi thẳng được, nhưng sẽ
   đọc được câu báo sự cố đúng nghĩa thay vì rơi xuống một trang trắng bên kia.
+- **Từ 2026-08-27, lượt gọi đó xảy ra ngay khi MỞ APP,** chứ không còn đợi bệnh nhân bấm nút. Ba hệ quả
+  nhận trọn: ① mỗi lần bật app là một lượt HTTP sang đối tác; ② đối tác chết thì mở app ra là **màn đăng
+  nhập của cơ sở kèm câu báo sự cố**, chứ không phải `/benh-nhan` — đúng theo mục 2, nhưng khác hẳn cảm
+  giác trước đó; ③ bệnh nhân của cơ sở đối tác **không còn thấy `/benh-nhan` khi mở nguội**, muốn vào thì
+  qua menu 3 gạch. Ai muốn đảo lại phải đọc mục 5 trước, đừng sửa mò ở `HomeController`.

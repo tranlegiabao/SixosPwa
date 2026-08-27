@@ -436,6 +436,34 @@ public class HomeController : Controller
             && User.Identity?.IsAuthenticated == true
             && !string.IsNullOrWhiteSpace(User.FindFirst(LuongCongBenhNhan.ClaimCccd)?.Value))
         {
+            // 🔴 Voi co so dung BO MAN CUA DOI TAC (Ung Buou), /benh-nhan la SAI dich.
+            // Benh nhan do song o TrangChu ben doi tac; trang benh nhan noi bo chi la
+            // mot tram dung khong ai muon. Phien da mang dau an thi mo nguoi phai di
+            // THANG sang ho, dung nhu luc bam nut trong app.
+            //
+            // Uy thac cho /DangNhap/DiTiep chu KHONG chep lai cay quyet dinh: no da
+            // giu du ba ve (co CCCD - co dau an - dung co so cua phien) va goi
+            // DangNhapLaiBangMatKhauDaCatAsync de HOI DOI TAC truoc khi ban giao
+            // (ADR 0016 muc 2). Moi nhanh thoat cua no deu la trang cuoi — /benh-nhan,
+            // /DangNhap/Login?coSo=, /DangNhap/BanGiao?coSo= — nen khong the vong lai "/".
+            //
+            // Doi tac chet thi DiTiep roi xuong ChonDichDenAsync => man dang nhap cua
+            // co so kem cau bao su co, KHONG phai /benh-nhan. Do la danh doi da biet
+            // cua ADR 0016 muc 2, khong phai lo thung moi.
+            //
+            // SUA ADR 0016 muc 5 ngay 2026-08-27: truoc do MOI phien mo nguoi deu ve
+            // /benh-nhan, ke ca phien cua co so doi tac.
+            var maCoSoPhien = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
+            if (!string.IsNullOrWhiteSpace(maCoSoPhien)
+                && User.FindFirst(LuongCongBenhNhan.ClaimDoiTacXacThuc) is not null)
+            {
+                var cuaPhien = await _luong.LayCuaAsync(maCoSoPhien);
+                if (cuaPhien?.DungManDoiTac == true)
+                {
+                    return Redirect("/DangNhap/DiTiep");
+                }
+            }
+
             return Redirect("/benh-nhan");
         }
 
