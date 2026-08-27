@@ -551,7 +551,9 @@
 {
     <div class="ub-panel col-lg-7 d-none d-lg-flex flex-column">
         <div class="ub-panel__dau">
-            <img src="@(trangChuUb)/Image/Logo_DangNhap.png" alt="@ViewBag.TenCoSo" class="ub-panel__logo">
+            <a href="@(string.IsNullOrWhiteSpace(ViewBag.SlugCoSo as string) ? "/" : $"/DangKyOnline/{ViewBag.SlugCoSo}")" title="Quay lại @ViewBag.TenCoSo">
+                <img src="@(trangChuUb)/Image/Logo_DangNhap.png" alt="@ViewBag.TenCoSo" class="ub-panel__logo">
+            </a>
             @if (!string.IsNullOrWhiteSpace(hotline))
             {
                 <div class="ub-panel__hotline">TỔNG ĐÀI TƯ VẤN: <span class="fw-bold">@hotline</span></div>
@@ -619,10 +621,10 @@
             <div class="d-flex align-items-center flex-column justify-content-center">
                 @* Anh trong DM_CSKCB.Logo thuong la anh VUONG co vien san. Boc trong
                    khung tron de vien do khong lo ra. *@
-                <div class="logo ub-logo">
+                <a href="@(string.IsNullOrWhiteSpace(ViewBag.SlugCoSo as string) ? "/" : $"/DangKyOnline/{ViewBag.SlugCoSo}")" class="logo ub-logo" title="Quay lại @ViewBag.TenCoSo">
                     <img src="@(ViewBag.LogoCoSo ?? "/static/icon-192.png")" alt="@ViewBag.TenCoSo">
-                </div>
-                <h2 class="heading">Chào mừng bạn đến<br> Bệnh Viện Ung Bướu</h2>
+                </a>
+                <h2 class="heading">Chào mừng bạn đến<br> @(ViewBag.TenCoSo ?? "Bệnh Viện Ung Bướu")</h2>
 
             </div>
 
