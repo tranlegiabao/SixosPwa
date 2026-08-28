@@ -456,67 +456,110 @@
         height: 45.6px;
         text-align: center;
         background-color: transparent;
-        color: #004aad;
+        color: #0056b3;
+        border: 1px solid transparent;
         border-radius: 8px;
-        font-weight: bold;
+        font-weight: 600;
         cursor: pointer;
-        transition: background-color 0.2s, color 0.2s;
+        text-decoration: none !important;
+        transition: all 0.2s ease;
     }
 
     #btn__forgotPassword:hover {
-        border: 1px solid #004aad;
-        transition: background-color 0.2s, color 0.2s !important;
+        border: 1px solid #0056b3;
+        background-color: transparent;
+        color: #0056b3;
     }
 
+    #login_btnDangNhap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        width: 100%;
+        height: 45.6px;
+        background: #0056b3;
+        border: 1px solid #0056b3;
+        color: #fff;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: background-color 0.2s;
+    }
+
+    #login_btnDangNhap:hover {
+        background: #004085;
+        border-color: #004085;
+    }
+
+
+    .ub-mobile-header {
+        width: 100%;
+        background-color: #2045e6;
+        padding: 14px 16px 16px 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+
+    .ub-mobile-header__logo {
+        max-height: 50px;
+        max-width: 250px;
+        object-fit: contain;
+    }
+
+    .ub-mobile-header__hotline {
+        background-color: #dc3545;
+        color: #fff;
+        font-weight: 700;
+        font-size: 0.95rem;
+        padding: 6px 16px;
+        border-radius: 8px;
+        text-align: center;
+        letter-spacing: 0.02em;
+    }
 
     .sticky-top {
         display: none !important;
     }
 
     @@media (max-width: 768px) {
-
-
         #div_ads {
             display: none !important;
         }
 
-
         #div_tab {
-            margin-left: 25px !important;
-
-        }
-
-        .sticky-top {
-            display: block !important;
-        }
-
-        .custom-header {
-            width: 100%;
-            background: #2d47d4;
-            display: flex;
-			flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
-            @* padding: 18px 36px 14px 36px; *@
-            box-shadow: 0 4px 24px rgba(44, 71, 212, 0.08);
-            /* height: 15vh; */
-            /* margin-bottom: 2vh; */
-
-        }
-
-        .header-left {
-            display: flex;
-            align-items: flex-start;
-            flex-direction: column;
+            margin-left: 0 !important;
+            margin-bottom: 20px !important;
         }
 
         .login-modal {
-			justify-content: flex-start;
+            justify-content: flex-start;
         }
 
-        
+        #idLogin {
+            padding-left: 1.25rem;
+            padding-right: 1.25rem;
+        }
 
+        #btn__forgotPassword {
+            height: auto;
+            width: auto;
+            border: none !important;
+            padding: 0;
+            margin-bottom: 0.5rem;
+            color: #0056b3;
+            font-size: 0.95rem;
+            display: inline-block;
+        }
 
+        #btn__forgotPassword:hover {
+            text-decoration: underline !important;
+            border: none !important;
+            background-color: transparent !important;
+        }
     }
 </style>
 </head>
@@ -585,18 +628,48 @@
                 @foreach (var cn in chiNhanh)
                 {
                     <div class="ub-coso">
-                        <div class="ub-coso__ten">@cn.Ten</div>
+                        <div class="ub-coso__ten">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-building-hospital" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                <path d="M3 21l18 0" />
+                                <path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16" />
+                                <path d="M9 21v-4a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v4" />
+                                <path d="M10 9l4 0" />
+                                <path d="M12 7l0 4" />
+                            </svg>
+                            <span>@cn.Ten</span>
+                        </div>
                         @if (!string.IsNullOrWhiteSpace(cn.DiaChi))
                         {
-                            <div class="ub-coso__dong">@cn.DiaChi</div>
+                            <div class="ub-coso__dong">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-map-pin" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                    <path d="M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" />
+                                    <path d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z" />
+                                </svg>
+                                <span>@cn.DiaChi</span>
+                            </div>
                         }
                         @if (!string.IsNullOrWhiteSpace(cn.Hotline))
                         {
-                            <div class="ub-coso__dong">@cn.Hotline</div>
+                            <div class="ub-coso__dong">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-phone" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                    <path d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2" />
+                                </svg>
+                                <span>@cn.Hotline</span>
+                            </div>
                         }
                         @if (!string.IsNullOrWhiteSpace(cn.GioLamViec))
                         {
-                            <div class="ub-coso__dong">@cn.GioLamViec</div>
+                            <div class="ub-coso__dong">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-clock" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                    <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+                                    <path d="M12 7v5l3 3" />
+                                </svg>
+                                <span>@cn.GioLamViec</span>
+                            </div>
                         }
                     </div>
                 }
@@ -614,38 +687,50 @@
         </footer>
     </div>
 }
+@{
+    var tenHienThi = ViewBag.TenCoSo as string ?? "Bệnh Viện Ung Bướu";
+    if (tenHienThi.Contains(" - Cơ sở"))
+    {
+        tenHienThi = tenHienThi.Substring(0, tenHienThi.IndexOf(" - Cơ sở")).Trim();
+    }
+}
         <div id="login"
-             class="login-modal col-12 bg-ccc d-flex align-items-center flex-column p-3">
+             class="login-modal col-12 bg-ccc d-flex align-items-center flex-column p-0 p-md-3">
 
+            @* Header trên điện thoại: hiện Logo và hotline tổng đài *@
+            <div class="ub-mobile-header d-lg-none">
+                <a href="@(string.IsNullOrWhiteSpace(ViewBag.SlugCoSo as string) ? "/" : $"/DangKyOnline/{ViewBag.SlugCoSo}")" title="Quay lại @ViewBag.TenCoSo">
+                    <img src="@(trangChuUb ?? "https://benhvienungbuou.vn")/Image/Logo_DangNhap.png" alt="@ViewBag.TenCoSo" class="ub-mobile-header__logo" />
+                </a>
+                @if (!string.IsNullOrWhiteSpace(hotline))
+                {
+                    <div class="ub-mobile-header__hotline">
+                        TỔNG ĐÀI TƯ VẤN: @hotline
+                    </div>
+                }
+            </div>
 
-            <div class="d-flex align-items-center flex-column justify-content-center">
-                @* Anh trong DM_CSKCB.Logo thuong la anh VUONG co vien san. Boc trong
-                   khung tron de vien do khong lo ra. *@
+            <div class="d-none d-lg-flex align-items-center flex-column justify-content-center">
+                @* Ảnh trong DM_CSKCB.Logo thường là ảnh VUÔNG có viền sẵn. Bọc trong
+                   khung tròn để viền đó không lộ ra. *@
                 <a href="@(string.IsNullOrWhiteSpace(ViewBag.SlugCoSo as string) ? "/" : $"/DangKyOnline/{ViewBag.SlugCoSo}")" class="logo ub-logo" title="Quay lại @ViewBag.TenCoSo">
                     <img src="@(ViewBag.LogoCoSo ?? "/static/icon-192.png")" alt="@ViewBag.TenCoSo">
                 </a>
-                <h2 class="heading">Chào mừng bạn đến<br> @(ViewBag.TenCoSo ?? "Bệnh Viện Ung Bướu")</h2>
-
+                <h2 class="heading">Chào mừng bạn đến<br> @tenHienThi</h2>
             </div>
 
-
-
-            <div class="tab position-relative" id="div_tab">
-
+            <div class="tab position-relative mt-2 mt-md-0" id="div_tab">
                 <a id="loginWithID" href="#" class="fs-4">Đăng nhập bằng ID</a>
                 <div class="tab-indicator"></div>
             </div>
 
-            <div id="idLogin" style="min-height: 324px;">
-                <div class="card-body">
-                    @* Benh nhan vua bam MOT nut o trang co so va mong duoc vao thang
-                       (ADR 0016). Ra toi day nghia la khong tu vao duoc — phai noi
-                       ro vi sao, khong de ho doan. Hai cau co the roi vao day:
-                       mat khau ben co so da doi, hoac chinh co so dang hong. *@
+            <div id="idLogin" style="width: 100%; max-width: 440px;">
+                <div class="card-body px-0 py-2">
+                    @* Bệnh nhân vừa bấm MỘT nút ở trang cơ sở và mong được vào thẳng
+                       (ADR 0016). Ra tới đây nghĩa là không tự vào được — phải nói
+                       rõ vì sao, không để họ đoán. *@
                     @if (!string.IsNullOrWhiteSpace(ViewBag.LoiDangNhapLai as string))
                     {
-                        @* Khong dung icon Font Awesome o day: man nay KHONG nap FA
-                           (chi _Layout nap tu CDN), gan vao la ra mot o trong. *@
                         <div class="alert alert-warning mb-3" role="alert">
                             @ViewBag.LoiDangNhapLai
                         </div>
@@ -655,7 +740,7 @@
                             <div class="col-12">
                                 <label class="form-label mb-1 mt-1 fs-4">Căn cước công dân/Hộ chiếu:</label>
                                 <input type="text" autocomplete="off" class="form-control" name="username"
-                                    placeholder="Nhập Căn cước/Hộ chiếu ">
+                                    placeholder="Nhập Căn cước/Hộ chiếu">
                             </div>
                             <div class="col-12">
                                 <label class="form-label mb-1 fs-4">Mật khẩu:</label>
@@ -663,19 +748,16 @@
                                     autocomplete="off">
                             </div>
                         </div>
-                        <div class="form-footer">
-                            <div class="row g-3 align-items-center">
-                                <div class="col-md-6 col-12 d-flex align-items-stretch">
-                                    <div class="text-center flex-grow-1">
-                                        <a id="btn__forgotPassword" href="/DangNhap/UbQuenMatKhau?coSo=@ViewBag.SlugCoSo"
-                                            class="text-primary fw-semibold fs-4">Quên mật
-                                            khẩu</a>
-                                    </div>
+                        <div class="form-footer mt-4">
+                            <div class="row g-3 align-items-center flex-column flex-md-row">
+                                <div class="col-12 col-md-6 order-1 order-md-1 text-center text-md-start">
+                                    <a id="btn__forgotPassword" href="/DangNhap/UbQuenMatKhau?coSo=@ViewBag.SlugCoSo">
+                                        Quên mật khẩu
+                                    </a>
                                 </div>
-                                <div class="col-md-6 col-12 d-flex justify-content-md-end">
-                                    <button type="submit" id="login_btnDangNhap"
-                                        class="btn btn-primary w-100 w-md-auto d-md-inline-block">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                <div class="col-12 col-md-6 order-2 order-md-2">
+                                    <button type="submit" id="login_btnDangNhap" class="w-100">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
                                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                             stroke-linecap="round" stroke-linejoin="round"
                                             class="icon icon-tabler icons-tabler-outline icon-tabler-key">
@@ -684,33 +766,28 @@
                                                 d="M16.555 3.843l3.602 3.602a2.877 2.877 0 0 1 0 4.069l-2.643 2.643a2.877 2.877 0 0 1 -4.069 0l-.301 -.301l-6.558 6.558a2 2 0 0 1 -1.239 .578l-.175 .008h-1.172a1 1 0 0 1 -.993 -.883l-.007 -.117v-1.172a2 2 0 0 1 .467 -1.284l.119 -.13l.414 -.414h2v-2h2v-2l2.144 -2.144l-.301 -.301a2.877 2.877 0 0 1 0 -4.069l2.643 -2.643a2.877 2.877 0 0 1 4.069 0z" />
                                             <path d="M15 9h.01" />
                                         </svg>
-                                        Đăng nhập
+                                        <span>Đăng nhập</span>
                                     </button>
                                 </div>
                             </div>
 
                         </div>
                     </form>
-
-                    @* Nut cai PWA — phai co o CA luong doi tac, khong chi luong OTP.
-                       CSS nam san trong site.css; pwa-install.js quyet dinh an/hien. *@
-                    <partial name="_PwaInstall" />
-
                 </div>
             </div>
 
 
-            <div class="container_note">
-                <div class="text-center text-black my-3 fs-4">
+            <div class="container_note mt-4 pt-2">
+                <div class="text-center text-black fs-4">
                     <span>Bạn chưa có tài khoản?</span>
-                    <a href="/DangNhap/UbDangKy?coSo=@ViewBag.SlugCoSo@(string.IsNullOrWhiteSpace(ViewBag.ReturnUrl as string) ? "" : "&returnUrl=" + Uri.EscapeDataString((string)ViewBag.ReturnUrl))" class="text-primary fw-semibold">Đăng ký miễn phí</a>
+                    <a href="/DangNhap/UbDangKy?coSo=@ViewBag.SlugCoSo@(string.IsNullOrWhiteSpace(ViewBag.ReturnUrl as string) ? "" : "&returnUrl=" + Uri.EscapeDataString((string)ViewBag.ReturnUrl))" class="text-primary fw-semibold text-decoration-none">Đăng ký miễn phí</a>
                 </div>
 
             </div>
-            <div class="mt-4 text-center end-0">
+            <div class="mt-4 pt-1 text-center pb-4">
                 <a href="https://benhvienungbuou.vn/cac-goi-kham-chuyen-gia"
-                   class="text-primary fw-semibold"
-                   style="font-size: 18px;">
+                   class="text-primary fw-semibold text-decoration-none"
+                   style="font-size: 1.15rem;">
                     Các gói khám chuyên gia
                 </a>
             </div>
@@ -721,7 +798,6 @@
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/ub-hien-mat-khau.js" asp-append-version="true"
         data-nhan-hien="Hiện mật khẩu" data-nhan-an="Ẩn mật khẩu"></script>
-<script src="~/js/pwa-install.js" asp-append-version="true"></script>
 <script>
     (function () {
         const maCoSo = @Html.Raw(System.Text.Json.JsonSerializer.Serialize((string?)ViewBag.MaCoSo));
