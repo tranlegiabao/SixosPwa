@@ -280,6 +280,24 @@
         opacity: 0.9;
     }
 
+    /* Nut phu "Quay lai" dung ngay canh .btn-primary o chan form nen phai cung
+       hinh hoc, lech mot chut la nhin ra ngay. Tru 1px padding doc de bu dung
+       vien 1px (btn-primary khong co vien), nho vay hai nut cao bang nhau. */
+    .btn-outline-primary {
+        border: 1px solid #206bc4;
+        color: #206bc4;
+        padding: calc(0.8rem - 1px) 1.5rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-outline-primary:hover {
+        background: #206bc4;
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(32, 107, 196, 0.25);
+    }
+
     .text-primary {
         color: #206bc4 !important;
         font-weight: 700 !important;
@@ -757,23 +775,27 @@ width: 70px;
                     <partial name="_PwaInstall" />
                 </div>
                 <div class="form-footer mt-0">
-                    <div class="row g-3 align-items-center">
+                    @* Hai nut nay truoc nam trong luoi col-3/col-9. Cot "Quay lai" hep
+                       hon be ngang chu o khoang 992-1440px (luc do panel chi con
+                       col-lg-5) nen chu gay hai dong va nut cao hon han "Tiep tuc".
+                       Do chinh la ly do no phai deo inline padding: 10px 0 — padding
+                       NGANG bang 0 cho vua cot, doi lai chu dinh sat vien.
+                       Thay bang mot hang flex: "Quay lai" co sat chu va khong cho co
+                       lai, "Tiep tuc" an het phan con lai. Da do bang Playwright o
+                       390 / 430 / 768 / 992 / 1280 / 1440 / 1670 / 1920px: khong khu
+                       nao gay dong, hai nut luon cao bang nhau (47px). *@
+                    <div class="d-flex align-items-center gap-3">
                         <!-- Nút Quay lại -->
-                        <div class="col-5 col-md-3 d-flex justify-content-center justify-content-md-start">
-                            <button type="button" class="btn btn-outline-primary fw-bold w-100 w-md-auto"
-                                    style="padding: 10px 0;"
-                                    onclick="history.back()">
-                                Quay lại
-                            </button>
-                        </div>
+                        <button type="button" class="btn btn-outline-primary fw-bold flex-shrink-0"
+                                onclick="history.back()">
+                            Quay lại
+                        </button>
 
                         <!-- Nút Tiếp tục -->
-                        <div class="col-7 col-md-9 d-flex justify-content-center justify-content-md-end">
-                            <button type="button" class="btn btn-primary w-100"
-                                    id="register_btnGetCode">
-                                Tiếp tục
-                            </button>
-                        </div>
+                        <button type="button" class="btn btn-primary flex-grow-1"
+                                id="register_btnGetCode">
+                            Tiếp tục
+                        </button>
                     </div>
                 </div>
 
