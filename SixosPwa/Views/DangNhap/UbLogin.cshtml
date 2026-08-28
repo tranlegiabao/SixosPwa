@@ -731,6 +731,8 @@
                        rõ vì sao, không để họ đoán. *@
                     @if (!string.IsNullOrWhiteSpace(ViewBag.LoiDangNhapLai as string))
                     {
+                        @* Không dùng icon Font Awesome ở đây: màn này KHÔNG nạp FA
+                           (chỉ _Layout nạp từ CDN), gắn vào là ra một ô trống. *@
                         <div class="alert alert-warning mb-3" role="alert">
                             @ViewBag.LoiDangNhapLai
                         </div>
