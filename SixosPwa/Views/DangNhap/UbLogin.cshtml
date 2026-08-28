@@ -256,19 +256,46 @@
     }
 
     .btn-primary {
-        background: linear-gradient(90deg, #206bc4, #004085);
-        border: none;
+        background: linear-gradient(180deg, #0f62c9 0%, #064497 100%);
+        border: 1.5px solid transparent;
         font-weight: 600;
-        padding: 0.8rem 1.5rem;
-        border-radius: 8px;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        font-size: 1rem;
+        padding: 0.65rem 1.25rem;
+        border-radius: 10px;
+        color: #fff;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 14px rgba(6, 68, 151, 0.28);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .btn-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
-        opacity: 0.9;
+        background: linear-gradient(180deg, #0d54ae 0%, #043477 100%);
+        color: #fff;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px rgba(6, 68, 151, 0.38);
+    }
+
+    .btn-outline-primary {
+        background-color: transparent;
+        border: 1.5px solid transparent;
+        color: #0f62c9 !important;
+        font-weight: 700;
+        font-size: 1rem;
+        padding: 0.65rem 1.25rem;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-outline-primary:hover {
+        background-color: transparent;
+        border-color: #0f62c9;
+        color: #0f62c9 !important;
     }
 
     .btn-primaryForgetPass {
@@ -448,26 +475,6 @@
         align-items: center;
     }
 
-    #btn__forgotPassword {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 100%;
-        height: 45.6px;
-        text-align: center;
-        background-color: transparent;
-        color: #004aad;
-        border-radius: 8px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: background-color 0.2s, color 0.2s;
-    }
-
-    #btn__forgotPassword:hover {
-        border: 1px solid #004aad;
-        transition: background-color 0.2s, color 0.2s !important;
-    }
-
 
     .sticky-top {
         display: none !important;
@@ -550,14 +557,6 @@
 @if (!string.IsNullOrWhiteSpace(trangChuUb))
 {
     <div class="ub-panel col-lg-7 d-none d-lg-flex flex-column">
-        <div class="ub-panel__dau">
-            <img src="@(trangChuUb)/Image/Logo_DangNhap.png" alt="@ViewBag.TenCoSo" class="ub-panel__logo">
-            @if (!string.IsNullOrWhiteSpace(hotline))
-            {
-                <div class="ub-panel__hotline">TỔNG ĐÀI TƯ VẤN: <span class="fw-bold">@hotline</span></div>
-            }
-        </div>
-
         <div id="ubCarousel" class="carousel slide ub-panel__anh" data-bs-ride="carousel" data-bs-interval="4000">
             <div class="carousel-inner">
                 @for (var i = 8; i <= 9; i++)
@@ -583,18 +582,40 @@
                 @foreach (var cn in chiNhanh)
                 {
                     <div class="ub-coso">
-                        <div class="ub-coso__ten">@cn.Ten</div>
+                        <div class="ub-coso__ten">
+                            <span class="ub-coso__ten-icon">🏥</span>
+                            <span>@cn.Ten</span>
+                        </div>
                         @if (!string.IsNullOrWhiteSpace(cn.DiaChi))
                         {
-                            <div class="ub-coso__dong">@cn.DiaChi</div>
+                            <div class="ub-coso__dong">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="ub-coso__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="9.5" stroke-width="1.5" />
+                                    <path d="M12 6.5a3 3 0 0 1 3 3c0 2.2 -3 6.5 -3 6.5s-3 -4.3 -3 -6.5a3 3 0 0 1 3 -3z" />
+                                    <circle cx="12" cy="9.5" r="1" fill="currentColor" />
+                                </svg>
+                                <span>@cn.DiaChi</span>
+                            </div>
                         }
                         @if (!string.IsNullOrWhiteSpace(cn.Hotline))
                         {
-                            <div class="ub-coso__dong">@cn.Hotline</div>
+                            <div class="ub-coso__dong">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="ub-coso__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="9.5" stroke-width="1.5" />
+                                    <path d="M8.5 9.5a0.8 .8 0 0 1 .8 -.8h1.2a.8 .8 0 0 1 .8 .6l.4 1.5a.8 .8 0 0 1 -.2 .8l-.7 .7a5.5 5.5 0 0 0 2.4 2.4l.7 -.7a.8 .8 0 0 1 .8 -.2l1.5 .4a.8 .8 0 0 1 .6 .8v1.2a.8 .8 0 0 1 -.8 .8c-4.2 0 -7.5 -3.3 -7.5 -7.5z" />
+                                </svg>
+                                <span>@cn.Hotline</span>
+                            </div>
                         }
                         @if (!string.IsNullOrWhiteSpace(cn.GioLamViec))
                         {
-                            <div class="ub-coso__dong">@cn.GioLamViec</div>
+                            <div class="ub-coso__dong">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="ub-coso__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="9.5" stroke-width="1.5" />
+                                    <polyline points="12 8 12 12 14.5 13.5" />
+                                </svg>
+                                <span>@cn.GioLamViec</span>
+                            </div>
                         }
                     </div>
                 }
@@ -613,56 +634,66 @@
     </div>
 }
         <div id="login"
-             class="login-modal col-12 bg-ccc d-flex align-items-center flex-column p-3">
+             class="login-modal col-12 col-lg-5 bg-white d-flex align-items-center flex-column p-0">
 
-
-            <div class="d-flex align-items-center flex-column justify-content-center">
-                @* Anh trong DM_CSKCB.Logo thuong la anh VUONG co vien san. Boc trong
-                   khung tron de vien do khong lo ra. *@
-                <div class="logo ub-logo">
-                    <img src="@(ViewBag.LogoCoSo ?? "/static/icon-192.png")" alt="@ViewBag.TenCoSo">
+            <!-- HEADER CHO MOBILE (Giao diện chuẩn Bệnh viện Ung Bướu) -->
+            <div class="ub-mobile-header d-lg-none">
+                <div class="ub-mobile-header__top">
+                    <div class="ub-mobile-header__logo">
+                        <img src="@(ViewBag.LogoCoSo ?? "/static/icon-192.png")" alt="@ViewBag.TenCoSo">
+                    </div>
+                    <div class="ub-mobile-header__info">
+                        <div class="ub-mobile-header__ten">@ViewBag.TenCoSo</div>
+                        <div class="ub-mobile-header__sub">Thành phố Hồ Chí Minh</div>
+                    </div>
                 </div>
-                <h2 class="heading">Chào mừng bạn đến<br> Bệnh Viện Ung Bướu</h2>
-
+                @if (!string.IsNullOrWhiteSpace(hotline))
+                {
+                    <div class="ub-mobile-header__hotline">
+                        TỔNG ĐÀI TƯ VẤN: @hotline
+                    </div>
+                }
             </div>
 
+            <div class="p-3 w-100 d-flex flex-column align-items-center">
+                <!-- HEADING CHO DESKTOP -->
+                <div class="d-none d-lg-flex align-items-center flex-column justify-content-center">
+                    <div class="logo ub-logo">
+                        <img src="@(ViewBag.LogoCoSo ?? "/static/icon-192.png")" alt="@ViewBag.TenCoSo">
+                    </div>
+                    <h2 class="heading mt-2">Chào mừng bạn đến<br> Bệnh Viện Ung Bướu</h2>
+                </div>
 
+                <div class="text-center my-3" id="div_tab">
+                    <div class="fw-bold fs-3 text-dark mb-2">Đăng nhập bằng ID</div>
+                    <div style="width: 240px; height: 1px; background: #ced4da; margin: 0 auto;"></div>
+                </div>
 
-            <div class="tab position-relative" id="div_tab">
-
-                <a id="loginWithID" href="#" class="fs-4">Đăng nhập bằng ID</a>
-                <div class="tab-indicator"></div>
-            </div>
-
-            <div id="idLogin" style="min-height: 324px;">
-                <div class="card-body">
-                    <form id="login_formLogin">
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <label class="form-label mb-1 mt-1 fs-4">Căn cước công dân/Hộ chiếu:</label>
-                                <input type="text" autocomplete="off" class="form-control" name="username"
-                                    placeholder="Nhập Căn cước/Hộ chiếu ">
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label mb-1 fs-4">Mật khẩu:</label>
-                                <input type="password" name="password" class="form-control" placeholder="Nhập mật khẩu"
-                                    autocomplete="off">
-                            </div>
-                        </div>
-                        <div class="form-footer">
-                            <div class="row g-3 align-items-center">
-                                <div class="col-md-6 col-12 d-flex align-items-stretch">
-                                    <div class="text-center flex-grow-1">
-                                        <a id="btn__forgotPassword" href="/DangNhap/UbQuenMatKhau?coSo=@ViewBag.SlugCoSo"
-                                            class="text-primary fw-semibold fs-4">Quên mật
-                                            khẩu</a>
-                                    </div>
+                <div id="idLogin" style="min-height: 324px; width: 100%; max-width: 440px;">
+                    <div class="card-body p-0 p-md-3">
+                        <form id="login_formLogin">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label mb-1 mt-1 fs-4">Căn cước công dân/Hộ chiếu:</label>
+                                    <input type="text" autocomplete="off" class="form-control" name="username"
+                                        placeholder="Nhập Căn cước/Hộ chiếu">
                                 </div>
-                                <div class="col-md-6 col-12 d-flex justify-content-md-end">
-                                    <button type="submit" id="login_btnDangNhap"
-                                        class="btn btn-primary w-100 w-md-auto d-md-inline-block">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                <div class="col-12">
+                                    <label class="form-label mb-1 fs-4">Mật khẩu:</label>
+                                    <input type="password" name="password" class="form-control" placeholder="Nhập mật khẩu"
+                                        autocomplete="off">
+                                </div>
+                            </div>
+                            <div class="form-footer mt-2">
+                                <!-- Mobile: Quên mật khẩu ở giữa với khoảng cách đều trên và dưới -->
+                                <div class="d-md-none text-center my-4 py-2">
+                                    <a id="btn__forgotPassword" href="/DangNhap/UbQuenMatKhau?coSo=@ViewBag.SlugCoSo"
+                                        class="text-primary fw-bold text-decoration-none" style="font-size: 1.05rem;">Quên mật khẩu</a>
+                                </div>
+                                <div class="d-md-none mb-3">
+                                    <button type="submit" class="btn btn-primary w-100 gap-2 py-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                                             stroke-linecap="round" stroke-linejoin="round"
                                             class="icon icon-tabler icons-tabler-outline icon-tabler-key">
                                             <path stroke="none" d="M0 0h24v24H0z" fill="none" />
@@ -670,35 +701,55 @@
                                                 d="M16.555 3.843l3.602 3.602a2.877 2.877 0 0 1 0 4.069l-2.643 2.643a2.877 2.877 0 0 1 -4.069 0l-.301 -.301l-6.558 6.558a2 2 0 0 1 -1.239 .578l-.175 .008h-1.172a1 1 0 0 1 -.993 -.883l-.007 -.117v-1.172a2 2 0 0 1 .467 -1.284l.119 -.13l.414 -.414h2v-2h2v-2l2.144 -2.144l-.301 -.301a2.877 2.877 0 0 1 0 -4.069l2.643 -2.643a2.877 2.877 0 0 1 4.069 0z" />
                                             <path d="M15 9h.01" />
                                         </svg>
-                                        Đăng nhập
+                                        <span>Đăng nhập</span>
                                     </button>
                                 </div>
+
+                                <!-- Desktop: 2 nút song song 50-50 -->
+                                <div class="d-none d-md-flex row g-3">
+                                    <div class="col-6">
+                                        <a href="/DangNhap/UbQuenMatKhau?coSo=@ViewBag.SlugCoSo"
+                                            class="btn btn-outline-primary w-100">Quên mật khẩu</a>
+                                    </div>
+                                    <div class="col-6">
+                                        <button type="submit" id="login_btnDangNhap"
+                                            class="btn btn-primary w-100 gap-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                                            stroke-linecap="round" stroke-linejoin="round"
+                                            class="icon icon-tabler icons-tabler-outline icon-tabler-key">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                            <path
+                                                d="M16.555 3.843l3.602 3.602a2.877 2.877 0 0 1 0 4.069l-2.643 2.643a2.877 2.877 0 0 1 -4.069 0l-.301 -.301l-6.558 6.558a2 2 0 0 1 -1.239 .578l-.175 .008h-1.172a1 1 0 0 1 -.993 -.883l-.007 -.117v-1.172a2 2 0 0 1 .467 -1.284l.119 -.13l.414 -.414h2v-2h2v-2l2.144 -2.144l-.301 -.301a2.877 2.877 0 0 1 0 -4.069l2.643 -2.643a2.877 2.877 0 0 1 4.069 0z" />
+                                            <path d="M15 9h.01" />
+                                        </svg>
+                                        <span>Đăng nhập</span>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
+                        </form>
 
-                        </div>
-                    </form>
+                        <partial name="_PwaInstall" />
 
-                    @* Nut cai PWA — phai co o CA luong doi tac, khong chi luong OTP.
-                       CSS nam san trong site.css; pwa-install.js quyet dinh an/hien. *@
-                    <partial name="_PwaInstall" />
-
-                </div>
-            </div>
-
-
-            <div class="container_note">
-                <div class="text-center text-black my-3 fs-4">
-                    <span>Bạn chưa có tài khoản?</span>
-                    <a href="/DangNhap/UbDangKy?coSo=@ViewBag.SlugCoSo@(string.IsNullOrWhiteSpace(ViewBag.ReturnUrl as string) ? "" : "&returnUrl=" + Uri.EscapeDataString((string)ViewBag.ReturnUrl))" class="text-primary fw-semibold">Đăng ký miễn phí</a>
+                    </div>
                 </div>
 
-            </div>
-            <div class="mt-4 text-center end-0">
-                <a href="https://benhvienungbuou.vn/cac-goi-kham-chuyen-gia"
-                   class="text-primary fw-semibold"
-                   style="font-size: 18px;">
-                    Các gói khám chuyên gia
-                </a>
+
+                <div class="container_note mt-4">
+                    <div class="text-center text-black mb-4 fs-4">
+                        <span>Bạn chưa có tài khoản?</span>
+                        <a href="/DangNhap/UbDangKy?coSo=@ViewBag.SlugCoSo@(string.IsNullOrWhiteSpace(ViewBag.ReturnUrl as string) ? "" : "&returnUrl=" + Uri.EscapeDataString((string)ViewBag.ReturnUrl))" class="text-primary fw-semibold ms-1">Đăng ký miễn phí</a>
+                    </div>
+
+                </div>
+                <div class="mt-3 text-center">
+                    <a href="https://benhvienungbuou.vn/cac-goi-kham-chuyen-gia"
+                       class="text-primary fw-bold"
+                       style="font-size: 18px; text-decoration: none;">
+                        Các gói khám chuyên gia
+                    </a>
+                </div>
             </div>
         </div>
 </div>
