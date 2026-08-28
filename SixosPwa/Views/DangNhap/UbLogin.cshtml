@@ -773,6 +773,11 @@
 
                         </div>
                     </form>
+
+                    @* Nut cai PWA — phai co o CA luong doi tac, khong chi luong OTP.
+                       CSS nam san trong site.css; pwa-install.js quyet dinh an/hien. *@
+                    <partial name="_PwaInstall" />
+
                 </div>
             </div>
 
@@ -798,6 +803,7 @@
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/ub-hien-mat-khau.js" asp-append-version="true"
         data-nhan-hien="Hiện mật khẩu" data-nhan-an="Ẩn mật khẩu"></script>
+<script src="~/js/pwa-install.js" asp-append-version="true"></script>
 <script>
     (function () {
         const maCoSo = @Html.Raw(System.Text.Json.JsonSerializer.Serialize((string?)ViewBag.MaCoSo));
