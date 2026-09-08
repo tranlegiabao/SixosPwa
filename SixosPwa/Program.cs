@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication;
+﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +24,7 @@ builder.Services.AddScoped<AdminStoredProcedureService>();
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<IPartnerGateway, NoApiGateway>();
 builder.Services.AddScoped<IPartnerGateway, UbGateway>();
+builder.Services.AddScoped<IPartnerGateway, HisGateway>();
 builder.Services.AddScoped<IPartnerGatewayFactory, PartnerGatewayFactory>();
 builder.Services.AddScoped<ILuongCongBenhNhan, LuongCongBenhNhan>();
 

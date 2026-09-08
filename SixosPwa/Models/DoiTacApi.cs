@@ -56,4 +56,16 @@ public static class KieuApiDoiTac
 
     /// <summary>Benh vien Ung Buou — SixOSDatKhamAPI + trang MVC kcg.bvungbuou.vn.</summary>
     public const string UngBuou = "UB";
+
+    /// <summary>
+    /// Co so chay HisSoft, noi qua mach SPWA (Giai doan 2).
+    ///
+    /// 🔴 CO API nhung VAN DUNG MAN CUA SIXOSPWA — khac han <see cref="UngBuou"/>
+    /// (co API thi ban giao phien sang man cua ho). Noi *nhanh ban giao* /
+    /// *nhanh man chung*, cam noi "nhanh co API" tran. Xem <c>HisGateway</c>.
+    ///
+    /// Voi kieu nay <see cref="DoiTacApi.BaseUrl"/> CO NGUOI DOC — duong DOC cua
+    /// cong goi vao HIS di qua dia chi do.
+    /// </summary>
+    public const string His = "HIS";
 }
