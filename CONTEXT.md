@@ -300,6 +300,9 @@ khoản**, đóng lúc đăng nhập và không đổi.
 Đổi hồ sơ = **phát lại cookie** với claim mới, không ghi gì vào cơ sở dữ liệu: đây là trạng thái của
 **phiên**, nên hai thiết bị của cùng một tài khoản xem được hai hồ sơ khác nhau cùng lúc. Phiên chưa
 mang claim (đăng nhập từ trước) thì rơi về hồ sơ *chính chủ*.
+Đăng nhập hoặc đăng ký xong mà tài khoản có **trên một** hồ sơ tại cơ sở đó thì đi qua màn *Hồ sơ của
+tôi* trước — bám khuôn `DangKyOnlineUB` (đăng nhập xong đẩy thẳng tới `/QuanLy/QL_HoSoBenhNhan`).
+Khác UB một chỗ: **một hồ sơ thì đi thẳng**, vì không có gì để chọn.
 _Tránh_: bệnh nhân hiện tại, context, hồ sơ active
 
 **Cửa tài liệu**:

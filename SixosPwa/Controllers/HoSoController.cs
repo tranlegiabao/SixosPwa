@@ -75,7 +75,10 @@ public class HoSoController : Controller
         }
 
         await PhatLaiClaimAsync(id);
-        return RedirectToAction(nameof(Index), new { xong = "1" });
+
+        // Chon xong la vao thang trang benh nhan — do la ly do nguoi ta bam.
+        // Muon doi tiep thi quay lai bang o *Ho so cua toi* tren do.
+        return Redirect("/benh-nhan");
     }
 
     [HttpGet("/benh-nhan/ho-so/them")]

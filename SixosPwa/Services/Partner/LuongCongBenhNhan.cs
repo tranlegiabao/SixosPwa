@@ -193,7 +193,18 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
         if (coSo is null || !coSo.CoBanGiao)
         {
             await BaoDamHoSoNoiBoAsync(maCoSo, cccd, dinhDanh, ct);
-            return "/benh-nhan";
+
+            // Mot tai khoan quan nhieu ho so (ADR 0019) => phai biet dang xem AI
+            // truoc khi vao trang benh nhan. Bam khuon DangKyOnlineUB: dang nhap
+            // xong la ve man chon ho so (HT_DangNhap_FE.js:35 day thang toi
+            // /QuanLy/QL_HoSoBenhNhan).
+            //
+            // Khac UB o mot cho: chi bat chon khi THAT SU co tren mot ho so. Ben
+            // UB ai cung nhieu ho so nen ho luon qua man do; ben nay phan lon tai
+            // khoan chi co dung mot ho so, bat ho bam them mot lan la phien vo ich
+            // — mot ho so thi khong co gi de chon.
+            var soHoSo = await DemHoSoTaiCoSoAsync(maCoSo, dinhDanh, ct);
+            return soHoSo > 1 ? "/benh-nhan/ho-so" : "/benh-nhan";
         }
 
         // Co so dung bo man cua doi tac thi benh nhan KHONG duoc di duong nay:
@@ -255,7 +266,16 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
         if (coSo is null || !coSo.CoBanGiao)
         {
             await LuuLienKetAsync(taiKhoan.Id, maCoSo, matKhau, null, ct);
-            return new KetQuaBuoc(true, "Đã tạo tài khoản", "/benh-nhan");
+
+            // Cung luat voi ChonDichDenAsync — hai loi vao (dang nhap / dang ky)
+            // phai di cung mot duong, neu khong nguoi dung thay hai hanh vi khac
+            // nhau cho cung mot trang thai.
+            //
+            // Nguoi vua dang ky thuong chi co dung mot ho so nen se di thang;
+            // nhung tai khoan cu dang ky them o co so moi thi van co the >1.
+            var soHoSo = await DemHoSoTaiCoSoAsync(maCoSo, dinhDanh, ct);
+            return new KetQuaBuoc(true, "Đã tạo tài khoản",
+                soHoSo > 1 ? "/benh-nhan/ho-so" : "/benh-nhan");
         }
 
         var dienThoai = LayDienThoai(dinhDanh, taiKhoan);
@@ -622,6 +642,34 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
 
         // Thu tuc tu lo them-hay-cap-nhat; UK_HT_TaiKhoanDoiTac chan trung (ADR 0008).
         await _thuTuc.SaveTaiKhoanDoiTacAsync(idTaiKhoan, idCoSo.Value, matKhau, maXacNhan, true);
+    }
+
+    /// <summary>
+    /// So ho so ma tai khoan nay dang quan TAI MOT CO SO — dung de quyet dinh co
+    /// phai qua man chon ho so khong.
+    ///
+    /// Phai khop dung dieu kien cua <c>HomeController.LayHoSoDangDungAsync</c>
+    /// (loc theo tai khoan + <c>DaMoTaiLieu</c>), neu khong se co canh: dem ra 2
+    /// nen day sang man chon, ma man kia chi hien 1.
+    /// </summary>
+    private async Task<int> DemHoSoTaiCoSoAsync(string maCoSo, string dinhDanh, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(dinhDanh) || string.IsNullOrWhiteSpace(maCoSo)) return 0;
+
+        var idTaiKhoan = await _db.TaiKhoans.AsNoTracking()
+            .Where(t => t.SDT == dinhDanh || t.Email == dinhDanh)
+            .Select(t => (long?)t.Id)
+            .FirstOrDefaultAsync(ct);
+
+        return await (
+            from p in _db.BenhNhans.AsNoTracking()
+            join h in _db.BenhNhanCoSos.AsNoTracking() on p.Id equals h.IdBenhNhan
+            join cs in _db.DMCSKCBs.AsNoTracking() on h.IdCoSo equals cs.Id
+            where ((idTaiKhoan != null && p.IdTaiKhoan == idTaiKhoan)
+                   || (p.IdTaiKhoan == null && (p.SDT == dinhDanh || p.Email == dinhDanh)))
+                  && cs.MaCoSo == maCoSo
+                  && h.DaMoTaiLieu
+            select h.Id).CountAsync(ct);
     }
 
     private async Task<TaiKhoan> TaoHoSoNoiBoAsync(string maCoSo, string cccd, string dinhDanh, string hoTen, CancellationToken ct)
