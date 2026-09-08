@@ -356,10 +356,10 @@
             @if (ViewBag.SoHoSo != null && (int)ViewBag.SoHoSo >= 1)
             {
                 <a class="bn-o-vuong" href="/benh-nhan/ho-so">
-                    @if ((int)ViewBag.SoHoSo > 1)
-                    {
-                        <span class="bn-badge" title="@ViewBag.SoHoSo hồ sơ">@ViewBag.SoHoSo</span>
-                    }
+                    @* KHONG dat huy hieu so o day. Huy hieu do o hai o kia nghia la
+                       "co N thu MOI cho ban xem"; so ho so thi khong phai tin moi,
+                       de mot cham do canh no chi lam nguoi dung tuong co viec phai
+                       xu ly. Muon biet co bao nhieu ho so thi mo man ra la thay. *@
                     <span class="bn-bieutuong" aria-hidden="true">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
