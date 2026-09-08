@@ -73,11 +73,20 @@ BEGIN
             RETURN;
         END;
 
-        SELECT @IDDotKham = ID
+        /* 🔴 BAY T-SQL da lam MAT DU LIEU IM LANG (bat duoc 08/09 luc chay that):
+           `SELECT @bien = cot` tren tap RONG thi bien GIU NGUYEN gia tri cu, KHONG
+           thanh NULL. Ban dau doan nay do thang vao @IDDotKham -- ma @IDDotKham da
+           duoc SET = 0 o dau thu tuc => `IF @IDDotKham IS NULL` KHONG BAO GIO dung
+           => luon roi xuong nhanh UPDATE ... WHERE ID = 0 => 0 dong, khong loi,
+           roi van SET @ResultCode = 1. API tra "Da nhan 1 dot kham" ma bang trong.
+           Dung bien CUC BO khai bao ngay tai day: no chac chan bat dau bang NULL. */
+        DECLARE @IDCu bigint;
+
+        SELECT @IDCu = ID
         FROM dbo.QL_DotKham WITH (UPDLOCK, HOLDLOCK)
         WHERE IDCoSo = @IDCoSo AND MaVaoVien = @MaVaoVien;
 
-        IF @IDDotKham IS NULL
+        IF @IDCu IS NULL
         BEGIN
             INSERT INTO dbo.QL_DotKham
                 (IDCoSo, IDBenhNhanCoSo, MaVaoVien, MaBN, NgayGioVao, NgayGioRa, TenKhoa, TenBacSi, ChanDoan, NgayTao)
@@ -99,7 +108,9 @@ BEGIN
                 TenBacSi       = @TenBacSi,
                 ChanDoan       = @ChanDoan,
                 NgayCapNhat    = GETDATE()
-            WHERE ID = @IDDotKham;
+            WHERE ID = @IDCu;
+
+            SET @IDDotKham = @IDCu;
         END;
 
         COMMIT TRANSACTION;

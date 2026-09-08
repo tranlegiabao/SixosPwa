@@ -48,6 +48,20 @@ BEGIN
     RETURN;
 END
 
+/* --- 0. Noi CHECK constraint de nhan them 'HIS' ---------------------------
+   🔴 Bat duoc luc CHAY THAT (08/09): CK_DM_DoiTacApi_KieuApi chot cung
+   ([KieuApi]='NONE' OR [KieuApi]='UB') -- dat tu truoc khi co kieu HIS. Khong
+   noi no thi buoc 1 chet voi Msg 547, MA CAC BATCH SAU VAN CHAY TIEP (moi GO
+   la mot batch doc lap) => khoa duoc cap trong khi cua van dong: DB o trang
+   thai NUA VOI, khong phai "chua chay gi".
+   Dung lai rang buoc chu khong bo han -- no chan duoc loi go sai kieu. */
+IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_DM_DoiTacApi_KieuApi')
+    ALTER TABLE dbo.DM_DoiTacApi DROP CONSTRAINT CK_DM_DoiTacApi_KieuApi;
+
+ALTER TABLE dbo.DM_DoiTacApi WITH CHECK
+    ADD CONSTRAINT CK_DM_DoiTacApi_KieuApi
+    CHECK (KieuApi IN ('NONE', 'UB', 'HIS'));
+
 /* --- 1. DM_DoiTacApi: bat nhanh man chung --------------------------------- */
 IF EXISTS (SELECT 1 FROM dbo.DM_DoiTacApi WHERE IdCoSo = @IdCoSo)
     UPDATE dbo.DM_DoiTacApi
@@ -105,3 +119,23 @@ PRINT N'     tren. Lech la moi cuoc goi day deu 401 KHOA_KHAC_CO_SO.';
 PRINT N'Roi goi: GET /Admin/KiemTraHis/CoSo/{IdCoSo}?khoa={khoa chieu cong->HIS}';
 PRINT N'--------------------------------------------------------------';
 GO
+
+/* =============================================================================
+   NGUOC LAI (chay tay khi can go mot co so khoi nhanh man chung).
+   KHONG de trong 99_ROLLBACK.sql vi file do la cua dot CSDL, con file nay la
+   seed cho TUNG co so -- go nham ca cum thi mat khoa cua co so khac.
+
+   DECLARE @MaCoSo varchar(50) = '<ma co so>';
+   DECLARE @IdCoSo bigint = (SELECT Id FROM dbo.DM_CSKCB WHERE MaCoSo = @MaCoSo);
+
+   UPDATE dbo.HT_KhoaApiCoSo SET Active = 0 WHERE IDCoSo = @IdCoSo;
+   UPDATE dbo.DM_DoiTacApi   SET KieuApi = 'NONE', BaseUrl = NULL WHERE IdCoSo = @IdCoSo;
+
+   -- Chi siet lai CHECK khi KHONG con co so nao dung kieu HIS:
+   IF NOT EXISTS (SELECT 1 FROM dbo.DM_DoiTacApi WHERE KieuApi = 'HIS')
+   BEGIN
+       ALTER TABLE dbo.DM_DoiTacApi DROP CONSTRAINT CK_DM_DoiTacApi_KieuApi;
+       ALTER TABLE dbo.DM_DoiTacApi WITH CHECK
+           ADD CONSTRAINT CK_DM_DoiTacApi_KieuApi CHECK (KieuApi IN ('NONE', 'UB'));
+   END
+   ============================================================================= */
