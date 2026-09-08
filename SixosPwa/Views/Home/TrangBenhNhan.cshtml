@@ -155,6 +155,17 @@
             overflow: hidden;
         }
 
+        .bn-doi-hoso {
+            text-decoration: none;
+            color: inherit;
+        }
+
+            .bn-doi-hoso strong {
+                margin-left: 6px;
+                color: #2563eb;
+                font-weight: 600;
+            }
+
         .bn-badge {
             position: absolute;
             top: 10px;
@@ -320,6 +331,22 @@
             <div class="bn-dong"><span>Mã CSKCB</span><span>@ViewBag.MaCoSo</span></div>
             <div class="bn-dong"><span>CCCD</span><span>@ViewBag.CccdCheBot</span></div>
             <div class="bn-dong"><span>Điện thoại</span><span>@ViewBag.DienThoai</span></div>
+
+            @* Loi vao *Ho so cua toi* (ADR 0019). Nam o day chu KHONG chiem mot o
+               trong khoi Dich vu: doi ho so khong phai mot dich vu y te, no thuoc
+               ve khoi DANH TINH — dat canh CCCD/dien thoai thi dung nghia hon.
+               Khuon DangKyOnlineUB cung de link doi ho so o header (_Layout:566).
+
+               Chi hien khi tai khoan quan tu HAI ho so tro len: mot ho so thi
+               khong co gi de doi. Nguoi muon them nguoi than van vao duoc bang
+               duong /benh-nhan/ho-so. *@
+            @if (ViewBag.SoHoSo != null && (int)ViewBag.SoHoSo > 1)
+            {
+                <a class="bn-dong bn-doi-hoso" href="/benh-nhan/ho-so">
+                    <span>Hồ sơ đang xem</span>
+                    <span>@ViewBag.TenBenhNhan <strong>Đổi</strong></span>
+                </a>
+            }
         </section>
 
         @if (ViewBag.CoLoiKetNoi == true)
@@ -349,41 +376,6 @@
                 </span>
                 <span class="bn-mui-ten" aria-hidden="true">›</span>
             </div>
-
-            @* Loi vao *Ho so cua toi* (ADR 0019). Hien tu ho so DAU TIEN, khong
-               phai tu ho so thu hai: muon them nguoi than thi phai vao duoc man
-               nay da — an di cho toi khi co 2 ho so la vong luan quan. *@
-            @if (ViewBag.SoHoSo != null && (int)ViewBag.SoHoSo >= 1)
-            {
-                <a class="bn-o-vuong" href="/benh-nhan/ho-so">
-                    @* KHONG dat huy hieu so o day. Huy hieu do o hai o kia nghia la
-                       "co N thu MOI cho ban xem"; so ho so thi khong phai tin moi,
-                       de mot cham do canh no chi lam nguoi dung tuong co viec phai
-                       xu ly. Muon biet co bao nhieu ho so thi mo man ra la thay. *@
-                    <span class="bn-bieutuong" aria-hidden="true">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="9" cy="7" r="4"></circle>
-                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                        </svg>
-                    </span>
-                    <span class="bn-noidung-the">
-                        <span class="bn-ten">Hồ sơ của tôi</span>
-                        <span class="bn-mota">
-                            @if (ViewBag.SoHoSo != null && (int)ViewBag.SoHoSo > 1)
-                            {
-                                <text>Đang xem: @ViewBag.TenBenhNhan</text>
-                            }
-                            else
-                            {
-                                <text>Thêm hồ sơ cho người thân</text>
-                            }
-                        </span>
-                    </span>
-                    <span class="bn-mui-ten" aria-hidden="true">›</span>
-                </a>
-            }
 
             <!-- 2. Đơn thuốc (Ô vuông xanh) -->
             <a class="bn-o-vuong" href="/benh-nhan/tai-lieu?nhom=don-thuoc">
