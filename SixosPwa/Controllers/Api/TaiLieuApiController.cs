@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SixosPwa.Data;
+using SixosPwa.Models;
 using SixosPwa.Models.Dto;
 using SixosPwa.Security;
 using SixosPwa.Services;
@@ -79,6 +80,19 @@ public class TaiLieuApiController : ControllerBase
             await _nhatKy.GhiAsync(duong, KetQuaApi.TuChoi, cskcb.Id, idKhoa,
                 lyDo: LyDoApi.ThieuHeader, ipGoi: ip);
             return BadRequest(ApiResponse<TiepNhanTaiLieuResponseData>.Fail("Thiếu Header loại tài liệu 'X-Loai-Tai-Lieu'."));
+        }
+
+        // 🔴 Danh muc DONG (V9). Truoc day man phan nhom bang != "DON_THUOC" nen
+        // moi chuoi la deu roi vao nhom "ket qua kham" — HIS go sai mot ky tu la
+        // don thuoc im lang nhay nhom. Chan ngay tu cua, va noi ro ma nao hop le
+        // de ben HIS sua duoc ngay chu khong phai doan.
+        if (!LoaiTaiLieu.HopLe(loaiTaiLieu))
+        {
+            await _nhatKy.GhiAsync(duong, KetQuaApi.TuChoi, cskcb.Id, idKhoa,
+                lyDo: LyDoApi.LoaiTaiLieuLa, ipGoi: ip);
+            return BadRequest(ApiResponse<TiepNhanTaiLieuResponseData>.Fail(
+                $"Loại tài liệu '{loaiTaiLieu}' không hợp lệ. Chỉ nhận: {LoaiTaiLieu.DanhSachChoNguoiDoc()}.",
+                new List<string> { LyDoApi.LoaiTaiLieuLa }));
         }
 
         if (request == null)

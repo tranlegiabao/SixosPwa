@@ -21,6 +21,7 @@ public static class LyDoApi
     public const string KhoaKhacCoSo = "KHOA_KHAC_CO_SO";
     public const string ChuaCoNguoiNhan = "CHUA_CO_NGUOI_NHAN";
     public const string DuLieuSai = "DU_LIEU_SAI";
+    public const string LoaiTaiLieuLa = "LOAI_TAI_LIEU_LA";
 }
 
 public interface INhatKyApi

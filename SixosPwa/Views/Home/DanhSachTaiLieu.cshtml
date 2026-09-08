@@ -53,11 +53,14 @@
                 int idx = 0;
                 @foreach (var item in Model)
                 {
-                    var isDonThuoc = item.LoaiTaiLieu == "DON_THUOC";
-                    var isXn = item.LoaiTaiLieu == "KET_QUA_XN";
-                    var isCdha = item.LoaiTaiLieu == "CDHA";
-                    var loaiHienThi = isDonThuoc ? "Đơn thuốc" : (isXn ? "Kết quả xét nghiệm" : (isCdha ? "CĐHA / X-Quang" : "Hồ sơ y tế"));
-                    var nhom = isDonThuoc ? "don-thuoc" : "ket-qua-kham";
+                    @* V9 — ten hien thi va nhom lay tu danh muc dong
+                       (SixosPwa.Models.LoaiTaiLieu), khong so chuoi tay o view nua.
+                       Ba bien is* giu lai vi con dung de chon icon ben duoi. *@
+                    var isDonThuoc = item.LoaiTaiLieu == SixosPwa.Models.LoaiTaiLieu.DonThuoc;
+                    var isXn = item.LoaiTaiLieu == SixosPwa.Models.LoaiTaiLieu.KetQuaXn;
+                    var isCdha = item.LoaiTaiLieu == SixosPwa.Models.LoaiTaiLieu.Cdha;
+                    var loaiHienThi = SixosPwa.Models.LoaiTaiLieu.TenHienThi(item.LoaiTaiLieu);
+                    var nhom = SixosPwa.Models.LoaiTaiLieu.NhomUrl(item.LoaiTaiLieu);
                     var fileUrl = $"/api/v1/tai-lieu/xem/{item.Id}";
                     var safeTen = item.TenTaiLieu.Replace("'", "\\'").Replace("\"", "&quot;");
                     var ngayHienThi = item.NgayKham?.ToString("dd' thg 'MM") ?? item.NgayTao.ToString("dd' thg 'MM");

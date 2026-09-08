@@ -45,6 +45,68 @@ public class HomeController : Controller
             .Select(t => (long?)t.Id)
             .FirstOrDefaultAsync();
 
+
+    /// <summary>
+    /// Ho so cua nguoi dang dang nhap TAI CO SO cua phien. Mot cho duy nhat —
+    /// truoc day cau nay chep o hai man va de lech nhau.
+    ///
+    /// <para>
+    /// 🔴 <c>orderby h.Id</c> la bat buoc (V6a). Script 05 da bo rang buoc
+    /// <c>UK_DM_BenhNhanCoSo_HoSo</c> vi no trai du lieu that (17,3% benh nhan
+    /// Thien Nam co >=2 MaBN tai CUNG mot co so). Truoc day CSDL bao dam moi
+    /// (nguoi, co so) mot ho so; nay chi con mot phep kiem o tang ung dung
+    /// (<see cref="Services.Partner.LuongCongBenhNhan"/>). Ngay nao co dong thu
+    /// hai ma khong sap thu tu thi SQL Server tra dong nao la tuy ke hoach truy
+    /// van — man se doi NGUOI giua hai lan tai ma khong bao gi.
+    /// </para>
+    /// <para>
+    /// Con phai chon dung MOT ho so cho toi khi co *ho so dang chon* (chot 2 dot
+    /// 1, ADR 0019) — do la V6b, di cung man Noi ho so. Tam thoi lay ho so cu
+    /// nhat va GHI CANH BAO khi co nhieu hon mot, de ngay do minh biet chu khong
+    /// phai doan.
+    /// </para>
+    /// <para>
+    /// Loc <c>DaMoTaiLieu</c> ngay tai day: *Cua tai lieu* (chot 9 dot 1,
+    /// ADR 0020) la dieu kien de mo ket qua can lam sang / don thuoc.
+    /// </para>
+    /// </summary>
+    private async Task<HoSoDangDung?> LayHoSoDangDungAsync(string dinhDanh, string? maCoSo)
+    {
+        if (string.IsNullOrWhiteSpace(dinhDanh) || string.IsNullOrWhiteSpace(maCoSo))
+        {
+            ViewBag.SoHoSo = 0;
+            return null;
+        }
+
+        // 🔴 KHONG khop bang CCCD (V5). CCCD go luc dang nhap khong duoc xac
+        // thuc — OTP chi xac thuc so dien thoai (A6 dot 1). Khop bang CCCD
+        // nghia la go CCCD nguoi khac la xem duoc tai lieu cua ho.
+        var danhSach = await (
+            from p in _db.BenhNhans.AsNoTracking()
+            join h in _db.BenhNhanCoSos.AsNoTracking() on p.Id equals h.IdBenhNhan
+            join cs in _db.DMCSKCBs.AsNoTracking() on h.IdCoSo equals cs.Id
+            where (p.SDT == dinhDanh || p.Email == dinhDanh)
+                  && cs.MaCoSo == maCoSo
+                  && h.DaMoTaiLieu
+            orderby h.Id
+            select new HoSoDangDung(p, h)).ToListAsync();
+
+        // De man sau nay gan bo chon ma khong phai sua lai controller.
+        ViewBag.SoHoSo = danhSach.Count;
+
+        if (danhSach.Count == 0) return null;
+
+        if (danhSach.Count > 1)
+        {
+            _logger.LogWarning(
+                "Mot nguoi co {SoHoSo} ho so tai co so {MaCoSo} (IdBenhNhan={IdBenhNhan}). " +
+                "Dang lay ho so cu nhat Id={IdHoSo}. Can *ho so dang chon* (V6b) de nguoi dung tu chon.",
+                danhSach.Count, maCoSo, danhSach[0].BenhNhan.Id, danhSach[0].HoSo.Id);
+        }
+
+        return danhSach[0];
+    }
+
     // Action Index (trang benh nhan cu) da duoc go bo ngay 2026-08-22 theo yeu cau
     // cua user: luong do khong dung nua, thay bang /benh-nhan. Lay lai neu can:
     //   git show 224341a -- SixosPwa/Views/Home/Index.cshtml
@@ -179,23 +241,10 @@ public class HomeController : Controller
         // Phai loc theo CA dinh danh LAN co so: mot so dien thoai co the co ho so
         // o nhieu co so khac nhau (du lieu that dang co truong hop do), khong loc
         // thi trang chao ten lay tu ho so cua co so KHAC.
-        var hoSoInfo = string.IsNullOrWhiteSpace(dinhDanh)
-            ? null
-            : await (from p in _db.BenhNhans.AsNoTracking()
-                     join h in _db.BenhNhanCoSos.AsNoTracking() on p.Id equals h.IdBenhNhan
-                     join cs in _db.DMCSKCBs.AsNoTracking() on h.IdCoSo equals cs.Id
-                     // 🔴 KHONG khop bang CCCD (V5). CCCD go luc dang nhap khong
-                     // duoc xac thuc — OTP chi xac thuc so dien thoai (A6 dot 1).
-                     // Khop bang CCCD nghia la go CCCD nguoi khac la xem duoc tai
-                     // lieu cua ho. Chi khop bang dinh danh DA qua OTP.
-                     where (p.SDT == dinhDanh || p.Email == dinhDanh) && cs.MaCoSo == maCoSo
-                     // *Cua tai lieu* (chot 9 dot 1, ADR 0020): ho so phai duoc
-                     // mo moi thay ket qua / don thuoc.
-                     && h.DaMoTaiLieu
-                     select new { BenhNhan = p, HoSoCoSo = h }).FirstOrDefaultAsync();
+        var hoSoInfo = await LayHoSoDangDungAsync(dinhDanh, maCoSo);
 
         var benhNhan = hoSoInfo?.BenhNhan;
-        var hoSoCoSo = hoSoInfo?.HoSoCoSo;
+        var hoSoCoSo = hoSoInfo?.HoSo;
 
         int soLuongDonThuoc = 0;
         int soLuongKetQuaKham = 0;
@@ -208,8 +257,11 @@ public class HomeController : Controller
             var queryTl = _db.TaiLieuBenhNhans.AsNoTracking()
                 .Where(t => t.IdCoSo == coSo.Id && t.IdBenhNhanCoSo == hoSoCoSo.Id && t.LaBanMoiNhat);
 
-            soLuongDonThuoc = await queryTl.CountAsync(t => t.LoaiTaiLieu == "DON_THUOC");
-            soLuongKetQuaKham = await queryTl.CountAsync(t => t.LoaiTaiLieu != "DON_THUOC");
+            // V9 — dem theo THANH VIEN TAP, khong phai "khac DON_THUOC". Ma la
+            // (du lieu cu, hoac HIS go sai truoc khi cua API siet) khong duoc
+            // lang le nhay vao nhom Ket qua kham nua.
+            soLuongDonThuoc = await queryTl.CountAsync(t => t.LoaiTaiLieu == LoaiTaiLieu.DonThuoc);
+            soLuongKetQuaKham = await queryTl.CountAsync(t => LoaiTaiLieu.MaCuaNhomKetQuaKham.Contains(t.LoaiTaiLieu));
         }
 
         ViewBag.SoLuongDonThuoc = soLuongDonThuoc;
@@ -263,56 +315,32 @@ public class HomeController : Controller
             ? null
             : await _db.DMCSKCBs.AsNoTracking().FirstOrDefaultAsync(x => x.MaCoSo == maCoSo);
 
-        var hoSoInfo = string.IsNullOrWhiteSpace(dinhDanh)
-            ? null
-            : await (from p in _db.BenhNhans.AsNoTracking()
-                     join h in _db.BenhNhanCoSos.AsNoTracking() on p.Id equals h.IdBenhNhan
-                     join cs in _db.DMCSKCBs.AsNoTracking() on h.IdCoSo equals cs.Id
-                     // 🔴 KHONG khop bang CCCD (V5). CCCD go luc dang nhap khong
-                     // duoc xac thuc — OTP chi xac thuc so dien thoai (A6 dot 1).
-                     // Khop bang CCCD nghia la go CCCD nguoi khac la xem duoc tai
-                     // lieu cua ho. Chi khop bang dinh danh DA qua OTP.
-                     where (p.SDT == dinhDanh || p.Email == dinhDanh) && cs.MaCoSo == maCoSo
-                     // *Cua tai lieu* (chot 9 dot 1, ADR 0020): ho so phai duoc
-                     // mo moi thay ket qua / don thuoc.
-                     && h.DaMoTaiLieu
-                     select new { BenhNhan = p, HoSoCoSo = h }).FirstOrDefaultAsync();
+        var hoSoInfo = await LayHoSoDangDungAsync(dinhDanh, maCoSo);
 
         ViewBag.MaCoSo = maCoSo;
         ViewBag.TenCoSo = coSo?.TenCoSo ?? "Cơ sở khám chữa bệnh";
         ViewBag.TenBenhNhan = hoSoInfo?.BenhNhan?.TenBN ?? dinhDanh;
-        ViewBag.MaBN = hoSoInfo?.HoSoCoSo?.MaBN;
-        var nhomChuan = string.IsNullOrWhiteSpace(nhom) ? "tat-ca" : nhom.Trim().ToLowerInvariant();
+        ViewBag.MaBN = hoSoInfo?.HoSo.MaBN;
+        var nhomChuan = string.IsNullOrWhiteSpace(nhom) ? LoaiTaiLieu.NhomTatCa : nhom.Trim().ToLowerInvariant();
         ViewBag.Nhom = nhomChuan;
-
-        string tieuDeTrang = "Tài liệu y tế";
-        if (nhomChuan == "don-thuoc")
-        {
-            tieuDeTrang = "Đơn thuốc";
-        }
-        else if (nhomChuan == "ket-qua-kham")
-        {
-            tieuDeTrang = "Kết quả khám";
-        }
-        ViewBag.TieuDeTrang = tieuDeTrang;
+        ViewBag.TieuDeTrang = LoaiTaiLieu.TieuDeNhom(nhomChuan);
 
         List<TaiLieuBenhNhan> danhSach = new();
         if (coSo != null && hoSoInfo != null)
         {
-            var idBnCoSo = hoSoInfo.HoSoCoSo.Id;
-            var maBn = hoSoInfo.HoSoCoSo.MaBN;
+            var idBnCoSo = hoSoInfo.HoSo.Id;
 
             var q = _db.TaiLieuBenhNhans.AsNoTracking()
                 .Where(t => t.IdCoSo == coSo.Id && t.IdBenhNhanCoSo == idBnCoSo && t.LaBanMoiNhat);
 
             // Lọc chính xác theo nhóm tài liệu
-            if (nhomChuan == "don-thuoc")
+            if (nhomChuan == LoaiTaiLieu.NhomDonThuoc)
             {
-                q = q.Where(t => t.LoaiTaiLieu == "DON_THUOC");
+                q = q.Where(t => t.LoaiTaiLieu == LoaiTaiLieu.DonThuoc);
             }
-            else if (nhomChuan == "ket-qua-kham")
+            else if (nhomChuan == LoaiTaiLieu.NhomKetQuaKham)
             {
-                q = q.Where(t => t.LoaiTaiLieu != "DON_THUOC");
+                q = q.Where(t => LoaiTaiLieu.MaCuaNhomKetQuaKham.Contains(t.LoaiTaiLieu));
             }
 
             danhSach = await q
