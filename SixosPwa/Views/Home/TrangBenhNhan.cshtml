@@ -30,13 +30,42 @@
         }
 
         body.bn-trang {
-            background: var(--bn-nen);
+            background: #e9eef5;
             color: var(--bn-chu);
             margin: 0;
             min-height: 100vh;
+            padding: 24px 12px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
         }
 
-        .bn-khung { max-width: 560px; margin: 0 auto; padding-bottom: 32px; }
+        .bn-khung {
+            width: 100%;
+            max-width: 520px;
+            margin: 0 auto;
+            background: var(--bn-nen);
+            border: 1px solid var(--bn-vien);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 12px 36px -8px rgba(18, 32, 46, 0.14), 0 4px 12px rgba(18, 32, 46, 0.06);
+            padding-bottom: 24px;
+        }
+
+        @@media (max-width: 576px) {
+            body.bn-trang {
+                background: var(--bn-nen);
+                padding: 0;
+            }
+            .bn-khung {
+                max-width: 100%;
+                border-radius: 0;
+                border: none;
+                box-shadow: none;
+                min-height: 100vh;
+            }
+        }
 
         .bn-dau {
             background: var(--bn-xanh);
@@ -99,39 +128,130 @@
             padding: 20px 20px 8px;
         }
 
-        .bn-the {
-            display: flex;
+        .bn-luoi-dichvu {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
             gap: 12px;
-            align-items: flex-start;
-            background: var(--bn-the);
-            border: 1px solid var(--bn-vien);
-            border-radius: 10px;
-            margin: 0 16px 10px;
-            padding: 14px 16px;
-            min-height: 56px;
-            text-decoration: none;
-            color: inherit;
-            transition: border-color .15s, box-shadow .15s;
+            padding: 0 16px 14px;
         }
-        .bn-the:hover, .bn-the:focus-visible {
-            border-color: var(--bn-xanh);
-            box-shadow: 0 2px 12px -6px rgba(13, 91, 212, .5);
-            color: inherit;
-        }
-        .bn-the:focus-visible { outline: 3px solid var(--bn-xanh); outline-offset: 2px; }
 
-        .bn-the .bn-bieutuong {
-            width: 38px; height: 38px; flex: 0 0 auto;
-            border-radius: 9px;
-            background: var(--bn-xanh-nhat);
-            color: var(--bn-xanh);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 17px;
+        .bn-o-vuong {
+            background: linear-gradient(145deg, #0d5bd4 0%, #1e6de4 100%);
+            color: #ffffff !important;
+            border-radius: 16px;
+            padding: 16px 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            text-decoration: none;
+            transition: all .2s ease;
+            box-shadow: 0 6px 18px -4px rgba(13, 91, 212, 0.28);
+            min-height: 128px;
+            box-sizing: border-box;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            position: relative;
+            overflow: hidden;
         }
-        /* Phai la block: dung span inline thi ten dich vu va mo ta dinh lien
-           nhau tren cung mot dong. */
-        .bn-the .bn-ten { display: block; font-weight: 700; font-size: 14.5px; }
-        .bn-the .bn-mota { display: block; font-size: 12.5px; color: var(--bn-chu-nhat); margin-top: 2px; }
+
+        .bn-o-vuong:hover, .bn-o-vuong:focus-visible {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 24px -4px rgba(13, 91, 212, 0.42);
+            color: #ffffff !important;
+        }
+
+        .bn-o-vuong:focus-visible { outline: 3px solid #ffffff; outline-offset: 2px; }
+
+        .bn-o-vuong .bn-bieutuong {
+            width: 46px;
+            height: 46px;
+            flex: 0 0 auto;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        .bn-o-vuong .bn-noidung-the {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .bn-o-vuong .bn-ten {
+            display: block;
+            font-weight: 700;
+            font-size: 14.5px;
+            color: #ffffff;
+            line-height: 1.3;
+        }
+
+        .bn-o-vuong .bn-mota {
+            display: block;
+            font-size: 11.5px;
+            color: rgba(255, 255, 255, 0.85);
+            margin-top: 4px;
+            line-height: 1.3;
+        }
+
+        /* Mũi tên nhỏ góc dưới các ô vuông */
+        .bn-o-vuong .bn-mui-ten {
+            position: absolute;
+            bottom: 8px;
+            right: 12px;
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .18s ease;
+        }
+
+        .bn-o-vuong:hover .bn-mui-ten {
+            transform: translateX(3px);
+            color: #ffffff;
+        }
+
+        /* Hàng cuối: chiếm trọn 2 cột (full width) và cũng màu xanh */
+        .bn-hang-cuoi {
+            grid-column: span 2;
+            flex-direction: row;
+            text-align: left;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 14px;
+            padding: 14px 18px;
+            min-height: 64px;
+        }
+
+        .bn-hang-cuoi .bn-bieutuong {
+            margin-bottom: 0;
+            width: 42px;
+            height: 42px;
+        }
+
+        .bn-hang-cuoi .bn-noidung-the {
+            align-items: flex-start;
+            flex: 1;
+        }
+
+        .bn-hang-cuoi .bn-mui-ten {
+            position: static;
+            font-size: 22px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-left: auto;
+            transition: transform .15s;
+        }
+
+        .bn-hang-cuoi:hover .bn-mui-ten {
+            transform: translateX(3px);
+            color: #ffffff;
+        }
 
         .bn-canhbao {
             background: var(--bn-do-nhat);
@@ -191,39 +311,97 @@
 
         <div class="bn-muc">DỊCH VỤ</div>
 
-        @* Chu va thu tu ba the lay dung tu trang cua doi tac. Dot nay MOI CHI
-           DUNG GIAO DIEN — ca ba deu dan toi man trong "Dang cap nhat". *@
-        <a class="bn-the" href="/benh-nhan/sap-co?muc=dat-goi-kham">
-            <span class="bn-bieutuong" aria-hidden="true">▤</span>
-            <span>
-                <span class="bn-ten">Đăng ký khám theo gói</span>
-                <span class="bn-mota">Chọn gói khám phù hợp — sức khoẻ trọn gói, an tâm tuyệt đối</span>
-            </span>
-        </a>
+        <div class="bn-luoi-dichvu">
+            <!-- 1. Lịch hẹn (Ô vuông xanh) -->
+            <div class="bn-o-vuong" role="button" tabindex="0" onclick="moModalLichHen()" onkeydown="if(event.key==='Enter') moModalLichHen()" style="cursor: pointer;">
+                <span class="bn-bieutuong" aria-hidden="true">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                </span>
+                <span class="bn-noidung-the">
+                    <span class="bn-ten">Lịch hẹn</span>
+                    <span class="bn-mota">Xem ngày nhắc hẹn khám</span>
+                </span>
+                <span class="bn-mui-ten" aria-hidden="true">›</span>
+            </div>
 
-        <a class="bn-the" href="/benh-nhan/sap-co?muc=lich-su-hen">
-            <span class="bn-bieutuong" aria-hidden="true">◷</span>
-            <span>
-                <span class="bn-ten">Lịch sử hẹn khám</span>
-                <span class="bn-mota">Quản lý lịch hẹn, thay đổi lịch hẹn</span>
-            </span>
-        </a>
+            <!-- 2. Đơn thuốc (Ô vuông xanh) -->
+            <a class="bn-o-vuong" href="/benh-nhan/sap-co?muc=don-thuoc">
+                <span class="bn-bieutuong" aria-hidden="true">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"></path>
+                        <path d="m8.5 8.5 7 7"></path>
+                    </svg>
+                </span>
+                <span class="bn-noidung-the">
+                    <span class="bn-ten">Đơn thuốc</span>
+                    <span class="bn-mota">Toa thuốc điện tử</span>
+                </span>
+                <span class="bn-mui-ten" aria-hidden="true">›</span>
+            </a>
 
-        <a class="bn-the" href="/benh-nhan/sap-co?muc=ho-so-kham">
-            <span class="bn-bieutuong" aria-hidden="true">◫</span>
-            <span>
-                <span class="bn-ten">Tra cứu hồ sơ khám bệnh</span>
-                <span class="bn-mota">Quản lý hồ sơ khám chữa bệnh</span>
-            </span>
-        </a>
+            <!-- 3. Kết quả khám bệnh (Ô vuông xanh) -->
+            <a class="bn-o-vuong" href="/benh-nhan/sap-co?muc=ket-qua-kham">
+                <span class="bn-bieutuong" aria-hidden="true">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <path d="m9 15 2 2 4-4"></path>
+                    </svg>
+                </span>
+                <span class="bn-noidung-the">
+                    <span class="bn-ten">Kết quả khám</span>
+                    <span class="bn-mota">Tra cứu xét nghiệm, chẩn đoán</span>
+                </span>
+                <span class="bn-mui-ten" aria-hidden="true">›</span>
+            </a>
+
+            <!-- 4. Quản lý hóa đơn (Ô vuông xanh) -->
+            <a class="bn-o-vuong" href="/benh-nhan/sap-co?muc=quan-ly-hoa-don">
+                <span class="bn-bieutuong" aria-hidden="true">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"></path>
+                        <line x1="8" y1="7" x2="16" y2="7"></line>
+                        <line x1="8" y1="11" x2="16" y2="11"></line>
+                        <line x1="8" y1="15" x2="13" y2="15"></line>
+                    </svg>
+                </span>
+                <span class="bn-noidung-the">
+                    <span class="bn-ten">Quản lý hóa đơn</span>
+                    <span class="bn-mota">Chi phí và thanh toán</span>
+                </span>
+                <span class="bn-mui-ten" aria-hidden="true">›</span>
+            </a>
+
+            <!-- 5. Kế hoạch điều trị (Hàng cuối màu xanh - full width) -->
+            <a class="bn-o-vuong bn-hang-cuoi" href="/benh-nhan/sap-co?muc=ke-hoach-dieu-tri">
+                <span class="bn-bieutuong" aria-hidden="true">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                        <path d="M12 11h4"></path>
+                        <path d="M12 16h4"></path>
+                        <path d="M8 11h.01"></path>
+                        <path d="M8 16h.01"></path>
+                    </svg>
+                </span>
+                <span class="bn-noidung-the">
+                    <span class="bn-ten">Kế hoạch điều trị</span>
+                    <span class="bn-mota">Lộ trình điều trị, phác đồ và hướng dẫn theo dõi</span>
+                </span>
+                <span class="bn-mui-ten" aria-hidden="true">›</span>
+            </a>
+        </div>
 
         <footer class="bn-chan">
             <div>Hỗ trợ: <a href="tel:0901878896">0901 87 88 96</a></div>
             <div>
                 @if (ViewBag.DungManDoiTac != true)
                 {
-                    @* Co so dung man cua doi tac thi mat khau do HO giu — doi o trang
-                       cua co so, khong phai o day. ADR 0014. *@
                     <a href="/DangNhap/DoiMatKhau?coSo=@ViewBag.MaCoSo">Đổi mật khẩu</a>
                     <text>&nbsp;·&nbsp;</text>
                 }
@@ -233,5 +411,1039 @@
 
     </div>
 
+    <!-- ==================== POPUP THÔNG BÁO LỊCH KHÁM (PHONG CÁCH VIETCOMBANK) ==================== -->
+    <div id="modalLichHen" class="vcb-overlay" style="display: none;" onclick="xuLyBamNgoaiModal(event)" role="dialog" aria-modal="true" aria-labelledby="vcbTieuDe">
+        <div class="vcb-hop" onclick="event.stopPropagation()">
+            
+            <!-- Top App Bar -->
+            <div class="vcb-top-bar">
+                <button type="button" class="vcb-nut-back" onclick="dongModalLichHen()" aria-label="Quay lại">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                </button>
+                <h2 id="vcbTieuDe" class="vcb-tieude-chinh">Thông tin lịch khám</h2>
+                <button type="button" class="vcb-nut-doc-tat-ca" onclick="danhDauTatCaDaDoc()" title="Đánh dấu tất cả đã đọc">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span class="vcb-badge-so-chua-doc" id="vcbBadgeChuaDoc">2</span>
+                </button>
+            </div>
+
+            <!-- Thanh điều hướng tuần / tháng (Date Range Navigator) -->
+            <div class="vcb-tuan-navigator">
+                <div class="vcb-tuan-chinh">
+                    <button type="button" class="vcb-btn-mui-ten" onclick="chuyenKhoangThoiGian(-1)" aria-label="Trước">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </button>
+                    <div class="vcb-tuan-chuoi" id="vcbChuoiKhoangNgay">
+                        07/09/2026 đến 13/09/2026
+                    </div>
+                    <button type="button" class="vcb-btn-mui-ten" onclick="chuyenKhoangThoiGian(1)" aria-label="Sau">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </button>
+                </div>
+                <!-- Nút mở menu chọn các tuần trong tháng -->
+                <div class="vcb-nut-tatca-wrap">
+                    <button type="button" class="vcb-btn-xem-tat-ca" id="vcbBtnXemTatCa" onclick="moSheetChonTuan()">
+                        <span class="vcb-tatca-icon">📅</span>
+                        <span id="vcbTextTatCa">Xem tất cả các tuần trong tháng</span>
+                        <span class="vcb-tatca-arrow">▼</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Ô tìm kiếm thông báo -->
+            <div class="vcb-tim-kiem-wrap">
+                <div class="vcb-tim-kiem-khung">
+                    <span class="vcb-icon-search" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </span>
+                    <input type="text" id="vcbInputTimKiem" class="vcb-input-search" placeholder="Tìm kiếm thông báo" oninput="timKiemThongBaoVcb(this.value)" />
+                </div>
+            </div>
+
+            <!-- Danh sách các thẻ thông báo (Cards feed) -->
+            <div class="vcb-danh-sach-wrap" id="vcbDanhSachThongBao">
+                <!-- Dynamic cards rendered by JS -->
+            </div>
+
+            <!-- Popup / Bottom Sheet Chọn Tuần hoặc Cả Tháng -->
+            <div id="vcbSheetChonTuan" class="vcb-sheet-overlay" style="display: none;" onclick="dongSheetChonTuan()">
+                <div class="vcb-sheet-hop" onclick="event.stopPropagation()">
+                    <div class="vcb-sheet-dau">
+                        <div>
+                            <h3 class="vcb-sheet-tieude">Chọn thời gian xem lịch</h3>
+                            <div class="vcb-sheet-phude" id="vcbSheetTenThang">Tháng 09/2026</div>
+                        </div>
+                        <button type="button" class="vcb-sheet-nut-dong" onclick="dongSheetChonTuan()">✕</button>
+                    </div>
+                    <div class="vcb-sheet-danhsach" id="vcbSheetDanhSachTuan">
+                        <!-- Dynamic week cards rendered by JS -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ==================== STYLES & SCRIPT PHONG CÁCH THÔNG BÁO VIETCOMBANK ==================== -->
+    <style>
+        .vcb-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            box-sizing: border-box;
+            animation: vcbFadeIn .2s ease-out;
+        }
+
+        @@keyframes vcbFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .vcb-hop {
+            background: #f1f4f8;
+            width: 100%;
+            max-width: 480px;
+            height: 90vh;
+            max-height: 840px;
+            border-radius: 22px;
+            box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.35);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            animation: vcbSlideUp .22s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+        }
+
+        @@keyframes vcbSlideUp {
+            from { transform: translateY(20px) scale(0.97); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+
+        /* Top Bar */
+        .vcb-top-bar {
+            background: #ffffff;
+            padding: 16px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #e6ebf1;
+            flex-shrink: 0;
+        }
+
+        .vcb-nut-back {
+            background: transparent;
+            border: none;
+            color: #0f172a;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 50%;
+            transition: background .15s;
+        }
+        .vcb-nut-back:hover { background: #f1f5f9; }
+
+        .vcb-tieude-chinh {
+            margin: 0;
+            font-size: 19px;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.01em;
+            flex: 1;
+            margin-left: 12px;
+        }
+
+        .vcb-nut-doc-tat-ca {
+            background: #f1f5f9;
+            border: none;
+            color: #1e293b;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            transition: all .15s;
+        }
+        .vcb-nut-doc-tat-ca:hover { background: #e2e8f0; }
+
+        .vcb-badge-so-chua-doc {
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            background: #ef4444;
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 5px;
+            border-radius: 10px;
+            border: 2px solid #ffffff;
+            line-height: 1;
+        }
+
+        /* Date Range Week/Month Navigator */
+        .vcb-tuan-navigator {
+            background: #ffffff;
+            padding: 10px 18px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border-bottom: 1px solid #e6ebf1;
+            flex-shrink: 0;
+        }
+
+        .vcb-tuan-chinh {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .vcb-btn-mui-ten {
+            background: transparent;
+            border: none;
+            color: #0f172a;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all .15s ease;
+        }
+        .vcb-btn-mui-ten:hover {
+            background: #f1f5f9;
+            transform: scale(1.08);
+        }
+
+        .vcb-tuan-chuoi {
+            font-size: 15.5px;
+            font-weight: 700;
+            color: #0f172a;
+            letter-spacing: -0.01em;
+            text-align: center;
+            flex: 1;
+            user-select: none;
+        }
+
+        /* Nút Xem tất cả tháng */
+        .vcb-nut-tatca-wrap {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .vcb-btn-xem-tat-ca {
+            background: #f0f7ff;
+            color: #0d5bd4;
+            border: 1px dashed #93c5fd;
+            padding: 5px 16px;
+            border-radius: 20px;
+            font-size: 12.5px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all .18s ease;
+            user-select: none;
+        }
+
+        .vcb-btn-xem-tat-ca:hover {
+            background: #dbeafe;
+            border-color: #3b82f6;
+            color: #1d4ed8;
+        }
+
+        .vcb-btn-xem-tat-ca.active {
+            background: #0d5bd4;
+            color: #ffffff;
+            border-color: #0d5bd4;
+            border-style: solid;
+            box-shadow: 0 2px 8px rgba(13, 91, 212, 0.28);
+        }
+
+        .vcb-tatca-arrow {
+            font-size: 9px;
+            opacity: 0.75;
+            margin-left: 2px;
+        }
+
+        /* Bottom Sheet Chọn Tuần / Toàn Bộ Tháng */
+        .vcb-sheet-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+            z-index: 100;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            animation: vcbSheetFadeIn .18s ease-out;
+        }
+
+        @@keyframes vcbSheetFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .vcb-sheet-hop {
+            background: #ffffff;
+            width: 100%;
+            border-top-left-radius: 22px;
+            border-top-right-radius: 22px;
+            box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.2);
+            padding: 18px 20px 24px;
+            box-sizing: border-box;
+            max-height: 75vh;
+            display: flex;
+            flex-direction: column;
+            animation: vcbSheetSlideUp .22s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @@keyframes vcbSheetSlideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .vcb-sheet-dau {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eef2f6;
+        }
+
+        .vcb-sheet-tieude {
+            margin: 0;
+            font-size: 17px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .vcb-sheet-phude {
+            font-size: 12.5px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        .vcb-sheet-nut-dong {
+            background: #f1f5f9;
+            border: none;
+            color: #64748b;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all .15s;
+        }
+        .vcb-sheet-nut-dong:hover { background: #e2e8f0; color: #0f172a; }
+
+        .vcb-sheet-danhsach {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            overflow-y: auto;
+            max-height: 55vh;
+            padding-right: 2px;
+        }
+
+        .vcb-sheet-item {
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all .15s ease;
+            user-select: none;
+        }
+
+        .vcb-sheet-item:hover {
+            background: #f0f7ff;
+            border-color: #93c5fd;
+        }
+
+        .vcb-sheet-item.active {
+            background: #eff6ff;
+            border-color: #0d5bd4;
+            box-shadow: 0 2px 8px rgba(13, 91, 212, 0.15);
+        }
+
+        .vcb-sheet-item.tat-ca {
+            background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+            border-color: #93c5fd;
+        }
+        .vcb-sheet-item.tat-ca.active {
+            border-color: #0d5bd4;
+            background: #eff6ff;
+        }
+
+        .vcb-sheet-item-trai {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .vcb-sheet-icon {
+            font-size: 18px;
+        }
+
+        .vcb-sheet-ten {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .vcb-sheet-badge-nay {
+            font-size: 10px;
+            font-weight: 700;
+            background: #dcfce7;
+            color: #15803d;
+            padding: 1px 6px;
+            border-radius: 6px;
+        }
+
+        .vcb-sheet-khoang {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        .vcb-sheet-dem {
+            font-size: 12px;
+            font-weight: 600;
+            color: #0d5bd4;
+            background: #ffffff;
+            padding: 3px 8px;
+            border-radius: 10px;
+            border: 1px solid #dbeafe;
+        }
+
+        /* Search box */
+        .vcb-tim-kiem-wrap {
+            padding: 12px 16px 8px;
+            background: #f1f4f8;
+            flex-shrink: 0;
+        }
+
+        .vcb-tim-kiem-khung {
+            background: #ffffff;
+            border: 1px solid #dce4ec;
+            border-radius: 14px;
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+        }
+
+        .vcb-icon-search {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .vcb-input-search {
+            border: none;
+            outline: none;
+            width: 100%;
+            font-size: 14px;
+            color: #1e293b;
+            background: transparent;
+        }
+        .vcb-input-search::placeholder { color: #94a3b8; }
+
+        /* List Cards Feed */
+        .vcb-danh-sach-wrap {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Card Thông Báo */
+        .vcb-the-thong-bao {
+            border-radius: 16px;
+            padding: 16px 16px 14px;
+            cursor: pointer;
+            transition: all .2s ease;
+            position: relative;
+            box-sizing: border-box;
+            border: 1px solid transparent;
+            user-select: none;
+        }
+
+        /* 1. TRẠNG THÁI CHƯA ĐỌC: SÁNG, NỔI BẬT, CÓ CHỮ MỚI */
+        .vcb-the-thong-bao.chua-doc {
+            background: #ffffff;
+            border-color: #cbd5e1;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+        }
+
+        .vcb-the-thong-bao.chua-doc:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+            border-color: #94a3b8;
+        }
+
+        /* 2. TRẠNG THÁI ĐÃ ĐỌC: TỐI HƠN TÝ (XÁM CHÌM), ĐÃ MẤT CHỮ MỚI */
+        .vcb-the-thong-bao.da-doc {
+            background: #e6ebf1; /* Tối hơn tí theo yêu cầu */
+            border-color: #d1d9e2;
+            box-shadow: none;
+            opacity: 0.92;
+        }
+
+        .vcb-the-thong-bao.da-doc:hover {
+            background: #dfe6ee;
+        }
+
+        /* Header trong thẻ */
+        .vcb-the-dau {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .vcb-thoi-gian {
+            font-size: 13px;
+            font-weight: 500;
+            color: #64748b;
+        }
+
+        .vcb-the-thong-bao.chua-doc .vcb-thoi-gian {
+            color: #334155;
+            font-weight: 700;
+        }
+
+        /* Chữ MỚI trên đầu (Dành cho tin chưa đọc) */
+        .vcb-badge-moi {
+            background: #ff3b30;
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            box-shadow: 0 2px 6px rgba(255, 59, 48, 0.35);
+            animation: vcbPulse 1.8s infinite;
+        }
+
+        @@keyframes vcbPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* Dấu tick xanh cho tin đã đọc (như hình VCB) */
+        .vcb-tick-da-doc {
+            color: #5bb749;
+            font-size: 16px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        /* Nội dung tin nhắn thông báo */
+        .vcb-noi-dung-text {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #0f172a;
+            word-break: break-word;
+        }
+
+        .vcb-the-thong-bao.da-doc .vcb-noi-dung-text {
+            color: #475569; /* Chữ trầm hơn cho tin đã đọc */
+        }
+
+        /* Khối dặn dò mở rộng */
+        .vcb-loi-dan-box {
+            margin-top: 10px;
+            padding: 10px 12px;
+            background: #fff8e6;
+            border-left: 3px solid #f59e0b;
+            border-radius: 6px;
+            font-size: 12.5px;
+            color: #92400e;
+            line-height: 1.4;
+        }
+
+        .vcb-the-thong-bao.da-doc .vcb-loi-dan-box {
+            background: rgba(245, 158, 11, 0.1);
+            color: #78350f;
+        }
+
+        /* Footer chi tiết trong thẻ */
+        .vcb-the-chan {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px dashed rgba(100, 116, 139, 0.2);
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .vcb-khoa-bac-si {
+            font-weight: 600;
+            color: #0d5bd4;
+        }
+
+        .vcb-trang-rong {
+            text-align: center;
+            padding: 40px 20px;
+            color: #94a3b8;
+            font-size: 14px;
+        }
+    </style>
+
+    <script>
+        // Danh sách thông báo lịch khám mô phỏng chuẩn phong cách thông báo tài khoản
+        // daDoc = false (Sáng sủa + hiện chữ MỚI)
+        // daDoc = true  (Tối hơn một tí + hiện tick xanh)
+        (function() {
+            const homNay = new Date();
+            const nam = homNay.getFullYear();
+            const thang = String(homNay.getMonth() + 1).padStart(2, '0');
+            const ngay = String(homNay.getDate()).padStart(2, '0');
+
+            window.danhSachThongBaoLich = [
+                {
+                    id: 1,
+                    thoiGianHienThi: "Hôm nay • 08:30",
+                    ngayIso: `${nam}-${thang}-${ngay}`,
+                    loai: "nhac-hen",
+                    daDoc: false, // Chưa đọc -> Sáng + chữ MỚI
+                    noiDung: `Lịch nhắc khám: Quý khách có lịch hẹn tái khám tại Khoa Nội Tiết - Phòng 204 lúc 08:30 ngày ${ngay}/${thang}/${nam}. Bác sĩ phụ trách: BSCKII. Nguyễn Văn An.`,
+                    loiDan: "Vui lòng nhịn ăn sáng để làm xét nghiệm máu và lấy kết quả trong buổi sáng.",
+                    chuyenKhoa: "Khoa Nội Tiết"
+                },
+                {
+                    id: 2,
+                    thoiGianHienThi: "Hôm qua • 21:31",
+                    ngayIso: `${nam}-09-07`,
+                    loai: "nhac-hen",
+                    daDoc: false, // Chưa đọc -> Sáng + chữ MỚI
+                    noiDung: `Lịch nhắc hẹn: Lịch khám định kỳ Mắt - Phòng 302 của quý khách vào 14:00 ngày 07/09/${nam}. ThS.BS. Hoàng Minh Tuấn phụ trách.`,
+                    loiDan: "Kiểm tra thị lực định kỳ và đo nhãn áp.",
+                    chuyenKhoa: "Khoa Mắt"
+                },
+                {
+                    id: 3,
+                    thoiGianHienThi: "06/09/2026 • 21:30",
+                    ngayIso: `${nam}-09-06`,
+                    loai: "tai-kham",
+                    daDoc: true, // Đã đọc -> Tối hơn tí + tick xanh
+                    noiDung: `Thông báo khám: Quý khách đã hoàn thành lịch hẹn khám Tim Mạch lúc 09:30 ngày 06/09/${nam}. BSCKII. Lê Thị Mai. Toa thuốc đã được cập nhật vào hồ sơ.`,
+                    loiDan: "Tái khám sau 1 tháng hoặc khi có biểu hiện tức ngực.",
+                    chuyenKhoa: "Khoa Tim Mạch"
+                },
+                {
+                    id: 4,
+                    thoiGianHienThi: "06/09/2026 • 19:01",
+                    ngayIso: `${nam}-09-06`,
+                    loai: "nhac-hen",
+                    daDoc: true, // Đã đọc -> Tối hơn tí + tick xanh
+                    noiDung: `Lịch hẹn khám: Bệnh viện tiếp nhận yêu cầu đặt lịch khám tổng quát ngày 06/09/${nam} lúc 08:00 tại Phòng 101.`,
+                    loiDan: "Đến trước 15 phút để lấy số thứ tự ưu tiên.",
+                    chuyenKhoa: "Khám Tổng Quát"
+                },
+                {
+                    id: 5,
+                    thoiGianHienThi: "02/09/2026 • 08:00",
+                    ngayIso: `${nam}-09-02`,
+                    loai: "tai-kham",
+                    daDoc: true, // Đã đọc -> Tối hơn tí + tick xanh
+                    noiDung: `Lịch hẹn khám: Nhắc lịch khám sức khỏe định kỳ lúc 08:00 ngày 02/09/${nam}. Bác sĩ phụ trách: BSCKI. Trần Văn Bình.`,
+                    loiDan: "Mang theo sổ khám và thẻ BHYT.",
+                    chuyenKhoa: "Khám Tổng Quát"
+                }
+            ];
+        })();
+
+        let cheDoXemTatCaThang = false; // false: Xem theo tuần, true: Xem tất cả các tuần trong tháng
+        let offsetThoiGian = 0; // offset tuần (hoặc offset tháng)
+        let customKhoangChon = null; // Khi chọn tuần cụ thể từ sheet
+        let tuKhoaTimKiemVcb = '';
+
+        function formatIso(dt) {
+            const y = dt.getFullYear();
+            const m = String(dt.getMonth() + 1).padStart(2, '0');
+            const d = String(dt.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function formatVn(dt) {
+            const d = String(dt.getDate()).padStart(2, '0');
+            const m = String(dt.getMonth() + 1).padStart(2, '0');
+            const y = dt.getFullYear();
+            return `${d}/${m}/${y}`;
+        }
+
+        // Tạo danh sách tất cả các tuần trong tháng
+        function layCacTuanTrongThang(nam, thang1Indexed) {
+            const firstDayOfMonth = new Date(nam, thang1Indexed - 1, 1);
+            const lastDayOfMonth = new Date(nam, thang1Indexed, 0);
+            
+            const weeks = [];
+            let currentMonday = new Date(firstDayOfMonth);
+            const dayOfWeek = currentMonday.getDay();
+            const diffToMonday = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
+            currentMonday.setDate(currentMonday.getDate() + diffToMonday);
+            currentMonday.setHours(0, 0, 0, 0);
+
+            let weekIndex = 1;
+            while (currentMonday <= lastDayOfMonth || (currentMonday.getMonth() === thang1Indexed - 1)) {
+                const currentSunday = new Date(currentMonday);
+                currentSunday.setDate(currentMonday.getDate() + 6);
+                currentSunday.setHours(23, 59, 59, 999);
+
+                if (currentSunday >= firstDayOfMonth && currentMonday <= lastDayOfMonth) {
+                    weeks.push({
+                        tenTuan: `Tuần ${weekIndex}`,
+                        monday: new Date(currentMonday),
+                        sunday: new Date(currentSunday),
+                        mondayIso: formatIso(currentMonday),
+                        sundayIso: formatIso(currentSunday),
+                        chuoiHienThi: `${formatVn(currentMonday)} đến ${formatVn(currentSunday)}`
+                    });
+                    weekIndex++;
+                }
+
+                currentMonday.setDate(currentMonday.getDate() + 7);
+                if (currentMonday > lastDayOfMonth && currentMonday.getMonth() !== thang1Indexed - 1) {
+                    break;
+                }
+            }
+            return weeks;
+        }
+
+        function layKhoangThoiGian(offset) {
+            if (customKhoangChon) {
+                return customKhoangChon;
+            }
+
+            const homNay = new Date();
+
+            if (cheDoXemTatCaThang) {
+                // Chế độ xem cả tháng: Lấy từ ngày 1 đến ngày cuối tháng
+                const targetMonth = new Date(homNay.getFullYear(), homNay.getMonth() + offset, 1);
+                const startMonth = new Date(targetMonth.getFullYear(), targetMonth.getMonth(), 1);
+                const endMonth = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0);
+                endMonth.setHours(23, 59, 59, 999);
+
+                const mStr = String(startMonth.getMonth() + 1).padStart(2, '0');
+                const yStr = startMonth.getFullYear();
+
+                return {
+                    startIso: formatIso(startMonth),
+                    endIso: formatIso(endMonth),
+                    chuoiHienThi: `Tháng ${mStr}/${yStr} (01/${mStr} đến ${String(endMonth.getDate()).padStart(2, '0')}/${mStr}/${yStr})`
+                };
+            } else {
+                // Chế độ xem theo tuần: Lấy Thứ Hai đến Chủ Nhật
+                const dayOfWeek = homNay.getDay();
+                const diffToMonday = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
+                
+                const monday = new Date(homNay);
+                monday.setDate(homNay.getDate() + diffToMonday + (offset * 7));
+                monday.setHours(0, 0, 0, 0);
+
+                const sunday = new Date(monday);
+                sunday.setDate(monday.getDate() + 6);
+                sunday.setHours(23, 59, 59, 999);
+
+                return {
+                    startIso: formatIso(monday),
+                    endIso: formatIso(sunday),
+                    chuoiHienThi: `${formatVn(monday)} đến ${formatVn(sunday)}`
+                };
+            }
+        }
+
+        function moSheetChonTuan() {
+            const homNay = new Date();
+            const nam = homNay.getFullYear();
+            const thang = homNay.getMonth() + 1;
+            
+            const sheetTenThang = document.getElementById('vcbSheetTenThang');
+            if (sheetTenThang) {
+                sheetTenThang.innerText = `Tháng ${String(thang).padStart(2, '0')}/${nam}`;
+            }
+
+            const danhsachContainer = document.getElementById('vcbSheetDanhSachTuan');
+            if (!danhsachContainer) return;
+
+            const cacTuan = layCacTuanTrongThang(nam, thang);
+            const khoangHienTai = layKhoangThoiGian(offsetThoiGian);
+            const dsNotif = window.danhSachThongBaoLich;
+
+            const startThangIso = `${nam}-${String(thang).padStart(2, '0')}-01`;
+            const endThangIso = formatIso(new Date(nam, thang, 0));
+            const soLuongCaThang = dsNotif.filter(x => x.ngayIso >= startThangIso && x.ngayIso <= endThangIso).length;
+
+            let html = `
+                <!-- Tùy chọn 1: Xem tất cả các tuần trong tháng -->
+                <div class="vcb-sheet-item tat-ca ${cheDoXemTatCaThang ? 'active' : ''}" onclick="chonTuSheet('tat-ca-thang')">
+                    <div class="vcb-sheet-item-trai">
+                        <span class="vcb-sheet-icon">🌟</span>
+                        <div>
+                            <div class="vcb-sheet-ten">Xem tất cả các tuần trong tháng</div>
+                            <div class="vcb-sheet-khoang">01/${String(thang).padStart(2,'0')} đến ${String(new Date(nam, thang, 0).getDate()).padStart(2,'0')}/${String(thang).padStart(2,'0')}/${nam}</div>
+                        </div>
+                    </div>
+                    <span class="vcb-sheet-dem">${soLuongCaThang} lịch hẹn</span>
+                </div>
+            `;
+
+            // Tùy chọn từng tuần
+            const homNayIso = formatIso(homNay);
+            cacTuan.forEach((tuan, idx) => {
+                const isActive = !cheDoXemTatCaThang && (khoangHienTai.startIso === tuan.mondayIso);
+                const isTuanNay = (homNayIso >= tuan.mondayIso && homNayIso <= tuan.sundayIso);
+                const soLuongTuan = dsNotif.filter(x => x.ngayIso >= tuan.mondayIso && x.ngayIso <= tuan.sundayIso).length;
+
+                html += `
+                    <div class="vcb-sheet-item ${isActive ? 'active' : ''}" onclick="chonTuSheet('tuan', '${tuan.mondayIso}', '${tuan.sundayIso}', '${tuan.chuoiHienThi}')">
+                        <div class="vcb-sheet-item-trai">
+                            <span class="vcb-sheet-icon">📅</span>
+                            <div>
+                                <div class="vcb-sheet-ten">
+                                    ${tuan.tenTuan}
+                                    ${isTuanNay ? '<span class="vcb-sheet-badge-nay">Tuần này</span>' : ''}
+                                </div>
+                                <div class="vcb-sheet-khoang">${tuan.chuoiHienThi}</div>
+                            </div>
+                        </div>
+                        <span class="vcb-sheet-dem">${soLuongTuan} lịch hẹn</span>
+                    </div>
+                `;
+            });
+
+            danhsachContainer.innerHTML = html;
+            document.getElementById('vcbSheetChonTuan').style.display = 'flex';
+        }
+
+        function dongSheetChonTuan() {
+            document.getElementById('vcbSheetChonTuan').style.display = 'none';
+        }
+
+        function chonTuSheet(loai, mondayIso, sundayIso, chuoiHienThi) {
+            if (loai === 'tat-ca-thang') {
+                cheDoXemTatCaThang = true;
+                customKhoangChon = null;
+                offsetThoiGian = 0;
+                
+                const btn = document.getElementById('vcbBtnXemTatCa');
+                const textEl = document.getElementById('vcbTextTatCa');
+                if (btn) btn.classList.add('active');
+                if (textEl) textEl.innerText = 'Đang xem tất cả tháng (Bấm để chọn lại)';
+            } else {
+                cheDoXemTatCaThang = false;
+                customKhoangChon = {
+                    startIso: mondayIso,
+                    endIso: sundayIso,
+                    chuoiHienThi: chuoiHienThi
+                };
+
+                const btn = document.getElementById('vcbBtnXemTatCa');
+                const textEl = document.getElementById('vcbTextTatCa');
+                if (btn) btn.classList.remove('active');
+                if (textEl) textEl.innerText = 'Xem tất cả các tuần trong tháng';
+            }
+
+            dongSheetChonTuan();
+            capNhatKhoangThoiGianUi();
+            renderDanhSachVcb();
+        }
+
+        function capNhatKhoangThoiGianUi() {
+            const khoang = layKhoangThoiGian(offsetThoiGian);
+            const el = document.getElementById('vcbChuoiKhoangNgay');
+            if (el) {
+                el.innerText = khoang.chuoiHienThi;
+            }
+        }
+
+        function chuyenKhoangThoiGian(direction) {
+            customKhoangChon = null; // Khi bấm nút mũi tên thì chuyển theo tuần tự
+            offsetThoiGian += direction;
+            capNhatKhoangThoiGianUi();
+            renderDanhSachVcb();
+        }
+
+        function capNhatBadgeChuaDoc() {
+            const soChuaDoc = window.danhSachThongBaoLich.filter(x => !x.daDoc).length;
+            const badgeEl = document.getElementById('vcbBadgeChuaDoc');
+            
+            if (badgeEl) {
+                badgeEl.innerText = soChuaDoc;
+                badgeEl.style.display = soChuaDoc > 0 ? 'inline-block' : 'none';
+            }
+        }
+
+        function renderDanhSachVcb() {
+            const container = document.getElementById('vcbDanhSachThongBao');
+            if (!container) return;
+
+            const khoang = layKhoangThoiGian(offsetThoiGian);
+            let ds = window.danhSachThongBaoLich;
+
+            // 1. Lọc theo khoảng thời gian đang chọn (tuần hoặc toàn bộ tháng)
+            ds = ds.filter(x => x.ngayIso >= khoang.startIso && x.ngayIso <= khoang.endIso);
+
+            // 2. Lọc theo Từ khóa tìm kiếm nếu có
+            if (tuKhoaTimKiemVcb.trim() !== '') {
+                const kw = tuKhoaTimKiemVcb.toLowerCase();
+                ds = ds.filter(x => x.noiDung.toLowerCase().includes(kw) || 
+                                    x.thoiGianHienThi.toLowerCase().includes(kw) || 
+                                    (x.loiDan && x.loiDan.toLowerCase().includes(kw)));
+            }
+
+            container.innerHTML = '';
+
+            if (ds.length === 0) {
+                const thongBaoRong = cheDoXemTatCaThang 
+                    ? "Không có thông báo lịch hẹn nào trong tháng này"
+                    : "Không có thông báo lịch hẹn trong tuần này";
+                container.innerHTML = `<div class="vcb-trang-rong">${thongBaoRong}</div>`;
+                capNhatBadgeChuaDoc();
+                return;
+            }
+
+            ds.forEach(item => {
+                const card = document.createElement('div');
+                // Chưa đọc: class 'chua-doc' (Sáng + Chữ MỚI) | Đã đọc: class 'da-doc' (Tối hơn tí + Tick xanh)
+                card.className = `vcb-the-thong-bao ${item.daDoc ? 'da-doc' : 'chua-doc'}`;
+                card.setAttribute('role', 'button');
+                card.setAttribute('tabindex', '0');
+                
+                // Khi nhấn vào xem -> Đánh dấu đã đọc và chuyển màu tối hơn
+                card.onclick = () => xuLyXemThongBao(item.id);
+                card.onkeydown = (e) => { if (e.key === 'Enter') xuLyXemThongBao(item.id); };
+
+                const badgeHtml = !item.daDoc 
+                    ? `<span class="vcb-badge-moi">MỚI</span>` 
+                    : `<span class="vcb-tick-da-doc" title="Đã xem">✔✔</span>`;
+
+                card.innerHTML = `
+                    <div class="vcb-the-dau">
+                        <span class="vcb-thoi-gian">${item.thoiGianHienThi}</span>
+                        ${badgeHtml}
+                    </div>
+                    <div class="vcb-noi-dung-text">
+                        ${item.noiDung}
+                    </div>
+                    ${item.loiDan ? `
+                        <div class="vcb-loi-dan-box">
+                            <strong>📌 Lời dặn:</strong> ${item.loiDan}
+                        </div>
+                    ` : ''}
+                    <div class="vcb-the-chan">
+                        <span class="vcb-khoa-bac-si">🏥 ${item.chuyenKhoa}</span>
+                        <span>${item.daDoc ? 'Đã xem' : 'Chạm để xem'}</span>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+
+            capNhatBadgeChuaDoc();
+        }
+
+        // Khi người dùng bấm vào xem thẻ thông báo
+        function xuLyXemThongBao(id) {
+            const item = window.danhSachThongBaoLich.find(x => x.id === id);
+            if (item) {
+                // Đổi trạng thái thành ĐÃ ĐỌC (Tối hơn một tí, mất chữ MỚI)
+                item.daDoc = true;
+                renderDanhSachVcb();
+            }
+        }
+
+        // Đánh dấu tất cả đã đọc
+        function danhDauTatCaDaDoc() {
+            window.danhSachThongBaoLich.forEach(item => item.daDoc = true);
+            renderDanhSachVcb();
+        }
+
+        function timKiemThongBaoVcb(value) {
+            tuKhoaTimKiemVcb = value;
+            renderDanhSachVcb();
+        }
+
+        function moModalLichHen() {
+            capNhatKhoangThoiGianUi();
+            renderDanhSachVcb();
+            document.getElementById('modalLichHen').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function dongModalLichHen() {
+            document.getElementById('modalLichHen').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        function xuLyBamNgoaiModal(e) {
+            if (e.target.id === 'modalLichHen') {
+                dongModalLichHen();
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (document.getElementById('vcbSheetChonTuan') && document.getElementById('vcbSheetChonTuan').style.display === 'flex') {
+                    dongSheetChonTuan();
+                } else {
+                    dongModalLichHen();
+                }
+            }
+        });
+    </script>
 </body>
 </html>
