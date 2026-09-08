@@ -6,6 +6,24 @@ using SixosPwa.Models.Dto;
 
 namespace SixosPwa.Services;
 
+/// <summary>
+/// Ma benh nhan chua co ho so nao nhan ben cong => tu choi ca goi tin
+/// (chot 3, ADR 0021). Tach thanh ngoai le RIENG chu khong dung
+/// InvalidOperationException chung, de controller tra dung 409 kem ma may doc
+/// duoc thay vi 500 — hang doi ben HIS phai phan biet duoc "chua co nguoi nhan"
+/// voi "loi ky thuat", neu khong thi no thu lai vo ich mai.
+/// </summary>
+public class ChuaCoNguoiNhanException : Exception
+{
+    public string MaBN { get; }
+
+    public ChuaCoNguoiNhanException(string maBN)
+        : base($"Mã bệnh nhân '{maBN}' chưa có hồ sơ nào nhận tại cổng.")
+    {
+        MaBN = maBN;
+    }
+}
+
 public class TaiLieuService : ITaiLieuService
 {
     private const int MaxPdfSizeBytes = 20 * 1024 * 1024; // 20MB
@@ -83,127 +101,63 @@ public class TaiLieuService : ITaiLieuService
             throw new ArgumentException("Tệp dữ liệu không phải định dạng PDF hợp lệ (không tìm thấy tiêu đề %PDF-).");
         }
 
-        // 5. Upload lên máy chủ FTP dùng chung theo ADR 0012
+        // 5. Xác định hồ sơ TRƯỚC KHI đụng tới kho tệp.
+        //
+        // 🔴 Thứ tự này là bắt buộc (V4). Bản trước đẩy tệp lên FTP rồi mới tra
+        // hồ sơ, nên mỗi lần bị từ chối lại bỏ lại một tệp rác trên kho mà không
+        // ai dọn — cơ sở dữ liệu sạch nhưng kho thì không.
+        //
+        // 🔴 Khoá tra cứu CHỈ là (cơ sở, mã bệnh nhân) — V2/V3. Bản trước dò
+        // theo CCCD rồi rơi xuống dò theo số điện thoại, và còn tự tạo bản ghi
+        // con người mới từ chính gói tin. Cả ba đều là đường đưa bệnh án người
+        // này cho người kia: đo trên dữ liệu thật có 345 nhóm cùng CCCD khác
+        // tên, và một số điện thoại gắn tới 876 người (ADR 0018). Việc nối hồ sơ
+        // là của NGƯỜI DÙNG ở màn Nối hồ sơ, không phải của đường API.
+        //
+        // Không tìm thấy thì TỪ CHỐI (chốt 3, ADR 0021) — cổng không giữ một
+        // byte bệnh án nào của người chưa phải người dùng của nó.
+        var maBNSach = request.MaBenhNhan.Trim();
+
+        var hoSo = await _db.BenhNhanCoSos
+            .AsNoTracking()
+            .FirstOrDefaultAsync(b => b.IdCoSo == cskcb.Id && b.MaBN == maBNSach);
+
+        if (hoSo == null)
+        {
+            _logger.LogInformation(
+                "Tu choi tai lieu: ma benh nhan {MaBN} chua co ho so nao tai co so {MaCoSo}",
+                maBNSach, cskcb.MaCoSo);
+            throw new ChuaCoNguoiNhanException(maBNSach);
+        }
+
+        // 6. Upload lên máy chủ FTP dùng chung theo ADR 0012
         var now = DateTime.Now;
         var remoteDir = $"{KhoAnh.GocFtp}/tailieu/{cskcb.MaCoSo}/{now:yyyy}/{now:MM}";
 
-        var safeMaBN = Regex.Replace(request.MaBenhNhan.Trim(), @"[^a-zA-Z0-9_\-]", "_");
+        var safeMaBN = Regex.Replace(maBNSach, @"[^a-zA-Z0-9_\-]", "_");
         var safeLoaiTL = Regex.Replace(loaiTaiLieu.Trim(), @"[^a-zA-Z0-9_\-]", "_");
         var fileName = $"{safeMaBN}_{safeLoaiTL}_{now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N")[..8]}.pdf";
 
         var remoteFilePath = await _ftpService.UploadBytesAsync(pdfBytes, fileName, remoteDir);
 
-        // 6. Xác định hồ sơ bệnh nhân tại cơ sở (DM_BenhNhanCoSo)
-        long? idBenhNhanCoSo = null;
-
-        // 6.1. Ưu tiên tìm định danh con người (DM_BenhNhan) theo CCCD hoặc SĐT nếu có gửi
-        BenhNhan? benhNhan = null;
-        if (!string.IsNullOrWhiteSpace(request.Cccd))
-        {
-            var cccdClean = request.Cccd.Trim();
-            benhNhan = await _db.BenhNhans
-                .AsNoTracking()
-                .FirstOrDefaultAsync(b => b.CCCD == cccdClean);
-        }
-
-        if (benhNhan == null && !string.IsNullOrWhiteSpace(request.Sdt))
-        {
-            var sdtClean = request.Sdt.Trim();
-            benhNhan = await _db.BenhNhans
-                .AsNoTracking()
-                .FirstOrDefaultAsync(b => b.SDT == sdtClean);
-        }
-
-        // 6.2. Nếu chưa có con người trong hệ thống nhưng có CCCD -> Tự động đăng ký con người mới
-        if (benhNhan == null && !string.IsNullOrWhiteSpace(request.Cccd))
-        {
-            var hoTen = !string.IsNullOrWhiteSpace(request.HoTen)
-                ? request.HoTen.Trim()
-                : $"Bệnh nhân {request.MaBenhNhan.Trim()}";
-
-            var (kqBn, newIdBn) = await _spService.SaveBenhNhanAsync(
-                cccd: request.Cccd.Trim(),
-                tenBN: hoTen,
-                sdt: request.Sdt?.Trim(),
-                email: null,
-                diaChi: null);
-
-            if (kqBn.Succeeded && newIdBn > 0)
-            {
-                benhNhan = new BenhNhan
-                {
-                    Id = newIdBn,
-                    CCCD = request.Cccd.Trim(),
-                    TenBN = hoTen,
-                    SDT = request.Sdt?.Trim()
-                };
-                _logger.LogInformation("Tự động tạo bản ghi DM_BenhNhan mới (ID={Id}, CCCD={Cccd})", newIdBn, request.Cccd.Trim());
-            }
-        }
-
-        // 6.3. Nếu đã xác định được con người (DM_BenhNhan)
-        if (benhNhan != null)
-        {
-            // Kiểm tra xem con người này đã có hồ sơ tại cơ sở này chưa
-            var bnCoSo = await _db.BenhNhanCoSos
-                .AsNoTracking()
-                .FirstOrDefaultAsync(b => b.IdCoSo == cskcb.Id && b.IdBenhNhan == benhNhan.Id);
-
-            if (bnCoSo != null)
-            {
-                idBenhNhanCoSo = bnCoSo.Id;
-            }
-            else
-            {
-                // Kiểm tra xem MaBN tại cơ sở này đã bị gán cho người khác chưa
-                var trungMaBn = await _db.BenhNhanCoSos
-                    .AsNoTracking()
-                    .AnyAsync(b => b.IdCoSo == cskcb.Id && b.MaBN == request.MaBenhNhan.Trim());
-
-                if (!trungMaBn)
-                {
-                    // Tự động tạo hồ sơ tại cơ sở này
-                    var (kqCoSo, newIdCoSo) = await _spService.SaveBenhNhanCoSoAsync(
-                        idBenhNhan: benhNhan.Id,
-                        idCoSo: cskcb.Id,
-                        maBN: request.MaBenhNhan.Trim());
-
-                    if (kqCoSo.Succeeded && newIdCoSo > 0)
-                    {
-                        idBenhNhanCoSo = newIdCoSo;
-                        _logger.LogInformation("Tự động liên kết DM_BenhNhanCoSo (ID={Id}, MaBN={MaBN}, IDCoSo={IDCoSo})",
-                            newIdCoSo, request.MaBenhNhan.Trim(), cskcb.Id);
-                    }
-                }
-            }
-        }
-
-        // 6.4. Fallback: Nếu không có CCCD/SĐT hoặc không map được con người, tìm theo (IDCoSo, MaBN) như cũ
-        if (idBenhNhanCoSo == null)
-        {
-            var bnCoSo = await _db.BenhNhanCoSos
-                .AsNoTracking()
-                .FirstOrDefaultAsync(b => b.IdCoSo == cskcb.Id && b.MaBN == request.MaBenhNhan.Trim());
-            idBenhNhanCoSo = bnCoSo?.Id;
-        }
-
         // 7. Xác định tên tài liệu
         var tenTaiLieu = string.IsNullOrWhiteSpace(request.TenTaiLieu)
-            ? $"{loaiTaiLieu.Trim()} - BN {request.MaBenhNhan.Trim()} - {now:dd/MM/yyyy HH:mm}"
+            ? $"{loaiTaiLieu.Trim()} - BN {maBNSach} - {now:dd/MM/yyyy HH:mm}"
             : request.TenTaiLieu.Trim();
 
         // 8. Lưu metadata vào Database qua Stored Procedure (ADR 0008)
         var (ketQua, idTaiLieu) = await _spService.SaveTaiLieuBenhNhanAsync(
             id: 0,
             idCoSo: cskcb.Id,
-            idBenhNhanCoSo: idBenhNhanCoSo,
-            maBN: request.MaBenhNhan.Trim(),
+            idBenhNhanCoSo: hoSo.Id,
+            maBN: maBNSach,
             loaiTaiLieu: loaiTaiLieu.Trim(),
             tenTaiLieu: tenTaiLieu,
             duongDanFtp: remoteFilePath,
             dungLuongByte: pdfBytes.Length,
             ngayKham: request.NgayKham,
-            ghiChu: request.GhiChu?.Trim());
+            ghiChu: request.GhiChu?.Trim(),
+            maNguonHIS: request.MaNguonHIS?.Trim());
 
         if (!ketQua.Succeeded)
         {
@@ -214,8 +168,8 @@ public class TaiLieuService : ITaiLieuService
         return new TiepNhanTaiLieuResponseData
         {
             Id = idTaiLieu,
-            IdBenhNhanCoSo = idBenhNhanCoSo,
-            MaBN = request.MaBenhNhan.Trim(),
+            IdBenhNhanCoSo = hoSo.Id,
+            MaBN = maBNSach,
             LoaiTaiLieu = loaiTaiLieu.Trim(),
             TenTaiLieu = tenTaiLieu,
             DuongDan = $"/api/v1/tai-lieu/xem/{idTaiLieu}",

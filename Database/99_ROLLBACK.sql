@@ -31,6 +31,13 @@ BEGIN
 END;
 GO
 
+-- --- Nguoc 08 ---------------------------------------------------------------
+-- Tham so @DaMoTaiLieu cua DM_BenhNhanCoSo_Save la TUY CHON va mac dinh 1, nen
+-- de nguyen cung khong hai gi khi lui: moi cho goi deu dung ten tham so, khong
+-- dua theo thu tu. Muon sach tuyet doi thi lay lai ban cu bang:
+--     git show 32dbb19 -- Database/  (ban truoc dot 2)
+-- Cot DaMoTaiLieu duoc bo o doan "Nguoc 05" ben duoi, keo theo ca doan UPDATE.
+
 -- --- Nguoc 05 ---------------------------------------------------------------
 -- Sau khi 05 chay xong thi day la INDEX CO LOC => DROP INDEX. Nhung neu 05 moi
 -- chay dở thi no van con la UNIQUE CONSTRAINT => phai DROP CONSTRAINT. Do ca

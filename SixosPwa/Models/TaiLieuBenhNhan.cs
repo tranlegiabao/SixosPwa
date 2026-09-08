@@ -35,5 +35,16 @@ public class TaiLieuBenhNhan
     /// <summary>Ghi chú bổ sung.</summary>
     public string? GhiChu { get; set; }
 
+    /// <summary>Dinh danh phieu ben HIS — nua kia cua khoa tu nhien chong trung.</summary>
+    public string? MaNguonHIS { get; set; }
+
+    public int PhienBan { get; set; } = 1;
+
+    /// <summary>
+    /// Ket qua bi sua/ky lai thi day them mot phien ban moi; chi ban mang co
+    /// nay duoc hien cho benh nhan. Cac ban cu giu lai lam doi chung.
+    /// </summary>
+    public bool LaBanMoiNhat { get; set; } = true;
+
     public DateTime NgayTao { get; set; } = DateTime.Now;
 }

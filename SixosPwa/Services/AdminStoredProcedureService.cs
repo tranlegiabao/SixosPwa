@@ -127,7 +127,8 @@ public sealed class AdminStoredProcedureService
         string duongDanFtp,
         long dungLuongByte,
         DateTime? ngayKham,
-        string? ghiChu) =>
+        string? ghiChu,
+        string? maNguonHIS = null) =>
         ExecuteWithIdAsync("dbo.QL_TaiLieuBenhNhan_Save", "@IDTaiLieu", command =>
         {
             AddParameter(command, "@ID", DbType.Int64, id);
@@ -140,6 +141,7 @@ public sealed class AdminStoredProcedureService
             AddParameter(command, "@DungLuongByte", DbType.Int64, dungLuongByte);
             AddParameter(command, "@NgayKham", DbType.DateTime, ngayKham);
             AddParameter(command, "@GhiChu", DbType.String, ghiChu);
+            AddParameter(command, "@MaNguonHIS", DbType.AnsiString, maNguonHIS, 50);
         });
 
     // ------------------------------------------------------------------

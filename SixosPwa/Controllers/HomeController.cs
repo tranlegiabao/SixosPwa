@@ -184,7 +184,14 @@ public class HomeController : Controller
             : await (from p in _db.BenhNhans.AsNoTracking()
                      join h in _db.BenhNhanCoSos.AsNoTracking() on p.Id equals h.IdBenhNhan
                      join cs in _db.DMCSKCBs.AsNoTracking() on h.IdCoSo equals cs.Id
-                     where (p.SDT == dinhDanh || p.Email == dinhDanh || p.CCCD == cccd) && cs.MaCoSo == maCoSo
+                     // 🔴 KHONG khop bang CCCD (V5). CCCD go luc dang nhap khong
+                     // duoc xac thuc — OTP chi xac thuc so dien thoai (A6 dot 1).
+                     // Khop bang CCCD nghia la go CCCD nguoi khac la xem duoc tai
+                     // lieu cua ho. Chi khop bang dinh danh DA qua OTP.
+                     where (p.SDT == dinhDanh || p.Email == dinhDanh) && cs.MaCoSo == maCoSo
+                     // *Cua tai lieu* (chot 9 dot 1, ADR 0020): ho so phai duoc
+                     // mo moi thay ket qua / don thuoc.
+                     && h.DaMoTaiLieu
                      select new { BenhNhan = p, HoSoCoSo = h }).FirstOrDefaultAsync();
 
         var benhNhan = hoSoInfo?.BenhNhan;
@@ -195,8 +202,11 @@ public class HomeController : Controller
 
         if (coSo != null && hoSoCoSo != null)
         {
+            // Chi dem ban MOI NHAT: ket qua bi sua/ky lai giu lai ban cu lam doi
+            // chung nhung khong duoc dem hai lan. Bo nhanh so theo MaBN — tu dot 2
+            // IdBenhNhanCoSo da NOT NULL nen no chi la duong vong.
             var queryTl = _db.TaiLieuBenhNhans.AsNoTracking()
-                .Where(t => t.IdCoSo == coSo.Id && (t.IdBenhNhanCoSo == hoSoCoSo.Id || t.MaBN == hoSoCoSo.MaBN));
+                .Where(t => t.IdCoSo == coSo.Id && t.IdBenhNhanCoSo == hoSoCoSo.Id && t.LaBanMoiNhat);
 
             soLuongDonThuoc = await queryTl.CountAsync(t => t.LoaiTaiLieu == "DON_THUOC");
             soLuongKetQuaKham = await queryTl.CountAsync(t => t.LoaiTaiLieu != "DON_THUOC");
@@ -258,7 +268,14 @@ public class HomeController : Controller
             : await (from p in _db.BenhNhans.AsNoTracking()
                      join h in _db.BenhNhanCoSos.AsNoTracking() on p.Id equals h.IdBenhNhan
                      join cs in _db.DMCSKCBs.AsNoTracking() on h.IdCoSo equals cs.Id
-                     where (p.SDT == dinhDanh || p.Email == dinhDanh || p.CCCD == cccd) && cs.MaCoSo == maCoSo
+                     // 🔴 KHONG khop bang CCCD (V5). CCCD go luc dang nhap khong
+                     // duoc xac thuc — OTP chi xac thuc so dien thoai (A6 dot 1).
+                     // Khop bang CCCD nghia la go CCCD nguoi khac la xem duoc tai
+                     // lieu cua ho. Chi khop bang dinh danh DA qua OTP.
+                     where (p.SDT == dinhDanh || p.Email == dinhDanh) && cs.MaCoSo == maCoSo
+                     // *Cua tai lieu* (chot 9 dot 1, ADR 0020): ho so phai duoc
+                     // mo moi thay ket qua / don thuoc.
+                     && h.DaMoTaiLieu
                      select new { BenhNhan = p, HoSoCoSo = h }).FirstOrDefaultAsync();
 
         ViewBag.MaCoSo = maCoSo;
@@ -286,8 +303,7 @@ public class HomeController : Controller
             var maBn = hoSoInfo.HoSoCoSo.MaBN;
 
             var q = _db.TaiLieuBenhNhans.AsNoTracking()
-                .Where(t => t.IdCoSo == coSo.Id &&
-                    (t.IdBenhNhanCoSo == idBnCoSo || t.MaBN == maBn));
+                .Where(t => t.IdCoSo == coSo.Id && t.IdBenhNhanCoSo == idBnCoSo && t.LaBanMoiNhat);
 
             // Lọc chính xác theo nhóm tài liệu
             if (nhomChuan == "don-thuoc")

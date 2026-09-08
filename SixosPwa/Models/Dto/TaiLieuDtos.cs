@@ -19,6 +19,14 @@ public class TiepNhanTaiLieuRequest
     [JsonPropertyName("hoTen")]
     public string? HoTen { get; set; }
 
+    /// <summary>
+    /// Dinh danh phieu ben HIS (IDPhieuCLS, IDToaThuoc...). Cung
+    /// (co so, loai, maNguonHIS) => day lai KHONG de dong trung; noi dung doi
+    /// => them mot phien ban moi va chi ban moi nhat duoc hien.
+    /// </summary>
+    [JsonPropertyName("maNguonHIS")]
+    public string? MaNguonHIS { get; set; }
+
     [JsonPropertyName("filePdf")]
     public string FilePdf { get; set; } = "";
 

@@ -93,8 +93,21 @@ public class TaiLieuApiController : ControllerBase
         {
             var ketQua = await _taiLieuService.TiepNhanTaiLieuAsync(cskcb, loaiTaiLieu, request);
             await _nhatKy.GhiAsync(duong, KetQuaApi.Nhan, cskcb.Id, idKhoa,
-                maBN: request.MaBenhNhan, ipGoi: ip);
+                maBN: request.MaBenhNhan, maNguonHIS: request.MaNguonHIS, ipGoi: ip);
             return Ok(ApiResponse<TiepNhanTaiLieuResponseData>.Ok(ketQua, "Tiếp nhận tài liệu thành công."));
+        }
+        catch (ChuaCoNguoiNhanException ex)
+        {
+            // 🔴 Chot 3: khong luu gi, khong day tep. Ma may LyDoApi.ChuaCoNguoiNhan
+            // nam trong errors de hang doi ben HIS phan biet duoc voi loi ky
+            // thuat — dung doc cau tieng Viet de quyet dinh co thu lai hay khong.
+            await _nhatKy.GhiAsync(duong, KetQuaApi.TuChoi, cskcb.Id, idKhoa,
+                maBN: ex.MaBN, maNguonHIS: request.MaNguonHIS,
+                lyDo: LyDoApi.ChuaCoNguoiNhan, ipGoi: ip);
+
+            return Conflict(ApiResponse<TiepNhanTaiLieuResponseData>.Fail(
+                ex.Message + " Giữ lại ở hàng đợi và hỏi lại qua /api/v1/ho-so/kiem-tra-nhan.",
+                new List<string> { LyDoApi.ChuaCoNguoiNhan }));
         }
         catch (ArgumentException ex)
         {
@@ -137,10 +150,13 @@ public class TaiLieuApiController : ControllerBase
             return NotFound("Không tìm thấy tài liệu yêu cầu.");
         }
 
-        // Cung luat khop ho so ma man DanhSachTaiLieu dang dung. Tra ve 404 chu
-        // khong 403: bao "co tai lieu nay nhung khong phai cua ban" la da lo ton
+        // Ba tang, cung luat man DanhSachTaiLieu dang dung. Tra ve 404 chu khong
+        // 403: bao "co tai lieu nay nhung khong phai cua ban" la da lo su ton
         // tai cua no.
-        var cccd = User.FindFirst(LuongCongBenhNhan.ClaimCccd)?.Value;
+        //
+        // 🔴 KHONG khop bang CCCD: CCCD go luc dang nhap khong duoc xac thuc,
+        // OTP chi xac thuc so dien thoai (A6 dot 1). Va ho so phai qua *Cua tai
+        // lieu* (chot 9 dot 1, ADR 0020).
         var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
         var dinhDanh = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? string.Empty;
 
@@ -148,10 +164,11 @@ public class TaiLieuApiController : ControllerBase
             from p in _db.BenhNhans.AsNoTracking()
             join h in _db.BenhNhanCoSos.AsNoTracking() on p.Id equals h.IdBenhNhan
             join cs in _db.DMCSKCBs.AsNoTracking() on h.IdCoSo equals cs.Id
-            where (p.SDT == dinhDanh || p.Email == dinhDanh || p.CCCD == cccd)
+            where (p.SDT == dinhDanh || p.Email == dinhDanh)
+                  && h.DaMoTaiLieu
                   && cs.MaCoSo == maCoSo
                   && cs.Id == taiLieu.IdCoSo
-                  && (h.Id == taiLieu.IdBenhNhanCoSo || h.MaBN == taiLieu.MaBN)
+                  && h.Id == taiLieu.IdBenhNhanCoSo
             select h.Id).AnyAsync();
 
         if (!laCuaNguoiDangXem)

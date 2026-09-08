@@ -69,6 +69,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<BenhNhanCoSo>().Property(e => e.IdBenhNhan).HasColumnName("IDBenhNhan").IsRequired();
         modelBuilder.Entity<BenhNhanCoSo>().Property(e => e.IdCoSo).HasColumnName("IDCoSo").IsRequired();
         modelBuilder.Entity<BenhNhanCoSo>().Property(e => e.MaBN).HasMaxLength(20).IsRequired();
+        modelBuilder.Entity<BenhNhanCoSo>().Property(e => e.DaMoTaiLieu).IsRequired();
         modelBuilder.Entity<BenhNhanCoSo>().HasIndex(e => new { e.IdCoSo, e.MaBN }).IsUnique();
 
         // -------------------------------------------------------------- HT_ThietBi
@@ -227,6 +228,9 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.DungLuongByte).IsRequired();
         modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.NgayKham);
         modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.GhiChu).HasColumnType("nvarchar(max)");
+        modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.MaNguonHIS).HasMaxLength(50);
+        modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.PhienBan).IsRequired();
+        modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.LaBanMoiNhat).IsRequired();
         modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.NgayTao).IsRequired();
         modelBuilder.Entity<TaiLieuBenhNhan>().HasIndex(e => new { e.IdCoSo, e.MaBN });
     }
