@@ -108,7 +108,14 @@ public class TaiLieuApiController : ControllerBase
             var ketQua = await _taiLieuService.TiepNhanTaiLieuAsync(cskcb, loaiTaiLieu, request);
             await _nhatKy.GhiAsync(duong, KetQuaApi.Nhan, cskcb.Id, idKhoa,
                 maBN: request.MaBenhNhan, maNguonHIS: request.MaNguonHIS, ipGoi: ip);
-            return Ok(ApiResponse<TiepNhanTaiLieuResponseData>.Ok(ketQua, "Tiếp nhận tài liệu thành công."));
+            // Nội dung y hệt bản đang có ⇒ vẫn là THÀNH CÔNG (tài liệu đã ở đúng
+            // chỗ nó cần ở), nhưng nói rõ là không tạo bản mới — để người ở quầy
+            // bên HIS đọc nhật ký thấy đúng sự thật.
+            return Ok(ApiResponse<TiepNhanTaiLieuResponseData>.Ok(
+                ketQua,
+                ketQua.NoiDungKhongDoi
+                    ? "Nội dung không đổi — giữ nguyên bản hiện có, không tạo phiên bản mới."
+                    : "Tiếp nhận tài liệu thành công."));
         }
         catch (ChuaCoNguoiNhanException ex)
         {

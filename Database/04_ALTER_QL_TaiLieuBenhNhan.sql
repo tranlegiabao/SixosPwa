@@ -113,6 +113,14 @@ GO
 IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.QL_TaiLieuBenhNhan') AND name = 'LaBanMoiNhat')
     ALTER TABLE dbo.QL_TaiLieuBenhNhan ADD LaBanMoiNhat bit NOT NULL CONSTRAINT DF_QL_TaiLieuBenhNhan_LaBanMoiNhat DEFAULT (1);
 GO
+-- BAM SHA-256 cua chinh noi dung PDF. Them 08/09 sau khi nghiem thu do duoc:
+-- day lai y het van de phien ban moi => moi lan thua bo lai mot file PDF tren
+-- FTP vinh vien. Co bam thi tang service so TRUOC KHI upload, trung thi tra ve
+-- ban dang co. Dong cu mang NULL = "chua biet bam" => cu day nhu cu, khong bao
+-- gio bo nham. Cua tra cuu + index nam o 11_BAM_NOI_DUNG_TAI_LIEU.sql.
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.QL_TaiLieuBenhNhan') AND name = 'BamNoiDung')
+    ALTER TABLE dbo.QL_TaiLieuBenhNhan ADD BamNoiDung char(64) NULL;
+GO
 
 -- Unique CO LOC: chi rang buoc ban moi nhat, va chi khi HIS co gui MaNguonHIS.
 -- 9 dong cu khong co MaNguonHIS nen nam ngoai rang buoc, khong can don.
@@ -144,6 +152,7 @@ CREATE OR ALTER PROCEDURE dbo.QL_TaiLieuBenhNhan_Save
     @NgayKham       DATETIME = NULL,
     @GhiChu         NVARCHAR(MAX) = NULL,
     @MaNguonHIS     VARCHAR(50) = NULL,
+    @BamNoiDung     CHAR(64) = NULL,
     @IDTaiLieu      BIGINT OUTPUT,
     @ResultCode     INT OUTPUT,
     @ResultMessage  NVARCHAR(4000) OUTPUT
@@ -198,10 +207,10 @@ BEGIN
 
             INSERT INTO dbo.QL_TaiLieuBenhNhan (
                 IDCoSo, IDBenhNhanCoSo, MaBN, LoaiTaiLieu, TenTaiLieu, DuongDanFtp,
-                DungLuongByte, NgayKham, GhiChu, MaNguonHIS, PhienBan, LaBanMoiNhat, NgayTao)
+                DungLuongByte, NgayKham, GhiChu, MaNguonHIS, BamNoiDung, PhienBan, LaBanMoiNhat, NgayTao)
             VALUES (
                 @IDCoSo, @IDBenhNhanCoSo, @MaBN, @LoaiTaiLieu, @TenTaiLieu, @DuongDanFtp,
-                @DungLuongByte, @NgayKham, @GhiChu, @MaNguonHIS, @PhienBan, 1, GETDATE());
+                @DungLuongByte, @NgayKham, @GhiChu, @MaNguonHIS, @BamNoiDung, @PhienBan, 1, GETDATE());
 
             SET @IDTaiLieu = SCOPE_IDENTITY();
         END

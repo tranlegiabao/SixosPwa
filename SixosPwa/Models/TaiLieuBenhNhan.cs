@@ -38,6 +38,13 @@ public class TaiLieuBenhNhan
     /// <summary>Dinh danh phieu ben HIS — nua kia cua khoa tu nhien chong trung.</summary>
     public string? MaNguonHIS { get; set; }
 
+    /// <summary>
+    /// Bam SHA-256 (hex chu thuong) cua chinh noi dung PDF. NULL = dong cu chua
+    /// biet bam => khong so duoc, cu day nhu cu. Them 08/09 de day lai cung noi
+    /// dung khong de phien ban moi va khong bo lai file thua tren FTP.
+    /// </summary>
+    public string? BamNoiDung { get; set; }
+
     public int PhienBan { get; set; } = 1;
 
     /// <summary>

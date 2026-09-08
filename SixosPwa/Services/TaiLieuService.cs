@@ -130,6 +130,45 @@ public class TaiLieuService : ITaiLieuService
             throw new ChuaCoNguoiNhanException(maBNSach);
         }
 
+        // 5b. Nội dung y hệt bản đang có ⇒ KHÔNG làm gì thêm.
+        //
+        // 🔴 Phải nằm TRƯỚC bước upload — cùng nguyên tắc của V4: quyết định
+        // xong mới đụng kho tệp. Đặt sau upload thì tệp đã nằm trên FTP rồi,
+        // và đó chính là thứ chỗ này sinh ra để chặn.
+        //
+        // Nghiệm thu 08/09 đo được: đẩy lại y hệt vẫn đẻ phiên bản mới, mỗi lần
+        // thừa bỏ lại một PDF trên FTP vĩnh viễn. So bằng BĂM NỘI DUNG, không
+        // bao giờ bằng kích thước tệp — hai PDF khác nội dung mà trùng kích
+        // thước thì kết quả mới sẽ bị bỏ im lặng, với tài liệu y tế là đánh đổi
+        // tệ hơn hẳn cái nó chữa.
+        //
+        // Bản cũ chưa có băm (BamNoiDung NULL) thì thủ tục tra trả rỗng ⇒ đẩy
+        // như cũ. Thà thừa một phiên bản còn hơn bỏ nhầm một kết quả.
+        var maNguonHIS = request.MaNguonHIS?.Trim();
+        var bamNoiDung = TinhBamNoiDung(pdfBytes);
+
+        var banDangCo = await TimBanTrungNoiDungAsync(cskcb.Id, loaiTaiLieu.Trim(), maNguonHIS, bamNoiDung);
+
+        if (banDangCo != null)
+        {
+            _logger.LogInformation(
+                "Tai lieu {Loai}/{MaNguon} cua BN {MaBN} co noi dung y het ban hien co (ID {Id}) — bo qua, khong upload",
+                loaiTaiLieu, maNguonHIS, maBNSach, banDangCo.Id);
+
+            return new TiepNhanTaiLieuResponseData
+            {
+                Id = banDangCo.Id,
+                IdBenhNhanCoSo = banDangCo.IdBenhNhanCoSo,
+                MaBN = banDangCo.MaBN,
+                LoaiTaiLieu = banDangCo.LoaiTaiLieu,
+                TenTaiLieu = banDangCo.TenTaiLieu,
+                DuongDan = $"/api/v1/tai-lieu/xem/{banDangCo.Id}",
+                DungLuongByte = banDangCo.DungLuongByte,
+                NgayTao = banDangCo.NgayTao,
+                NoiDungKhongDoi = true
+            };
+        }
+
         // 6. Upload lên máy chủ FTP dùng chung theo ADR 0012
         var now = DateTime.Now;
         var remoteDir = $"{KhoAnh.GocFtp}/tailieu/{cskcb.MaCoSo}/{now:yyyy}/{now:MM}";
@@ -157,7 +196,8 @@ public class TaiLieuService : ITaiLieuService
             dungLuongByte: pdfBytes.Length,
             ngayKham: request.NgayKham,
             ghiChu: request.GhiChu?.Trim(),
-            maNguonHIS: request.MaNguonHIS?.Trim());
+            maNguonHIS: maNguonHIS,
+            bamNoiDung: bamNoiDung);
 
         if (!ketQua.Succeeded)
         {
@@ -188,5 +228,37 @@ public class TaiLieuService : ITaiLieuService
     public Task<Stream> TaiStreamPdfAsync(string duongDanFtp)
     {
         return _ftpService.DownloadAsync(duongDanFtp);
+    }
+
+    /// <summary>
+    /// Băm SHA-256 nội dung PDF, trả hex chữ thường. Đây là thứ quyết định
+    /// "cùng nội dung hay không" — cố ý KHÔNG dùng kích thước tệp.
+    /// </summary>
+    private static string TinhBamNoiDung(byte[] noiDung)
+    {
+        var bytes = System.Security.Cryptography.SHA256.HashData(noiDung);
+        return Convert.ToHexString(bytes).ToLowerInvariant();
+    }
+
+    /// <summary>
+    /// Bản mới nhất của cùng nguồn có đúng nội dung này không.
+    /// Trả null khi không đủ căn cứ để kết luận (thiếu mã nguồn HIS, hoặc bản
+    /// đang có chưa lưu băm) — khi đó phía gọi cứ đẩy như cũ.
+    /// </summary>
+    private async Task<TaiLieuBenhNhan?> TimBanTrungNoiDungAsync(
+        long idCoSo, string loaiTaiLieu, string? maNguonHIS, string bamNoiDung)
+    {
+        if (string.IsNullOrWhiteSpace(maNguonHIS) || string.IsNullOrWhiteSpace(bamNoiDung))
+            return null;
+
+        return await _db.TaiLieuBenhNhans
+            .AsNoTracking()
+            .Where(t => t.IdCoSo == idCoSo
+                     && t.LoaiTaiLieu == loaiTaiLieu
+                     && t.MaNguonHIS == maNguonHIS
+                     && t.BamNoiDung == bamNoiDung
+                     && t.LaBanMoiNhat)
+            .OrderByDescending(t => t.Id)
+            .FirstOrDefaultAsync();
     }
 }

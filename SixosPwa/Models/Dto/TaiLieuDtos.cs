@@ -51,6 +51,15 @@ public class TiepNhanTaiLieuResponseData
     [JsonPropertyName("idBenhNhanCoSo")]
     public long? IdBenhNhanCoSo { get; set; }
 
+    /// <summary>
+    /// true = noi dung y het ban dang co nen cong GIU NGUYEN ban do: khong them
+    /// phien ban, khong upload tep moi. HIS ghi nhat ky la THANH CONG kem thong
+    /// diep "noi dung khong doi" — nguoi o quay thay dung su that thay vi tuong
+    /// vua tao mot ban moi.
+    /// </summary>
+    [JsonPropertyName("noiDungKhongDoi")]
+    public bool NoiDungKhongDoi { get; set; }
+
     [JsonPropertyName("maBN")]
     public string MaBN { get; set; } = "";
 
