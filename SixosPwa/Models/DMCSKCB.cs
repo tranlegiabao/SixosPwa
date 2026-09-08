@@ -23,6 +23,7 @@ public class DMCSKCB
     public string? Img { get; set; }
     public string? Logo { get; set; }
     public bool Active { get; set; } = true;
+    public string? ApiKey { get; set; }
 
     /// <summary>So nguyen VND — decimal(15,0) la CO Y, khong phai sai kieu tien te.</summary>
     public decimal? QuangCao { get; set; }

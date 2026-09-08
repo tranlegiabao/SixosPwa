@@ -31,6 +31,7 @@ builder.Services.AddScoped<ILuongCongBenhNhan, LuongCongBenhNhan>();
 builder.Services.Configure<FtpSettings>(builder.Configuration.GetSection("FtpServer"));
 builder.Services.AddScoped<IFtpService, FtpService>();
 builder.Services.AddScoped<IDonAnhService, DonAnhService>();
+builder.Services.AddScoped<ITaiLieuService, TaiLieuService>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>

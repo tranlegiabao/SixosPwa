@@ -1,0 +1,330 @@
+{
+  "info": {
+    "_postman_id": "8a716c52-7b24-4f8e-9087-f8234db6c3e1",
+    "name": "SixosPwa - API Tiếp nhận & Phục vụ Tài liệu Y tế",
+    "description": "Bộ sưu tập Postman để kiểm thử API tiếp nhận tài liệu PDF Base64 và xem/tải tài liệu qua FTP Proxy trong SixosPwa.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Tiếp nhận tài liệu thành công (Happy Path)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "pm.test(\"Success is true\", function () {",
+              "    pm.expect(jsonData.success).to.eql(true);",
+              "});",
+              "",
+              "if (jsonData.data && jsonData.data.id) {",
+              "    pm.collectionVariables.set(\"document_id\", jsonData.data.id);",
+              "    console.log(\"Saved document_id:\", jsonData.data.id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{api_key}}",
+            "type": "text",
+            "description": "Khóa bí mật của cơ sở khám chữa bệnh (đối chiếu cột ApiKey trong DM_CSKCB)"
+          },
+          {
+            "key": "X-Ma-CSKCB",
+            "value": "{{ma_cskcb}}",
+            "type": "text",
+            "description": "Mã cơ sở y tế (ví dụ: CS2, 79423, ...)"
+          },
+          {
+            "key": "X-Loai-Tai-Lieu",
+            "value": "{{loai_tai_lieu}}",
+            "type": "text",
+            "description": "Loại tài liệu (ví dụ: DON_THUOC, KET_QUA_XN, CDHA, GIAY_RA_VIEN)"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"maBenhNhan\": \"BN00123\",\n  \"filePdf\": \"JVBERi0xLjQKMSAwIG9iagpbL1BERiAvVGV4dF0KZW5kb2JqCjIgMCBvYmoKPDwvVHlwZSAvUGFnZXMgL0tpZHMgWzMgMCBSXSAvQ291bnQgMT4+CmVuZG9iagozIDAgb2JqCjw8L1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8L1Byb2NTZXQgMSAwIFI+PiAvQ29udGVudHMgNCAwIFI+PgplbmRvYmoKNCAwIG9iago8PC9MZW5ndGggMzM+PnN0cmVhbQpCVAovRjEgMTIgVGYKNzIgNzEyIFREKAogSGVsbyB4aW4gY2hhbyApIFRqCkVUCmVuZHN0cmVhbQplbmRvYmoKNSAwIG9iago8PC9UeXBlIC9DYXRhbG9nIC9QYWdlcyAyIDAgUj4+CmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDAzOCAwMDAwMCBuIAowMDAwMDAwMDk2IDAwMDAwIG4gCjAwMDAwMDAyMDkgMDAwMDAgbiAKMDAwMDAwMDI5MiAwMDAwMCBuIAp0cmFpbGVyCjw8L1NpemUgNi9Sb290IDUgMCBSPj4Kc3RhcnR4cmVmCjM0MQolJUVPRg==\",\n  \"tenTaiLieu\": \"Đơn thuốc điều trị ngoại trú ngày 08/09/2026\",\n  \"ngayKham\": \"2026-09-08T08:30:00\",\n  \"ghiChu\": \"Uống thuốc sau khi ăn, tái khám sau 2 tuần.\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/tai-lieu/tiep-nhan",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tai-lieu",
+            "tiep-nhan"
+          ]
+        },
+        "description": "Gửi tài liệu dạng PDF Base64 lên hệ thống. Tự động lưu file vào FTP theo thư mục năm/tháng và ghi nhận bản ghi vào database."
+      },
+      "response": []
+    },
+    {
+      "name": "2. Xem / Tải file PDF vừa tạo",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/tai-lieu/xem/{{document_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tai-lieu",
+            "xem",
+            "{{document_id}}"
+          ]
+        },
+        "description": "Tải stream tệp PDF trực tiếp từ máy chủ FTP. Hỗ trợ hiển thị trên trình duyệt hoặc tải về."
+      },
+      "response": []
+    },
+    {
+      "name": "3. Lỗi - Thiếu Header X-API-Key (401)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Ma-CSKCB",
+            "value": "{{ma_cskcb}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Loai-Tai-Lieu",
+            "value": "{{loai_tai_lieu}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"maBenhNhan\": \"BN00123\",\n  \"filePdf\": \"JVBERi0xLjQK...\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/tai-lieu/tiep-nhan",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tai-lieu",
+            "tiep-nhan"
+          ]
+        },
+        "description": "Kiểm thử khi thiếu Header X-API-Key, kỳ vọng trả về HTTP 401 Unauthorized."
+      },
+      "response": []
+    },
+    {
+      "name": "4. Lỗi - Sai X-API-Key (401)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "wrong-api-key-value",
+            "type": "text"
+          },
+          {
+            "key": "X-Ma-CSKCB",
+            "value": "{{ma_cskcb}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Loai-Tai-Lieu",
+            "value": "{{loai_tai_lieu}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"maBenhNhan\": \"BN00123\",\n  \"filePdf\": \"JVBERi0xLjQK...\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/tai-lieu/tiep-nhan",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tai-lieu",
+            "tiep-nhan"
+          ]
+        },
+        "description": "Kiểm thử khi truyền sai API Key, kỳ vọng trả về HTTP 401 Unauthorized."
+      },
+      "response": []
+    },
+    {
+      "name": "5. Lỗi - Thiếu Header X-Ma-CSKCB (400)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Loai-Tai-Lieu",
+            "value": "{{loai_tai_lieu}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"maBenhNhan\": \"BN00123\",\n  \"filePdf\": \"JVBERi0xLjQK...\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/tai-lieu/tiep-nhan",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tai-lieu",
+            "tiep-nhan"
+          ]
+        },
+        "description": "Kiểm thử khi thiếu Header X-Ma-CSKCB, kỳ vọng trả về HTTP 400 Bad Request."
+      },
+      "response": []
+    },
+    {
+      "name": "6. Lỗi - Tệp không phải PDF hợp lệ (400)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-API-Key",
+            "value": "{{api_key}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Ma-CSKCB",
+            "value": "{{ma_cskcb}}",
+            "type": "text"
+          },
+          {
+            "key": "X-Loai-Tai-Lieu",
+            "value": "{{loai_tai_lieu}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"maBenhNhan\": \"BN00123\",\n  \"filePdf\": \"SGVsbG8gd29ybGQgbm90IGEgcGRmIGZpbGU=\",\n  \"tenTaiLieu\": \"File giả mạo không phải PDF\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/tai-lieu/tiep-nhan",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tai-lieu",
+            "tiep-nhan"
+          ]
+        },
+        "description": "Kiểm thử khi gửi chuỗi Base64 của văn bản thường hoặc ảnh không có header %PDF-, kỳ vọng trả về HTTP 400."
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://localhost:7024",
+      "type": "string"
+    },
+    {
+      "key": "api_key",
+      "value": "test-api-key-cs2",
+      "type": "string"
+    },
+    {
+      "key": "ma_cskcb",
+      "value": "CS2",
+      "type": "string"
+    },
+    {
+      "key": "loai_tai_lieu",
+      "value": "DON_THUOC",
+      "type": "string"
+    },
+    {
+      "key": "document_id",
+      "value": "1",
+      "type": "string"
+    }
+  ]
+}

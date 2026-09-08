@@ -117,6 +117,31 @@ public sealed class AdminStoredProcedureService
             AddParameter(command, "@MaBN", DbType.AnsiString, maBN, 20);
         });
 
+    public Task<(AdminStoredProcedureResult KetQua, long Id)> SaveTaiLieuBenhNhanAsync(
+        long id,
+        long idCoSo,
+        long? idBenhNhanCoSo,
+        string maBN,
+        string loaiTaiLieu,
+        string tenTaiLieu,
+        string duongDanFtp,
+        long dungLuongByte,
+        DateTime? ngayKham,
+        string? ghiChu) =>
+        ExecuteWithIdAsync("dbo.QL_TaiLieuBenhNhan_Save", "@IDTaiLieu", command =>
+        {
+            AddParameter(command, "@ID", DbType.Int64, id);
+            AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
+            AddParameter(command, "@IDBenhNhanCoSo", DbType.Int64, idBenhNhanCoSo);
+            AddParameter(command, "@MaBN", DbType.String, maBN, 50);
+            AddParameter(command, "@LoaiTaiLieu", DbType.String, loaiTaiLieu, 50);
+            AddParameter(command, "@TenTaiLieu", DbType.String, tenTaiLieu, 255);
+            AddParameter(command, "@DuongDanFtp", DbType.String, duongDanFtp, 500);
+            AddParameter(command, "@DungLuongByte", DbType.Int64, dungLuongByte);
+            AddParameter(command, "@NgayKham", DbType.DateTime, ngayKham);
+            AddParameter(command, "@GhiChu", DbType.String, ghiChu);
+        });
+
     // ------------------------------------------------------------------
     //  Co so y te
     // ------------------------------------------------------------------

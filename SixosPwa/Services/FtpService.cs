@@ -8,6 +8,7 @@ namespace SixosPwa.Services
     public interface IFtpService
     {
         Task<string> UploadFileAsync(IFormFile file, string remoteDirectory = "");
+        Task<string> UploadBytesAsync(byte[] bytes, string fileName, string remoteDirectory = "");
         Task<bool> DeleteFileAsync(string remoteFilePath);
         Task<bool> TestConnectionAsync();
         Task<Stream> DownloadAsync(string remoteFilePath);
@@ -81,6 +82,64 @@ namespace SixosPwa.Services
             catch (Exception ex)
             {
                 _logger.LogError($"FTP Upload Error: {ex.Message}");
+                throw;
+            }
+        }
+
+        public async Task<string> UploadBytesAsync(byte[] bytes, string fileName, string remoteDirectory = "")
+        {
+            if (bytes == null || bytes.Length == 0)
+                throw new ArgumentException("Bytes array is empty");
+
+            string originalFileName = Path.GetFileName(fileName);
+            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(originalFileName);
+            string fileExt = Path.GetExtension(originalFileName);
+
+            remoteDirectory = remoteDirectory.TrimStart('/');
+            string remoteFilePath = string.IsNullOrEmpty(remoteDirectory)
+                ? originalFileName
+                : $"{remoteDirectory}/{originalFileName}";
+
+            // Kiểm tra trùng tên và thêm (1), (2), ...
+            int counter = 1;
+            while (await FileExistsAsync("/" + remoteFilePath))
+            {
+                string newFileName = $"{fileNameWithoutExt}({counter}){fileExt}";
+                remoteFilePath = string.IsNullOrEmpty(remoteDirectory)
+                    ? newFileName
+                    : $"{remoteDirectory}/{newFileName}";
+                counter++;
+            }
+
+            string ftpUrl = $"ftp://{_ftpSettings.FtpHost}/{remoteFilePath}";
+
+            try
+            {
+                // Tạo thư mục nếu chưa tồn tại
+                if (!string.IsNullOrEmpty(remoteDirectory))
+                {
+                    await CreateDirectoryIfNotExistsAsync(remoteDirectory);
+                }
+
+                // Upload bytes
+                FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpUrl);
+                request.Method = WebRequestMethods.Ftp.UploadFile;
+                request.Credentials = new NetworkCredential(_ftpSettings.FtpUsername, _ftpSettings.FtpPassword);
+                request.UseBinary = true;
+                request.UsePassive = true;
+                request.KeepAlive = false;
+
+                using (var memoryStream = new MemoryStream(bytes))
+                using (var ftpStream = await request.GetRequestStreamAsync())
+                {
+                    await memoryStream.CopyToAsync(ftpStream);
+                }
+
+                return remoteFilePath;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"FTP UploadBytes Error: {ex.Message}");
                 throw;
             }
         }

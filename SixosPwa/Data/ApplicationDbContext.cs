@@ -31,6 +31,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<DMChuDe> DMChuDes => Set<DMChuDe>();
     public DbSet<DoiTacApi> DoiTacApis => Set<DoiTacApi>();
     public DbSet<TaiKhoanDoiTac> TaiKhoanDoiTacs => Set<TaiKhoanDoiTac>();
+    public DbSet<TaiLieuBenhNhan> TaiLieuBenhNhans => Set<TaiLieuBenhNhan>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -134,6 +135,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<DMCSKCB>().Property(e => e.TenTM).HasMaxLength(100);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.Img).HasMaxLength(500);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.QuangCao).HasColumnType("decimal(15,0)");
+        modelBuilder.Entity<DMCSKCB>().Property(e => e.ApiKey).HasMaxLength(100);
         modelBuilder.Entity<DMCSKCB>().HasIndex(e => e.MaCoSo).IsUnique();
         modelBuilder.Entity<DMCSKCB>().HasIndex(e => e.Slug).IsUnique();
 
@@ -189,5 +191,21 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<TaiKhoanDoiTac>().Property(e => e.MatKhau).HasMaxLength(255);
         modelBuilder.Entity<TaiKhoanDoiTac>().Property(e => e.MaXacNhanTam).HasMaxLength(10);
         modelBuilder.Entity<TaiKhoanDoiTac>().HasIndex(e => new { e.IdTaiKhoan, e.IdCoSo }).IsUnique();
+
+        // ---------------------------------------------------- QL_TaiLieuBenhNhan
+        modelBuilder.Entity<TaiLieuBenhNhan>().ToTable("QL_TaiLieuBenhNhan");
+        modelBuilder.Entity<TaiLieuBenhNhan>().HasKey(e => e.Id);
+        modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.Id).HasColumnName("ID");
+        modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.IdCoSo).HasColumnName("IDCoSo").IsRequired();
+        modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.IdBenhNhanCoSo).HasColumnName("IDBenhNhanCoSo");
+        modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.MaBN).HasMaxLength(50).IsRequired();
+        modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.LoaiTaiLieu).HasMaxLength(50).IsRequired();
+        modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.TenTaiLieu).HasMaxLength(255).IsRequired();
+        modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.DuongDanFtp).HasMaxLength(500).IsRequired();
+        modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.DungLuongByte).IsRequired();
+        modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.NgayKham);
+        modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.GhiChu).HasColumnType("nvarchar(max)");
+        modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.NgayTao).IsRequired();
+        modelBuilder.Entity<TaiLieuBenhNhan>().HasIndex(e => new { e.IdCoSo, e.MaBN });
     }
 }
