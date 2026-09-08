@@ -4,7 +4,16 @@
 
    Dung khi noi mot ban HisSoft vao cong benh nhan (Giai doan 2, mach SPWA).
 
-   🔴 SUA BON BIEN O DAU FILE roi hay chay. KHONG chay nguyen ban.
+   🔴 SUA BON BIEN O DAU FILE roi hay chay. KHONG chay nguyen ban -- file tu
+   chan bang RAISERROR "Chua doi @KhoaTho" neu ban chay thang.
+
+   ⚠️ KHI NAO CAN CHAY: chi khi noi MOT CO SO MOI vao cong. Co so da co
+   DM_DoiTacApi.KieuApi = 'HIS' thi KHONG can chay lai -- chay lai chi ghi de
+   BaseUrl, con khoa thi giu nguyen (tru khi dat @GhiDeKhoa = 1).
+   Kiem truoc khi chay:
+       SELECT c.MaCoSo, c.TenCoSo, d.KieuApi, d.BaseUrl, d.Active
+         FROM dbo.DM_CSKCB c JOIN dbo.DM_DoiTacApi d ON d.IdCoSo = c.Id
+        WHERE d.KieuApi = 'HIS';
 
    HAI KHOA CHO HAI CHIEU, dung lan:
      (A) HIS -> cong : khoa CONG cap cho HIS. File nay sinh no, luu BAM vao
@@ -42,9 +51,27 @@ BEGIN
     RETURN;
 END
 
+/* Chot chan co y: file nay KHONG chay duoc nguyen ban. Bao ro phai lam gi chu
+   khong chi bao "sai o dau" -- nguoi doc thong bao loi thuong khong doc header. */
 IF @KhoaTho = 'DOI-KHOA-NAY-TRUOC-KHI-CHAY'
 BEGIN
-    RAISERROR (N'Chua doi @KhoaTho. Dat mot khoa that roi chay lai.', 16, 1);
+    PRINT N'';
+    PRINT N'====================================================================';
+    PRINT N'  FILE NAY CHUA CHAY. Day la CHOT CHAN co y, khong phai loi.';
+    PRINT N'  Mo file, sua 3 dong o khoi "SUA O DAY" (khoang dong 30-33):';
+    PRINT N'';
+    PRINT N'    @MaCoSo   = ma co so trong DM_CSKCB (vd 77121)';
+    PRINT N'    @BaseUrl  = goc dia chi HIS cua co so do';
+    PRINT N'    @KhoaTho  = mot khoa THAT do ban tu dat (chuoi ngau nhien dai)';
+    PRINT N'';
+    PRINT N'  Roi chay lai file. Kiem xem co so da seed chua:';
+    PRINT N'    SELECT c.MaCoSo, d.KieuApi, d.BaseUrl, d.Active';
+    PRINT N'      FROM DM_CSKCB c JOIN DM_DoiTacApi d ON d.IdCoSo = c.Id';
+    PRINT N'     WHERE d.KieuApi = ''HIS'';';
+    PRINT N'  Co so da co KieuApi = HIS thi KHONG can chay file nay nua.';
+    PRINT N'====================================================================';
+
+    RAISERROR (N'Chưa đổi @KhoaTho — xem hướng dẫn vừa in ở tab Messages.', 16, 1);
     RETURN;
 END
 
