@@ -50,13 +50,23 @@ GO
 
 -- MaBN cho phep rong: ho so TU KHAI chua noi HIS thi khong co ma nao ca
 -- (chot 12 dot 1). Rang buoc duy nhat doi sang unique CO LOC.
+--
+-- Go index TRUOC, va o BATCH RIENG. Khong ALTER COLUMN duoc chung nao con index
+-- bam vao cot — dung cai bay da lam script 04 gay o lan chay dau (Msg 5074).
+-- Cot MaBN nay chi co UK_DM_BenhNhanCoSo_MaBN (IDCoSo, MaBN) bam vao; da kiem
+-- toan bo sys.indexes cua bang, khong con index nao khac cham toi no.
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.DM_BenhNhanCoSo')
+           AND name = 'MaBN' AND is_nullable = 0)
+   AND EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UK_DM_BenhNhanCoSo_MaBN'
+               AND object_id = OBJECT_ID(N'dbo.DM_BenhNhanCoSo'))
+BEGIN
+    DROP INDEX UK_DM_BenhNhanCoSo_MaBN ON dbo.DM_BenhNhanCoSo;
+END;
+GO
+
 IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.DM_BenhNhanCoSo')
            AND name = 'MaBN' AND is_nullable = 0)
 BEGIN
-    IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UK_DM_BenhNhanCoSo_MaBN'
-               AND object_id = OBJECT_ID(N'dbo.DM_BenhNhanCoSo'))
-        DROP INDEX UK_DM_BenhNhanCoSo_MaBN ON dbo.DM_BenhNhanCoSo;
-
     ALTER TABLE dbo.DM_BenhNhanCoSo ALTER COLUMN MaBN varchar(20) NULL;
 END;
 GO

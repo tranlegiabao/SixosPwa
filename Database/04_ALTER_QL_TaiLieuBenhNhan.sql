@@ -11,6 +11,13 @@
 --   (3) MaBN doi nvarchar(50) -> varchar(20) cho KHOP DM_BenhNhanCoSo.MaBN.
 --       Dang lech kieu => moi phep so sanh deu implicit convert.
 --
+-- 🔴 CHAY LAI DUOC. Lan chay dau (08/09) gay o buoc siet cot vi thieu doan go
+--    index — Msg 5074 + Msg 4922. Moi GO la mot batch rieng nen cac batch SAU
+--    van chay tiep, bang do o trang thai nua voi: da don mo coi + da them 3 cot
+--    + da co UK_..._Nguon + stored da co @MaNguonHIS, nhung IDBenhNhanCoSo van
+--    NULL duoc va MaBN van la nvarchar(50). Ban nay da sua va toan bo buoc deu
+--    co IF EXISTS, nen cu chay lai ca file — buoc nao xong roi se tu bo qua.
+--
 -- DO THAT truoc khi viet script (2026-09-08, HIS_CSKH@118):
 --    12 dong tong, 3 dong IDBenhNhanCoSo IS NULL. Ba dong mo coi do duoc CHEP
 --    sang bak.QL_TaiLieuBenhNhan_MoCoi_V001 roi moi xoa — dung quy uoc bak.*
@@ -44,6 +51,25 @@ GO
 -- trong bang bak de xoa tay neu can. Xoa tep la thao tac mot chieu.
 
 -- --- (2) Siet cot ------------------------------------------------------------
+-- 🔴 KHONG ALTER COLUMN duoc chung nao con index bam vao cot do. Script cua
+-- dong nghiep tao HAI index nam dung tren hai cot ta phai sua:
+--     IX_QL_TaiLieuBenhNhan_IdBenhNhanCoSo  (loc WHERE IDBenhNhanCoSo IS NOT NULL)
+--     IX_QL_TaiLieuBenhNhan_IdCoSo_MaBN     (chua cot MaBN)
+-- Bo qua buoc go la lan chay bao Msg 5074 + Msg 4922, va vi moi GO la mot batch
+-- rieng nen cac batch SAU do van chay tiep => bang vao trang thai nua voi.
+-- Phai go index xuong, doi cot, roi dung lai.
+
+IF EXISTS (SELECT 1 FROM sys.indexes
+           WHERE name = 'IX_QL_TaiLieuBenhNhan_IdBenhNhanCoSo'
+             AND object_id = OBJECT_ID(N'dbo.QL_TaiLieuBenhNhan'))
+    DROP INDEX IX_QL_TaiLieuBenhNhan_IdBenhNhanCoSo ON dbo.QL_TaiLieuBenhNhan;
+GO
+IF EXISTS (SELECT 1 FROM sys.indexes
+           WHERE name = 'IX_QL_TaiLieuBenhNhan_IdCoSo_MaBN'
+             AND object_id = OBJECT_ID(N'dbo.QL_TaiLieuBenhNhan'))
+    DROP INDEX IX_QL_TaiLieuBenhNhan_IdCoSo_MaBN ON dbo.QL_TaiLieuBenhNhan;
+GO
+
 IF EXISTS (SELECT 1 FROM sys.columns
            WHERE object_id = OBJECT_ID(N'dbo.QL_TaiLieuBenhNhan')
              AND name = 'IDBenhNhanCoSo' AND is_nullable = 1)
@@ -59,6 +85,22 @@ IF EXISTS (SELECT 1 FROM sys.columns
 BEGIN
     ALTER TABLE dbo.QL_TaiLieuBenhNhan ALTER COLUMN MaBN varchar(20) NOT NULL;
 END;
+GO
+
+-- Dung lai hai index vua go. Cai theo IDBenhNhanCoSo dung lai KHONG CON BO LOC:
+-- cot da NOT NULL nen dieu kien "IS NOT NULL" khong loc gi nua, ma index co loc
+-- thi bo toi uu khong dung duoc cho moi truy van.
+IF NOT EXISTS (SELECT 1 FROM sys.indexes
+               WHERE name = 'IX_QL_TaiLieuBenhNhan_IdCoSo_MaBN'
+                 AND object_id = OBJECT_ID(N'dbo.QL_TaiLieuBenhNhan'))
+    CREATE NONCLUSTERED INDEX IX_QL_TaiLieuBenhNhan_IdCoSo_MaBN
+        ON dbo.QL_TaiLieuBenhNhan (IDCoSo, MaBN);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes
+               WHERE name = 'IX_QL_TaiLieuBenhNhan_IdBenhNhanCoSo'
+                 AND object_id = OBJECT_ID(N'dbo.QL_TaiLieuBenhNhan'))
+    CREATE NONCLUSTERED INDEX IX_QL_TaiLieuBenhNhan_IdBenhNhanCoSo
+        ON dbo.QL_TaiLieuBenhNhan (IDBenhNhanCoSo);
 GO
 
 -- --- (3) Cot phien ban -------------------------------------------------------

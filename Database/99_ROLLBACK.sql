@@ -85,9 +85,30 @@ GO
 IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.QL_TaiLieuBenhNhan') AND name = 'MaNguonHIS')
     ALTER TABLE dbo.QL_TaiLieuBenhNhan DROP COLUMN MaNguonHIS;
 GO
+-- Cung cai bay nhu o 04, chieu nguoc: phai go index bam vao cot truoc khi doi.
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_QL_TaiLieuBenhNhan_IdBenhNhanCoSo'
+           AND object_id = OBJECT_ID(N'dbo.QL_TaiLieuBenhNhan'))
+    DROP INDEX IX_QL_TaiLieuBenhNhan_IdBenhNhanCoSo ON dbo.QL_TaiLieuBenhNhan;
+GO
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_QL_TaiLieuBenhNhan_IdCoSo_MaBN'
+           AND object_id = OBJECT_ID(N'dbo.QL_TaiLieuBenhNhan'))
+    DROP INDEX IX_QL_TaiLieuBenhNhan_IdCoSo_MaBN ON dbo.QL_TaiLieuBenhNhan;
+GO
 ALTER TABLE dbo.QL_TaiLieuBenhNhan ALTER COLUMN MaBN nvarchar(50) NOT NULL;
 GO
 ALTER TABLE dbo.QL_TaiLieuBenhNhan ALTER COLUMN IDBenhNhanCoSo bigint NULL;
+GO
+-- Dung lai DUNG hinh dang goc trong script cua dong nghiep, ke ca bo loc.
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_QL_TaiLieuBenhNhan_IdCoSo_MaBN'
+               AND object_id = OBJECT_ID(N'dbo.QL_TaiLieuBenhNhan'))
+    CREATE NONCLUSTERED INDEX IX_QL_TaiLieuBenhNhan_IdCoSo_MaBN
+        ON dbo.QL_TaiLieuBenhNhan (IDCoSo, MaBN);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_QL_TaiLieuBenhNhan_IdBenhNhanCoSo'
+               AND object_id = OBJECT_ID(N'dbo.QL_TaiLieuBenhNhan'))
+    CREATE NONCLUSTERED INDEX IX_QL_TaiLieuBenhNhan_IdBenhNhanCoSo
+        ON dbo.QL_TaiLieuBenhNhan (IDBenhNhanCoSo)
+        WHERE IDBenhNhanCoSo IS NOT NULL;
 GO
 -- Tra lai cac dong mo coi da don o buoc 04.
 IF EXISTS (SELECT 1 FROM sys.tables t JOIN sys.schemas s ON s.schema_id = t.schema_id
