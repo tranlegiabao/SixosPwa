@@ -335,18 +335,18 @@
             @* Loi vao *Ho so cua toi* (ADR 0019). Nam o day chu KHONG chiem mot o
                trong khoi Dich vu: doi ho so khong phai mot dich vu y te, no thuoc
                ve khoi DANH TINH — dat canh CCCD/dien thoai thi dung nghia hon.
-               Khuon DangKyOnlineUB cung de link doi ho so o header (_Layout:566).
 
-               Chi hien khi tai khoan quan tu HAI ho so tro len: mot ho so thi
-               khong co gi de doi. Nguoi muon them nguoi than van vao duoc bang
-               duong /benh-nhan/ho-so. *@
-            @if (ViewBag.SoHoSo != null && (int)ViewBag.SoHoSo > 1)
-            {
-                <a class="bn-dong bn-doi-hoso" href="/benh-nhan/ho-so">
-                    <span>Hồ sơ đang xem</span>
-                    <span>@ViewBag.TenBenhNhan <strong>Đổi</strong></span>
-                </a>
-            }
+               🔴 LUON HIEN, khong dat dieu kien so ho so. Ban dau co `@if SoHoSo > 1`
+               voi ly do "mot ho so thi khong co gi de doi" — SAI khuon. Khuon
+               DangKyOnlineUB de link "Thay doi ho so" VO DIEU KIEN o header
+               (PhongMach/Views/Shared/_Layout.cshtml:566, khong mot @if nao).
+               Va o day khong chi de DOI: do la loi vao duy nhat de THEM ho so
+               nguoi than. An no khi moi co mot ho so la giau mat chinh cai cua
+               ma nguoi ta can de co ho so thu hai. *@
+            <a class="bn-dong bn-doi-hoso" href="/benh-nhan/ho-so">
+                <span>Hồ sơ</span>
+                <span>@ViewBag.TenBenhNhan <strong>Đổi</strong></span>
+            </a>
         </section>
 
         @if (ViewBag.CoLoiKetNoi == true)
