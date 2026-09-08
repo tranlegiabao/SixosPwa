@@ -1,0 +1,999 @@
+/* ====================================================================
+   TAI-LIEU-BENH-NHAN.CSS - Giao dien Grid Cards kieu Google Drive
+   va In-App PDF Viewer co bo chuyen qua lai giua cac tai lieu cung loai
+   ==================================================================== */
+
+:root {
+    --tl-xanh-dam: #0d5bd4;
+    --tl-xanh-hover: #0947a8;
+    --tl-xanh-nhat: #e8f1fd;
+    --tl-chu-dam: #0f172a;
+    --tl-chu-phu: #475569;
+    --tl-chu-mo: #64748b;
+    --tl-nen-trang: #f8fafc;
+    --tl-vien: #e2e8f0;
+    --tl-vien-dam: #cbd5e1;
+    --tl-do-pdf: #ea4335;
+    --tl-xanh-sheet: #0f9d58;
+    --tl-xanh-doc: #4285f4;
+    --tl-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+    --tl-shadow-md: 0 4px 14px rgba(15, 23, 42, 0.08);
+    --tl-shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.18);
+    --tl-card-radius: 14px;
+}
+
+/* Khung chua toan trang */
+.tl-trang {
+    background-color: var(--tl-nen-trang);
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--tl-chu-dam);
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.tl-khung {
+    max-width: 1160px;
+    margin: 0 auto;
+    min-height: 100vh;
+    background: #ffffff;
+    box-shadow: 0 0 24px rgba(0, 0, 0, 0.04);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ====================================================================
+   TOP APP BAR
+   ==================================================================== */
+.tl-top-bar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: #ffffff;
+    border-bottom: 1px solid var(--tl-vien);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.tl-btn-back {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: none;
+    background: #f1f5f9;
+    color: var(--tl-chu-dam);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s ease, transform 0.15s ease;
+    flex-shrink: 0;
+}
+
+.tl-btn-back:hover {
+    background: #e2e8f0;
+    transform: scale(1.05);
+}
+
+.tl-top-title {
+    flex: 1;
+}
+
+.tl-top-title h1 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--tl-chu-dam);
+    line-height: 1.25;
+}
+
+.tl-top-title .tl-top-subtitle {
+    font-size: 12.5px;
+    color: var(--tl-chu-phu);
+    margin-top: 2px;
+    display: block;
+}
+
+.tl-badge-total {
+    background: #f1f5f9;
+    color: var(--tl-chu-phu);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+/* ====================================================================
+   THONG TIN BENH NHAN BANNER
+   ==================================================================== */
+.tl-header-info {
+    margin: 14px 20px 8px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #f0f7ff 0%, #e8f1fd 100%);
+    border-radius: 14px;
+    border: 1px solid #dbeafe;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.tl-bn-avatar-circle {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--tl-xanh-dam);
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(13, 91, 212, 0.25);
+}
+
+.tl-bn-text-info {
+    flex: 1;
+}
+
+.tl-bn-text-info .tl-bn-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--tl-chu-dam);
+}
+
+.tl-bn-text-info .tl-bn-id {
+    font-size: 12px;
+    color: var(--tl-chu-phu);
+    margin-top: 2px;
+}
+
+.tl-bn-stats {
+    text-align: right;
+    display: none;
+}
+
+@media (min-width: 540px) {
+    .tl-bn-stats { display: block; }
+}
+
+.tl-stat-label {
+    display: block;
+    font-size: 11px;
+    color: var(--tl-chu-mo);
+}
+
+.tl-stat-val {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--tl-xanh-dam);
+}
+
+/* Thong tin BN / Benh Vien ket thuc */
+
+/* ====================================================================
+   GRID CONTAINER (GOOGLE DRIVE CARDS LAYOUT)
+   ==================================================================== */
+.tl-grid-container {
+    padding: 12px 20px 32px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 205px));
+    gap: 16px;
+    align-content: start;
+    align-items: start;
+    flex: 1;
+}
+
+@media (max-width: 520px) {
+    .tl-grid-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        padding: 10px 12px 24px;
+        align-content: start;
+        align-items: start;
+    }
+}
+
+@media (min-width: 900px) {
+    .tl-grid-container {
+        grid-template-columns: repeat(auto-fill, minmax(185px, 210px));
+        gap: 18px;
+    }
+}
+
+@media (min-width: 1100px) {
+    .tl-grid-container {
+        grid-template-columns: repeat(auto-fill, minmax(190px, 215px));
+        gap: 20px;
+    }
+}
+
+/* ====================================================================
+   THE TAI LIEU (GOOGLE DRIVE CARD ITEM - VUONG 1:1)
+   ==================================================================== */
+.tl-drive-card {
+    background: #ffffff;
+    border: 1px solid var(--tl-vien);
+    border-radius: var(--tl-card-radius);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: var(--tl-shadow-sm);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    aspect-ratio: 1 / 1; /* Dam bao the vuong 1:1 chu vi chuan Google Drive */
+    height: auto;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.tl-drive-card:hover {
+    border-color: var(--tl-vien-dam);
+    box-shadow: var(--tl-shadow-md);
+    transform: translateY(-2px);
+}
+
+.tl-drive-card:active {
+    transform: scale(0.985);
+}
+
+/* Header cua Card: Icon + Ten + Menu 3 cham */
+.tl-drive-header {
+    padding: 8px 10px 6px;
+    height: 38px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #ffffff;
+    flex-shrink: 0;
+}
+
+.tl-file-icon-box {
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.tl-drive-title {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--tl-chu-dam);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tl-drive-btn-more {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--tl-chu-mo);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.tl-drive-btn-more:hover {
+    background: #f1f5f9;
+    color: var(--tl-chu-dam);
+}
+
+/* Preview Thumbnail giua Card (Mo phong trang van ban y te giong Google Drive) */
+.tl-drive-preview {
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+    border-bottom: 1px solid #f1f5f9;
+    padding: 6px 8px;
+    flex: 1;
+    min-height: 0;
+    height: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.tl-preview-inner {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Trang giay van ban mo phong */
+.tl-paper-sheet {
+    width: 82%;
+    height: 94%;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow: hidden;
+    position: relative;
+    transition: transform 0.2s ease;
+}
+
+.tl-drive-card:hover .tl-paper-sheet {
+    transform: scale(1.02);
+}
+
+.tl-paper-header-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 4px;
+}
+
+.tl-paper-logo {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    background: #cbd5e1;
+}
+
+.tl-paper-lines-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.tl-paper-line {
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 2px;
+}
+
+.tl-paper-line.tl-line-bold {
+    height: 5px;
+    background: #94a3b8;
+}
+
+.tl-paper-line.tl-line-color-green {
+    background: #86efac;
+}
+
+.tl-paper-body {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 2px;
+    position: relative;
+}
+
+.tl-paper-rx-badge {
+    position: absolute;
+    right: 2px;
+    bottom: -6px;
+    font-size: 16px;
+    font-weight: 900;
+    font-style: italic;
+    color: rgba(22, 163, 74, 0.25);
+    line-height: 1;
+}
+
+.tl-paper-table-mini {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-top: 2px;
+}
+
+.tl-mini-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.tl-mini-row span {
+    height: 4px;
+    background: #cbd5e1;
+    border-radius: 2px;
+    flex: 1;
+}
+
+.tl-paper-img-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 0;
+}
+
+/* Footer the: Avatar + Ngay */
+.tl-drive-footer {
+    padding: 6px 10px;
+    height: 32px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #ffffff;
+    font-size: 11px;
+    color: var(--tl-chu-mo);
+    flex-shrink: 0;
+}
+
+.tl-user-avatar-mini {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.tl-drive-footer-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ====================================================================
+   MODAL IN-APP PDF VIEWER (FULLSCREEN POPUP VOI CHUYEN TAI LIEU CUNG LOAI)
+   ==================================================================== */
+.tl-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 9999;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.tl-modal-overlay.active {
+    display: flex;
+}
+
+.tl-modal-box {
+    background: #1e293b;
+    color: #ffffff;
+    width: 100%;
+    height: 100%;
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+
+@media (min-width: 768px) {
+    .tl-modal-overlay {
+        padding: 20px;
+    }
+    .tl-modal-box {
+        height: 94vh;
+        border-radius: 16px;
+        box-shadow: var(--tl-shadow-lg);
+        border: 1px solid #334155;
+    }
+}
+
+/* Modal Toolbar */
+.tl-modal-toolbar {
+    background: #0f172a;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid #334155;
+    flex-shrink: 0;
+    z-index: 20;
+}
+
+.tl-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.tl-title-col {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.tl-modal-doc-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #f8fafc;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+}
+
+.tl-modal-doc-subtitle {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+@media (min-width: 640px) {
+    .tl-modal-doc-title {
+        max-width: 260px;
+    }
+}
+
+.tl-modal-close {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s;
+    flex-shrink: 0;
+}
+
+.tl-modal-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* ====================================================================
+   BO DIEU HUONG QUA LAI GIUA CAC TAI LIEU CUNG LOAI (DOCUMENT SWITCHER)
+   ==================================================================== */
+.tl-doc-nav-bar {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    padding: 3px 6px;
+    gap: 4px;
+}
+
+.tl-btn-nav-doc {
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.15s, opacity 0.15s;
+}
+
+.tl-btn-nav-doc:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.tl-btn-nav-doc:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.tl-doc-counter-badge {
+    font-size: 12px;
+    font-weight: 700;
+    color: #38bdf8;
+    background: rgba(14, 165, 233, 0.18);
+    padding: 3px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+    .tl-nav-text { display: none; }
+}
+
+.tl-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Page navigation noi bo trong PDF (Trang 1/2) */
+.tl-page-nav {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 11.5px;
+    color: #e2e8f0;
+}
+
+.tl-btn-page {
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+}
+
+.tl-btn-page:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.tl-btn-page:not(:disabled):hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* Action buttons on toolbar: PNG & PDF */
+.tl-btn-tool {
+    border: none;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.tl-btn-tool-png {
+    background: #0284c7;
+    color: #ffffff;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);
+}
+
+.tl-btn-tool-png:hover {
+    background: #0369a1;
+}
+
+@media (max-width: 520px) {
+    .tl-hide-sm { display: none; }
+    .tl-page-nav { display: none; }
+}
+
+/* ====================================================================
+   VIEWER CONTAINER & FLOATING ARROWS 2 BEN
+   ==================================================================== */
+.tl-viewer-container {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: #1e293b;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start; /* Fix che dau trang: luon bat dau tu tren dinh */
+    padding: 24px 60px 48px;
+    position: relative;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: auto;
+}
+
+@media (max-width: 600px) {
+    .tl-viewer-container {
+        padding: 14px 8px 36px;
+    }
+}
+
+/* 2 Nut mui ten noi o 2 ben mep man hinh (Floating Navigation) */
+.tl-floating-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 30;
+    transition: all 0.18s ease;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.tl-floating-nav:hover:not(:disabled) {
+    background: rgba(13, 91, 212, 0.9);
+    border-color: #38bdf8;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.tl-floating-nav:disabled {
+    opacity: 0.2;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.tl-floating-prev {
+    left: 14px;
+}
+
+.tl-floating-next {
+    right: 14px;
+}
+
+@media (max-width: 540px) {
+    .tl-floating-nav {
+        width: 40px;
+        height: 40px;
+        background: rgba(15, 23, 42, 0.75);
+    }
+    .tl-floating-prev { left: 8px; }
+    .tl-floating-next { right: 8px; }
+}
+
+.tl-canvas-wrapper {
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    background: #ffffff;
+    border-radius: 6px;
+    overflow: hidden;
+    max-width: 100%;
+    margin: 8px auto 28px auto;
+    flex-shrink: 0;
+}
+
+#tlPdfCanvas {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+/* ====================================================================
+   BO TRANG CUON DOC LIEN TUC (CONTINUOUS VERTICAL SCROLL)
+   ==================================================================== */
+.tl-pages-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 6px 0 36px 0;
+}
+
+.tl-pdf-page-item {
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    background: #ffffff;
+    border-radius: 6px;
+    overflow: hidden;
+    max-width: 100%;
+    margin: 0 auto;
+    flex-shrink: 0;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.tl-pdf-page-item.active-page {
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.8), 0 14px 40px rgba(0, 0, 0, 0.65);
+}
+
+.tl-pdf-page-canvas {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+.tl-page-badge {
+    position: absolute;
+    bottom: 10px;
+    right: 14px;
+    background: rgba(15, 23, 42, 0.75);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 12px;
+    pointer-events: none;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+}
+
+.tl-page-skeleton {
+    width: 100%;
+    height: 100%;
+    min-height: 400px;
+    background: #f1f5f9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #64748b;
+    font-size: 12.5px;
+}
+
+/* Bottom status bar in viewer */
+.tl-viewer-bottom-bar {
+    background: #0f172a;
+    padding: 6px 16px;
+    border-top: 1px solid #334155;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11.5px;
+    color: #94a3b8;
+}
+
+.tl-viewer-bottom-bar strong {
+    color: #38bdf8;
+}
+
+.tl-key-hint kbd {
+    background: #1e293b;
+    border: 1px solid #475569;
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 10px;
+    color: #e2e8f0;
+}
+
+@media (max-width: 600px) {
+    .tl-key-hint { display: none; }
+}
+
+/* Loading Spinner */
+.tl-viewer-loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: #ffffff;
+    font-size: 13px;
+    z-index: 10;
+}
+
+.tl-spinner {
+    width: 38px;
+    height: 38px;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    border-top-color: #38bdf8;
+    border-radius: 50%;
+    animation: tlSpin 0.8s linear infinite;
+}
+
+@keyframes tlSpin {
+    to { transform: rotate(360deg); }
+}
+
+/* ====================================================================
+   DROPDOWN MENU 3 CHAM
+   ==================================================================== */
+.tl-dropdown-menu {
+    position: fixed;
+    background: #ffffff;
+    border: 1px solid var(--tl-vien);
+    border-radius: 10px;
+    box-shadow: var(--tl-shadow-lg);
+    padding: 6px;
+    z-index: 999;
+    display: none;
+    flex-direction: column;
+    min-width: 160px;
+}
+
+.tl-dropdown-menu.show {
+    display: flex;
+}
+
+.tl-dropdown-item {
+    border: none;
+    background: transparent;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--tl-chu-dam);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s;
+}
+
+.tl-dropdown-item:hover {
+    background: #f1f5f9;
+    color: var(--tl-xanh-dam);
+}
+
+/* Empty State */
+.tl-empty {
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--tl-chu-phu);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.tl-empty-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--tl-chu-dam);
+}
+
+.tl-empty-desc {
+    font-size: 13px;
+    max-width: 320px;
+    line-height: 1.5;
+}
+
+/* Toast Thong bao */
+.tl-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: rgba(15, 23, 42, 0.95);
+    color: #ffffff;
+    padding: 10px 18px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 10000;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tl-toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}

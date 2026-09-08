@@ -179,13 +179,31 @@ public class HomeController : Controller
         // Phai loc theo CA dinh danh LAN co so: mot so dien thoai co the co ho so
         // o nhieu co so khac nhau (du lieu that dang co truong hop do), khong loc
         // thi trang chao ten lay tu ho so cua co so KHAC.
-        var benhNhan = string.IsNullOrWhiteSpace(dinhDanh)
+        var hoSoInfo = string.IsNullOrWhiteSpace(dinhDanh)
             ? null
             : await (from p in _db.BenhNhans.AsNoTracking()
                      join h in _db.BenhNhanCoSos.AsNoTracking() on p.Id equals h.IdBenhNhan
                      join cs in _db.DMCSKCBs.AsNoTracking() on h.IdCoSo equals cs.Id
-                     where (p.SDT == dinhDanh || p.Email == dinhDanh) && cs.MaCoSo == maCoSo
-                     select p).FirstOrDefaultAsync();
+                     where (p.SDT == dinhDanh || p.Email == dinhDanh || p.CCCD == cccd) && cs.MaCoSo == maCoSo
+                     select new { BenhNhan = p, HoSoCoSo = h }).FirstOrDefaultAsync();
+
+        var benhNhan = hoSoInfo?.BenhNhan;
+        var hoSoCoSo = hoSoInfo?.HoSoCoSo;
+
+        int soLuongDonThuoc = 0;
+        int soLuongKetQuaKham = 0;
+
+        if (coSo != null && hoSoCoSo != null)
+        {
+            var queryTl = _db.TaiLieuBenhNhans.AsNoTracking()
+                .Where(t => t.IdCoSo == coSo.Id && (t.IdBenhNhanCoSo == hoSoCoSo.Id || t.MaBN == hoSoCoSo.MaBN));
+
+            soLuongDonThuoc = await queryTl.CountAsync(t => t.LoaiTaiLieu == "DON_THUOC");
+            soLuongKetQuaKham = await queryTl.CountAsync(t => t.LoaiTaiLieu != "DON_THUOC");
+        }
+
+        ViewBag.SoLuongDonThuoc = soLuongDonThuoc;
+        ViewBag.SoLuongKetQuaKham = soLuongKetQuaKham;
 
         ViewBag.MaCoSo = maCoSo;
         ViewBag.TenCoSo = coSo?.TenCoSo ?? "Cơ sở khám chữa bệnh";
@@ -219,6 +237,75 @@ public class HomeController : Controller
         ViewBag.DungManDoiTac = cuaCoSo?.DungManDoiTac == true;
 
         return View();
+    }
+
+    /// <summary>
+    /// Trang danh sách tài liệu y tế của bệnh nhân (Đơn thuốc, Kết quả xét nghiệm, CĐHA, ...).
+    /// </summary>
+    [HttpGet("/benh-nhan/tai-lieu")]
+    public async Task<IActionResult> DanhSachTaiLieu(string? nhom = null)
+    {
+        var cccd = User.FindFirst(LuongCongBenhNhan.ClaimCccd)?.Value;
+        var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
+        var dinhDanh = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? string.Empty;
+
+        var coSo = string.IsNullOrWhiteSpace(maCoSo)
+            ? null
+            : await _db.DMCSKCBs.AsNoTracking().FirstOrDefaultAsync(x => x.MaCoSo == maCoSo);
+
+        var hoSoInfo = string.IsNullOrWhiteSpace(dinhDanh)
+            ? null
+            : await (from p in _db.BenhNhans.AsNoTracking()
+                     join h in _db.BenhNhanCoSos.AsNoTracking() on p.Id equals h.IdBenhNhan
+                     join cs in _db.DMCSKCBs.AsNoTracking() on h.IdCoSo equals cs.Id
+                     where (p.SDT == dinhDanh || p.Email == dinhDanh || p.CCCD == cccd) && cs.MaCoSo == maCoSo
+                     select new { BenhNhan = p, HoSoCoSo = h }).FirstOrDefaultAsync();
+
+        ViewBag.MaCoSo = maCoSo;
+        ViewBag.TenCoSo = coSo?.TenCoSo ?? "Cơ sở khám chữa bệnh";
+        ViewBag.TenBenhNhan = hoSoInfo?.BenhNhan?.TenBN ?? dinhDanh;
+        ViewBag.MaBN = hoSoInfo?.HoSoCoSo?.MaBN;
+        var nhomChuan = string.IsNullOrWhiteSpace(nhom) ? "tat-ca" : nhom.Trim().ToLowerInvariant();
+        ViewBag.Nhom = nhomChuan;
+
+        string tieuDeTrang = "Tài liệu y tế";
+        if (nhomChuan == "don-thuoc")
+        {
+            tieuDeTrang = "Đơn thuốc";
+        }
+        else if (nhomChuan == "ket-qua-kham")
+        {
+            tieuDeTrang = "Kết quả khám";
+        }
+        ViewBag.TieuDeTrang = tieuDeTrang;
+
+        List<TaiLieuBenhNhan> danhSach = new();
+        if (coSo != null && hoSoInfo != null)
+        {
+            var idBnCoSo = hoSoInfo.HoSoCoSo.Id;
+            var maBn = hoSoInfo.HoSoCoSo.MaBN;
+
+            var q = _db.TaiLieuBenhNhans.AsNoTracking()
+                .Where(t => t.IdCoSo == coSo.Id &&
+                    (t.IdBenhNhanCoSo == idBnCoSo || t.MaBN == maBn));
+
+            // Lọc chính xác theo nhóm tài liệu
+            if (nhomChuan == "don-thuoc")
+            {
+                q = q.Where(t => t.LoaiTaiLieu == "DON_THUOC");
+            }
+            else if (nhomChuan == "ket-qua-kham")
+            {
+                q = q.Where(t => t.LoaiTaiLieu != "DON_THUOC");
+            }
+
+            danhSach = await q
+                .OrderByDescending(t => t.NgayKham ?? t.NgayTao)
+                .ThenByDescending(t => t.Id)
+                .ToListAsync();
+        }
+
+        return View(danhSach);
     }
 
     /// <summary>
