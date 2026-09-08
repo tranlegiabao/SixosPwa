@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "8a716c52-7b24-4f8e-9087-f8234db6c3e1",
     "name": "SixosPwa - API Tiếp nhận & Phục vụ Tài liệu Y tế",
-    "description": "Bộ sưu tập Postman để kiểm thử API tiếp nhận tài liệu PDF Base64 và xem/tải tài liệu qua FTP Proxy trong SixosPwa.",
+    "description": "Bộ sưu tập Postman với các Header được cấu hình trực tiếp (cho phép tự do sửa đổi giá trị, bật/tắt checkbox dễ dàng trong tab Headers của Postman).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -36,21 +36,49 @@
         "header": [
           {
             "key": "X-API-Key",
-            "value": "{{api_key}}",
+            "value": "test-api-key-cs2",
             "type": "text",
-            "description": "Khóa bí mật của cơ sở khám chữa bệnh (đối chiếu cột ApiKey trong DM_CSKCB)"
+            "description": "Khóa bí mật của CSKCB (Bạn có thể sửa trực tiếp tại đây)"
           },
           {
             "key": "X-Ma-CSKCB",
-            "value": "{{ma_cskcb}}",
+            "value": "CS2",
             "type": "text",
-            "description": "Mã cơ sở y tế (ví dụ: CS2, 79423, ...)"
+            "description": "Mã cơ sở y tế (Bạn có thể sửa trực tiếp tại đây, ví dụ: CS2, 79423, ...)"
+          },
+          {
+            "key": "X-Ma-CSKCB",
+            "value": "79423",
+            "type": "text",
+            "disabled": true,
+            "description": "Gợi ý: Cơ sở BV Ung Bướu CS1 (Tích vào checkbox để đổi nhanh)"
           },
           {
             "key": "X-Loai-Tai-Lieu",
-            "value": "{{loai_tai_lieu}}",
+            "value": "DON_THUOC",
             "type": "text",
-            "description": "Loại tài liệu (ví dụ: DON_THUOC, KET_QUA_XN, CDHA, GIAY_RA_VIEN)"
+            "description": "Loại tài liệu: Đơn thuốc (Sửa trực tiếp hoặc tích các dòng dưới)"
+          },
+          {
+            "key": "X-Loai-Tai-Lieu",
+            "value": "KET_QUA_XN",
+            "type": "text",
+            "disabled": true,
+            "description": "Gợi ý: Kết quả xét nghiệm (Tích vào checkbox để đổi nhanh)"
+          },
+          {
+            "key": "X-Loai-Tai-Lieu",
+            "value": "CDHA",
+            "type": "text",
+            "disabled": true,
+            "description": "Gợi ý: Chẩn đoán hình ảnh X-Quang/CT/MRI (Tích vào checkbox để đổi nhanh)"
+          },
+          {
+            "key": "X-Loai-Tai-Lieu",
+            "value": "GIAY_RA_VIEN",
+            "type": "text",
+            "disabled": true,
+            "description": "Gợi ý: Giấy ra viện (Tích vào checkbox để đổi nhanh)"
           },
           {
             "key": "Content-Type",
@@ -79,7 +107,7 @@
             "tiep-nhan"
           ]
         },
-        "description": "Gửi tài liệu dạng PDF Base64 lên hệ thống. Tự động lưu file vào FTP theo thư mục năm/tháng và ghi nhận bản ghi vào database."
+        "description": "Gửi tài liệu dạng PDF Base64 lên hệ thống. Tự do sửa đổi các Header trong tab Headers."
       },
       "response": []
     },
@@ -101,7 +129,7 @@
             "{{document_id}}"
           ]
         },
-        "description": "Tải stream tệp PDF trực tiếp từ máy chủ FTP. Hỗ trợ hiển thị trên trình duyệt hoặc tải về."
+        "description": "Tải stream tệp PDF trực tiếp từ máy chủ FTP. Có thể sửa số ID trên URL để xem tài liệu khác."
       },
       "response": []
     },
@@ -111,14 +139,23 @@
         "method": "POST",
         "header": [
           {
+            "key": "X-API-Key",
+            "value": "test-api-key-cs2",
+            "type": "text",
+            "disabled": true,
+            "description": "Đang tắt checkbox để test lỗi thiếu header. Bật lại để gửi."
+          },
+          {
             "key": "X-Ma-CSKCB",
-            "value": "{{ma_cskcb}}",
-            "type": "text"
+            "value": "CS2",
+            "type": "text",
+            "description": "Sửa trực tiếp mã CSKCB tại đây"
           },
           {
             "key": "X-Loai-Tai-Lieu",
-            "value": "{{loai_tai_lieu}}",
-            "type": "text"
+            "value": "DON_THUOC",
+            "type": "text",
+            "description": "Sửa trực tiếp loại tài liệu tại đây"
           },
           {
             "key": "Content-Type",
@@ -147,7 +184,7 @@
             "tiep-nhan"
           ]
         },
-        "description": "Kiểm thử khi thiếu Header X-API-Key, kỳ vọng trả về HTTP 401 Unauthorized."
+        "description": "Header X-API-Key đang bị disable (bỏ chọn checkbox) để kiểm thử trả về 401. Bạn có thể tích lại để thử nghiệm."
       },
       "response": []
     },
@@ -158,18 +195,21 @@
         "header": [
           {
             "key": "X-API-Key",
-            "value": "wrong-api-key-value",
-            "type": "text"
+            "value": "sai-api-key-123456",
+            "type": "text",
+            "description": "Giá trị API Key sai để test phản hồi 401"
           },
           {
             "key": "X-Ma-CSKCB",
-            "value": "{{ma_cskcb}}",
-            "type": "text"
+            "value": "CS2",
+            "type": "text",
+            "description": "Sửa trực tiếp mã CSKCB tại đây"
           },
           {
             "key": "X-Loai-Tai-Lieu",
-            "value": "{{loai_tai_lieu}}",
-            "type": "text"
+            "value": "DON_THUOC",
+            "type": "text",
+            "description": "Sửa trực tiếp loại tài liệu tại đây"
           },
           {
             "key": "Content-Type",
@@ -209,13 +249,22 @@
         "header": [
           {
             "key": "X-API-Key",
-            "value": "{{api_key}}",
-            "type": "text"
+            "value": "test-api-key-cs2",
+            "type": "text",
+            "description": "Sửa trực tiếp API Key tại đây"
+          },
+          {
+            "key": "X-Ma-CSKCB",
+            "value": "CS2",
+            "type": "text",
+            "disabled": true,
+            "description": "Đang tắt checkbox để test lỗi thiếu header X-Ma-CSKCB"
           },
           {
             "key": "X-Loai-Tai-Lieu",
-            "value": "{{loai_tai_lieu}}",
-            "type": "text"
+            "value": "DON_THUOC",
+            "type": "text",
+            "description": "Sửa trực tiếp loại tài liệu tại đây"
           },
           {
             "key": "Content-Type",
@@ -244,7 +293,7 @@
             "tiep-nhan"
           ]
         },
-        "description": "Kiểm thử khi thiếu Header X-Ma-CSKCB, kỳ vọng trả về HTTP 400 Bad Request."
+        "description": "Header X-Ma-CSKCB đang bị disable (bỏ chọn checkbox) để kiểm thử trả về 400. Bạn có thể tích lại để thử nghiệm."
       },
       "response": []
     },
@@ -255,18 +304,21 @@
         "header": [
           {
             "key": "X-API-Key",
-            "value": "{{api_key}}",
-            "type": "text"
+            "value": "test-api-key-cs2",
+            "type": "text",
+            "description": "Sửa trực tiếp API Key tại đây"
           },
           {
             "key": "X-Ma-CSKCB",
-            "value": "{{ma_cskcb}}",
-            "type": "text"
+            "value": "CS2",
+            "type": "text",
+            "description": "Sửa trực tiếp mã CSKCB tại đây"
           },
           {
             "key": "X-Loai-Tai-Lieu",
-            "value": "{{loai_tai_lieu}}",
-            "type": "text"
+            "value": "DON_THUOC",
+            "type": "text",
+            "description": "Sửa trực tiếp loại tài liệu tại đây"
           },
           {
             "key": "Content-Type",
@@ -295,7 +347,7 @@
             "tiep-nhan"
           ]
         },
-        "description": "Kiểm thử khi gửi chuỗi Base64 của văn bản thường hoặc ảnh không có header %PDF-, kỳ vọng trả về HTTP 400."
+        "description": "Kiểm thử khi gửi chuỗi Base64 của văn bản thường không có header %PDF-, kỳ vọng trả về HTTP 400."
       },
       "response": []
     }
@@ -304,21 +356,6 @@
     {
       "key": "base_url",
       "value": "https://localhost:7024",
-      "type": "string"
-    },
-    {
-      "key": "api_key",
-      "value": "test-api-key-cs2",
-      "type": "string"
-    },
-    {
-      "key": "ma_cskcb",
-      "value": "CS2",
-      "type": "string"
-    },
-    {
-      "key": "loai_tai_lieu",
-      "value": "DON_THUOC",
       "type": "string"
     },
     {
