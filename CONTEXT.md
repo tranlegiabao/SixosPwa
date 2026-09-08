@@ -81,18 +81,24 @@ Lớp `IPartnerGateway` — chỗ duy nhất trong SixosPwa biết một hệ đ
 Màn hình gọi giao diện này chứ không gọi thẳng API của ai.
 _Tránh_: adapter, connector, tích hợp
 
-**Nhánh có API** / **nhánh nội bộ**:
-Hai đường đi sau khi xác thực, chọn theo `DM_DoiTacApi.KieuApi`. *Có API* thì bàn giao sang đối tác;
-*nội bộ* thì ở lại trang bệnh nhân của SixosPwa.
-_Tránh_: mode, loại cơ sở
+**Nhánh bàn giao** / **nhánh màn chung**:
+Hai đường đi sau khi xác thực, chọn theo `DM_DoiTacApi.KieuApi`. *Bàn giao* thì chuyển phiên sang màn
+của đối tác (`KieuApi = UB`); *màn chung* thì ở lại trang bệnh nhân của SixosPwa (`NONE`, `HIS`).
+🔴 Cặp từ này trước 2026-09-08 gọi là *"nhánh có API" / "nhánh nội bộ"* — **đã bỏ**, vì từ giai đoạn 2
+một *Cơ sở dùng HIS* **có API mà vẫn ở lại màn chung**. Nói "nhánh có API" trần từ nay là mơ hồ.
+_Tránh_: nhánh có API, nhánh nội bộ, mode, loại cơ sở
 
 **Liên kết một lần**:
 Màn chỉ hiện đúng một lần cho bệnh nhân đã có sẵn tài khoản bên đối tác mà SixosPwa chưa biết mật
-khẩu. Sau khi qua, những lần sau đi thẳng.
-_Tránh_: kết nối, đồng bộ tài khoản
+khẩu. Sau khi qua, những lần sau đi thẳng. 🔴 **Không phải** *Nối hồ sơ* — cái này nói về **mật khẩu
+tài khoản đối tác** (`HT_TaiKhoanDoiTac.DaLienKet`), cái kia nói về **hồ sơ khám ở HIS**. Hai màn
+khác nhau; ADR 0018 từng lỡ dùng chung tên này cho cả hai.
+_Tránh_: kết nối, đồng bộ tài khoản, nối hồ sơ
 
 **Trang bệnh nhân nội bộ**:
-Trang chủ dành cho bệnh nhân của cơ sở **không có** API riêng. Đợt 2026-08 mới chỉ có giao diện.
+Trang chủ dành cho bệnh nhân của cơ sở đi theo *nhánh màn chung*. Đợt 2026-08 mới chỉ có giao diện;
+giai đoạn 2 đổ dữ liệu thật vào. Ba ô: *Đăng ký khám theo gói* (ẩn tới giai đoạn 3) · *Lịch sử hẹn
+khám* · *Tra cứu hồ sơ khám bệnh*.
 _Tránh_: dashboard, trang chủ (chung chung)
 
 ### Xác thực & vé bàn giao (chốt 2026-08-25)
@@ -125,13 +131,19 @@ _Tránh_: phương thức xác thực, hình thức gửi OTP
 
 **Con người**:
 Một dòng `DM_BenhNhan`, định danh bằng **CCCD** — khoá tự nhiên, tồn tại đúng một nơi trong cả cơ sở dữ
-liệu. Một con người có thể khám ở nhiều cơ sở nhưng vẫn chỉ là một dòng.
+liệu. Một con người có thể khám ở nhiều cơ sở nhưng vẫn chỉ là một dòng. 🔴 Từ 2026-09-08 một con người
+còn **thuộc về đúng một *Tài khoản cổng*** (`DM_BenhNhan.IDTaiKhoan`) — nên *ai khai trước giữ CCCD*:
+con khai hộ mẹ rồi thì mẹ tự đăng ký sẽ **bị chặn** cho tới khi con xoá hồ sơ đó. Xem ADR 0019.
 _Tránh_: bệnh nhân (mơ hồ — xem *Hồ sơ tại cơ sở*), user, tài khoản
 
 **Hồ sơ tại cơ sở**:
-Một dòng `DM_BenhNhanCoSo` — việc một *con người* có mặt tại một *cơ sở*, mang mã bệnh nhân do chính cơ
-sở đó cấp. Cùng một người ở hai cơ sở là **hai hồ sơ, một con người**. Thực đo 2026-08-24: 13 con người
-ứng với 15 hồ sơ.
+Một dòng `DM_BenhNhanCoSo` — việc một *con người* mang một mã bệnh nhân do một *cơ sở* cấp. Cùng một
+người ở hai cơ sở là **hai hồ sơ, một con người**. Thực đo 2026-08-24: 13 con người ứng với 15 hồ sơ.
+🔴 **Một người tại MỘT cơ sở vẫn có thể có NHIỀU hồ sơ** — bản trước 2026-09-08 ngầm hiểu là một, và
+điều đó **sai**. Đo trên DB khách thật: `PKDK_ThienNam` **17,3%** người có ≥2 `MaBN` (8.454 người),
+`PKDK_TamDuc_BL` 24,7%, `Chinh_PKDKNhanDuc` 12,7%. Vì vậy mọi màn hiển thị phải gom theo *Con người*,
+không theo *Hồ sơ tại cơ sở*; và ràng buộc duy nhất đúng là `(IDCoSo, MaBN)`, không phải
+`(IDBenhNhan, IDCoSo)`. Xem ADR 0018.
 _Tránh_: bệnh nhân, bản ghi BN
 
 **Mã BN**:
@@ -177,15 +189,119 @@ nhận người mới — **không phải khoá tài khoản**: bệnh nhân đ�
 _Tránh_: đã xác minh, kích hoạt, đã duyệt, bật/tắt
 
 **Cờ `Active`**:
-🔴 Có **ba** cột mang tên này với **ba nghĩa khác nhau**, đừng lẫn. `DM_CSKCB.Active` là *Cơ sở đang
+🔴 Có **bốn** cột mang tên này với **bốn nghĩa khác nhau**, đừng lẫn. `DM_CSKCB.Active` là *Cơ sở đang
 hiển thị* ở trên. `DM_DoiTacApi.Active` nói đăng ký API của một cơ sở còn hiệu lực không.
-`DM_CSKCB_CapQuangCao.Active` nói một cấp quảng cáo còn hiệu lực không. Chỉ cái đầu là cổng hiển thị.
+`DM_CSKCB_CapQuangCao.Active` nói một cấp quảng cáo còn hiệu lực không. `HT_KhoaApiCoSo.Active` là
+*Khoá cơ sở* còn dùng được không. Chỉ cái đầu là cổng hiển thị.
+🔴 `DM_CSKCB.Active` **không** phải cổng đường API. Theo ADR 0013 nó quyết định đúng hai thứ: cơ sở có
+hiện ở cổng công khai, và có nhận đăng nhập/đăng ký mới. Tắt một cơ sở khỏi trang quảng bá mà làm HIS
+của họ ngừng đẩy được kết quả là lỗi im lặng. Cắt đường API thì tắt *Khoá cơ sở*.
 _Tránh_: nói "cờ Active" trần khi chưa nói rõ bảng nào
 
 **Phòng khám**:
 **Không tồn tại.** Bảng `PhongKham` từng có 3 dòng dữ liệu bịa, đã bỏ ở đợt 2026-08-24. Mọi "nơi khám"
 đều là *Cơ sở*.
 _Tránh_: dùng lại từ này dưới bất kỳ dạng nào
+
+### Đồng bộ với HIS (chốt 2026-09-08)
+
+**Cơ sở dùng HIS**:
+Một *Cơ sở* có `DM_DoiTacApi.KieuApi = 'HIS'` — dùng *Trang bệnh nhân nội bộ* của SixosPwa, **đồng
+thời** có một bản HisSoft đứng sau cấp dữ liệu. Khác *Cơ sở bàn giao* (`UB`) ở chỗ đối tác không dựng
+màn nào; khác cơ sở `NONE` ở chỗ có nguồn dữ liệu thật. Bước đệm hiện nay là **Thiên Nam**.
+_Tránh_: cơ sở có API, cơ sở nội bộ, khách HisSoft
+
+**Đẩy** / **Gọi thẳng**:
+Hai chiều đi của dữ liệu, chia theo **loại dữ liệu** chứ không theo cơ sở. *Đẩy* = HIS chủ động gửi
+lên SixosPwa (tài liệu, đợt khám). *Gọi thẳng* = SixosPwa chủ động hỏi HIS qua `DM_DoiTacApi.BaseUrl`
+(lịch trống, đặt/huỷ lịch). Lịch hẹn **không** có bản sao ở SixosPwa. Xem ADR 0017.
+_Tránh_: đồng bộ (chung chung — không nói được ai gọi ai), push/pull
+
+**Hàng đợi gửi**:
+Bảng nằm **bên HIS**, không phải bên SixosPwa: mỗi dòng là một tài liệu chờ đẩy, mang trạng thái và
+số lần thử. Nó tồn tại vì cò đẩy là **người bấm**, nên phải có chỗ ghi nhớ cái gì đã gửi, cái gì còn
+tồn, cái gì gửi hỏng cần gửi lại.
+_Tránh_: queue, bảng log, bảng đồng bộ
+
+**Luật gộp hồ sơ**:
+Điều kiện để SixosPwa coi hai `MaBN` là cùng một *Con người*: khớp **cả ba** — CCCD hợp lệ, Họ tên
+không dấu, Ngày sinh. Lệch bất kỳ ô nào thì **không tự gộp**, đẩy sang *Liên kết một lần* cho bệnh
+nhân tự nhận. 🔴 **Không bao giờ gộp chỉ bằng CCCD**: đo thật ở Thiên Nam có **345 nhóm** cùng CCCD
+mà khác tên. Xem ADR 0018.
+_Tránh_: khớp bệnh nhân, matching, gộp theo CCCD
+
+**CCCD rác**:
+Giá trị nằm ở cột CCCD nhưng không định danh ai — `000000000000` (2.847 lần trên `Dev_Master3`),
+`111111111111`, `012345678910`… Mọi câu đếm hay khớp theo CCCD **bắt buộc** loại nhóm này trước, nếu
+không con số ra sai hoàn toàn.
+_Tránh_: CCCD trống, dữ liệu bẩn
+
+**Lịch đặt**:
+Một lần bệnh nhân đặt lịch từ cổng, lưu ở **bảng riêng bên HIS**, mang trạng thái *chờ xác nhận /
+đã xác nhận / đã huỷ*. **Không phải** *Giấy hẹn tái khám* (`QL_GiayHenTaiKham`) — cái đó do bác sĩ cấp
+và gắn vào một đợt khám đã xảy ra.
+_Tránh_: giấy hẹn, lịch hẹn (trần), appointment
+
+**Khoá cơ sở**:
+Một dòng `HT_KhoaApiCoSo` — chuỗi bí mật cấp cho **một cơ sở** để HIS của họ gọi vào *khu API nhận*.
+Cơ sở giữ chuỗi thô trong cấu hình HIS; cổng chỉ giữ **bản băm**, nên đọc cơ sở dữ liệu không đọc ra
+được khoá. Một cơ sở mang **nhiều khoá** cùng lúc được — đó là cách xoay khoá mà không có khoảng chết.
+Cờ `Active` của nó là công tắc **duy nhất** của đường API, tách hẳn khỏi *Cờ `Active`* của cơ sở.
+_Tránh_: API key (trần), token, mật khẩu đối tác
+
+**Khu API nhận**:
+Các đường dưới `api/v1` — chỗ **MÁY** gọi vào: HIS của cơ sở đẩy tài liệu, đẩy đợt khám, hỏi ai đã nối
+hồ sơ. Vào bằng *Khoá cơ sở*, không bao giờ bằng cookie. Đối lại là các đường của **NGƯỜI** bệnh nhân
+dưới `/benh-nhan`, vào bằng cookie. 🔴 Một đường phục vụ người mà nằm trong khu này là sai chỗ — đó
+chính là cách đường đọc tài liệu từng hở cho cả thế giới.
+_Tránh_: API (trần), endpoint, webhook
+
+**Đợt khám**:
+Một dòng `QL_DotKham` = **một lần đến khám**, do HIS đẩy lên theo lô. Không phải bảng đếm: bảng đếm cũ
+`QL_LichSuKham` đã khai tử, các số *lần đầu / lần gần nhất / số lần* suy thẳng từ đây. Khoá nhận dạng
+là cặp *(cơ sở, mã vào viện)*. Ô chẩn đoán **được phép trống** — 20,5% đợt khám ở Thiên Nam trống ô này.
+_Tránh_: lịch sử khám (trần), lượt khám, phiên khám
+
+**Tài liệu mồ côi**:
+Tài liệu HIS đẩy lên cho một *Mã BN* mà cổng **chưa có hồ sơ nào** nối tới. Cổng **từ chối** chứ không
+giữ lại: cổng không ôm một byte bệnh án nào của người chưa phải người dùng. Phiếu nằm lại hàng đợi bên
+HIS, và HIS biết khi nào đẩy được nhờ hỏi lại theo lô. Xem ADR 0021.
+_Tránh_: tài liệu treo, ký gửi, pending
+
+### Tài khoản và hồ sơ (chốt 2026-09-08)
+
+**Tài khoản cổng**:
+Một dòng `HT_TaiKhoan`, khoá bằng **số điện thoại** (`UK_HT_TaiKhoan_SDT`) — thứ đi qua OTP. Từ
+2026-09-08 một tài khoản quản **nhiều** *Con người* (ADR 0019), chứ không còn một-một. Vẫn phải phân
+biệt với *Con người*: tài khoản là chỗ đăng nhập, con người là người đi khám.
+🔴 Quan hệ nhiều-hồ-sơ này **chỉ áp cho nhánh màn chung**; cơ sở đi *nhánh bàn giao* (`KieuApi='UB'`)
+giữ nguyên một tài khoản một người. Hai mô hình danh tính song song là **cố ý**, không phải bỏ sót.
+_Tránh_: user, người dùng, tài khoản (trần — dễ lẫn với `HT_TaiKhoanDoiTac`)
+
+**Hồ sơ tự khai**:
+Một *Con người* do chính người dùng gõ tay trên màn *Hồ sơ của tôi*, khi cơ sở **chưa** có người đó.
+Chưa mang `MaBN`, chưa có đợt khám nào, và **sửa được mọi ô**. Đối lập với *hồ sơ đã nối*, nơi họ tên
+/ ngày sinh / CCCD đọc từ HIS và **khoá cứng** — vì đó đúng là ba ô của *Luật gộp hồ sơ*.
+_Tránh_: hồ sơ tạm, hồ sơ nháp, hồ sơ trống
+
+**Nối hồ sơ**:
+Việc gắn một *Hồ sơ tự khai* với hồ sơ thật bên HIS. Tự động khi khớp cả ba ô của *Luật gộp hồ sơ*;
+lệch thì bệnh nhân gõ **Mã BN** in trên phiếu. SixosPwa chỉ hỏi HIS **khi người dùng bấm**, không hỏi
+mỗi lần mở màn — một tài khoản N hồ sơ thì mở màn một lần là N cuộc gọi sang máy khách.
+_Tránh_: liên kết, đồng bộ, tra cứu (trần)
+
+**Hồ sơ đang chọn**:
+Claim trong phiên nói người dùng đang xem hồ sơ nào. Bám khuôn `DangKyOnlineUB`
+(`QL_HoSoBenhNhanServices.ThemIdXemThongTinBenhNhan`). Khác claim `Cccd` — cái đó là **chính chủ tài
+khoản**, đóng lúc đăng nhập và không đổi.
+_Tránh_: bệnh nhân hiện tại, context, hồ sơ active
+
+**Cửa tài liệu**:
+Điều kiện để *kết quả cận lâm sàng* và *đơn thuốc* của một hồ sơ được mở ra: số điện thoại trên hồ sơ
+HIS trùng số điện thoại của *Tài khoản cổng*, hoặc bệnh nhân đã gõ đúng **Mã BN** một lần. Đọc nó là
+*"cơ sở đã ghi bạn là đầu mối liên lạc của người này"*, **không** phải *"bạn chính là người này"*.
+Tóm tắt đợt khám thì **không** qua cửa này. Xem ADR 0020.
+_Tránh_: phân quyền, khoá tài liệu, xác thực (trần)
 
 ## Quyết định
 
@@ -221,3 +337,7 @@ _Tránh_: ảnh thừa, ảnh rác, file cũ
 - [0014](docs/adr/0014-co-so-ub-dung-man-cua-khach.md) — vì sao cơ sở Ung Bướu dùng bộ màn của khách thay vì OTP của SixosPwa.
 - [0015](docs/adr/0015-phan-hoi-doi-tac-phai-co-statuscode-200.md) — vì sao phản hồi của đối tác chỉ tính là thành công khi mang `statusCode == 200`.
 - [0016](docs/adr/0016-phien-con-song-di-thang-va-dau-an-doi-tac.md) — vì sao phiên còn sống thì đi thẳng, và vì sao bàn giao đòi dấu ấn của đối tác chứ không chỉ `[Authorize]`.
+- [0017](docs/adr/0017-hai-chieu-theo-loai-du-lieu.md) — vì sao tài liệu thì HIS đẩy lên còn lịch hẹn thì SixosPwa gọi thẳng.
+- [0018](docs/adr/0018-luat-gop-ho-so-cccd-ten-ngaysinh.md) — vì sao gộp hồ sơ đòi cả CCCD + tên + ngày sinh chứ không chỉ CCCD.
+- [0019](docs/adr/0019-mot-tai-khoan-nhieu-ho-so.md) — vì sao một tài khoản quản nhiều hồ sơ, và vì sao ai khai trước giữ CCCD.
+- [0020](docs/adr/0020-tin-cccd-o-loi-vao-chan-o-tang-tai-lieu.md) — vì sao tin CCCD ở lối vào nhưng đặt cửa chắn ở tầng tài liệu.

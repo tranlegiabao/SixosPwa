@@ -542,7 +542,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         ViewData["TopCSKCB"] = previewItems;
         ViewData["PreviewStatic"] = true;
 
-        return View("~/Views/Home/ThongTinBenhNhan.cshtml", new List<LichSuKham>());
+        return View("~/Views/Home/ThongTinBenhNhan.cshtml", new List<DotKham>());
     }
 
     /// <summary>

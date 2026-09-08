@@ -610,7 +610,7 @@ public class HomeController : Controller
         var sdt = User.Identity?.Name;
         if (string.IsNullOrEmpty(sdt))
         {
-            return View(new List<LichSuKham>());
+            return View(new List<DotKham>());
         }
 
         ViewData["UserName"] = sdt;
@@ -628,7 +628,7 @@ public class HomeController : Controller
             ViewData["TenBN"] = "";
             ViewData["DiaChi"] = "";
             ViewData["Email"] = "";
-            return View(new List<LichSuKham>());
+            return View(new List<DotKham>());
         }
 
         ViewData["MaBN"] = await _db.BenhNhanCoSos
@@ -642,14 +642,18 @@ public class HomeController : Controller
 
         // Lich su kham nay treo vao HO SO TAI MOT CO SO — bang PhongKham da bi
         // xoa o dot tai kien truc (W-05).
-        var lichSuKham = await (
-            from ls in _db.LichSuKhams
-            join h in _db.BenhNhanCoSos on ls.IdBenhNhanCoSo equals h.Id
+        //
+        // Gom theo CON NGUOI (IdBenhNhan) chu khong theo mot ho so: mot nguoi tai
+        // MOT co so van co the co nhieu ho so — 17,3% benh nhan Thien Nam co >=2
+        // MaBN. Loc theo mot ho so se giau mat lich su cua chinh ho.
+        var dotKham = await (
+            from dk in _db.DotKhams
+            join h in _db.BenhNhanCoSos on dk.IdBenhNhanCoSo equals h.Id
             where h.IdBenhNhan == benhNhan.Id
-            orderby ls.NgayKhamGanNhat descending
-            select ls).ToListAsync();
+            orderby dk.NgayGioVao descending
+            select dk).ToListAsync();
 
-        return View(lichSuKham);
+        return View(dotKham);
     }
 
     [HttpGet]

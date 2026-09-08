@@ -32,6 +32,8 @@ builder.Services.Configure<FtpSettings>(builder.Configuration.GetSection("FtpSer
 builder.Services.AddScoped<IFtpService, FtpService>();
 builder.Services.AddScoped<IDonAnhService, DonAnhService>();
 builder.Services.AddScoped<ITaiLieuService, TaiLieuService>();
+builder.Services.AddScoped<INhatKyApi, NhatKyApiService>();
+builder.Services.AddScoped<IDotKhamService, DotKhamService>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>

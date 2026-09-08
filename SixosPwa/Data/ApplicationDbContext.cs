@@ -21,7 +21,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<TaiKhoan> TaiKhoans => Set<TaiKhoan>();
     public DbSet<ThongBao> ThongBaos => Set<ThongBao>();
     public DbSet<PushDangKy> PushDangKys => Set<PushDangKy>();
-    public DbSet<LichSuKham> LichSuKhams => Set<LichSuKham>();
+    public DbSet<DotKham> DotKhams => Set<DotKham>();
     public DbSet<DMCSKCB> DMCSKCBs => Set<DMCSKCB>();
     public DbSet<CSKCBGioLamViec> CSKCBGioLamViecs => Set<CSKCBGioLamViec>();
     public DbSet<CSKCBCapQuangCao> CSKCBCapQuangCaos => Set<CSKCBCapQuangCao>();
@@ -32,6 +32,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<DoiTacApi> DoiTacApis => Set<DoiTacApi>();
     public DbSet<TaiKhoanDoiTac> TaiKhoanDoiTacs => Set<TaiKhoanDoiTac>();
     public DbSet<TaiLieuBenhNhan> TaiLieuBenhNhans => Set<TaiLieuBenhNhan>();
+    public DbSet<KhoaApiCoSo> KhoaApiCoSos => Set<KhoaApiCoSo>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -110,15 +111,37 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<PushDangKy>().Property(e => e.Auth).HasMaxLength(200).IsRequired();
         modelBuilder.Entity<PushDangKy>().Property(e => e.ThoiGian).IsRequired();
 
-        // --------------------------------------------------------- QL_LichSuKham
-        modelBuilder.Entity<LichSuKham>().ToTable("QL_LichSuKham");
-        modelBuilder.Entity<LichSuKham>().HasKey(e => e.Id);
-        modelBuilder.Entity<LichSuKham>().Property(e => e.Id).HasColumnName("ID");
-        modelBuilder.Entity<LichSuKham>().Property(e => e.IdBenhNhanCoSo).HasColumnName("IDBenhNhanCoSo").IsRequired();
-        modelBuilder.Entity<LichSuKham>().Property(e => e.NgayKhamDau).IsRequired();
-        modelBuilder.Entity<LichSuKham>().Property(e => e.NgayKhamGanNhat).IsRequired();
-        modelBuilder.Entity<LichSuKham>().Property(e => e.SoLanKham).IsRequired();
-        modelBuilder.Entity<LichSuKham>().Property(e => e.TrangThai).HasMaxLength(50);
+        // ------------------------------------------------------------- QL_DotKham
+        // Thay cho QL_LichSuKham (bang 4 cot dem, da khai tu o script 06): ba so
+        // dem cu suy thang tu bang nay bang MIN/MAX/COUNT.
+        modelBuilder.Entity<DotKham>().ToTable("QL_DotKham");
+        modelBuilder.Entity<DotKham>().HasKey(e => e.Id);
+        modelBuilder.Entity<DotKham>().Property(e => e.Id).HasColumnName("ID");
+        modelBuilder.Entity<DotKham>().Property(e => e.IdCoSo).HasColumnName("IDCoSo").IsRequired();
+        modelBuilder.Entity<DotKham>().Property(e => e.IdBenhNhanCoSo).HasColumnName("IDBenhNhanCoSo").IsRequired();
+        modelBuilder.Entity<DotKham>().Property(e => e.MaVaoVien).HasMaxLength(50).IsRequired();
+        modelBuilder.Entity<DotKham>().Property(e => e.MaBN).HasMaxLength(20).IsRequired();
+        modelBuilder.Entity<DotKham>().Property(e => e.NgayGioVao).IsRequired();
+        modelBuilder.Entity<DotKham>().Property(e => e.NgayGioRa);
+        modelBuilder.Entity<DotKham>().Property(e => e.TenKhoa).HasMaxLength(255);
+        modelBuilder.Entity<DotKham>().Property(e => e.TenBacSi).HasMaxLength(255);
+        modelBuilder.Entity<DotKham>().Property(e => e.ChanDoan).HasColumnType("nvarchar(max)");
+        modelBuilder.Entity<DotKham>().Property(e => e.NgayTao).IsRequired();
+        modelBuilder.Entity<DotKham>().Property(e => e.NgayCapNhat);
+        modelBuilder.Entity<DotKham>().HasIndex(e => new { e.IdCoSo, e.MaVaoVien }).IsUnique();
+
+        // -------------------------------------------------------- HT_KhoaApiCoSo
+        modelBuilder.Entity<KhoaApiCoSo>().ToTable("HT_KhoaApiCoSo");
+        modelBuilder.Entity<KhoaApiCoSo>().HasKey(e => e.Id);
+        modelBuilder.Entity<KhoaApiCoSo>().Property(e => e.Id).HasColumnName("ID");
+        modelBuilder.Entity<KhoaApiCoSo>().Property(e => e.IdCoSo).HasColumnName("IDCoSo").IsRequired();
+        modelBuilder.Entity<KhoaApiCoSo>().Property(e => e.TenKhoa).HasMaxLength(100).IsRequired();
+        modelBuilder.Entity<KhoaApiCoSo>().Property(e => e.KhoaBam).HasColumnType("varbinary(32)").IsRequired();
+        modelBuilder.Entity<KhoaApiCoSo>().Property(e => e.Active).IsRequired();
+        modelBuilder.Entity<KhoaApiCoSo>().Property(e => e.NgayCap).IsRequired();
+        modelBuilder.Entity<KhoaApiCoSo>().Property(e => e.NgayHetHan);
+        modelBuilder.Entity<KhoaApiCoSo>().Property(e => e.NgayDungCuoi);
+        modelBuilder.Entity<KhoaApiCoSo>().HasIndex(e => e.KhoaBam).IsUnique();
 
         // --------------------------------------------------------------- DM_CSKCB
         modelBuilder.Entity<DMCSKCB>().ToTable("DM_CSKCB");

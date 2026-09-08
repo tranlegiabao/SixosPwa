@@ -143,6 +143,84 @@ public sealed class AdminStoredProcedureService
         });
 
     // ------------------------------------------------------------------
+    //  Khu API nhan (dot 2 giai doan 2)
+    // ------------------------------------------------------------------
+
+    /// <summary>
+    /// Cap hoac sua mot khoa API cua co so. <paramref name="khoaTho"/> chi bat
+    /// buoc khi CAP MOI (<paramref name="id"/> = 0); thu tuc tu bam, khoa tho
+    /// khong bao gio duoc luu.
+    /// </summary>
+    public Task<(AdminStoredProcedureResult KetQua, long Id)> SaveKhoaApiCoSoAsync(
+        long id,
+        long idCoSo,
+        string tenKhoa,
+        string? khoaTho,
+        bool active,
+        DateTime? ngayHetHan) =>
+        ExecuteWithIdAsync("dbo.HT_KhoaApiCoSo_Save", "@IDKhoa", command =>
+        {
+            AddParameter(command, "@ID", DbType.Int64, id);
+            AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
+            AddParameter(command, "@TenKhoa", DbType.String, tenKhoa, 100);
+            AddParameter(command, "@KhoaTho", DbType.AnsiString, khoaTho, 100);
+            AddParameter(command, "@Active", DbType.Boolean, active);
+            AddParameter(command, "@NgayHetHan", DbType.DateTime, ngayHetHan);
+        });
+
+    /// <summary>Mot dong nhat ky doi soat. Thu tuc nay khong tra ResultCode.</summary>
+    public Task GhiLogApiCoSoAsync(
+        long? idCoSo,
+        long? idKhoa,
+        string endpoint,
+        string? maBN,
+        string? maNguonHIS,
+        string ketQua,
+        string? lyDo,
+        int? soLuong,
+        string? ipGoi) =>
+        ExecuteNoResultAsync("dbo.HT_LogApiCoSo_Ghi", command =>
+        {
+            AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
+            AddParameter(command, "@IDKhoa", DbType.Int64, idKhoa);
+            AddParameter(command, "@Endpoint", DbType.AnsiString, endpoint, 100);
+            AddParameter(command, "@MaBN", DbType.AnsiString, maBN, 20);
+            AddParameter(command, "@MaNguonHIS", DbType.AnsiString, maNguonHIS, 50);
+            AddParameter(command, "@KetQua", DbType.AnsiString, ketQua, 20);
+            AddParameter(command, "@LyDo", DbType.AnsiString, lyDo, 50);
+            AddParameter(command, "@SoLuong", DbType.Int32, soLuong);
+            AddParameter(command, "@IpGoi", DbType.AnsiString, ipGoi, 45);
+        });
+
+    /// <summary>
+    /// Luu MOT dot kham. Goi lap cho ca lo tu <see cref="DotKhamService"/> —
+    /// moi dong tu quyet dinh them hay cap nhat theo khoa tu nhien
+    /// (IDCoSo, MaVaoVien), nen day lai ca lo khong de dong trung.
+    /// </summary>
+    public Task<(AdminStoredProcedureResult KetQua, long Id)> SaveDotKhamAsync(
+        long idCoSo,
+        long idBenhNhanCoSo,
+        string maVaoVien,
+        string maBN,
+        DateTime ngayGioVao,
+        DateTime? ngayGioRa,
+        string? tenKhoa,
+        string? tenBacSi,
+        string? chanDoan) =>
+        ExecuteWithIdAsync("dbo.QL_DotKham_Save", "@IDDotKham", command =>
+        {
+            AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
+            AddParameter(command, "@IDBenhNhanCoSo", DbType.Int64, idBenhNhanCoSo);
+            AddParameter(command, "@MaVaoVien", DbType.AnsiString, maVaoVien, 50);
+            AddParameter(command, "@MaBN", DbType.AnsiString, maBN, 20);
+            AddParameter(command, "@NgayGioVao", DbType.DateTime, ngayGioVao);
+            AddParameter(command, "@NgayGioRa", DbType.DateTime, ngayGioRa);
+            AddParameter(command, "@TenKhoa", DbType.String, tenKhoa, 255);
+            AddParameter(command, "@TenBacSi", DbType.String, tenBacSi, 255);
+            AddParameter(command, "@ChanDoan", DbType.String, chanDoan);
+        });
+
+    // ------------------------------------------------------------------
     //  Co so y te
     // ------------------------------------------------------------------
 

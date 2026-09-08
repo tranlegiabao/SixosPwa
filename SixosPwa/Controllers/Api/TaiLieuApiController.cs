@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using SixosPwa.Data;
 using SixosPwa.Models.Dto;
 using SixosPwa.Services;
+using SixosPwa.Services.Partner;
 
 namespace SixosPwa.Controllers.Api;
 
@@ -114,12 +115,46 @@ public class TaiLieuApiController : ControllerBase
     /// Endpoint xem / tải tệp PDF an toàn từ kho lưu trữ FTP qua Proxy.
     /// </summary>
     /// <param name="id">ID tài liệu</param>
+    // 🔴 VA TAM (dot 2 giai doan 2). Truoc do action nay thua huong
+    // [AllowAnonymous] cua lop, ma {id} lai la IDENTITY tuan tu => go 1,2,3...
+    // la tai duoc benh an cua bat ky ai.
+    //
+    // Day CHI la mieng va: [Authorize] chan nguoi la, doan kiem duoi chan benh
+    // nhan nay xem tai lieu cua benh nhan kia. Cach dung han (V1) van la CHUYEN
+    // duong doc ra khoi khu api/v1 sang HomeController voi route
+    // /benh-nhan/tai-lieu/xem/{id}, va them tang thu ba la *Cua tai lieu*
+    // (DM_BenhNhanCoSo.DaMoTaiLieu, chot 9 dot 1 + ADR 0020). Khu api/v1 chi
+    // danh cho MAY.
+    [Authorize]
     [HttpGet("xem/{id:long}")]
     public async Task<IActionResult> XemTaiLieu(long id)
     {
         var taiLieu = await _taiLieuService.LayTaiLieuAsync(id);
         if (taiLieu == null)
         {
+            return NotFound("Không tìm thấy tài liệu yêu cầu.");
+        }
+
+        // Cung luat khop ho so ma man DanhSachTaiLieu dang dung. Tra ve 404 chu
+        // khong 403: bao "co tai lieu nay nhung khong phai cua ban" la da lo ton
+        // tai cua no.
+        var cccd = User.FindFirst(LuongCongBenhNhan.ClaimCccd)?.Value;
+        var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
+        var dinhDanh = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? string.Empty;
+
+        var laCuaNguoiDangXem = await (
+            from p in _db.BenhNhans.AsNoTracking()
+            join h in _db.BenhNhanCoSos.AsNoTracking() on p.Id equals h.IdBenhNhan
+            join cs in _db.DMCSKCBs.AsNoTracking() on h.IdCoSo equals cs.Id
+            where (p.SDT == dinhDanh || p.Email == dinhDanh || p.CCCD == cccd)
+                  && cs.MaCoSo == maCoSo
+                  && cs.Id == taiLieu.IdCoSo
+                  && (h.Id == taiLieu.IdBenhNhanCoSo || h.MaBN == taiLieu.MaBN)
+            select h.Id).AnyAsync();
+
+        if (!laCuaNguoiDangXem)
+        {
+            _logger.LogWarning("Chan doc tai lieu {Id} khong thuoc nguoi dang dang nhap", id);
             return NotFound("Không tìm thấy tài liệu yêu cầu.");
         }
 
