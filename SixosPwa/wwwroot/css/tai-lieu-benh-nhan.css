@@ -320,13 +320,76 @@
     justify-content: center;
 }
 
-/* Trang giay van ban mo phong */
-.tl-paper-sheet {
-    width: 82%;
+/* ====================================================================
+   THUMBNAIL TRANG ĐẦU TIÊN THẬT CỦA FILE PDF (GOOGLE DRIVE STYLE - TOP CROP)
+   ==================================================================== */
+.tl-card-thumb-paper {
+    width: 90%;
     height: 94%;
     background: #ffffff;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #cbd5e1;
     border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start; /* Can tu tren dinh xuong de thay ro tieu de */
+    overflow: hidden;
+    position: relative;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.tl-drive-card:hover .tl-card-thumb-paper {
+    transform: scale(1.03);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+    border-color: #94a3b8;
+}
+
+.tl-card-thumb-canvas {
+    display: none; /* Mặc định ẩn, hiện khi render xong trang 1 */
+    width: 100%;
+    height: auto; /* De chieu cao tu nhien bat dau tu dinh trang */
+    flex-shrink: 0;
+    background: #ffffff;
+}
+
+.tl-thumb-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(248, 250, 252, 0.85);
+    z-index: 5;
+}
+
+.tl-thumb-spinner-sm {
+    width: 22px;
+    height: 22px;
+    border: 2.5px solid #cbd5e1;
+    border-top: 2.5px solid #0d5bd4;
+    border-radius: 50%;
+    animation: tl-spin 0.7s linear infinite;
+}
+
+.tl-paper-fallback {
+    width: 100%;
+    height: 100%;
+    box-shadow: none;
+    border: none;
+    border-radius: 0;
+}
+
+/* Trang giay van ban mo phong */
+.tl-paper-sheet {
+    width: 100%;
+    height: 100%;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
     padding: 8px 10px;
     display: flex;
@@ -334,7 +397,7 @@
     gap: 6px;
     overflow: hidden;
     position: relative;
-    transition: transform 0.2s ease;
+    box-sizing: border-box;
 }
 
 .tl-drive-card:hover .tl-paper-sheet {

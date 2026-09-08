@@ -66,6 +66,7 @@
         collectDocumentsFromDOM();
         initModalEvents();
         initDropdownEvents();
+        loadAllCardThumbnails();
     });
 
     function initDOMElements() {
@@ -113,6 +114,60 @@
                 date: card.getAttribute("data-date"),
                 element: card,
                 globalIndex: idx
+            });
+        });
+    }
+
+    /**
+     * Tự động đọc file PDF và hiển thị hình ảnh trang đầu tiên thật của tài liệu vào khung thẻ (Google Drive style)
+     */
+    function loadAllCardThumbnails() {
+        if (!window.pdfjsLib) return;
+
+        const cards = document.querySelectorAll(".tl-drive-card");
+        cards.forEach((card) => {
+            const idx = card.getAttribute("data-index");
+            const fileUrl = card.getAttribute("data-url");
+            if (!fileUrl) return;
+
+            const canvas = document.getElementById(`tlThumbCanvas_${idx}`);
+            const loadingEl = document.getElementById(`tlThumbLoading_${idx}`);
+            const fallbackEl = document.getElementById(`tlThumbFallback_${idx}`);
+            const paperEl = document.getElementById(`tlThumbPaper_${idx}`);
+            if (!canvas) return;
+
+            const loadingTask = window.pdfjsLib.getDocument(fileUrl);
+            loadingTask.promise.then(function (pdfDoc) {
+                return pdfDoc.getPage(1);
+            }).then(function (page) {
+                const targetWidth = (paperEl ? paperEl.clientWidth : 180) || 180;
+                const unscaledViewport = page.getViewport({ scale: 1 });
+
+                // Phóng to vừa khít 100% chiều ngang khung thẻ để chữ to rõ ràng, thấy ngay nội dung
+                const scale = targetWidth / unscaledViewport.width;
+                const dpr = Math.max(window.devicePixelRatio || 1, 2.2);
+                const viewport = page.getViewport({ scale: scale * dpr });
+
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                canvas.style.width = "100%";
+                canvas.style.height = "auto";
+
+                const ctx = canvas.getContext("2d");
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+
+                return page.render(renderContext).promise;
+            }).then(function () {
+                // Render thành công: Ẩn loading và fallback, hiện canvas trang 1 thật
+                if (loadingEl) loadingEl.style.display = "none";
+                if (fallbackEl) fallbackEl.style.display = "none";
+                canvas.style.display = "block";
+            }).catch(function (err) {
+                console.warn(`Không thể tạo thumbnail trang 1 cho tài liệu ${idx}:`, err);
+                if (loadingEl) loadingEl.style.display = "none";
             });
         });
     }
