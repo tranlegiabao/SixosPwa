@@ -128,22 +128,34 @@ BEGIN
 END
 
 /* --- 2b. Co so co HIEN ra cho benh nhan khong? ----------------------------
-   🔴 Bat duoc 08/09: seed duong API dung het ma co so van TANG HINH tren cong.
-   Man /Home/DanhSachCoSo-{nhom} loc `WHERE IdNhomCS = <nhom> AND Active`
-   (HomeController.cs), nen co so thieu IdNhomCS thi khong thuoc danh sach nao
-   — benh nhan khong co duong nao bam vao, du API hai chieu chay hoan hao.
+   🔴 Bat duoc 08/09: seed duong API dung het — KieuApi=HIS, cua mo, khoa active
+   — ma co so van TANG HINH tren cong. BA cho co the chan, deu im lang:
+
+     (1) IdNhomCS NULL  -> man /Home/DanhSachCoSo-{nhom} loc
+                           `WHERE IdNhomCS = <nhom> AND Active` (HomeController)
+                           nen co so khong thuoc danh sach nao.
+     (2) Active = 0     -> cung cau loc tren.
+     (3) QuangCao 0/NULL-> JS cua chinh trang do con loc `c.quangCao > 0` khi
+                           NGUOI DUNG CHUA TIM KIEM. Co so van ton tai va van
+                           ra neu go ten vao o tim kiem, nhung KHONG nam trong
+                           danh sach mac dinh — de tuong la seed hong.
+
    Canh bao chu khong chan: van co the co so co y an di. */
-IF EXISTS (SELECT 1 FROM dbo.DM_CSKCB WHERE Id = @IdCoSo AND (IdNhomCS IS NULL OR Active = 0))
+IF EXISTS (SELECT 1 FROM dbo.DM_CSKCB
+            WHERE Id = @IdCoSo
+              AND (IdNhomCS IS NULL OR Active = 0 OR ISNULL(QuangCao, 0) <= 0))
 BEGIN
     PRINT N'';
-    PRINT N'!!! CANH BAO: co so nay se KHONG HIEN tren cong cho benh nhan.';
-    PRINT N'    Thieu IdNhomCS (nhom co so) hoac Active = 0.';
+    PRINT N'!!! CANH BAO: co so nay se KHONG HIEN trong danh sach mac dinh tren cong.';
+    PRINT N'    Kiem 3 cho: IdNhomCS (nhom co so) / Active / QuangCao.';
     PRINT N'    Sua bang:';
     PRINT N'      UPDATE DM_CSKCB';
     PRINT N'         SET IdNhomCS = (SELECT ID FROM DM_NhomCS WHERE MaNhom = ''pkdk''),';
-    PRINT N'             Active = 1';
+    PRINT N'             Active   = 1,';
+    PRINT N'             QuangCao = 100   -- > 0 thi moi hien khi chua tim kiem';
     PRINT N'       WHERE MaCoSo = ''<ma co so>'';';
     PRINT N'    (MaNhom: benhvien | pkdk | nhakhoa | phongmach | nhathuoc)';
+    PRINT N'    QuangCao cung la trong so sap xep: cao hon thi nam tren.';
     PRINT N'';
 END
 
