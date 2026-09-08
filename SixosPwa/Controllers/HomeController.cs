@@ -271,12 +271,17 @@ public class HomeController : Controller
         }));
     }
 
-    /// <summary>Man trong cho ba the chua noi du lieu.</summary>
+    /// <summary>Màn trống cho các thẻ chưa nối dữ liệu.</summary>
     [HttpGet("/benh-nhan/sap-co")]
     public IActionResult SapCo(string? muc = null)
     {
         (ViewBag.TenMuc, ViewBag.BieuTuong) = muc switch
         {
+            "lich-hen" => ("Lịch hẹn", "📅"),
+            "don-thuoc" => ("Đơn thuốc", "💊"),
+            "ket-qua-kham" => ("Kết quả khám bệnh", "📋"),
+            "quan-ly-hoa-don" => ("Quản lý hóa đơn", "🧾"),
+            "ke-hoach-dieu-tri" => ("Kế hoạch điều trị", "🩺"),
             "dat-goi-kham" => ("Đăng ký khám theo gói", "▤"),
             "lich-su-hen" => ("Lịch sử hẹn khám", "◷"),
             "ho-so-kham" => ("Tra cứu hồ sơ khám bệnh", "◫"),
