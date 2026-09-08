@@ -10,6 +10,15 @@ public class TiepNhanTaiLieuRequest
     [JsonPropertyName("maBenhNhan")]
     public string MaBenhNhan { get; set; } = "";
 
+    [JsonPropertyName("cccd")]
+    public string? Cccd { get; set; }
+
+    [JsonPropertyName("sdt")]
+    public string? Sdt { get; set; }
+
+    [JsonPropertyName("hoTen")]
+    public string? HoTen { get; set; }
+
     [JsonPropertyName("filePdf")]
     public string FilePdf { get; set; } = "";
 
@@ -30,6 +39,9 @@ public class TiepNhanTaiLieuResponseData
 {
     [JsonPropertyName("id")]
     public long Id { get; set; }
+
+    [JsonPropertyName("idBenhNhanCoSo")]
+    public long? IdBenhNhanCoSo { get; set; }
 
     [JsonPropertyName("maBN")]
     public string MaBN { get; set; } = "";

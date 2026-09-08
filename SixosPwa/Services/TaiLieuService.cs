@@ -93,11 +93,99 @@ public class TaiLieuService : ITaiLieuService
 
         var remoteFilePath = await _ftpService.UploadBytesAsync(pdfBytes, fileName, remoteDir);
 
-        // 6. Tìm kiếm hồ sơ bệnh nhân tại cơ sở (DM_BenhNhanCoSo) nếu đã tồn tại
-        var bnCoSo = await _db.BenhNhanCoSos
-            .AsNoTracking()
-            .FirstOrDefaultAsync(b => b.IdCoSo == cskcb.Id && b.MaBN == request.MaBenhNhan.Trim());
-        long? idBenhNhanCoSo = bnCoSo?.Id;
+        // 6. Xác định hồ sơ bệnh nhân tại cơ sở (DM_BenhNhanCoSo)
+        long? idBenhNhanCoSo = null;
+
+        // 6.1. Ưu tiên tìm định danh con người (DM_BenhNhan) theo CCCD hoặc SĐT nếu có gửi
+        BenhNhan? benhNhan = null;
+        if (!string.IsNullOrWhiteSpace(request.Cccd))
+        {
+            var cccdClean = request.Cccd.Trim();
+            benhNhan = await _db.BenhNhans
+                .AsNoTracking()
+                .FirstOrDefaultAsync(b => b.CCCD == cccdClean);
+        }
+
+        if (benhNhan == null && !string.IsNullOrWhiteSpace(request.Sdt))
+        {
+            var sdtClean = request.Sdt.Trim();
+            benhNhan = await _db.BenhNhans
+                .AsNoTracking()
+                .FirstOrDefaultAsync(b => b.SDT == sdtClean);
+        }
+
+        // 6.2. Nếu chưa có con người trong hệ thống nhưng có CCCD -> Tự động đăng ký con người mới
+        if (benhNhan == null && !string.IsNullOrWhiteSpace(request.Cccd))
+        {
+            var hoTen = !string.IsNullOrWhiteSpace(request.HoTen)
+                ? request.HoTen.Trim()
+                : $"Bệnh nhân {request.MaBenhNhan.Trim()}";
+
+            var (kqBn, newIdBn) = await _spService.SaveBenhNhanAsync(
+                cccd: request.Cccd.Trim(),
+                tenBN: hoTen,
+                sdt: request.Sdt?.Trim(),
+                email: null,
+                diaChi: null);
+
+            if (kqBn.Succeeded && newIdBn > 0)
+            {
+                benhNhan = new BenhNhan
+                {
+                    Id = newIdBn,
+                    CCCD = request.Cccd.Trim(),
+                    TenBN = hoTen,
+                    SDT = request.Sdt?.Trim()
+                };
+                _logger.LogInformation("Tự động tạo bản ghi DM_BenhNhan mới (ID={Id}, CCCD={Cccd})", newIdBn, request.Cccd.Trim());
+            }
+        }
+
+        // 6.3. Nếu đã xác định được con người (DM_BenhNhan)
+        if (benhNhan != null)
+        {
+            // Kiểm tra xem con người này đã có hồ sơ tại cơ sở này chưa
+            var bnCoSo = await _db.BenhNhanCoSos
+                .AsNoTracking()
+                .FirstOrDefaultAsync(b => b.IdCoSo == cskcb.Id && b.IdBenhNhan == benhNhan.Id);
+
+            if (bnCoSo != null)
+            {
+                idBenhNhanCoSo = bnCoSo.Id;
+            }
+            else
+            {
+                // Kiểm tra xem MaBN tại cơ sở này đã bị gán cho người khác chưa
+                var trungMaBn = await _db.BenhNhanCoSos
+                    .AsNoTracking()
+                    .AnyAsync(b => b.IdCoSo == cskcb.Id && b.MaBN == request.MaBenhNhan.Trim());
+
+                if (!trungMaBn)
+                {
+                    // Tự động tạo hồ sơ tại cơ sở này
+                    var (kqCoSo, newIdCoSo) = await _spService.SaveBenhNhanCoSoAsync(
+                        idBenhNhan: benhNhan.Id,
+                        idCoSo: cskcb.Id,
+                        maBN: request.MaBenhNhan.Trim());
+
+                    if (kqCoSo.Succeeded && newIdCoSo > 0)
+                    {
+                        idBenhNhanCoSo = newIdCoSo;
+                        _logger.LogInformation("Tự động liên kết DM_BenhNhanCoSo (ID={Id}, MaBN={MaBN}, IDCoSo={IDCoSo})",
+                            newIdCoSo, request.MaBenhNhan.Trim(), cskcb.Id);
+                    }
+                }
+            }
+        }
+
+        // 6.4. Fallback: Nếu không có CCCD/SĐT hoặc không map được con người, tìm theo (IDCoSo, MaBN) như cũ
+        if (idBenhNhanCoSo == null)
+        {
+            var bnCoSo = await _db.BenhNhanCoSos
+                .AsNoTracking()
+                .FirstOrDefaultAsync(b => b.IdCoSo == cskcb.Id && b.MaBN == request.MaBenhNhan.Trim());
+            idBenhNhanCoSo = bnCoSo?.Id;
+        }
 
         // 7. Xác định tên tài liệu
         var tenTaiLieu = string.IsNullOrWhiteSpace(request.TenTaiLieu)
@@ -126,6 +214,7 @@ public class TaiLieuService : ITaiLieuService
         return new TiepNhanTaiLieuResponseData
         {
             Id = idTaiLieu,
+            IdBenhNhanCoSo = idBenhNhanCoSo,
             MaBN = request.MaBenhNhan.Trim(),
             LoaiTaiLieu = loaiTaiLieu.Trim(),
             TenTaiLieu = tenTaiLieu,
