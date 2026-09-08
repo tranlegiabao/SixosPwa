@@ -127,7 +127,29 @@ BEGIN
     PRINT N'Da cap khoa moi cho co so.';
 END
 
-/* --- 3. Doi chieu ---------------------------------------------------------- */
+/* --- 2b. Co so co HIEN ra cho benh nhan khong? ----------------------------
+   🔴 Bat duoc 08/09: seed duong API dung het ma co so van TANG HINH tren cong.
+   Man /Home/DanhSachCoSo-{nhom} loc `WHERE IdNhomCS = <nhom> AND Active`
+   (HomeController.cs), nen co so thieu IdNhomCS thi khong thuoc danh sach nao
+   — benh nhan khong co duong nao bam vao, du API hai chieu chay hoan hao.
+   Canh bao chu khong chan: van co the co so co y an di. */
+IF EXISTS (SELECT 1 FROM dbo.DM_CSKCB WHERE Id = @IdCoSo AND (IdNhomCS IS NULL OR Active = 0))
+BEGIN
+    PRINT N'';
+    PRINT N'!!! CANH BAO: co so nay se KHONG HIEN tren cong cho benh nhan.';
+    PRINT N'    Thieu IdNhomCS (nhom co so) hoac Active = 0.';
+    PRINT N'    Sua bang:';
+    PRINT N'      UPDATE DM_CSKCB';
+    PRINT N'         SET IdNhomCS = (SELECT ID FROM DM_NhomCS WHERE MaNhom = ''pkdk''),';
+    PRINT N'             Active = 1';
+    PRINT N'       WHERE MaCoSo = ''<ma co so>'';';
+    PRINT N'    (MaNhom: benhvien | pkdk | nhakhoa | phongmach | nhathuoc)';
+    PRINT N'';
+END
+
+/* --- 3. Doi chieu ----------------------------------------------------------
+   KHONG dat GO o tren: ca file nay la MOT batch, @IdCoSo khai bao o dau va con
+   duoc dung o duoi — GO cat batch la mat bien. */
 SELECT c.Id AS IdCoSo, c.MaCoSo, c.TenCoSo,
        d.KieuApi, d.BaseUrl, d.Active AS CuaMo,
        (SELECT COUNT(*) FROM dbo.HT_KhoaApiCoSo k WHERE k.IDCoSo = c.Id AND k.Active = 1) AS SoKhoaActive
