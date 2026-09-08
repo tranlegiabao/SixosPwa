@@ -35,44 +35,77 @@
 SET NOCOUNT ON;
 GO
 
--- ─── SUA O DAY ───────────────────────────────────────────────────────────────
-DECLARE @MaCoSo   varchar(50)   = 'PWTEST1';                  -- DM_CSKCB.MaCoSo
-DECLARE @BaseUrl  nvarchar(255) = 'https://his.example.local'; -- goc dia chi HIS
-DECLARE @KhoaTho  varchar(200)  = 'DOI-KHOA-NAY-TRUOC-KHI-CHAY';
+/* Moc "chua sua" khai bao MOT LAN roi so lai voi chinh no — de nguoi dung
+   find-and-replace chuoi giu cho khong vo tinh vo hieu hoa luon chot chan. */
+DECLARE @CHUA_SUA varchar(100) = '<<CHUA-SUA>>';
+
+-- ─── SUA O DAY: doi @CHUA_SUA thanh gia tri that ────────────────────────────
+DECLARE @MaCoSo   varchar(50)   = '77121';   -- PHAI BANG ThongTinDoanhNghiep.MaCSKCB ben HIS
+DECLARE @TenCoSo  nvarchar(500) = N'PKĐK Thiên Nam';
+DECLARE @Slug     varchar(100)  = 'pkdk-thien-nam';   -- doan chu tren URL /DangKyOnline/{slug}
+DECLARE @MaNhom   varchar(50)   = 'pkdk';    -- benhvien | pkdk | nhakhoa | phongmach | nhathuoc
+DECLARE @BaseUrl  nvarchar(255) = @CHUA_SUA;  -- goc dia chi HIS cua co so
+DECLARE @KhoaTho  varchar(200)  = @CHUA_SUA;  -- khoa HIS dung de goi LEN cong
 DECLARE @GhiDeKhoa bit          = 0;  -- 1 = cap lai khoa moi cho co so da co khoa
 -- ─────────────────────────────────────────────────────────────────────────────
 
 DECLARE @IdCoSo bigint;
 SELECT @IdCoSo = Id FROM dbo.DM_CSKCB WHERE MaCoSo = @MaCoSo;
 
-IF @IdCoSo IS NULL
+/* Chot chan co y: file nay KHONG chay duoc nguyen ban. Bao ro phai lam gi chu
+   khong chi bao "sai o dau" -- nguoi doc thong bao loi thuong khong doc header.
+   Dat TRUOC moi thao tac ghi, de chay nham khong de lai gi. */
+IF @KhoaTho = @CHUA_SUA OR @BaseUrl = @CHUA_SUA
 BEGIN
-    RAISERROR (N'Khong co co so nao mang MaCoSo = %s trong DM_CSKCB. Tao co so truoc da.', 16, 1, @MaCoSo);
+    PRINT N'';
+    PRINT N'====================================================================';
+    PRINT N'  FILE NAY CHUA CHAY GI CA. Day la CHOT CHAN co y, khong phai loi.';
+    PRINT N'  Mo file, sua khoi "SUA O DAY" (khoang dong 38-45):';
+    PRINT N'';
+    PRINT N'    @MaCoSo  = ma co so, PHAI BANG ThongTinDoanhNghiep.MaCSKCB ben HIS';
+    PRINT N'    @BaseUrl = goc dia chi HIS (vd https://xxx.trycloudflare.com)';
+    PRINT N'    @KhoaTho = mot khoa THAT do ban tu dat (chuoi ngau nhien dai)';
+    PRINT N'';
+    PRINT N'  Roi chay lai. File nay CHAY LAI DUOC, chay nhieu lan khong sao.';
+    PRINT N'====================================================================';
+
+    RAISERROR (N'Chưa sửa @KhoaTho / @BaseUrl — xem hướng dẫn vừa in ở tab Messages.', 16, 1);
     RETURN;
 END
 
-/* Chot chan co y: file nay KHONG chay duoc nguyen ban. Bao ro phai lam gi chu
-   khong chi bao "sai o dau" -- nguoi doc thong bao loi thuong khong doc header. */
-IF @KhoaTho = 'DOI-KHOA-NAY-TRUOC-KHI-CHAY'
-BEGIN
-    PRINT N'';
-    PRINT N'====================================================================';
-    PRINT N'  FILE NAY CHUA CHAY. Day la CHOT CHAN co y, khong phai loi.';
-    PRINT N'  Mo file, sua 3 dong o khoi "SUA O DAY" (khoang dong 30-33):';
-    PRINT N'';
-    PRINT N'    @MaCoSo   = ma co so trong DM_CSKCB (vd 77121)';
-    PRINT N'    @BaseUrl  = goc dia chi HIS cua co so do';
-    PRINT N'    @KhoaTho  = mot khoa THAT do ban tu dat (chuoi ngau nhien dai)';
-    PRINT N'';
-    PRINT N'  Roi chay lai file. Kiem xem co so da seed chua:';
-    PRINT N'    SELECT c.MaCoSo, d.KieuApi, d.BaseUrl, d.Active';
-    PRINT N'      FROM DM_CSKCB c JOIN DM_DoiTacApi d ON d.IdCoSo = c.Id';
-    PRINT N'     WHERE d.KieuApi = ''HIS'';';
-    PRINT N'  Co so da co KieuApi = HIS thi KHONG can chay file nay nua.';
-    PRINT N'====================================================================';
+/* --- 0a. Tao co so neu chua co, va bao dam no HIEN RA ----------------------
+   Truoc day file chi RAISERROR "khong co co so nao mang MaCoSo" roi bat nguoi
+   dung tu tao — nhung tao thieu truong thi co so TANG HINH (xem 2b), nen viec
+   tao gom luon vao day cho tron. */
+DECLARE @IdNhom bigint = (SELECT ID FROM dbo.DM_NhomCS WHERE MaNhom = @MaNhom);
 
-    RAISERROR (N'Chưa đổi @KhoaTho — xem hướng dẫn vừa in ở tab Messages.', 16, 1);
+IF @IdNhom IS NULL
+BEGIN
+    RAISERROR (N'Khong co nhom co so nao mang MaNhom = %s trong DM_NhomCS.', 16, 1, @MaNhom);
     RETURN;
+END
+
+IF @IdCoSo IS NULL
+BEGIN
+    INSERT INTO dbo.DM_CSKCB (MaCoSo, TenCoSo, Slug, IdNhomCS, Active, QuangCao, NgayTao)
+    VALUES (@MaCoSo, @TenCoSo, @Slug, @IdNhom, 1, 100, GETDATE());
+
+    SET @IdCoSo = SCOPE_IDENTITY();
+    PRINT N'Da TAO co so moi.';
+END
+ELSE
+BEGIN
+    /* Co so da co: chi sua nhung truong QUYET DINH CO HIEN RA HAY KHONG.
+       KHONG dung toi TenCoSo/Slug -- do la du lieu nguoi ta dat, ghi de la
+       lam gay URL /DangKyOnline/{slug} da phat cho doi tac. */
+    UPDATE dbo.DM_CSKCB
+       SET IdNhomCS    = ISNULL(IdNhomCS, @IdNhom),
+           Active      = 1,
+           QuangCao    = CASE WHEN ISNULL(QuangCao, 0) <= 0 THEN 100 ELSE QuangCao END,
+           NgayCapNhat = GETDATE()
+     WHERE Id = @IdCoSo;
+
+    PRINT N'Co so da co san — chi bao dam no hien ra, giu nguyen ten va slug.';
 END
 
 /* --- 0. Noi CHECK constraint de nhan them 'HIS' ---------------------------
