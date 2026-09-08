@@ -3,35 +3,44 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SixosPwa.Data;
 using SixosPwa.Models.Dto;
+using SixosPwa.Security;
 using SixosPwa.Services;
 using SixosPwa.Services.Partner;
 
 namespace SixosPwa.Controllers.Api;
 
+// 🔴 KHONG dat [AllowAnonymous] o muc LOP. Dat o day thi MOI action deu thua
+// huong, ke ca duong doc tep — do la cach xem/{id} tung mo cho ca the gioi.
+// Tung action tu khai: cua cho MAY dung [KhoaCoSo], cua cho NGUOI dung
+// [Authorize].
 [ApiController]
 [Route("api/v1/tai-lieu")]
-[AllowAnonymous]
 public class TaiLieuApiController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
     private readonly ITaiLieuService _taiLieuService;
+    private readonly INhatKyApi _nhatKy;
     private readonly ILogger<TaiLieuApiController> _logger;
 
     public TaiLieuApiController(
         ApplicationDbContext db,
         ITaiLieuService taiLieuService,
+        INhatKyApi nhatKy,
         ILogger<TaiLieuApiController> logger)
     {
         _db = db;
         _taiLieuService = taiLieuService;
+        _nhatKy = nhatKy;
         _logger = logger;
     }
 
     /// <summary>
     /// API tiếp nhận tài liệu y tế (PDF mã hóa Base64) từ các hệ thống HIS của cơ sở y tế.
     /// </summary>
-    /// <param name="apiKey">Khóa bảo mật của CSKCB (Header: X-API-Key)</param>
-    /// <param name="maCskcb">Mã cơ sở khám chữa bệnh (Header: X-Ma-CSKCB)</param>
+    /// <remarks>
+    /// Xác thực bằng <see cref="KhoaCoSoAttribute"/>: hai header <c>X-API-Key</c>
+    /// và <c>X-Ma-CSKCB</c>. Cơ sở đã xác thực đọc ra từ <c>HttpContext</c>.
+    /// </remarks>
     /// <param name="loaiTaiLieu">Loại tài liệu (Header: X-Loai-Tai-Lieu)</param>
     /// <param name="request">Body JSON chứa mã bệnh nhân, file PDF base64 và thông tin mở rộng</param>
     [HttpPost("tiep-nhan")]
@@ -40,72 +49,65 @@ public class TaiLieuApiController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<TiepNhanTaiLieuResponseData>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<TiepNhanTaiLieuResponseData>), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ApiResponse<TiepNhanTaiLieuResponseData>), StatusCodes.Status404NotFound)]
+    // 🔴 Xac thuc chuyen sang [KhoaCoSo] (muc V7). Bat buoc, khong con la tuy
+    // chon: cot DM_CSKCB.ApiKey da bi bo khoi CSDL, doan so chuoi cu khong con
+    // gi de so. Ba khoa cua 3 co so dang test da duoc chuyen sang
+    // HT_KhoaApiCoSo dang BAM o script 01, bam cung cach => co so GIU NGUYEN
+    // khoa cu van goi duoc, khong phai cap lai.
+    //
+    // Attribute lo luon: thieu header, khoa sai, khoa tat, khoa het han, va
+    // khoa dung nhung go nham ma co so. No cung ghi dong nhat ky cho moi luot
+    // bi chan, nen o day chi con ghi ket qua NGHIEP VU — moi cuoc goi dung mot
+    // dong HT_LogApiCoSo.
+    //
+    // KHONG kiem DM_CSKCB.Active nua: theo ADR 0013 co ay chi quyet dinh hien
+    // thi cong khai va nhan dang nhap moi. Co so tam an di sua noi dung ma bi
+    // ngung nhan ket qua xet nghiem la loi im lang.
+    [AllowAnonymous]
+    [KhoaCoSo]
     public async Task<IActionResult> TiepNhanTaiLieu(
-        [FromHeader(Name = "X-API-Key")] string? apiKey,
-        [FromHeader(Name = "X-Ma-CSKCB")] string? maCskcb,
         [FromHeader(Name = "X-Loai-Tai-Lieu")] string? loaiTaiLieu,
         [FromBody] TiepNhanTaiLieuRequest request)
     {
-        // 1. Kiểm tra các header bắt buộc
-        if (string.IsNullOrWhiteSpace(apiKey))
-        {
-            return Unauthorized(ApiResponse<TiepNhanTaiLieuResponseData>.Fail("Thiếu Header xác thực 'X-API-Key'."));
-        }
-
-        if (string.IsNullOrWhiteSpace(maCskcb))
-        {
-            return BadRequest(ApiResponse<TiepNhanTaiLieuResponseData>.Fail("Thiếu Header mã cơ sở khám chữa bệnh 'X-Ma-CSKCB'."));
-        }
+        var cskcb = HttpContext.CoSoDaXacThuc();
+        var idKhoa = HttpContext.IdKhoaDaXacThuc();
+        var duong = HttpContext.Request.Path.Value ?? "";
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
 
         if (string.IsNullOrWhiteSpace(loaiTaiLieu))
         {
+            await _nhatKy.GhiAsync(duong, KetQuaApi.TuChoi, cskcb.Id, idKhoa,
+                lyDo: LyDoApi.ThieuHeader, ipGoi: ip);
             return BadRequest(ApiResponse<TiepNhanTaiLieuResponseData>.Fail("Thiếu Header loại tài liệu 'X-Loai-Tai-Lieu'."));
         }
 
         if (request == null)
         {
+            await _nhatKy.GhiAsync(duong, KetQuaApi.TuChoi, cskcb.Id, idKhoa,
+                lyDo: LyDoApi.DuLieuSai, ipGoi: ip);
             return BadRequest(ApiResponse<TiepNhanTaiLieuResponseData>.Fail("Dữ liệu Request Body không được để trống."));
-        }
-
-        // 2. Tra cứu cơ sở y tế
-        var cskcb = await _db.DMCSKCBs
-            .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.MaCoSo == maCskcb.Trim());
-
-        if (cskcb == null)
-        {
-            _logger.LogWarning("Không tìm thấy cơ sở y tế với mã: {MaCoSo}", maCskcb);
-            return NotFound(ApiResponse<TiepNhanTaiLieuResponseData>.Fail($"Không tìm thấy cơ sở y tế với mã '{maCskcb}'."));
-        }
-
-        if (!cskcb.Active)
-        {
-            _logger.LogWarning("Cơ sở y tế {MaCoSo} đang bị vô hiệu hóa", maCskcb);
-            return StatusCode(StatusCodes.Status403Forbidden,
-                ApiResponse<TiepNhanTaiLieuResponseData>.Fail("Cơ sở khám chữa bệnh này đang tạm dừng hoạt động hoặc chưa được kích hoạt."));
-        }
-
-        // 3. Xác thực API Key
-        if (string.IsNullOrWhiteSpace(cskcb.ApiKey) || !string.Equals(cskcb.ApiKey, apiKey.Trim(), StringComparison.Ordinal))
-        {
-            _logger.LogWarning("Xác thực API Key thất bại cho cơ sở: {MaCoSo}", maCskcb);
-            return Unauthorized(ApiResponse<TiepNhanTaiLieuResponseData>.Fail("Xác thực thất bại: Khóa 'X-API-Key' không chính xác hoặc cơ sở chưa được cấp khóa API."));
         }
 
         // 4. Thực thi tiếp nhận và lưu trữ tài liệu
         try
         {
             var ketQua = await _taiLieuService.TiepNhanTaiLieuAsync(cskcb, loaiTaiLieu, request);
+            await _nhatKy.GhiAsync(duong, KetQuaApi.Nhan, cskcb.Id, idKhoa,
+                maBN: request.MaBenhNhan, ipGoi: ip);
             return Ok(ApiResponse<TiepNhanTaiLieuResponseData>.Ok(ketQua, "Tiếp nhận tài liệu thành công."));
         }
         catch (ArgumentException ex)
         {
-            _logger.LogWarning(ex, "Tham số không hợp lệ khi tiếp nhận tài liệu cơ sở {MaCoSo}: {Message}", maCskcb, ex.Message);
+            _logger.LogWarning(ex, "Tham so khong hop le khi tiep nhan tai lieu co so {MaCoSo}: {Message}", cskcb.MaCoSo, ex.Message);
+            await _nhatKy.GhiAsync(duong, KetQuaApi.TuChoi, cskcb.Id, idKhoa,
+                maBN: request.MaBenhNhan, lyDo: LyDoApi.DuLieuSai, ipGoi: ip);
             return BadRequest(ApiResponse<TiepNhanTaiLieuResponseData>.Fail(ex.Message));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Lỗi xử lý khi tiếp nhận tài liệu cho cơ sở {MaCoSo}", maCskcb);
+            _logger.LogError(ex, "Loi xu ly khi tiep nhan tai lieu cho co so {MaCoSo}", cskcb.MaCoSo);
+            await _nhatKy.GhiAsync(duong, KetQuaApi.Loi, cskcb.Id, idKhoa,
+                maBN: request.MaBenhNhan, ipGoi: ip);
             return StatusCode(StatusCodes.Status500InternalServerError,
                 ApiResponse<TiepNhanTaiLieuResponseData>.Fail("Đã xảy ra lỗi máy chủ nội bộ trong quá trình tiếp nhận tài liệu."));
         }

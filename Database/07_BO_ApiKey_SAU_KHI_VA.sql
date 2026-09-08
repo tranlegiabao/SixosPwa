@@ -1,5 +1,14 @@
 -- ============================================================================
--- 07 — Bo DM_CSKCB.ApiKey. CHAY SAU CUNG, va CHI KHI da xong V7.
+-- 07 — Bo DM_CSKCB.ApiKey.
+--
+-- ✅ DA CHAY 2026-09-08, va V7 da lam xong ngay sau do. File nay giu lai de doi
+--    chieu; chay lai la no-op vi cot khong con.
+--
+-- BAI HOC: file nay tung mang dieu kien "chi chay sau khi xong V7" nhung lai
+-- nam chung thu muc voi cac file chay tuan tu, nen "chay full" la quet luon.
+-- Dieu kien viet trong THAN file khong chan duoc ai. Lan sau: buoc co dieu
+-- kien phai nam THU MUC KHAC, hoac ten file phai tu chan (vd
+-- "KHONG_CHAY_CHUNG_07_...").
 --
 -- 🔴 DIEU KIEN TRUOC KHI CHAY:
 --    Khu tai lieu (TaiLieuApiController + TaiLieuService) da doi sang attribute

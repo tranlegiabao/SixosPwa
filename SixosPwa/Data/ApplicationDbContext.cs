@@ -158,7 +158,6 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<DMCSKCB>().Property(e => e.TenTM).HasMaxLength(100);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.Img).HasMaxLength(500);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.QuangCao).HasColumnType("decimal(15,0)");
-        modelBuilder.Entity<DMCSKCB>().Property(e => e.ApiKey).HasMaxLength(100);
         modelBuilder.Entity<DMCSKCB>().HasIndex(e => e.MaCoSo).IsUnique();
         modelBuilder.Entity<DMCSKCB>().HasIndex(e => e.Slug).IsUnique();
 
