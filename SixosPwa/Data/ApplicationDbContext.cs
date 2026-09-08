@@ -60,6 +60,9 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<BenhNhan>().Property(e => e.SDT).HasMaxLength(20);
         modelBuilder.Entity<BenhNhan>().Property(e => e.Email).HasMaxLength(100);
         modelBuilder.Entity<BenhNhan>().Property(e => e.DiaChi).HasMaxLength(255);
+        modelBuilder.Entity<BenhNhan>().Property(e => e.IdTaiKhoan).HasColumnName("IDTaiKhoan");
+        modelBuilder.Entity<BenhNhan>().Property(e => e.NgaySinh);
+        modelBuilder.Entity<BenhNhan>().Property(e => e.HoTenKhongDau).HasMaxLength(100);
         modelBuilder.Entity<BenhNhan>().HasIndex(e => e.CCCD).IsUnique();
 
         // -------------------------------------------------------- DM_BenhNhanCoSo
@@ -68,7 +71,8 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<BenhNhanCoSo>().Property(e => e.Id).HasColumnName("ID");
         modelBuilder.Entity<BenhNhanCoSo>().Property(e => e.IdBenhNhan).HasColumnName("IDBenhNhan").IsRequired();
         modelBuilder.Entity<BenhNhanCoSo>().Property(e => e.IdCoSo).HasColumnName("IDCoSo").IsRequired();
-        modelBuilder.Entity<BenhNhanCoSo>().Property(e => e.MaBN).HasMaxLength(20).IsRequired();
+        // KHONG IsRequired nua: ho so tu khai chua co ma co so cap (chot 12).
+        modelBuilder.Entity<BenhNhanCoSo>().Property(e => e.MaBN).HasMaxLength(20);
         modelBuilder.Entity<BenhNhanCoSo>().Property(e => e.DaMoTaiLieu).IsRequired();
         modelBuilder.Entity<BenhNhanCoSo>().HasIndex(e => new { e.IdCoSo, e.MaBN }).IsUnique();
 

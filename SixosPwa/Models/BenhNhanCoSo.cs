@@ -9,7 +9,12 @@ public class BenhNhanCoSo
     public long Id { get; set; }
     public long IdBenhNhan { get; set; }
     public long IdCoSo { get; set; }
-    public string MaBN { get; set; } = "";
+    /// <summary>
+    /// Ma do CO SO cap. RONG khi ho so con la *tu khai* — cong khong tu bia ma
+    /// nua (chot 12 dot 1). Truoc day cong sinh BN-yyyyMMdd-#### cho co cho lap,
+    /// nhung do khong phai ma co so cap nen no danh lua nguoi doc du lieu.
+    /// </summary>
+    public string? MaBN { get; set; }
 
     /// <summary>
     /// *Cua tai lieu* (chot 9 dot 1, ADR 0020): ho so nay da duoc phep mo ket

@@ -1,0 +1,150 @@
+@model List<SixosPwa.Services.HoSoCuaToi>
+@{
+    Layout = null;
+    var soHoSo = Model?.Count ?? 0;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Hồ sơ của tôi</title>
+    @* Dung chung bang mau / khung voi man Tai lieu de hai man khong lech nhau. *@
+    <link rel="stylesheet" href="/css/tai-lieu-benh-nhan.css?v=20260908_v8" />
+    <style>
+        /* Chi nhung gi rieng cua man nay; con lai thua tu tai-lieu-benh-nhan.css */
+        .hs-the { display:flex; align-items:center; gap:12px; padding:14px 16px;
+                  border:1px solid #e5e7eb; border-radius:12px; background:#fff; margin-bottom:10px; }
+        .hs-the.dang-chon { border-color:#2563eb; box-shadow:0 0 0 2px rgba(37,99,235,.12); }
+        .hs-avatar { width:44px; height:44px; border-radius:50%; flex:0 0 44px;
+                     display:flex; align-items:center; justify-content:center;
+                     background:#eff6ff; color:#2563eb; font-weight:700; font-size:18px; }
+        .hs-noi-dung { flex:1 1 auto; min-width:0; }
+        .hs-ten { font-weight:600; color:#111827; }
+        .hs-phu { font-size:13px; color:#6b7280; margin-top:2px;
+                  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .hs-nhan { display:inline-block; font-size:11px; padding:2px 8px; border-radius:999px;
+                   margin-left:6px; vertical-align:middle; }
+        .hs-nhan-noi { background:#ecfdf5; color:#047857; }
+        .hs-nhan-tukhai { background:#f3f4f6; color:#4b5563; }
+        .hs-nhan-chon { background:#2563eb; color:#fff; }
+        .hs-nut { flex:0 0 auto; display:flex; gap:8px; align-items:center; }
+        .hs-nut button { border:none; border-radius:8px; padding:8px 12px;
+                         font-size:13px; cursor:pointer; }
+        .hs-nut .hs-chon { background:#2563eb; color:#fff; }
+        .hs-nut .hs-xoa { background:#fef2f2; color:#b91c1c; }
+        .hs-bao { padding:12px 14px; border-radius:10px; margin-bottom:14px; font-size:14px; line-height:1.5; }
+        .hs-bao-loi { background:#fef2f2; color:#991b1b; border:1px solid #fecaca; }
+        .hs-bao-xong { background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; }
+        .hs-rong { text-align:center; color:#6b7280; padding:32px 16px; }
+    </style>
+</head>
+<body class="tl-trang">
+    <div class="tl-khung">
+
+        <header class="tl-top-bar">
+            <a class="tl-btn-back" href="/benh-nhan" title="Quay lại cổng bệnh nhân" aria-label="Quay lại">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+            </a>
+            <div class="tl-top-title">
+                <h1>Hồ sơ của tôi</h1>
+                <span class="tl-top-subtitle">Chọn người bạn muốn xem</span>
+            </div>
+            <div class="tl-top-actions">
+                <span class="tl-badge-total">@soHoSo hồ sơ</span>
+            </div>
+        </header>
+
+        <main style="padding:16px;">
+
+            @if (!string.IsNullOrEmpty(ViewBag.Loi as string))
+            {
+                <div class="hs-bao hs-bao-loi">@ViewBag.Loi</div>
+            }
+            @if (!string.IsNullOrEmpty(ViewBag.Xong as string))
+            {
+                <div class="hs-bao hs-bao-xong">Đã cập nhật.</div>
+            }
+
+            <a href="/benh-nhan/ho-so/them"
+               style="display:block;text-align:center;padding:12px;margin-bottom:14px;
+                      border:1px dashed #93c5fd;border-radius:12px;color:#2563eb;
+                      text-decoration:none;font-weight:600;font-size:14px;">
+                + Thêm hồ sơ người thân
+            </a>
+
+            @if (Model == null || Model.Count == 0)
+            {
+                <div class="hs-rong">
+                    Tài khoản này chưa có hồ sơ nào.
+                </div>
+            }
+            else
+            {
+                @foreach (var hs in Model)
+                {
+                    <div class="hs-the @(hs.DangChon ? "dang-chon" : "")">
+                        <div class="hs-avatar">
+                            @(string.IsNullOrWhiteSpace(hs.TenBN) ? "?" : hs.TenBN.Trim().Substring(0, 1).ToUpper())
+                        </div>
+
+                        <div class="hs-noi-dung">
+                            <div class="hs-ten">
+                                @hs.TenBN
+                                @if (hs.DangChon)
+                                {
+                                    <span class="hs-nhan hs-nhan-chon">Đang xem</span>
+                                }
+                                @if (hs.DaNoiHIS)
+                                {
+                                    <span class="hs-nhan hs-nhan-noi">Đã nối bệnh án</span>
+                                }
+                                else
+                                {
+                                    <span class="hs-nhan hs-nhan-tukhai">Tự khai</span>
+                                }
+                            </div>
+                            <div class="hs-phu">
+                                CCCD @hs.Cccd
+                                @if (hs.NgaySinh.HasValue)
+                                {
+                                    <text> · @hs.NgaySinh.Value.ToString("dd/MM/yyyy")</text>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(hs.Sdt))
+                                {
+                                    <text> · @hs.Sdt</text>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="hs-nut">
+                            @if (!hs.DangChon)
+                            {
+                                <form method="post" action="/benh-nhan/ho-so/chon">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@hs.IdBenhNhan" />
+                                    <button type="submit" class="hs-chon">Xem</button>
+                                </form>
+                            }
+                            @* Ho so da noi benh an hoac da co du lieu kham thi KHONG cho xoa —
+                               xoa la mat du lieu y te that. Thu tuc cung chan lai o tang CSDL. *@
+                            @if (hs.XoaDuoc)
+                            {
+                                <form method="post" action="/benh-nhan/ho-so/xoa"
+                                      onsubmit="return confirm('Xoá hồ sơ của @hs.TenBN? Số căn cước sẽ được nhả ra để tài khoản khác khai lại.');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@hs.IdBenhNhan" />
+                                    <button type="submit" class="hs-xoa">Xoá</button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </main>
+    </div>
+</body>
+</html>

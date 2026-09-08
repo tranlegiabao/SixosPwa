@@ -19,19 +19,22 @@ public class HomeController : Controller
     private readonly IConfiguration _config;
     private readonly AdminStoredProcedureService _thuTuc;
     private readonly ILuongCongBenhNhan _luong;
+    private readonly IHoSoBenhNhanService _hoSo;
 
     public HomeController(
         ILogger<HomeController> logger,
         ApplicationDbContext db,
         IConfiguration config,
         AdminStoredProcedureService thuTuc,
-        ILuongCongBenhNhan luong)
+        ILuongCongBenhNhan luong,
+        IHoSoBenhNhanService hoSo)
     {
         _logger = logger;
         _db = db;
         _config = config;
         _thuTuc = thuTuc;
         _luong = luong;
+        _hoSo = hoSo;
     }
 
     /// <summary>
@@ -78,30 +81,57 @@ public class HomeController : Controller
             return null;
         }
 
+        // Mot tai khoan quan NHIEU con nguoi (ADR 0019), nen phai bat dau tu tai
+        // khoan chu khong tu so dien thoai cua tung con nguoi: ho so cua me do
+        // con tao mang so cua me, loc theo so dien thoai la no bien mat.
+        var idTaiKhoan = await _hoSo.LayIdTaiKhoanAsync(dinhDanh);
+
         // 🔴 KHONG khop bang CCCD (V5). CCCD go luc dang nhap khong duoc xac
         // thuc — OTP chi xac thuc so dien thoai (A6 dot 1). Khop bang CCCD
         // nghia la go CCCD nguoi khac la xem duoc tai lieu cua ho.
+        //
+        // Nhanh thu hai (p.SDT == dinhDanh) la duong LUI cho du lieu chua kip do
+        // sang cot IdTaiKhoan. Script 09 do het mot lan, nhung phien dang song
+        // van phai chay dung.
         var danhSach = await (
             from p in _db.BenhNhans.AsNoTracking()
             join h in _db.BenhNhanCoSos.AsNoTracking() on p.Id equals h.IdBenhNhan
             join cs in _db.DMCSKCBs.AsNoTracking() on h.IdCoSo equals cs.Id
-            where (p.SDT == dinhDanh || p.Email == dinhDanh)
+            where ((idTaiKhoan != null && p.IdTaiKhoan == idTaiKhoan)
+                   || (p.IdTaiKhoan == null && (p.SDT == dinhDanh || p.Email == dinhDanh)))
                   && cs.MaCoSo == maCoSo
                   && h.DaMoTaiLieu
             orderby h.Id
             select new HoSoDangDung(p, h)).ToListAsync();
 
-        // De man sau nay gan bo chon ma khong phai sua lai controller.
         ViewBag.SoHoSo = danhSach.Count;
 
         if (danhSach.Count == 0) return null;
 
-        if (danhSach.Count > 1)
+        // *Ho so dang chon* (ADR 0019): claim quyet dinh dang xem ho so nao.
+        // Claim CHI duoc phat sau khi da kiem ho so thuoc tai khoan
+        // (HoSoController.Chon), nen o day tin duoc — nhung van loc lai trong
+        // danh sach da tra ve chu khong tra cuu thang theo claim.
+        var idDangChon = User.FindFirst(LuongCongBenhNhan.ClaimHoSoDangChon)?.Value;
+
+        if (long.TryParse(idDangChon, out var idChon))
         {
-            _logger.LogWarning(
-                "Mot nguoi co {SoHoSo} ho so tai co so {MaCoSo} (IdBenhNhan={IdBenhNhan}). " +
-                "Dang lay ho so cu nhat Id={IdHoSo}. Can *ho so dang chon* (V6b) de nguoi dung tu chon.",
-                danhSach.Count, maCoSo, danhSach[0].BenhNhan.Id, danhSach[0].HoSo.Id);
+            var khop = danhSach.FirstOrDefault(x => x.BenhNhan.Id == idChon);
+            if (khop is not null) return khop;
+
+            // Ho so dang chon khong co mat o co so nay — chuyen co so hoac vua bi
+            // xoa. Roi ve ho so dau tien, dung de man trang.
+            _logger.LogInformation(
+                "Ho so dang chon {IdChon} khong co o co so {MaCoSo}, dung ho so {IdThayThe}",
+                idChon, maCoSo, danhSach[0].BenhNhan.Id);
+        }
+        else if (danhSach.Count > 1)
+        {
+            // Phien cu chua mang claim. Van tat dinh nho orderby, nhung nguoi
+            // dung chua chon duoc — ho vao *Ho so cua toi* mot lan la xong.
+            _logger.LogInformation(
+                "Tai khoan co {SoHoSo} ho so tai co so {MaCoSo} nhung phien chua co claim ho so dang chon.",
+                danhSach.Count, maCoSo);
         }
 
         return danhSach[0];

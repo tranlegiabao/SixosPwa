@@ -350,6 +350,41 @@
                 <span class="bn-mui-ten" aria-hidden="true">›</span>
             </div>
 
+            @* Loi vao *Ho so cua toi* (ADR 0019). Hien tu ho so DAU TIEN, khong
+               phai tu ho so thu hai: muon them nguoi than thi phai vao duoc man
+               nay da — an di cho toi khi co 2 ho so la vong luan quan. *@
+            @if (ViewBag.SoHoSo != null && (int)ViewBag.SoHoSo >= 1)
+            {
+                <a class="bn-o-vuong" href="/benh-nhan/ho-so">
+                    @if ((int)ViewBag.SoHoSo > 1)
+                    {
+                        <span class="bn-badge" title="@ViewBag.SoHoSo hồ sơ">@ViewBag.SoHoSo</span>
+                    }
+                    <span class="bn-bieutuong" aria-hidden="true">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                    </span>
+                    <span class="bn-noidung-the">
+                        <span class="bn-ten">Hồ sơ của tôi</span>
+                        <span class="bn-mota">
+                            @if (ViewBag.SoHoSo != null && (int)ViewBag.SoHoSo > 1)
+                            {
+                                <text>Đang xem: @ViewBag.TenBenhNhan</text>
+                            }
+                            else
+                            {
+                                <text>Thêm hồ sơ cho người thân</text>
+                            }
+                        </span>
+                    </span>
+                    <span class="bn-mui-ten" aria-hidden="true">›</span>
+                </a>
+            }
+
             <!-- 2. Đơn thuốc (Ô vuông xanh) -->
             <a class="bn-o-vuong" href="/benh-nhan/tai-lieu?nhom=don-thuoc">
                 @if (ViewBag.SoLuongDonThuoc != null && (int)ViewBag.SoLuongDonThuoc > 0)

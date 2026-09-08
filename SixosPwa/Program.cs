@@ -34,6 +34,7 @@ builder.Services.AddScoped<IDonAnhService, DonAnhService>();
 builder.Services.AddScoped<ITaiLieuService, TaiLieuService>();
 builder.Services.AddScoped<INhatKyApi, NhatKyApiService>();
 builder.Services.AddScoped<IDotKhamService, DotKhamService>();
+builder.Services.AddScoped<IHoSoBenhNhanService, HoSoBenhNhanService>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>

@@ -31,6 +31,26 @@ BEGIN
 END;
 GO
 
+-- --- Nguoc 09 ---------------------------------------------------------------
+-- KHONG khoi phuc duoc: ma tu bia BN-yyyyMMdd-#### da bi don ve NULL o buoc (5)
+-- cua script 09. Chung von la ma CONG tu bia chu khong phai ma co so cap, nen
+-- mat cung khong mat thong tin that — nhung khong sinh lai duoc dung chuoi cu.
+-- Muon lui hoan toan thi phuc hoi tu ban sao luu CSDL.
+
+IF EXISTS (SELECT 1 FROM sys.objects WHERE name = 'DM_BenhNhan_XoaHoSo' AND type = 'P')
+    DROP PROCEDURE dbo.DM_BenhNhan_XoaHoSo;
+GO
+IF EXISTS (SELECT 1 FROM sys.objects WHERE name = 'DM_BenhNhan_NhanChuSoHuu' AND type = 'P')
+    DROP PROCEDURE dbo.DM_BenhNhan_NhanChuSoHuu;
+GO
+IF EXISTS (SELECT 1 FROM sys.objects WHERE name = 'DM_BenhNhanCoSo_TaoTuKhai' AND type = 'P')
+    DROP PROCEDURE dbo.DM_BenhNhanCoSo_TaoTuKhai;
+GO
+-- DM_BenhNhan_Save tra ve ban khong co @IDTaiKhoan/@NgaySinh/@HoTenKhongDau.
+-- Lay lai nguyen ban tu catalog:
+--   Projects/Databases/118.69.34.247,8392/HIS_CSKH/Stored/dbo.DM_BenhNhan_Save.sql
+-- Cot IDTaiKhoan duoc bo o doan "Nguoc 05" ben duoi, keo theo ca du lieu da do.
+
 -- --- Nguoc 08 ---------------------------------------------------------------
 -- Tham so @DaMoTaiLieu cua DM_BenhNhanCoSo_Save la TUY CHON va mac dinh 1, nen
 -- de nguyen cung khong hai gi khi lui: moi cho goi deu dung ten tham so, khong

@@ -71,6 +71,24 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
     public const string ClaimMaCoSo = "MaCoSo";
 
     /// <summary>
+    /// Claim giu ID cua *ho so dang chon* — con nguoi nao trong so cac ho so cua
+    /// tai khoan dang duoc xem (ADR 0019). Mot tai khoan quan nhieu ho so: con
+    /// dat kham cho me, me theo doi ket qua cho con.
+    ///
+    /// <para>
+    /// 🔴 Doi ho so = PHAT LAI claim nay (khuon <c>DangKyOnlineUB</c>:
+    /// <c>ThemIdXemThongTinBenhNhan</c> goi <c>AddClaimsAsync</c>). Man chi doc,
+    /// khong bao gio nhan ID ho so tu tham so URL — nhan tu URL thi go so khac
+    /// la xem duoc ho so nguoi ta.
+    /// </para>
+    /// <para>
+    /// Thieu claim nay (phien cu dang song, hoac tai khoan mot ho so) thi cac man
+    /// tu chon ho so dau tien — xem <c>HomeController.LayHoSoDangDungAsync</c>.
+    /// </para>
+    /// </summary>
+    public const string ClaimHoSoDangChon = "HoSoDangChon";
+
+    /// <summary>
     /// Dau an: phien nay do CHINH doi tac xac thuc (mat khau that hoac ma SMS cua
     /// ho), khong phai OTP cua SixosPwa. Chi CapPhienBenhNhanAsync dong dau nay.
     ///
@@ -535,11 +553,25 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
     /// CCCD nay thuoc DM_BenhNhan chu khong con nam tren tai khoan — 5/18 tai khoan
     /// la Admin/DoiTac, khong co CCCD la DUNG chu khong phai du lieu thieu.
     /// </summary>
-    private Task<TaiKhoan?> TimTaiKhoanAsync(string cccd, CancellationToken ct)
-        => (from t in _db.TaiKhoans
+    private async Task<TaiKhoan?> TimTaiKhoanAsync(string cccd, CancellationToken ct)
+    {
+        // Chieu MOI truoc (ADR 0019): con nguoi tro ve tai khoan quan minh.
+        var theoChuSoHuu = await (
+            from p in _db.BenhNhans
+            join t in _db.TaiKhoans on p.IdTaiKhoan equals t.Id
+            where p.CCCD == cccd
+            select t).FirstOrDefaultAsync(ct);
+
+        if (theoChuSoHuu is not null) return theoChuSoHuu;
+
+        // Lui ve chieu CU cho du lieu chua kip do sang. Script 09 do het mot lan,
+        // nhung nhanh nay giu lai de phien dang song khong gay giua chung.
+        return await (
+            from t in _db.TaiKhoans
             join p in _db.BenhNhans on t.IdBenhNhan equals p.Id
             where p.CCCD == cccd
             select t).FirstOrDefaultAsync(ct);
+    }
 
     /// <summary>
     /// Lien ket cua benh nhan tai mot co so. Neu co so nay chua co, tim sang cac
@@ -601,20 +633,32 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
         var idCoSo = await LayIdCoSoAsync(maCoSo, ct);
 
         // Con nguoi truoc (khoa CCCD), roi moi den ho so tai co so.
+        var tenDayDu = string.IsNullOrWhiteSpace(hoTen) ? dinhDanh : hoTen;
+
         var luuNguoi = await _thuTuc.SaveBenhNhanAsync(
             cccd,
-            string.IsNullOrWhiteSpace(hoTen) ? dinhDanh : hoTen,
+            tenDayDu,
             sdt,
             email,
-            null);
+            null,
+            // Chu so huu chua biet o buoc nay — tai khoan duoc tao SAU. Nhan chu
+            // o cuoi ham bang DM_BenhNhan_NhanChuSoHuu.
+            idTaiKhoan: null,
+            ngaySinh: null,
+            // O thu ba cua luat gop (ADR 0018). Chuan hoa MOT BAN DUY NHAT qua
+            // ChuanHoaTen — dung tu bo dau kieu khac o cho khac.
+            hoTenKhongDau: ChuanHoaTen.BoDau(tenDayDu));
 
+        // 🔴 KHONG con bia ma benh nhan (chot 12 dot 1). Ho so vua tao la *tu
+        // khai*: co so chua cap ma nao cho nguoi nay, nen MaBN de RONG. Truoc day
+        // cong sinh BN-yyyyMMdd-#### cho co cho lap, nhung do khong phai ma co so
+        // cap nen no danh lua ca nguoi doc du lieu lan duong nhan tai lieu.
+        //
+        // Thu tuc tu lo chong trung, va tu bo qua neu nguoi nay DA co ho so noi
+        // HIS tai co so — luc do khong can them dong tu khai.
         if (idCoSo is not null && luuNguoi.Id > 0)
         {
-            var daCoHoSo = await _db.BenhNhanCoSos
-                .AnyAsync(x => x.IdBenhNhan == luuNguoi.Id && x.IdCoSo == idCoSo.Value, ct);
-
-            if (!daCoHoSo)
-                await _thuTuc.SaveBenhNhanCoSoAsync(luuNguoi.Id, idCoSo.Value, SinhMaBenhNhan());
+            await _thuTuc.TaoHoSoTuKhaiAsync(luuNguoi.Id, idCoSo.Value);
         }
 
         var taiKhoan = await TimTaiKhoanAsync(cccd, ct)
@@ -630,6 +674,24 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
             luuNguoi.Id > 0 ? luuNguoi.Id : taiKhoan?.IdBenhNhan);
 
         var idTaiKhoan = luuTaiKhoan.Id > 0 ? luuTaiKhoan.Id : (taiKhoan?.Id ?? 0);
+
+        // Nhan chu so huu (ADR 0019). Da co chu KHAC thi thu tuc tra ResultCode 3
+        // va khong doi gi — day la "ai khai truoc giu CCCD".
+        //
+        // 🔴 KHONG chan dang nhap khi trung chu: phien van phai vao duoc, chi la
+        // ho so do khong thuoc ve tai khoan nay. Chan o day thi nguoi go nham mot
+        // so CCCD se bi khoa hoan toan khoi cong ma khong hieu vi sao. Man *Ho so
+        // cua toi* moi la cho hien loi va chi duong ra.
+        if (luuNguoi.Id > 0 && idTaiKhoan > 0)
+        {
+            var nhanChu = await _thuTuc.NhanChuSoHuuAsync(luuNguoi.Id, idTaiKhoan);
+            if (!nhanChu.Succeeded)
+            {
+                _logger.LogInformation(
+                    "Ho so {IdBenhNhan} da thuoc tai khoan khac, tai khoan {IdTaiKhoan} khong nhan duoc: {ThongBao}",
+                    luuNguoi.Id, idTaiKhoan, nhanChu.Message);
+            }
+        }
 
         return await _db.TaiKhoans.FirstAsync(x => x.Id == idTaiKhoan, ct);
     }
@@ -672,7 +734,4 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
     private static string? LayEmail(string dinhDanh, TaiKhoan taiKhoan)
         => dinhDanh.Contains('@') ? dinhDanh : taiKhoan.Email;
 
-    /// <summary>Giu dung khuon ma benh nhan dang dung trong DB: BN-yyyyMMdd-####.</summary>
-    private static string SinhMaBenhNhan()
-        => $"BN-{DateTime.Now:yyyyMMdd}-{Random.Shared.Next(1000, 9999)}";
 }

@@ -149,7 +149,10 @@ _Tránh_: bệnh nhân, bản ghi BN
 **Mã BN**:
 `DM_BenhNhanCoSo.MaBN` — do **từng cơ sở** cấp, nên chỉ duy nhất *trong phạm vi một cơ sở*. Hai cơ sở
 khác nhau hoàn toàn có thể cấp trùng một chuỗi. Không bao giờ dùng `MaBN` trần làm khoá nối.
-_Tránh_: mã bệnh nhân toàn hệ, ID bệnh nhân
+🔴 Từ 2026-09-08 mã này **được phép rỗng**: hồ sơ *tự khai* chưa được cơ sở cấp mã nào. Cổng từng tự
+bịa `BN-yyyyMMdd-####` cho có chỗ lấp — **đã bỏ**, vì chuỗi đó không phải mã cơ sở cấp nên nó đánh lừa
+cả người đọc dữ liệu lẫn đường nhận tài liệu. Rỗng ⇔ *chưa nối HIS*.
+_Tránh_: mã bệnh nhân toàn hệ, ID bệnh nhân, mã cổng sinh
 
 **Mật khẩu nội bộ**:
 `HT_TaiKhoan.MatKhauNoiBo` — để Admin và Đối tác đăng nhập vào SixosPwa. Bệnh nhân không dùng cột này
@@ -294,6 +297,9 @@ _Tránh_: liên kết, đồng bộ, tra cứu (trần)
 Claim trong phiên nói người dùng đang xem hồ sơ nào. Bám khuôn `DangKyOnlineUB`
 (`QL_HoSoBenhNhanServices.ThemIdXemThongTinBenhNhan`). Khác claim `Cccd` — cái đó là **chính chủ tài
 khoản**, đóng lúc đăng nhập và không đổi.
+Đổi hồ sơ = **phát lại cookie** với claim mới, không ghi gì vào cơ sở dữ liệu: đây là trạng thái của
+**phiên**, nên hai thiết bị của cùng một tài khoản xem được hai hồ sơ khác nhau cùng lúc. Phiên chưa
+mang claim (đăng nhập từ trước) thì rơi về hồ sơ *chính chủ*.
 _Tránh_: bệnh nhân hiện tại, context, hồ sơ active
 
 **Cửa tài liệu**:
@@ -302,6 +308,19 @@ HIS trùng số điện thoại của *Tài khoản cổng*, hoặc bệnh nhân
 *"cơ sở đã ghi bạn là đầu mối liên lạc của người này"*, **không** phải *"bạn chính là người này"*.
 Tóm tắt đợt khám thì **không** qua cửa này. Xem ADR 0020.
 _Tránh_: phân quyền, khoá tài liệu, xác thực (trần)
+
+**Chính chủ**:
+*Hồ sơ* sinh ra từ số căn cước người dùng gõ ở màn đăng nhập — hồ sơ của chính người đang cầm điện
+thoại. Nó luôn được tạo trước nên đứng đầu danh sách, và là hồ sơ được chọn mặc định khi phiên chưa
+mang claim *Hồ sơ đang chọn*.
+_Tránh_: hồ sơ gốc, hồ sơ chính
+
+**Ai khai trước giữ**:
+Luật xử tranh chấp số căn cước: căn cước đã nằm trong một *Tài khoản cổng* thì tài khoản khác **không**
+khai lại được. Thông báo lỗi **bắt buộc chỉ đường ra** — nhờ người đang giữ vào *Hồ sơ của tôi* xoá hồ
+sơ để nhả căn cước, hoặc liên hệ cơ sở. Người chính chủ **có thể** bị người khai hộ chặn; đó là cái giá
+đã biết và chấp nhận của ADR 0019.
+_Tránh_: khoá CCCD, chiếm hồ sơ
 
 ## Quyết định
 
