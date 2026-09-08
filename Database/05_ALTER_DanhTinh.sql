@@ -4,6 +4,13 @@
 -- CHI THEM COT + NOI RANG BUOC. KHONG doi luong dang nhap, KHONG doi khoa tra
 -- cuu cua DM_BenhNhanCoSo_Save trong dot nay — xem ghi chu o cuoi file.
 --
+-- 🔴 CHAY LAI DUOC. Lan chay dau (08/09) gay o buoc bo rang buoc: hai cai
+--    UK_DM_BenhNhanCoSo_* la UNIQUE CONSTRAINT chu khong phai index thuong, nen
+--    DROP INDEX bao Msg 3723. Moi GO la mot batch rieng nen phan truoc do van
+--    chay: 6 cot moi da them, va MaBN da nullable (doi nullability tren cot chi
+--    co unique constraint thuong thi khong bi chan — chi index CO BO LOC moi
+--    chan, dung cai da lam 04 gay). Con lai dung hai rang buoc. Chay lai ca file.
+--
 -- Vi sao:
 --   * Luat gop chay o SixosPwa, HIS tra THO (chot 1 dot 1) => cong phai co cho
 --     giu NgaySinh + ten khong dau de chay luat gop 3 o.
@@ -40,12 +47,20 @@ IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.DM_Be
 GO
 
 -- --- Rang buoc ---------------------------------------------------------------
--- Bo rang buoc "mot nguoi mot ho so tai mot co so" (trai voi du lieu that).
+-- 🔴 Hai rang buoc nay la UNIQUE CONSTRAINT chu khong phai index thuong
+-- (sys.indexes.is_unique_constraint = 1). DROP INDEX se bao Msg 3723
+-- "An explicit DROP INDEX is not allowed... used for UNIQUE KEY constraint
+-- enforcement" — phai ALTER TABLE DROP CONSTRAINT. Van giu nhanh DROP INDEX
+-- cho truong hop CSDL khac dung index thuong cung ten.
+
+-- Bo rang buoc "mot nguoi mot ho so tai mot co so" (trai voi du lieu that:
+-- 17,3% benh nhan Thien Nam co >=2 MaBN).
 IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UK_DM_BenhNhanCoSo_HoSo'
-           AND object_id = OBJECT_ID(N'dbo.DM_BenhNhanCoSo'))
-BEGIN
+           AND object_id = OBJECT_ID(N'dbo.DM_BenhNhanCoSo') AND is_unique_constraint = 1)
+    ALTER TABLE dbo.DM_BenhNhanCoSo DROP CONSTRAINT UK_DM_BenhNhanCoSo_HoSo;
+ELSE IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UK_DM_BenhNhanCoSo_HoSo'
+                AND object_id = OBJECT_ID(N'dbo.DM_BenhNhanCoSo'))
     DROP INDEX UK_DM_BenhNhanCoSo_HoSo ON dbo.DM_BenhNhanCoSo;
-END;
 GO
 
 -- MaBN cho phep rong: ho so TU KHAI chua noi HIS thi khong co ma nao ca
@@ -55,13 +70,15 @@ GO
 -- bam vao cot — dung cai bay da lam script 04 gay o lan chay dau (Msg 5074).
 -- Cot MaBN nay chi co UK_DM_BenhNhanCoSo_MaBN (IDCoSo, MaBN) bam vao; da kiem
 -- toan bo sys.indexes cua bang, khong con index nao khac cham toi no.
-IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.DM_BenhNhanCoSo')
-           AND name = 'MaBN' AND is_nullable = 0)
-   AND EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UK_DM_BenhNhanCoSo_MaBN'
-               AND object_id = OBJECT_ID(N'dbo.DM_BenhNhanCoSo'))
-BEGIN
+-- Cai cu la unique constraint tren (IDCoSo, MaBN) — constraint KHONG co bo loc
+-- duoc, ma ta can bo loc "WHERE MaBN IS NOT NULL" de nhieu ho so tu khai cung
+-- de trong MaBN. Nen phai bo constraint roi dung lai bang INDEX co loc.
+IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UK_DM_BenhNhanCoSo_MaBN'
+           AND object_id = OBJECT_ID(N'dbo.DM_BenhNhanCoSo') AND is_unique_constraint = 1)
+    ALTER TABLE dbo.DM_BenhNhanCoSo DROP CONSTRAINT UK_DM_BenhNhanCoSo_MaBN;
+ELSE IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UK_DM_BenhNhanCoSo_MaBN'
+                AND object_id = OBJECT_ID(N'dbo.DM_BenhNhanCoSo') AND has_filter = 0)
     DROP INDEX UK_DM_BenhNhanCoSo_MaBN ON dbo.DM_BenhNhanCoSo;
-END;
 GO
 
 IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.DM_BenhNhanCoSo')

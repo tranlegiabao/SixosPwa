@@ -32,16 +32,34 @@ END;
 GO
 
 -- --- Nguoc 05 ---------------------------------------------------------------
+-- Sau khi 05 chay xong thi day la INDEX CO LOC => DROP INDEX. Nhung neu 05 moi
+-- chay dở thi no van con la UNIQUE CONSTRAINT => phai DROP CONSTRAINT. Do ca
+-- hai truong hop, dung doan.
 IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UK_DM_BenhNhanCoSo_MaBN'
-           AND object_id = OBJECT_ID(N'dbo.DM_BenhNhanCoSo'))
+           AND object_id = OBJECT_ID(N'dbo.DM_BenhNhanCoSo') AND is_unique_constraint = 1)
+    ALTER TABLE dbo.DM_BenhNhanCoSo DROP CONSTRAINT UK_DM_BenhNhanCoSo_MaBN;
+ELSE IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UK_DM_BenhNhanCoSo_MaBN'
+                AND object_id = OBJECT_ID(N'dbo.DM_BenhNhanCoSo'))
     DROP INDEX UK_DM_BenhNhanCoSo_MaBN ON dbo.DM_BenhNhanCoSo;
 GO
 -- Chi siet lai NOT NULL duoc khi khong con dong nao MaBN rong.
+-- Dung lai dung hinh dang GOC: hai cai nay von la UNIQUE CONSTRAINT chu khong
+-- phai index thuong, nen tra ve bang ADD CONSTRAINT. Dung lai bang
+-- CREATE UNIQUE INDEX se ra mot thu khac ten giong, va lan sau ai do go no se
+-- lai vap dung Msg 3723 nhu lan nay.
 IF NOT EXISTS (SELECT 1 FROM dbo.DM_BenhNhanCoSo WHERE MaBN IS NULL)
 BEGIN
     ALTER TABLE dbo.DM_BenhNhanCoSo ALTER COLUMN MaBN varchar(20) NOT NULL;
-    CREATE UNIQUE NONCLUSTERED INDEX UK_DM_BenhNhanCoSo_MaBN ON dbo.DM_BenhNhanCoSo (IDCoSo, MaBN);
-    CREATE UNIQUE NONCLUSTERED INDEX UK_DM_BenhNhanCoSo_HoSo ON dbo.DM_BenhNhanCoSo (IDBenhNhan, IDCoSo);
+
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UK_DM_BenhNhanCoSo_MaBN'
+                   AND object_id = OBJECT_ID(N'dbo.DM_BenhNhanCoSo'))
+        ALTER TABLE dbo.DM_BenhNhanCoSo
+            ADD CONSTRAINT UK_DM_BenhNhanCoSo_MaBN UNIQUE (IDCoSo, MaBN);
+
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UK_DM_BenhNhanCoSo_HoSo'
+                   AND object_id = OBJECT_ID(N'dbo.DM_BenhNhanCoSo'))
+        ALTER TABLE dbo.DM_BenhNhanCoSo
+            ADD CONSTRAINT UK_DM_BenhNhanCoSo_HoSo UNIQUE (IDBenhNhan, IDCoSo);
 END;
 GO
 IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.DM_BenhNhanCoSo') AND name = 'DaMoTaiLieu')
