@@ -99,9 +99,7 @@
                         hay chưa — bạn thử lưu lại sau ít phút.
                     </div>
                     break;
-                case "da-go":
-                    <div class="hs-bao hs-bao-xong">Đã gỡ nối. Hồ sơ của bạn vẫn giữ nguyên.</div>
-                    break;
+                @* "da-go" da bo: benh nhan khong con go noi duoc, viec do sang man Admin. *@
                 case "khong-noi":
                     <div class="hs-bao hs-bao-xong">Đã lưu. Chưa nối mã nào.</div>
                     break;
@@ -239,7 +237,8 @@
                                 </div>
                             }
                             <div class="hs-goi-y">
-                                Mã nào không phải của bạn thì bấm <b>Gỡ nối</b> ở dưới — hồ sơ vẫn giữ nguyên.
+                                Mã nào không phải của bạn thì báo <b>bộ phận hỗ trợ của cơ sở</b> để được
+                                gỡ — hồ sơ của bạn vẫn giữ nguyên.
                             </div>
                         }
                     </div>
@@ -292,33 +291,23 @@
                     {
                         <div class="hs-goi-y" style="margin-bottom:12px;">
                             Hồ sơ này đã nối với bệnh án tại cơ sở nên họ tên, ngày sinh, căn cước và
-                            giới tính lấy theo cơ sở. Muốn sửa thì báo cơ sở, hoặc gỡ nối trước.
+                            giới tính lấy theo cơ sở. Muốn sửa thì báo bộ phận hỗ trợ của cơ sở.
                         </div>
                     }
 
                     <button type="submit" class="hs-gui">Lưu</button>
                 </form>
 
-                @* Nut *Go noi* DAT NGOAI form sua — long form vao nhau la HTML khong hop le. *@
-                @if (Model.DanhSachMa.Count > 0)
-                {
-                    <div style="margin-top:16px;">
-                        @foreach (var ma in Model.DanhSachMa)
-                        {
-                            <form method="post" action="/benh-nhan/ho-so/go-noi"
-                                  onsubmit="return confirm('Gỡ nối mã @ma.MaBN? Tài liệu và lịch sử khám đi kèm mã này sẽ không còn hiện trong hồ sơ của bạn.');">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="id" value="@Model.IdBenhNhan" />
-                                <input type="hidden" name="idHoSoCoSo" value="@ma.IdBenhNhanCoSo" />
-                                <div class="ma-hang">
-                                    <span class="kq-ma">@ma.MaBN</span>
-                                    <span class="kq-phu" style="flex:1;">không phải mã của bạn?</span>
-                                    <button type="submit" class="ma-go">Gỡ nối</button>
-                                </div>
-                            </form>
-                        }
-                    </div>
-                }
+                @* 🔴 NUT *GO NOI* DA GO KHOI MAN BENH NHAN (09/09).
+                   Go nối là thao tác PHA HUY: nó xoá tài liệu + đợt khám của mã đó và
+                   nhả mã ra cho người khác nhận. Để bệnh nhân tự bấm thì một lần bấm
+                   nhầm là mất bệnh án, mà chính họ cũng không dựng lại được.
+                   Việc này chuyển sang màn ADMIN — bộ phận hỗ trợ của cơ sở làm, có
+                   nhánh riêng của đồng nghiệp. Phần lõi GIỮ NGUYÊN cho màn đó dùng:
+                   thủ tục `DM_BenhNhanCoSo_GoNoi`, ba bảng sao lưu `bak.GoNoi_*_V001`,
+                   `AdminStoredProcedureService.GoNoiAsync` và `IHoSoBenhNhanService
+                   .GoNoiAsync`. Chỉ CỬA VÀO phía bệnh nhân là đóng — cả nút LẪN
+                   action `POST /benh-nhan/ho-so/go-noi` (xem HoSoController). *@
             }
         </main>
     </div>

@@ -230,31 +230,24 @@ public class HoSoController : Controller
             : RedirectToAction(nameof(Sua), new { id, loi = thongBao });
     }
 
-    /// <summary>
-    /// *Go noi* — thao MOT ma khoi ho so (ADR 0024 ve 3). Nam o man *Sua ho so*,
-    /// KHONG o *Ho so cua toi*: man do de chon nguoi, tron mot nut pha huy vao
-    /// danh sach chon la moi nguoi dung bam nham.
-    /// </summary>
-    [HttpPost("/benh-nhan/ho-so/go-noi")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> GoNoi(long id, long idHoSoCoSo)
-    {
-        var idTaiKhoan = await LayIdTaiKhoanAsync();
-
-        if (idTaiKhoan is null)
-        {
-            return RedirectToAction(nameof(Index), new { loi = "Không tìm thấy tài khoản." });
-        }
-
-        // 🔴 Phep kiem chu so huu nam TRONG thu tuc (no join sang DM_BenhNhan de
-        // doi chieu IDTaiKhoan), nen khong the go ma cua nguoi khac bang cach doan
-        // idHoSoCoSo.
-        var (thanhCong, thongBao) = await _hoSo.GoNoiAsync(idHoSoCoSo, idTaiKhoan.Value);
-
-        return thanhCong
-            ? RedirectToAction(nameof(Sua), new { id, xong = "da-go" })
-            : RedirectToAction(nameof(Sua), new { id, loi = thongBao });
-    }
+    // ─────────────────────────────────────────────────────────────────────────
+    // 🔴 *Go noi* DA RUT KHOI PHIA BENH NHAN (09/09) — dao ve 3 cua ADR 0024.
+    //
+    // Go noi la thao tac PHA HUY: thu tuc xoa tai lieu + dot kham cua ma do roi
+    // nha ma ra cho nguoi khac nhan. De benh nhan tu bam thi mot lan bam nham la
+    // mat benh an, ma chinh ho khong dung lai duoc — phai co nguoi cua co so vao
+    // CSDL moi khoi phuc tu bak.GoNoi_*_V001.
+    //
+    // Viec nay chuyen han sang man ADMIN (nhanh rieng cua dong nghiep). O day
+    // KHONG chi go cai nut: BO LUON action. An nut ma de cua mo thi ai doc HTML
+    // cu cung goi tay duoc — dung nghia "an di" chu khong phai "dong lai".
+    //
+    // Phan LOI van con nguyen cho man Admin dung, dung xoa nham:
+    //   - thu tuc  dbo.DM_BenhNhanCoSo_GoNoi
+    //   - ba bang  bak.GoNoi_TaiLieu_V001 / _DotKham_V001 / _HoSoCoSo_V001
+    //   - AdminStoredProcedureService.GoNoiAsync
+    //   - IHoSoBenhNhanService.GoNoiAsync
+    // ─────────────────────────────────────────────────────────────────────────
 
     [HttpPost("/benh-nhan/ho-so/xoa")]
     [ValidateAntiForgeryToken]
