@@ -304,6 +304,13 @@ public class HomeController : Controller
         ViewBag.TenCoSo = coSo?.TenCoSo ?? "Cơ sở khám chữa bệnh";
         ViewBag.TenBenhNhan = benhNhan?.TenBN ?? dinhDanh;
 
+        // 🔴 Khoi *Ma ho so* cua giao dien moi (nhanh bk) doc ViewBag.MaBN, ma man
+        // NAY truoc do khong he dat no => no tut xuong nhanh du phong ViewBag.MaCoSo
+        // va benh nhan doc duoc MA CO SO (77121) duoi nhan "Ma ho so". Ho mang con
+        // so do ra quay tiep nhan doc thi khong ai tra cuu ra ai. Bat duoc luc
+        // nghiem thu ban merge 09/09.
+        ViewBag.MaBN = hoSoCoSo?.MaBN;
+
         // Logo + duong ra khoi trang benh nhan. Truoc day man nay khong co loi nao
         // quay lai phan cong khai, ma tu 2026-08-27 "/" lai day nguoc ve day, nen
         // thieu no la benh nhan bi nhot. Tro toi DANH SACH co so chu khong tro "/":

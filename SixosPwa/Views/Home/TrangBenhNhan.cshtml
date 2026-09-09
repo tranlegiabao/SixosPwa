@@ -910,8 +910,13 @@
                         </svg>
                     </div>
                     <div class="bn-mahoso-block">
-                        <span class="bn-nhan-mahoso">Mã hồ sơ</span>
-                        <span class="bn-giatri-mahoso">@(ViewBag.MaBN ?? ViewBag.MaCoSo ?? "77121")</span>
+                        @* 🔴 CHI duoc hien MA BENH NHAN that. Ban cua nhanh bk tut
+                           xuong ViewBag.MaCoSo roi cuoi cung la chuoi cung "77121" —
+                           ca hai deu la MA CO SO, khong phai ma cua nguoi dang xem, va
+                           "77121" con la ma cua DUNG MOT phong kham nam cung trong
+                           view dung chung. Chua noi ma thi noi thang la chua co. *@
+                        <span class="bn-nhan-mahoso">Mã bệnh nhân</span>
+                        <span class="bn-giatri-mahoso">@(string.IsNullOrWhiteSpace(ViewBag.MaBN as string) ? "Chưa có" : ViewBag.MaBN)</span>
                     </div>
                 </div>
 
