@@ -1,367 +1,1221 @@
 {
   "info": {
     "_postman_id": "8a716c52-7b24-4f8e-9087-f8234db6c3e1",
-    "name": "SixosPwa - API Tiếp nhận & Phục vụ Tài liệu Y tế",
-    "description": "Bộ sưu tập Postman với các Header được cấu hình trực tiếp (cho phép tự do sửa đổi giá trị, bật/tắt checkbox dễ dàng trong tab Headers của Postman).",
+    "name": "SixosPwa - API Tích Hợp HIS (Tài Liệu, Đợt Khám & Hồ Sơ)",
+    "description": "Bộ sưu tập Postman hoàn chỉnh cho hệ thống HIS tích hợp vào cổng SixosPwa.\n- Xác thực bằng [KhoaCoSo] qua 2 Header: `X-API-Key` và `X-Ma-CSKCB`.\n- Cho phép sửa trực tiếp mã CSKCB, API Key ngay trên ô Header của từng Request, hoặc tích chọn các checkbox gợi ý sẵn (CS2, 75265, 77121, 79423...).\n- Hỗ trợ đầy đủ các tính năng mới: định danh `maNguonHIS`, cơ chế băm SHA-256 chống trùng file (`noiDungKhongDoi`), kiểm tra nhận hồ sơ (409 Conflict `CHUA_CO_NGUOI_NHAN`), danh mục loại tài liệu đóng, đồng bộ lô đợt khám và hỏi theo lô trạng thái hồ sơ.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "1. Tiếp nhận tài liệu thành công (Happy Path)",
-      "event": [
+      "name": "1. Tiếp Nhận & Xem Tài Liệu (/api/v1/tai-lieu)",
+      "item": [
         {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status code is 200\", function () {",
-              "    pm.response.to.have.status(200);",
-              "});",
-              "",
-              "var jsonData = pm.response.json();",
-              "pm.test(\"Success is true\", function () {",
-              "    pm.expect(jsonData.success).to.eql(true);",
-              "});",
-              "",
-              "if (jsonData.data && jsonData.data.id) {",
-              "    pm.collectionVariables.set(\"document_id\", jsonData.data.id);",
-              "    console.log(\"Saved document_id:\", jsonData.data.id);",
-              "}"
+          "name": "1.1 Tiếp nhận tài liệu mới (Happy Path - Lần đầu)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Success is true\", function () {",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "});",
+                  "",
+                  "pm.test(\"noiDungKhongDoi is false for initial upload\", function () {",
+                  "    if (jsonData.data) {",
+                  "        pm.expect(jsonData.data.noiDungKhongDoi).to.eql(false);",
+                  "    }",
+                  "});",
+                  "",
+                  "if (jsonData.data && jsonData.data.id) {",
+                  "    pm.collectionVariables.set(\"document_id\", jsonData.data.id);",
+                  "    console.log(\"Saved document_id:\", jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "test-api-key-cs2",
+                "type": "text",
+                "description": "Khóa bí mật của CSKCB (Bạn có thể sửa trực tiếp giá trị tại đây hoặc dùng {{api_key}})"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "THUNGHIEM-DOT2-20260908-a7f3c1",
+                "type": "text",
+                "disabled": true,
+                "description": "Gợi ý: Khóa thử nghiệm của cơ sở 75265 (Tích vào checkbox để đổi nhanh)"
+              },
+              {
+                "key": "X-Ma-CSKCB",
+                "value": "CS2",
+                "type": "text",
+                "description": "Mã cơ sở y tế (Bạn có thể sửa trực tiếp giá trị tại đây, ví dụ: CS2, 75265, 77121, 79423...)"
+              },
+              {
+                "key": "X-Ma-CSKCB",
+                "value": "75265",
+                "type": "text",
+                "disabled": true,
+                "description": "Gợi ý: Cơ sở 75265 (Tích vào checkbox để đổi nhanh)"
+              },
+              {
+                "key": "X-Ma-CSKCB",
+                "value": "77121",
+                "type": "text",
+                "disabled": true,
+                "description": "Gợi ý: Cơ sở PKĐK Thiên Nam 77121 (Tích vào checkbox để đổi nhanh)"
+              },
+              {
+                "key": "X-Ma-CSKCB",
+                "value": "79423",
+                "type": "text",
+                "disabled": true,
+                "description": "Gợi ý: Cơ sở BV Ung Bướu CS1 79423 (Tích vào checkbox để đổi nhanh)"
+              },
+              {
+                "key": "X-Loai-Tai-Lieu",
+                "value": "DON_THUOC",
+                "type": "text",
+                "description": "Loại tài liệu: Đơn thuốc (Sửa trực tiếp hoặc tích các dòng gợi ý dưới)"
+              },
+              {
+                "key": "X-Loai-Tai-Lieu",
+                "value": "KET_QUA_XN",
+                "type": "text",
+                "disabled": true,
+                "description": "Gợi ý: Kết quả xét nghiệm (Tích vào checkbox để đổi nhanh)"
+              },
+              {
+                "key": "X-Loai-Tai-Lieu",
+                "value": "CDHA",
+                "type": "text",
+                "disabled": true,
+                "description": "Gợi ý: Chẩn đoán hình ảnh X-Quang/CT/MRI (Tích vào checkbox để đổi nhanh)"
+              },
+              {
+                "key": "X-Loai-Tai-Lieu",
+                "value": "GIAY_RA_VIEN",
+                "type": "text",
+                "disabled": true,
+                "description": "Gợi ý: Giấy ra viện (Tích vào checkbox để đổi nhanh)"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
             ],
-            "type": "text/javascript"
-          }
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"maBenhNhan\": \"BN00123\",\n  \"maNguonHIS\": \"TOA_20260908_001\",\n  \"tenTaiLieu\": \"Đơn thuốc điều trị ngoại trú ngày 08/09/2026\",\n  \"ngayKham\": \"2026-09-08T08:30:00\",\n  \"ghiChu\": \"Uống thuốc sau khi ăn, tái khám sau 2 tuần.\",\n  \"cccd\": \"079090001234\",\n  \"sdt\": \"0901234567\",\n  \"hoTen\": \"Nguyễn Văn A\",\n  \"filePdf\": \"JVBERi0xLjQKMSAwIG9iagpbL1BERiAvVGV4dF0KZW5kb2JqCjIgMCBvYmoKPDwvVHlwZSAvUGFnZXMgL0tpZHMgWzMgMCBSXSAvQ291bnQgMT4+CmVuZG9iagozIDAgb2JqCjw8L1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8L1Byb2NTZXQgMSAwIFI+PiAvQ29udGVudHMgNCAwIFI+PgplbmRvYmoKNCAwIG9iago8PC9MZW5ndGggMzM+PnN0cmVhbQpCVAovRjEgMTIgVGYKNzIgNzEyIFREKAogSGVsbyB4aW4gY2hhbyApIFRqCkVUCmVuZHN0cmVhbQplbmRvYmoKNSAwIG9iago8PC9UeXBlIC9DYXRhbG9nIC9QYWdlcyAyIDAgUj4+CmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDAzOCAwMDAwMCBuIAowMDAwMDAwMDk2IDAwMDAwIG4gCjAwMDAwMDAyMDkgMDAwMDAgbiAKMDAwMDAwMDI5MiAwMDAwMCBuIAp0cmFpbGVyCjw8L1NpemUgNi9Sb290IDUgMCBSPj4Kc3RhcnR4cmVmCjM0MQolJUVPRg==\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/tai-lieu/tiep-nhan",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tai-lieu",
+                "tiep-nhan"
+              ]
+            },
+            "description": "Gửi tài liệu dạng PDF Base64 lên hệ thống. Bạn có thể tự do sửa đổi trực tiếp mã CSKCB, API Key và Loại tài liệu trong tab Headers."
+          },
+          "response": []
+        },
+        {
+          "name": "1.2 Tiếp nhận lại cùng nội dung (Test Băm SHA-256 - noiDungKhongDoi)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Success is true\", function () {",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "});",
+                  "",
+                  "pm.test(\"noiDungKhongDoi is true when re-sending identical PDF\", function () {",
+                  "    pm.expect(jsonData.data.noiDungKhongDoi).to.eql(true);",
+                  "});",
+                  "",
+                  "pm.test(\"Message reflects no change\", function () {",
+                  "    pm.expect(jsonData.message).to.include(\"Nội dung không đổi\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "test-api-key-cs2",
+                "type": "text",
+                "description": "Sửa trực tiếp API Key tại đây"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "THUNGHIEM-DOT2-20260908-a7f3c1",
+                "type": "text",
+                "disabled": true,
+                "description": "Gợi ý: Khóa thử nghiệm cơ sở 75265"
+              },
+              {
+                "key": "X-Ma-CSKCB",
+                "value": "CS2",
+                "type": "text",
+                "description": "Sửa trực tiếp mã CSKCB tại đây"
+              },
+              {
+                "key": "X-Ma-CSKCB",
+                "value": "75265",
+                "type": "text",
+                "disabled": true,
+                "description": "Gợi ý: Cơ sở 75265"
+              },
+              {
+                "key": "X-Loai-Tai-Lieu",
+                "value": "DON_THUOC",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"maBenhNhan\": \"BN00123\",\n  \"maNguonHIS\": \"TOA_20260908_001\",\n  \"tenTaiLieu\": \"Đơn thuốc điều trị ngoại trú ngày 08/09/2026\",\n  \"ngayKham\": \"2026-09-08T08:30:00\",\n  \"filePdf\": \"JVBERi0xLjQKMSAwIG9iagpbL1BERiAvVGV4dF0KZW5kb2JqCjIgMCBvYmoKPDwvVHlwZSAvUGFnZXMgL0tpZHMgWzMgMCBSXSAvQ291bnQgMT4+CmVuZG9iagozIDAgb2JqCjw8L1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8L1Byb2NTZXQgMSAwIFI+PiAvQ29udGVudHMgNCAwIFI+PgplbmRvYmoKNCAwIG9iago8PC9MZW5ndGggMzM+PnN0cmVhbQpCVAovRjEgMTIgVGYKNzIgNzEyIFREKAogSGVsbyB4aW4gY2hhbyApIFRqCkVUCmVuZHN0cmVhbQplbmRvYmoKNSAwIG9iago8PC9UeXBlIC9DYXRhbG9nIC9QYWdlcyAyIDAgUj4+CmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDAzOCAwMDAwMCBuIAowMDAwMDAwMDk2IDAwMDAwIG4gCjAwMDAwMDAyMDkgMDAwMDAgbiAKMDAwMDAwMDI5MiAwMDAwMCBuIAp0cmFpbGVyCjw8L1NpemUgNi9Sb290IDUgMCBSPj4Kc3RhcnR4cmVmCjM0MQolJUVPRg==\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/tai-lieu/tiep-nhan",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tai-lieu",
+                "tiep-nhan"
+              ]
+            },
+            "description": "Gửi lại cùng mã nguồn HIS (maNguonHIS) và cùng nội dung PDF đã gửi ở Request 1.1. Hệ thống dùng mã băm SHA-256 nhận diện trùng, giữ nguyên bản hiện có, KHÔNG upload đè hay tạo phiên bản thừa trên FTP."
+          },
+          "response": []
+        },
+        {
+          "name": "1.3 Lỗi - Bệnh nhân chưa có hồ sơ tại cổng (409 Conflict)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 409 Conflict\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Success is false\", function () {",
+                  "    pm.expect(jsonData.success).to.eql(false);",
+                  "});",
+                  "",
+                  "pm.test(\"Errors contains CHUA_CO_NGUOI_NHAN\", function () {",
+                  "    pm.expect(jsonData.errors).to.include(\"CHUA_CO_NGUOI_NHAN\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "test-api-key-cs2",
+                "type": "text",
+                "description": "Sửa trực tiếp API Key tại đây"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "THUNGHIEM-DOT2-20260908-a7f3c1",
+                "type": "text",
+                "disabled": true,
+                "description": "Gợi ý: Khóa thử nghiệm cơ sở 75265"
+              },
+              {
+                "key": "X-Ma-CSKCB",
+                "value": "CS2",
+                "type": "text",
+                "description": "Sửa trực tiếp mã CSKCB tại đây"
+              },
+              {
+                "key": "X-Ma-CSKCB",
+                "value": "75265",
+                "type": "text",
+                "disabled": true,
+                "description": "Gợi ý: Cơ sở 75265"
+              },
+              {
+                "key": "X-Loai-Tai-Lieu",
+                "value": "DON_THUOC",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"maBenhNhan\": \"BN_CHUA_CO_HO_SO_99999\",\n  \"maNguonHIS\": \"TOA_CHUA_CO_HO_SO_01\",\n  \"filePdf\": \"JVBERi0xLjQKMSAwIG9iagpbL1BERiAvVGV4dF0KZW5kb2JqCjIgMCBvYmoKPDwvVHlwZSAvUGFnZXMgL0tpZHMgWzMgMCBSXSAvQ291bnQgMT4+CmVuZG9iagozIDAgb2JqCjw8L1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8L1Byb2NTZXQgMSAwIFI+PiAvQ29udGVudHMgNCAwIFI+PgplbmRvYmoKNCAwIG9iago8PC9MZW5ndGggMzM+PnN0cmVhbQpCVAovRjEgMTIgVGYKNzIgNzEyIFREKAogSGVsbyB4aW4gY2hhbyApIFRqCkVUCmVuZHN0cmVhbQplbmRvYmoKNSAwIG9iago8PC9UeXBlIC9DYXRhbG9nIC9QYWdlcyAyIDAgUj4+CmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDAzOCAwMDAwMCBuIAowMDAwMDAwMDk2IDAwMDAwIG4gCjAwMDAwMDAyMDkgMDAwMDAgbiAKMDAwMDAwMDI5MiAwMDAwMCBuIAp0cmFpbGVyCjw8L1NpemUgNi9Sb290IDUgMCBSPj4Kc3RhcnR4cmVmCjM0MQolJUVPRg==\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/tai-lieu/tiep-nhan",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tai-lieu",
+                "tiep-nhan"
+              ]
+            },
+            "description": "Kiểm thử mã bệnh nhân chưa từng có hồ sơ nối trên cổng (chưa có trong DM_BenhNhanCoSo). Hệ thống từ chối lưu và không đẩy file rác lên FTP, trả về 409 Conflict kèm mã lỗi CHUA_CO_NGUOI_NHAN để HIS giữ lại hàng đợi."
+          },
+          "response": []
+        },
+        {
+          "name": "1.4 Lỗi - Loại tài liệu không hợp lệ (400 Bad Request)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400 Bad Request\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Success is false\", function () {",
+                  "    pm.expect(jsonData.success).to.eql(false);",
+                  "});",
+                  "",
+                  "pm.test(\"Errors contains LOAI_TAI_LIEU_LA\", function () {",
+                  "    pm.expect(jsonData.errors).to.include(\"LOAI_TAI_LIEU_LA\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "test-api-key-cs2",
+                "type": "text",
+                "description": "Sửa trực tiếp API Key tại đây"
+              },
+              {
+                "key": "X-Ma-CSKCB",
+                "value": "CS2",
+                "type": "text",
+                "description": "Sửa trực tiếp mã CSKCB tại đây"
+              },
+              {
+                "key": "X-Loai-Tai-Lieu",
+                "value": "LOAI_KHONG_HOP_LE_XYZ",
+                "type": "text",
+                "description": "Loại tài liệu ngoài danh mục đóng (DON_THUOC, KET_QUA_XN, CDHA, GIAY_RA_VIEN)"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"maBenhNhan\": \"BN00123\",\n  \"filePdf\": \"JVBERi0xLjQK...\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/tai-lieu/tiep-nhan",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tai-lieu",
+                "tiep-nhan"
+              ]
+            },
+            "description": "Kiểm thử danh mục đóng của Header X-Loai-Tai-Lieu. Khi truyền một chuỗi lạ không nằm trong [DON_THUOC, KET_QUA_XN, CDHA, GIAY_RA_VIEN], kỳ vọng trả về HTTP 400 Bad Request kèm mã lỗi LOAI_TAI_LIEU_LA."
+          },
+          "response": []
+        },
+        {
+          "name": "1.5 Lỗi - Thiếu Header X-Loai-Tai-Lieu (400 Bad Request)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400 Bad Request\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Success is false\", function () {",
+                  "    pm.expect(jsonData.success).to.eql(false);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "test-api-key-cs2",
+                "type": "text",
+                "description": "Sửa trực tiếp API Key tại đây"
+              },
+              {
+                "key": "X-Ma-CSKCB",
+                "value": "CS2",
+                "type": "text",
+                "description": "Sửa trực tiếp mã CSKCB tại đây"
+              },
+              {
+                "key": "X-Loai-Tai-Lieu",
+                "value": "DON_THUOC",
+                "type": "text",
+                "disabled": true,
+                "description": "Bị tắt checkbox để test lỗi thiếu header bắt buộc này"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"maBenhNhan\": \"BN00123\",\n  \"filePdf\": \"JVBERi0xLjQK...\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/tai-lieu/tiep-nhan",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tai-lieu",
+                "tiep-nhan"
+              ]
+            },
+            "description": "Header X-Loai-Tai-Lieu bị disable để kiểm tra phản hồi khi thiếu Header nghiệp vụ bắt buộc."
+          },
+          "response": []
+        },
+        {
+          "name": "1.6 Lỗi - Tệp không phải PDF hợp lệ (400 Bad Request)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400 Bad Request\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Success is false\", function () {",
+                  "    pm.expect(jsonData.success).to.eql(false);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "test-api-key-cs2",
+                "type": "text",
+                "description": "Sửa trực tiếp API Key tại đây"
+              },
+              {
+                "key": "X-Ma-CSKCB",
+                "value": "CS2",
+                "type": "text",
+                "description": "Sửa trực tiếp mã CSKCB tại đây"
+              },
+              {
+                "key": "X-Loai-Tai-Lieu",
+                "value": "DON_THUOC",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"maBenhNhan\": \"BN00123\",\n  \"filePdf\": \"SGVsbG8gd29ybGQgbm90IGEgcGRmIGZpbGU=\",\n  \"tenTaiLieu\": \"File giả mạo không phải PDF\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/tai-lieu/tiep-nhan",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tai-lieu",
+                "tiep-nhan"
+              ]
+            },
+            "description": "Kiểm thử khi gửi chuỗi Base64 của văn bản thường không có header %PDF-, kỳ vọng trả về HTTP 400."
+          },
+          "response": []
+        },
+        {
+          "name": "1.7 Xem / Tải file PDF vừa tạo (Proxy FTP)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/tai-lieu/xem/{{document_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tai-lieu",
+                "xem",
+                "{{document_id}}"
+              ]
+            },
+            "description": "Tải stream tệp PDF trực tiếp từ máy chủ FTP. \n\nLƯU Ý BẢO MẬT: Endpoint này có [Authorize] bảo vệ quyền riêng tư y tế. Chỉ bệnh nhân đã đăng nhập và sở hữu hồ sơ (đã mở quyền xem tài liệu tại cơ sở) mới có quyền xem tệp."
+          },
+          "response": []
         }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "X-API-Key",
-            "value": "test-api-key-cs2",
-            "type": "text",
-            "description": "Khóa bí mật của CSKCB (Bạn có thể sửa trực tiếp tại đây)"
-          },
-          {
-            "key": "X-Ma-CSKCB",
-            "value": "CS2",
-            "type": "text",
-            "description": "Mã cơ sở y tế (Bạn có thể sửa trực tiếp tại đây, ví dụ: CS2, 79423, ...)"
-          },
-          {
-            "key": "X-Ma-CSKCB",
-            "value": "79423",
-            "type": "text",
-            "disabled": true,
-            "description": "Gợi ý: Cơ sở BV Ung Bướu CS1 (Tích vào checkbox để đổi nhanh)"
-          },
-          {
-            "key": "X-Loai-Tai-Lieu",
-            "value": "DON_THUOC",
-            "type": "text",
-            "description": "Loại tài liệu: Đơn thuốc (Sửa trực tiếp hoặc tích các dòng dưới)"
-          },
-          {
-            "key": "X-Loai-Tai-Lieu",
-            "value": "KET_QUA_XN",
-            "type": "text",
-            "disabled": true,
-            "description": "Gợi ý: Kết quả xét nghiệm (Tích vào checkbox để đổi nhanh)"
-          },
-          {
-            "key": "X-Loai-Tai-Lieu",
-            "value": "CDHA",
-            "type": "text",
-            "disabled": true,
-            "description": "Gợi ý: Chẩn đoán hình ảnh X-Quang/CT/MRI (Tích vào checkbox để đổi nhanh)"
-          },
-          {
-            "key": "X-Loai-Tai-Lieu",
-            "value": "GIAY_RA_VIEN",
-            "type": "text",
-            "disabled": true,
-            "description": "Gợi ý: Giấy ra viện (Tích vào checkbox để đổi nhanh)"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"maBenhNhan\": \"BN00123\",\n  \"cccd\": \"079090001234\",\n  \"sdt\": \"0901234567\",\n  \"hoTen\": \"Nguyễn Văn A\",\n  \"filePdf\": \"JVBERi0xLjQKMSAwIG9iagpbL1BERiAvVGV4dF0KZW5kb2JqCjIgMCBvYmoKPDwvVHlwZSAvUGFnZXMgL0tpZHMgWzMgMCBSXSAvQ291bnQgMT4+CmVuZG9iagozIDAgb2JqCjw8L1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8L1Byb2NTZXQgMSAwIFI+PiAvQ29udGVudHMgNCAwIFI+PgplbmRvYmoKNCAwIG9iago8PC9MZW5ndGggMzM+PnN0cmVhbQpCVAovRjEgMTIgVGYKNzIgNzEyIFREKAogSGVsbyB4aW4gY2hhbyApIFRqCkVUCmVuZHN0cmVhbQplbmRvYmoKNSAwIG9iago8PC9UeXBlIC9DYXRhbG9nIC9QYWdlcyAyIDAgUj4+CmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDAzOCAwMDAwMCBuIAowMDAwMDAwMDk2IDAwMDAwIG4gCjAwMDAwMDAyMDkgMDAwMDAgbiAKMDAwMDAwMDI5MiAwMDAwMCBuIAp0cmFpbGVyCjw8L1NpemUgNi9Sb290IDUgMCBSPj4Kc3RhcnR4cmVmCjM0MQolJUVPRg==\",\n  \"tenTaiLieu\": \"Đơn thuốc điều trị ngoại trú ngày 08/09/2026\",\n  \"ngayKham\": \"2026-09-08T08:30:00\",\n  \"ghiChu\": \"Uống thuốc sau khi ăn, tái khám sau 2 tuần.\"\n}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        },
-        "url": {
-          "raw": "{{base_url}}/api/v1/tai-lieu/tiep-nhan",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "api",
-            "v1",
-            "tai-lieu",
-            "tiep-nhan"
-          ]
-        },
-        "description": "Gửi tài liệu dạng PDF Base64 lên hệ thống. Tự do sửa đổi các Header trong tab Headers."
-      },
-      "response": []
+      ]
     },
     {
-      "name": "2. Xem / Tải file PDF vừa tạo",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{base_url}}/api/v1/tai-lieu/xem/{{document_id}}",
-          "host": [
-            "{{base_url}}"
+      "name": "2. Kiểm Tra Nhận Hồ Sơ (/api/v1/ho-so)",
+      "item": [
+        {
+          "name": "2.1 Hỏi theo lô mã bệnh nhân đã có hồ sơ tại cổng (Happy Path)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Success is true\", function () {",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "});",
+                  "",
+                  "pm.test(\"Response contains daCoNguoiNhan list and soDaHoi\", function () {",
+                  "    pm.expect(jsonData.data).to.have.property(\"daCoNguoiNhan\");",
+                  "    pm.expect(jsonData.data).to.have.property(\"soDaHoi\");",
+                  "    pm.expect(jsonData.data.soDaHoi).to.eql(3);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
           ],
-          "path": [
-            "api",
-            "v1",
-            "tai-lieu",
-            "xem",
-            "{{document_id}}"
-          ]
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "test-api-key-cs2",
+                "type": "text",
+                "description": "Sửa trực tiếp API Key tại đây"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "THUNGHIEM-DOT2-20260908-a7f3c1",
+                "type": "text",
+                "disabled": true,
+                "description": "Gợi ý: Khóa thử nghiệm cơ sở 75265"
+              },
+              {
+                "key": "X-Ma-CSKCB",
+                "value": "CS2",
+                "type": "text",
+                "description": "Sửa trực tiếp mã CSKCB tại đây"
+              },
+              {
+                "key": "X-Ma-CSKCB",
+                "value": "75265",
+                "type": "text",
+                "disabled": true,
+                "description": "Gợi ý: Cơ sở 75265"
+              },
+              {
+                "key": "X-Ma-CSKCB",
+                "value": "77121",
+                "type": "text",
+                "disabled": true,
+                "description": "Gợi ý: Cơ sở PKĐK Thiên Nam 77121"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"maBenhNhan\": [\n    \"BN00123\",\n    \"BN_CHUA_CO_HO_SO_99999\",\n    \"100992\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ho-so/kiem-tra-nhan",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ho-so",
+                "kiem-tra-nhan"
+              ]
+            },
+            "description": "Cửa hỏi theo lô dành cho HIS: Trong danh sách mã bệnh nhân đang chờ ở hàng đợi, mã nào ĐÃ có người nhận hồ sơ tại cổng? Giúp HIS giải phóng hàng đợi và biết mã nào sẵn sàng gửi tài liệu/đợt khám sang."
+          },
+          "response": []
         },
-        "description": "Tải stream tệp PDF trực tiếp từ máy chủ FTP. Có thể sửa số ID trên URL để xem tài liệu khác."
-      },
-      "response": []
+        {
+          "name": "2.2 Lỗi - Danh sách mã rỗng (400 Bad Request)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400 Bad Request\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Success is false\", function () {",
+                  "    pm.expect(jsonData.success).to.eql(false);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "test-api-key-cs2",
+                "type": "text",
+                "description": "Sửa trực tiếp API Key tại đây"
+              },
+              {
+                "key": "X-Ma-CSKCB",
+                "value": "CS2",
+                "type": "text",
+                "description": "Sửa trực tiếp mã CSKCB tại đây"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"maBenhNhan\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ho-so/kiem-tra-nhan",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ho-so",
+                "kiem-tra-nhan"
+              ]
+            },
+            "description": "Kiểm thử khi gửi mảng mã bệnh nhân rỗng, kỳ vọng trả về HTTP 400 Bad Request."
+          },
+          "response": []
+        }
+      ]
     },
     {
-      "name": "3. Lỗi - Thiếu Header X-API-Key (401)",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "X-API-Key",
-            "value": "test-api-key-cs2",
-            "type": "text",
-            "disabled": true,
-            "description": "Đang tắt checkbox để test lỗi thiếu header. Bật lại để gửi."
-          },
-          {
-            "key": "X-Ma-CSKCB",
-            "value": "CS2",
-            "type": "text",
-            "description": "Sửa trực tiếp mã CSKCB tại đây"
-          },
-          {
-            "key": "X-Loai-Tai-Lieu",
-            "value": "DON_THUOC",
-            "type": "text",
-            "description": "Sửa trực tiếp loại tài liệu tại đây"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"maBenhNhan\": \"BN00123\",\n  \"filePdf\": \"JVBERi0xLjQK...\"\n}",
-          "options": {
-            "raw": {
-              "language": "json"
+      "name": "3. Đồng Bộ Đợt Khám (/api/v1/dot-kham)",
+      "item": [
+        {
+          "name": "3.1 Đồng bộ lô đợt khám thành công (Happy Path)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Success is true\", function () {",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "});",
+                  "",
+                  "pm.test(\"Response contains soDaNhan and soBoQua\", function () {",
+                  "    pm.expect(jsonData.data).to.have.property(\"soDaNhan\");",
+                  "    pm.expect(jsonData.data).to.have.property(\"soBoQua\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
             }
-          }
-        },
-        "url": {
-          "raw": "{{base_url}}/api/v1/tai-lieu/tiep-nhan",
-          "host": [
-            "{{base_url}}"
           ],
-          "path": [
-            "api",
-            "v1",
-            "tai-lieu",
-            "tiep-nhan"
-          ]
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "test-api-key-cs2",
+                "type": "text",
+                "description": "Sửa trực tiếp API Key tại đây"
+              },
+              {
+                "key": "X-API-Key",
+                "value": "THUNGHIEM-DOT2-20260908-a7f3c1",
+                "type": "text",
+                "disabled": true,
+                "description": "Gợi ý: Khóa thử nghiệm cơ sở 75265"
+              },
+              {
+                "key": "X-Ma-CSKCB",
+                "value": "CS2",
+                "type": "text",
+                "description": "Sửa trực tiếp mã CSKCB tại đây"
+              },
+              {
+                "key": "X-Ma-CSKCB",
+                "value": "75265",
+                "type": "text",
+                "disabled": true,
+                "description": "Gợi ý: Cơ sở 75265"
+              },
+              {
+                "key": "X-Ma-CSKCB",
+                "value": "77121",
+                "type": "text",
+                "disabled": true,
+                "description": "Gợi ý: Cơ sở PKĐK Thiên Nam 77121"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"maBenhNhan\": \"BN00123\",\n  \"dotKham\": [\n    {\n      \"maVaoVien\": \"VV2026090801\",\n      \"ngayGioVao\": \"2026-09-08T08:00:00\",\n      \"ngayGioRa\": \"2026-09-08T11:30:00\",\n      \"tenKhoa\": \"Khoa Khám Bệnh Ngoại Trú\",\n      \"tenBacSi\": \"BS.CKI Nguyễn Văn B\",\n      \"chanDoan\": \"Viêm mũi họng cấp tính (J06.9)\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/dot-kham",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dot-kham"
+              ]
+            },
+            "description": "Đồng bộ cả lô lịch sử khám của một bệnh nhân từ HIS sang cổng. Bạn có thể sửa trực tiếp mã CSKCB và API Key trong tab Headers."
+          },
+          "response": []
         },
-        "description": "Header X-API-Key đang bị disable (bỏ chọn checkbox) để kiểm thử trả về 401. Bạn có thể tích lại để thử nghiệm."
-      },
-      "response": []
+        {
+          "name": "3.2 Lỗi - Bệnh nhân chưa có hồ sơ tại cổng (409 Conflict)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 409 Conflict\", function () {",
+                  "    pm.response.to.have.status(409);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Success is false\", function () {",
+                  "    pm.expect(jsonData.success).to.eql(false);",
+                  "});",
+                  "",
+                  "pm.test(\"Errors contains CHUA_CO_NGUOI_NHAN\", function () {",
+                  "    pm.expect(jsonData.errors).to.include(\"CHUA_CO_NGUOI_NHAN\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "test-api-key-cs2",
+                "type": "text",
+                "description": "Sửa trực tiếp API Key tại đây"
+              },
+              {
+                "key": "X-Ma-CSKCB",
+                "value": "CS2",
+                "type": "text",
+                "description": "Sửa trực tiếp mã CSKCB tại đây"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"maBenhNhan\": \"BN_CHUA_CO_HO_SO_99999\",\n  \"dotKham\": [\n    {\n      \"maVaoVien\": \"VV_TEST_001\",\n      \"ngayGioVao\": \"2026-09-08T08:00:00\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/dot-kham",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dot-kham"
+              ]
+            },
+            "description": "Khi bệnh nhân chưa nối hồ sơ tại cổng, từ chối toàn bộ lô đợt khám và trả về 409 Conflict kèm mã lỗi CHUA_CO_NGUOI_NHAN."
+          },
+          "response": []
+        }
+      ]
     },
     {
-      "name": "4. Lỗi - Sai X-API-Key (401)",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "X-API-Key",
-            "value": "sai-api-key-123456",
-            "type": "text",
-            "description": "Giá trị API Key sai để test phản hồi 401"
-          },
-          {
-            "key": "X-Ma-CSKCB",
-            "value": "CS2",
-            "type": "text",
-            "description": "Sửa trực tiếp mã CSKCB tại đây"
-          },
-          {
-            "key": "X-Loai-Tai-Lieu",
-            "value": "DON_THUOC",
-            "type": "text",
-            "description": "Sửa trực tiếp loại tài liệu tại đây"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"maBenhNhan\": \"BN00123\",\n  \"filePdf\": \"JVBERi0xLjQK...\"\n}",
-          "options": {
-            "raw": {
-              "language": "json"
+      "name": "4. Kiểm Thử Xác Thực [KhoaCoSo] (Chung)",
+      "item": [
+        {
+          "name": "4.1 Lỗi - Thiếu Header X-API-Key (401 Unauthorized)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 Unauthorized\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Success is false\", function () {",
+                  "    pm.expect(jsonData.success).to.eql(false);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
             }
-          }
-        },
-        "url": {
-          "raw": "{{base_url}}/api/v1/tai-lieu/tiep-nhan",
-          "host": [
-            "{{base_url}}"
           ],
-          "path": [
-            "api",
-            "v1",
-            "tai-lieu",
-            "tiep-nhan"
-          ]
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "test-api-key-cs2",
+                "type": "text",
+                "disabled": true,
+                "description": "Đang tắt checkbox để test lỗi thiếu header X-API-Key. Bật lại để gửi."
+              },
+              {
+                "key": "X-Ma-CSKCB",
+                "value": "CS2",
+                "type": "text",
+                "description": "Sửa trực tiếp mã CSKCB tại đây"
+              },
+              {
+                "key": "X-Loai-Tai-Lieu",
+                "value": "DON_THUOC",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"maBenhNhan\": \"BN00123\",\n  \"filePdf\": \"JVBERi0xLjQK...\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/tai-lieu/tiep-nhan",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tai-lieu",
+                "tiep-nhan"
+              ]
+            },
+            "description": "Header X-API-Key bị disable để kiểm thử phản hồi từ chối 401 Unauthorized khi thiếu khóa."
+          },
+          "response": []
         },
-        "description": "Kiểm thử khi truyền sai API Key, kỳ vọng trả về HTTP 401 Unauthorized."
-      },
-      "response": []
-    },
-    {
-      "name": "5. Lỗi - Thiếu Header X-Ma-CSKCB (400)",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "X-API-Key",
-            "value": "test-api-key-cs2",
-            "type": "text",
-            "description": "Sửa trực tiếp API Key tại đây"
-          },
-          {
-            "key": "X-Ma-CSKCB",
-            "value": "CS2",
-            "type": "text",
-            "disabled": true,
-            "description": "Đang tắt checkbox để test lỗi thiếu header X-Ma-CSKCB"
-          },
-          {
-            "key": "X-Loai-Tai-Lieu",
-            "value": "DON_THUOC",
-            "type": "text",
-            "description": "Sửa trực tiếp loại tài liệu tại đây"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"maBenhNhan\": \"BN00123\",\n  \"filePdf\": \"JVBERi0xLjQK...\"\n}",
-          "options": {
-            "raw": {
-              "language": "json"
+        {
+          "name": "4.2 Lỗi - Thiếu Header X-Ma-CSKCB (401 Unauthorized)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 Unauthorized\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Success is false\", function () {",
+                  "    pm.expect(jsonData.success).to.eql(false);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
             }
-          }
-        },
-        "url": {
-          "raw": "{{base_url}}/api/v1/tai-lieu/tiep-nhan",
-          "host": [
-            "{{base_url}}"
           ],
-          "path": [
-            "api",
-            "v1",
-            "tai-lieu",
-            "tiep-nhan"
-          ]
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "test-api-key-cs2",
+                "type": "text",
+                "description": "Sửa trực tiếp API Key tại đây"
+              },
+              {
+                "key": "X-Ma-CSKCB",
+                "value": "CS2",
+                "type": "text",
+                "disabled": true,
+                "description": "Đang tắt checkbox để test lỗi thiếu header X-Ma-CSKCB. Bật lại để gửi."
+              },
+              {
+                "key": "X-Loai-Tai-Lieu",
+                "value": "DON_THUOC",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"maBenhNhan\": \"BN00123\",\n  \"filePdf\": \"JVBERi0xLjQK...\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/tai-lieu/tiep-nhan",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tai-lieu",
+                "tiep-nhan"
+              ]
+            },
+            "description": "Header X-Ma-CSKCB bị disable để kiểm thử phản hồi từ chối 401 Unauthorized từ [KhoaCoSo]."
+          },
+          "response": []
         },
-        "description": "Header X-Ma-CSKCB đang bị disable (bỏ chọn checkbox) để kiểm thử trả về 400. Bạn có thể tích lại để thử nghiệm."
-      },
-      "response": []
-    },
-    {
-      "name": "6. Lỗi - Tệp không phải PDF hợp lệ (400)",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "X-API-Key",
-            "value": "test-api-key-cs2",
-            "type": "text",
-            "description": "Sửa trực tiếp API Key tại đây"
-          },
-          {
-            "key": "X-Ma-CSKCB",
-            "value": "CS2",
-            "type": "text",
-            "description": "Sửa trực tiếp mã CSKCB tại đây"
-          },
-          {
-            "key": "X-Loai-Tai-Lieu",
-            "value": "DON_THUOC",
-            "type": "text",
-            "description": "Sửa trực tiếp loại tài liệu tại đây"
-          },
-          {
-            "key": "Content-Type",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"maBenhNhan\": \"BN00123\",\n  \"filePdf\": \"SGVsbG8gd29ybGQgbm90IGEgcGRmIGZpbGU=\",\n  \"tenTaiLieu\": \"File giả mạo không phải PDF\"\n}",
-          "options": {
-            "raw": {
-              "language": "json"
+        {
+          "name": "4.3 Lỗi - Sai X-API-Key (401 Unauthorized)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 Unauthorized\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Success is false\", function () {",
+                  "    pm.expect(jsonData.success).to.eql(false);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
             }
-          }
-        },
-        "url": {
-          "raw": "{{base_url}}/api/v1/tai-lieu/tiep-nhan",
-          "host": [
-            "{{base_url}}"
           ],
-          "path": [
-            "api",
-            "v1",
-            "tai-lieu",
-            "tiep-nhan"
-          ]
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "sai-api-key-123456",
+                "type": "text",
+                "description": "Giá trị API Key không tồn tại trong HT_KhoaApiCoSo (bạn có thể đổi chuỗi khác)"
+              },
+              {
+                "key": "X-Ma-CSKCB",
+                "value": "CS2",
+                "type": "text",
+                "description": "Sửa trực tiếp mã CSKCB tại đây"
+              },
+              {
+                "key": "X-Loai-Tai-Lieu",
+                "value": "DON_THUOC",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"maBenhNhan\": \"BN00123\",\n  \"filePdf\": \"JVBERi0xLjQK...\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/tai-lieu/tiep-nhan",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tai-lieu",
+                "tiep-nhan"
+              ]
+            },
+            "description": "Kiểm thử khi gửi giá trị API Key sai hoàn toàn. Bộ lọc [KhoaCoSo] kiểm tra mã băm SHA-256 không thấy và chặn ngay lập tức."
+          },
+          "response": []
         },
-        "description": "Kiểm thử khi gửi chuỗi Base64 của văn bản thường không có header %PDF-, kỳ vọng trả về HTTP 400."
-      },
-      "response": []
+        {
+          "name": "4.4 Lỗi - Khóa không khớp với mã cơ sở (401 Unauthorized)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401 Unauthorized\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Success is false\", function () {",
+                  "    pm.expect(jsonData.success).to.eql(false);",
+                  "});",
+                  "",
+                  "pm.test(\"Message mentions key mismatch facility\", function () {",
+                  "    pm.expect(jsonData.message).to.include(\"không thuộc cơ sở\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-API-Key",
+                "value": "test-api-key-cs2",
+                "type": "text",
+                "description": "Khóa của cơ sở CS2 (bạn có thể sửa trực tiếp)"
+              },
+              {
+                "key": "X-Ma-CSKCB",
+                "value": "79423",
+                "type": "text",
+                "description": "Mã cơ sở khác (ví dụ: BV Ung Bướu CS1 79423 hoặc 75265)"
+              },
+              {
+                "key": "X-Loai-Tai-Lieu",
+                "value": "DON_THUOC",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"maBenhNhan\": \"BN00123\",\n  \"filePdf\": \"JVBERi0xLjQK...\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/tai-lieu/tiep-nhan",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tai-lieu",
+                "tiep-nhan"
+              ]
+            },
+            "description": "Kiểm thử trường hợp cơ sở có khóa hợp lệ nhưng gõ nhầm mã cơ sở khác trong header X-Ma-CSKCB. [KhoaCoSo] sẽ chặn lại thay vì để đẩy nhầm dữ liệu sang cơ sở khác."
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "variable": [
     {
       "key": "base_url",
       "value": "https://localhost:7024",
-      "type": "string"
+      "type": "string",
+      "description": "Địa chỉ gốc của cổng SixosPwa (ví dụ: https://localhost:7024 hoặc http://localhost:5247)"
+    },
+    {
+      "key": "api_key",
+      "value": "test-api-key-cs2",
+      "type": "string",
+      "description": "API Key của cơ sở (Gợi ý test: test-api-key-cs2 hoặc THUNGHIEM-DOT2-20260908-a7f3c1)"
+    },
+    {
+      "key": "ma_cskcb",
+      "value": "CS2",
+      "type": "string",
+      "description": "Mã CSKCB tương ứng với API Key (Gợi ý: CS2, 75265, 77121, 79423)"
     },
     {
       "key": "document_id",
       "value": "1",
-      "type": "string"
+      "type": "string",
+      "description": "ID tài liệu (tự động cập nhật sau khi gọi Request 1.1 thành công)"
     }
   ]
 }
