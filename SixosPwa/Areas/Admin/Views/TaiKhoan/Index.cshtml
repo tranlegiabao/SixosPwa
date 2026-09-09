@@ -746,12 +746,14 @@
             <input type="hidden" id="modalSuaId" value="" />
             <input type="hidden" id="modalSuaAccountId" value="" />
 
-            <!-- 1. Mã bệnh nhân tại cơ sở -->
+            <!-- 1. Mã bệnh nhân tại cơ sở + Nút Gỡ nối bên cạnh -->
             <div class="modal-hs-o">
                 <label>Mã bệnh nhân tại cơ sở</label>
-                <input id="modalSuaMaBN" disabled value="" placeholder="Chưa có mã tại cơ sở" />
-                <div class="modal-hs-goi-y" id="modalSuaMaGoiY">
-                    Mã nào không phải của bạn thì bấm <b>Gỡ nối</b> ở dưới — hồ sơ vẫn giữ nguyên.
+                <div style="display: flex; gap: 10px; align-items: stretch;">
+                    <input id="modalSuaMaBN" disabled value="" placeholder="Chưa có mã tại cơ sở" style="flex: 1 1 auto; min-width: 0; background: #f8fafc;" />
+                    <button type="button" id="modalSuaBtnGoNoi" class="btn btn-outline-danger font-weight-bold" style="flex: 0 0 auto; width: 105px; height: 44px; border-radius: 10px; font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; justify-content: center;" onclick="goNoiModal()">
+                        Gỡ nối
+                    </button>
                 </div>
             </div>
 
@@ -798,15 +800,6 @@
 
             <!-- Nút Lưu -->
             <button type="button" class="modal-hs-btn-submit" id="modalSuaBtnSave" onclick="luuThongTinModal()">Lưu</button>
-
-            <!-- Khối Gỡ Nối (nếu có mã) -->
-            <div id="modalSuaGoNoiCard" class="modal-hs-go-noi-card" style="display: none;">
-                <div>
-                    <strong id="modalSuaGoNoiMaText">100992</strong>
-                    <span class="text-muted ms-1" style="font-size: 13px;">không phải mã của bạn?</span>
-                </div>
-                <button type="button" class="btn btn-sm btn-outline-danger font-weight-bold" onclick="goNoiModal()">Gỡ nối</button>
-            </div>
         </div>
     </div>
 </div>
@@ -899,21 +892,16 @@
         document.getElementById('modalSuaTenSubtitle').innerText = tenBN;
 
         const inpMaBN = document.getElementById('modalSuaMaBN');
-        const goNoiCard = document.getElementById('modalSuaGoNoiCard');
+        const btnGoNoi = document.getElementById('modalSuaBtnGoNoi');
         const daNoiNote = document.getElementById('modalSuaDaNoiNote');
         const maGoiY = document.getElementById('modalSuaMaGoiY');
 
         if (maBN) {
             inpMaBN.value = `${maBN} ${tenCoSo ? `(${tenCoSo})` : ''}`;
-            goNoiCard.style.display = 'flex';
-            daNoiNote.style.display = 'block';
-            maGoiY.style.display = 'block';
-            document.getElementById('modalSuaGoNoiMaText').innerText = maBN;
+            if (daNoiNote) daNoiNote.style.display = 'block';
         } else {
             inpMaBN.value = '';
-            goNoiCard.style.display = 'none';
-            daNoiNote.style.display = 'none';
-            maGoiY.style.display = 'none';
+            if (daNoiNote) daNoiNote.style.display = 'none';
         }
 
         document.getElementById('modalSuaCCCD').value = cccd;
@@ -1033,11 +1021,22 @@
     }
 
     function goNoiModal() {
+        const inpMa = document.getElementById('modalSuaMaBN');
+        if (!inpMa.value) {
+            if (typeof showToast === 'function') showToast('Hồ sơ này chưa có mã cơ sở để gỡ nối.', 'info');
+            else alert('Hồ sơ này chưa có mã cơ sở để gỡ nối.');
+            return;
+        }
         if (confirm('Bạn có chắc chắn muốn gỡ nối mã cơ sở này?')) {
-            document.getElementById('modalSuaMaBN').value = '';
-            document.getElementById('modalSuaGoNoiCard').style.display = 'none';
-            document.getElementById('modalSuaDaNoiNote').style.display = 'none';
-            document.getElementById('modalSuaMaGoiY').style.display = 'none';
+            inpMa.value = '';
+            const id = document.getElementById('modalSuaId').value;
+            const tr = document.getElementById('hoso-row-' + id);
+            if (tr) {
+                tr.setAttribute('data-mabn', '');
+                tr.setAttribute('data-tencoso', '');
+            }
+            const daNoiNote = document.getElementById('modalSuaDaNoiNote');
+            if (daNoiNote) daNoiNote.style.display = 'none';
             if (typeof showToast === 'function') showToast('Đã gỡ nối mã cơ sở.', 'success');
         }
     }
