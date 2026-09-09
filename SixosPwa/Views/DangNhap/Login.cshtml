@@ -41,20 +41,6 @@
         <div class="card auth__card">
             <div class="card-body">
 
-                @if (!string.IsNullOrWhiteSpace(ViewBag.DangDangNhapLa as string))
-                {
-                    @* Con phien cu. KHONG tu day di — de nguoi dung tu chon, vi
-                       ta khong biet ho vua dang xuat ben he doi tac hay chua. *@
-                    <div class="alert alert-light border mb-3">
-                        <div class="small text-muted mb-1">Bạn đang đăng nhập với</div>
-                        <div class="fw-bold mb-2">@ViewBag.DangDangNhapLa</div>
-                        <a href="@ViewBag.LinkDiTiep" class="btn btn-primary w-100 py-2 fw-bold">
-                            Tiếp tục với tài khoản này
-                        </a>
-                    </div>
-
-                    <div class="text-center text-muted small mb-3">hoặc đăng nhập tài khoản khác</div>
-                }
 
                 <!-- BƯỚC 1: NHẬP SỐ ĐIỆN THOẠI HOẶC EMAIL -->
                 <form id="formStep1" class="step-1" onsubmit="event.preventDefault(); guiOtp();">
