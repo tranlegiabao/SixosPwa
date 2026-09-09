@@ -94,13 +94,12 @@ public class DangNhapController : Controller
                     return Redirect($"/DangKyOnline/{coSo}?canhBao=1&returnUrl={Uri.EscapeDataString(yDinh)}");
                 }
 
-                ViewBag.DangDangNhapLa = User.FindFirst(ClaimTypes.Name)?.Value;
-                ViewBag.LinkDiTiep = Url.Action(nameof(DiTiep), new { returnUrl });
+                // Phiên còn sống: đi thẳng vào trong, không bắt xác nhận lại một bước thừa
+                return await DiTiep(returnUrl);
             }
-            else
+            else if (User.IsInRole("Admin"))
             {
-                // Phien cu, thieu claim cua cong benh nhan: coi nhu chua dang nhap.
-                ViewBag.DangDangNhapLa = null;
+                return Redirect("/Admin");
             }
         }
 
