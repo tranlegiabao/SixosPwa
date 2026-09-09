@@ -1,6 +1,6 @@
     /* Hide layout parts */
     .app-nav, .bottom-nav, .app-foot { display: none !important; }
-    html, body { height: 100dvh; overflow: hidden !important; margin: 0; padding: 0 !important; background-color: #f0f4f8; font-family: 'Inter', sans-serif; display: flex; flex-direction: column; }
+    html, body { height: 100dvh; overflow: hidden !important; margin: 0; padding: 0 !important; background-color: #f0f4f8; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; flex-direction: column; }
     .container, main.container { max-width: 100% !important; padding: 0 !important; margin: 0 !important; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
 
     /* Layout Variables */
