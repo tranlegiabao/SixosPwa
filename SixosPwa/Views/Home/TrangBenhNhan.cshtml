@@ -506,9 +506,9 @@
                         </svg>
                     </button>
                 </div>
-                <!-- Nút mở menu chọn các tuần trong tháng -->
+                <!-- Nút mở lịch tháng toàn diện -->
                 <div class="vcb-nut-tatca-wrap">
-                    <button type="button" class="vcb-btn-xem-tat-ca" id="vcbBtnXemTatCa" onclick="moSheetChonTuan()">
+                    <button type="button" class="vcb-btn-xem-tat-ca" id="vcbBtnXemTatCa" onclick="moModalLichThang()">
                         <span class="vcb-tatca-icon">📅</span>
                         <span id="vcbTextTatCa">Xem tất cả các tuần trong tháng</span>
                         <span class="vcb-tatca-arrow">▼</span>
@@ -534,7 +534,81 @@
                 <!-- Dynamic cards rendered by JS -->
             </div>
 
-            <!-- Popup / Bottom Sheet Chọn Tuần hoặc Cả Tháng -->
+            <!-- ==================== GIAO DIỆN LỊCH THÁNG (CHUẨN THEO ẢNH USER) ==================== -->
+            <div id="vcbModalLichThang" class="vcb-cal-overlay" style="display: none;">
+                <div class="vcb-cal-hop">
+                    <!-- Top Bar Lịch Tháng -->
+                    <div class="vcb-cal-top-bar">
+                        <button type="button" class="vcb-cal-btn-icon" onclick="dongModalLichThang()" title="Quay lại danh sách">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12 19 5 12 12 5"></polyline>
+                            </svg>
+                        </button>
+                        
+                        <!-- Vùng chuyển tháng ở giữa với 2 cánh bấm cực rộng -->
+                        <div class="vcb-cal-thang-container">
+                            <!-- Vùng bấm bên trái: Bấm bất cứ đâu vùng này -> Về tháng trước -->
+                            <div class="vcb-cal-vung-chuyen vung-trai" onclick="chuyenThangLich(-1, 'right')" title="Bấm để xem tháng trước">
+                                <span class="vcb-cal-nav-arrow">‹</span>
+                            </div>
+
+                            <!-- Tiêu đề Tháng -->
+                            <span class="vcb-cal-tieude-thang" id="vcbCalTieuDeThang">TH09</span>
+
+                            <!-- Vùng bấm bên phải: Bấm bất cứ đâu vùng này -> Sang tháng sau -->
+                            <div class="vcb-cal-vung-chuyen vung-phai" onclick="chuyenThangLich(1, 'left')" title="Bấm để xem tháng sau">
+                                <span class="vcb-cal-nav-arrow">›</span>
+                            </div>
+                        </div>
+
+                        <div class="vcb-cal-top-phai">
+                            <button type="button" class="vcb-cal-btn-homnay" onclick="veHomNayLich()" title="Về ngày hôm nay">
+                                <span id="vcbCalNgayHienTaiBadge">8</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Chú thích màu sắc (Legend) -->
+                    <div class="vcb-cal-legend">
+                        <div class="vcb-cal-legend-item">
+                            <span class="vcb-cal-dot dot-can-ke"></span>
+                            <span>🔴 Cận kề / Hôm nay</span>
+                        </div>
+                        <div class="vcb-cal-legend-item">
+                            <span class="vcb-cal-dot dot-co-hen"></span>
+                            <span>🟢 Ngày hẹn</span>
+                        </div>
+                        <div class="vcb-cal-legend-item">
+                            <span class="vcb-cal-dot dot-da-qua"></span>
+                            <span>⚪ Đã qua</span>
+                        </div>
+                    </div>
+
+                    <!-- Hàng Thứ (T.2 -> CN) -->
+                    <div class="vcb-cal-thu-grid">
+                        <div class="vcb-cal-thu-col">T.2</div>
+                        <div class="vcb-cal-thu-col">T.3</div>
+                        <div class="vcb-cal-thu-col">T.4</div>
+                        <div class="vcb-cal-thu-col">T.5</div>
+                        <div class="vcb-cal-thu-col">T.6</div>
+                        <div class="vcb-cal-thu-col">T.7</div>
+                        <div class="vcb-cal-thu-col cn">CN</div>
+                    </div>
+
+                    <!-- Lưới các ô ngày trong tháng -->
+                    <div class="vcb-cal-ngay-grid" id="vcbCalNgayGrid">
+                        <!-- Rendered by JS -->
+                    </div>
+
+                    <!-- Thanh thông tin ngày chọn / Chi tiết lịch hẹn bên dưới -->
+                    <div class="vcb-cal-bottom-bar" id="vcbCalBottomBar">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Popup Chọn Tuần (Dự phòng) -->
             <div id="vcbSheetChonTuan" class="vcb-sheet-overlay" style="display: none;" onclick="dongSheetChonTuan()">
                 <div class="vcb-sheet-hop" onclick="event.stopPropagation()">
                     <div class="vcb-sheet-dau">
@@ -1096,12 +1170,404 @@
             color: #94a3b8;
             font-size: 14px;
         }
+
+        /* ==================== STYLES LỊCH THÁNG TOÀN DIỆN (THEO PHONG CÁCH SÁNG / TRẮNG) ==================== */
+        .vcb-cal-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #ffffff;
+            z-index: 120;
+            display: flex;
+            flex-direction: column;
+            animation: vcbFadeIn .18s ease-out;
+            color: #0f172a;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            touch-action: pan-y;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        .vcb-cal-hop {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+            background: #ffffff;
+            box-sizing: border-box;
+            touch-action: pan-y;
+        }
+
+        .vcb-cal-top-bar {
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            flex-shrink: 0;
+            gap: 4px;
+        }
+
+        .vcb-cal-btn-icon {
+            background: transparent;
+            border: none;
+            color: #0f172a;
+            width: 38px;
+            height: 38px;
+            cursor: pointer;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .15s;
+            flex-shrink: 0;
+            z-index: 2;
+        }
+        .vcb-cal-btn-icon:hover { background: #f1f5f9; }
+
+        .vcb-cal-thang-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            height: 42px;
+            position: relative;
+        }
+
+        /* 2 Vùng Bấm Rộng Chuyển Tháng */
+        .vcb-cal-vung-chuyen {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 0 14px;
+            border-radius: 10px;
+            transition: all .15s ease;
+            user-select: none;
+        }
+
+        .vcb-cal-vung-chuyen.vung-trai {
+            justify-content: flex-end;
+        }
+
+        .vcb-cal-vung-chuyen.vung-phai {
+            justify-content: flex-start;
+        }
+
+        .vcb-cal-vung-chuyen:hover {
+            background: #f1f5f9;
+        }
+
+        .vcb-cal-vung-chuyen:active {
+            background: #e2e8f0;
+            transform: scale(0.97);
+        }
+
+        .vcb-cal-nav-arrow {
+            color: #475569;
+            font-size: 26px;
+            font-weight: 700;
+            line-height: 1;
+            padding: 0 4px;
+        }
+
+        .vcb-cal-tieude-thang {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            color: #0f172a;
+            padding: 0 6px;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .vcb-cal-top-phai {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .vcb-cal-btn-homnay {
+            background: #f8fafc;
+            border: 1.5px solid #cbd5e1;
+            color: #0f172a;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .15s;
+        }
+        .vcb-cal-btn-homnay:hover {
+            border-color: #0f172a;
+            background: #e2e8f0;
+        }
+
+        /* Thanh Chú Thích Màu Sắc */
+        .vcb-cal-legend {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 8px 12px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 11.5px;
+            color: #475569;
+            flex-shrink: 0;
+        }
+
+        .vcb-cal-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 600;
+        }
+
+        .vcb-cal-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .vcb-cal-dot.dot-can-ke { background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.4); }
+        .vcb-cal-dot.dot-co-hen { background: #10b981; box-shadow: 0 0 6px rgba(16, 185, 129, 0.4); }
+        .vcb-cal-dot.dot-da-qua { background: #94a3b8; }
+
+        /* Hàng Thứ */
+        .vcb-cal-thu-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            padding: 10px 6px 6px;
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #64748b;
+            flex-shrink: 0;
+            background: #ffffff;
+        }
+
+        .vcb-cal-thu-col.cn { color: #ef4444; }
+
+        /* Lưới Ô Ngày Trong Tháng */
+        .vcb-cal-ngay-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            grid-auto-rows: 1fr;
+            gap: 4px;
+            padding: 4px 6px 8px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            background: #f8fafc;
+        }
+
+        .vcb-cal-cell {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 5px 2px 3px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            cursor: pointer;
+            transition: all .15s ease;
+            position: relative;
+            user-select: none;
+            border: 1px solid #e2e8f0;
+            min-height: 52px;
+            box-sizing: border-box;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+        }
+
+        .vcb-cal-cell:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+
+        .vcb-cal-solar {
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1.2;
+            color: #0f172a;
+        }
+
+        .vcb-cal-lunar {
+            font-size: 9.5px;
+            color: #64748b;
+            line-height: 1.1;
+            margin-top: 2px;
+            text-align: center;
+        }
+
+        .vcb-cal-tag {
+            font-size: 8px;
+            font-weight: 800;
+            padding: 1px 3px;
+            border-radius: 4px;
+            margin-top: 3px;
+            line-height: 1.1;
+            text-align: center;
+            max-width: 96%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* 1. NGÀY ĐÃ QUA: MÀU XÁM */
+        .vcb-cal-cell.cal-da-qua {
+            background: #f1f5f9;
+            border-color: #e2e8f0;
+            opacity: 0.75;
+        }
+        .vcb-cal-cell.cal-da-qua .vcb-cal-solar {
+            color: #94a3b8;
+        }
+        .vcb-cal-cell.cal-da-qua .vcb-cal-lunar {
+            color: #cbd5e1;
+        }
+        .vcb-cal-cell.cal-da-qua .vcb-cal-tag {
+            background: #e2e8f0;
+            color: #64748b;
+        }
+
+        /* 2. NGÀY CẬN KỀ / HÔM NAY: MÀU ĐỎ */
+        .vcb-cal-cell.cal-can-ke {
+            background: #fef2f2;
+            border: 2px solid #ef4444;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+        }
+        .vcb-cal-cell.cal-can-ke .vcb-cal-solar {
+            color: #dc2626;
+            font-weight: 900;
+        }
+        .vcb-cal-cell.cal-can-ke .vcb-cal-lunar {
+            color: #ef4444;
+            font-weight: 700;
+        }
+        .vcb-cal-cell.cal-can-ke .vcb-cal-tag {
+            background: #ef4444;
+            color: #ffffff;
+            box-shadow: 0 1px 4px rgba(239, 68, 68, 0.35);
+        }
+
+        /* 3. NGÀY CÓ LỊCH HẸN TRONG TƯƠNG LAI: MÀU XANH LÁ */
+        .vcb-cal-cell.cal-co-hen {
+            background: #ecfdf5;
+            border: 1.5px solid #10b981;
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.15);
+        }
+        .vcb-cal-cell.cal-co-hen .vcb-cal-solar {
+            color: #059669;
+            font-weight: 800;
+        }
+        .vcb-cal-cell.cal-co-hen .vcb-cal-lunar {
+            color: #10b981;
+            font-weight: 700;
+        }
+        .vcb-cal-cell.cal-co-hen .vcb-cal-tag {
+            background: #059669;
+            color: #ffffff;
+            box-shadow: 0 1px 4px rgba(5, 150, 105, 0.35);
+        }
+
+        /* Ngày đang được chọn */
+        .vcb-cal-cell.cal-selected {
+            outline: 2px solid #0284c7;
+            outline-offset: 1px;
+            transform: scale(1.03);
+            z-index: 2;
+        }
+
+        /* Ngày ngoài tháng */
+        .vcb-cal-cell.cal-ngoai-thang {
+            opacity: 0.3;
+        }
+
+        /* Bottom Floating Bar / Chi Tiết Ngày Chọn */
+        .vcb-cal-bottom-bar {
+            padding: 12px 16px 16px;
+            background: #ffffff;
+            border-top: 1px solid #e2e8f0;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: 0 -4px 12px rgba(15, 23, 42, 0.05);
+        }
+
+        .vcb-cal-btn-action {
+            width: 100%;
+            padding: 13px 18px;
+            border-radius: 28px;
+            border: none;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all .18s ease;
+            box-sizing: border-box;
+            background: linear-gradient(135deg, #0d5bd4 0%, #1e40af 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(13, 91, 212, 0.35);
+        }
+
+        .vcb-cal-btn-action:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(13, 91, 212, 0.45);
+        }
+
+        .vcb-cal-btn-action.can-ke {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35);
+        }
+        .vcb-cal-btn-action.co-hen {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
+        }
+        .vcb-cal-btn-action.da-qua {
+            background: #f1f5f9;
+            color: #64748b;
+            box-shadow: none;
+            border: 1px solid #e2e8f0;
+        }
+        .vcb-cal-btn-action.khong-hen {
+            background: #f8fafc;
+            color: #334155;
+            box-shadow: none;
+            border: 1px solid #cbd5e1;
+        }
+
+        /* Hiệu ứng trượt ngang khi vuốt chuyển tháng */
+        @@keyframes vcbSlideLeft {
+            0% { transform: translateX(50px); opacity: 0.2; }
+            100% { transform: translateX(0); opacity: 1; }
+        }
+
+        @@keyframes vcbSlideRight {
+            0% { transform: translateX(-50px); opacity: 0.2; }
+            100% { transform: translateX(0); opacity: 1; }
+        }
+
+        .vcb-slide-left {
+            animation: vcbSlideLeft 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .vcb-slide-right {
+            animation: vcbSlideRight 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
     </style>
 
     <script>
         // Danh sách thông báo lịch khám mô phỏng chuẩn phong cách thông báo tài khoản
-        // daDoc = false (Sáng sủa + hiện chữ MỚI)
-        // daDoc = true  (Tối hơn một tí + hiện tick xanh)
         (function() {
             const homNay = new Date();
             const nam = homNay.getFullYear();
@@ -1109,22 +1575,24 @@
             const ngay = String(homNay.getDate()).padStart(2, '0');
 
             window.danhSachThongBaoLich = [
+                // 1. HẸN CẬN KỀ / HÔM NAY (MÀU ĐỎ)
                 {
                     id: 1,
                     thoiGianHienThi: "Hôm nay • 08:30",
                     ngayIso: `${nam}-${thang}-${ngay}`,
                     loai: "nhac-hen",
-                    daDoc: false, // Chưa đọc -> Sáng + chữ MỚI
+                    daDoc: false,
                     noiDung: `Lịch nhắc khám: Quý khách có lịch hẹn tái khám tại Khoa Nội Tiết - Phòng 204 lúc 08:30 ngày ${ngay}/${thang}/${nam}. Bác sĩ phụ trách: BSCKII. Nguyễn Văn An.`,
                     loiDan: "Vui lòng nhịn ăn sáng để làm xét nghiệm máu và lấy kết quả trong buổi sáng.",
                     chuyenKhoa: "Khoa Nội Tiết"
                 },
+                // 2. NGÀY ĐÃ QUA TRONG QUÁ KHỨ (MÀU XÁM)
                 {
                     id: 2,
                     thoiGianHienThi: "Hôm qua • 21:31",
                     ngayIso: `${nam}-09-07`,
                     loai: "nhac-hen",
-                    daDoc: false, // Chưa đọc -> Sáng + chữ MỚI
+                    daDoc: false,
                     noiDung: `Lịch nhắc hẹn: Lịch khám định kỳ Mắt - Phòng 302 của quý khách vào 14:00 ngày 07/09/${nam}. ThS.BS. Hoàng Minh Tuấn phụ trách.`,
                     loiDan: "Kiểm tra thị lực định kỳ và đo nhãn áp.",
                     chuyenKhoa: "Khoa Mắt"
@@ -1134,38 +1602,91 @@
                     thoiGianHienThi: "06/09/2026 • 21:30",
                     ngayIso: `${nam}-09-06`,
                     loai: "tai-kham",
-                    daDoc: true, // Đã đọc -> Tối hơn tí + tick xanh
+                    daDoc: true,
                     noiDung: `Thông báo khám: Quý khách đã hoàn thành lịch hẹn khám Tim Mạch lúc 09:30 ngày 06/09/${nam}. BSCKII. Lê Thị Mai. Toa thuốc đã được cập nhật vào hồ sơ.`,
                     loiDan: "Tái khám sau 1 tháng hoặc khi có biểu hiện tức ngực.",
                     chuyenKhoa: "Khoa Tim Mạch"
                 },
                 {
                     id: 4,
-                    thoiGianHienThi: "06/09/2026 • 19:01",
-                    ngayIso: `${nam}-09-06`,
-                    loai: "nhac-hen",
-                    daDoc: true, // Đã đọc -> Tối hơn tí + tick xanh
-                    noiDung: `Lịch hẹn khám: Bệnh viện tiếp nhận yêu cầu đặt lịch khám tổng quát ngày 06/09/${nam} lúc 08:00 tại Phòng 101.`,
-                    loiDan: "Đến trước 15 phút để lấy số thứ tự ưu tiên.",
-                    chuyenKhoa: "Khám Tổng Quát"
-                },
-                {
-                    id: 5,
                     thoiGianHienThi: "02/09/2026 • 08:00",
                     ngayIso: `${nam}-09-02`,
                     loai: "tai-kham",
-                    daDoc: true, // Đã đọc -> Tối hơn tí + tick xanh
+                    daDoc: true,
                     noiDung: `Lịch hẹn khám: Nhắc lịch khám sức khỏe định kỳ lúc 08:00 ngày 02/09/${nam}. Bác sĩ phụ trách: BSCKI. Trần Văn Bình.`,
                     loiDan: "Mang theo sổ khám và thẻ BHYT.",
                     chuyenKhoa: "Khám Tổng Quát"
+                },
+                // 3. NGÀY CÓ HẸN TRONG TƯƠNG LAI (MÀU XANH)
+                {
+                    id: 5,
+                    thoiGianHienThi: "15/09/2026 • 09:00",
+                    ngayIso: `${nam}-09-15`,
+                    loai: "nhac-hen",
+                    daDoc: false,
+                    noiDung: `Lịch hẹn tái khám Mắt: Tái khám đo nhãn áp và kiểm tra đáy mắt lúc 09:00 ngày 15/09/${nam}. Phòng 302 - ThS.BS. Hoàng Minh Tuấn.`,
+                    loiDan: "Mang theo kính mắt hiện tại và đơn thuốc cũ.",
+                    chuyenKhoa: "Khoa Mắt"
+                },
+                {
+                    id: 6,
+                    thoiGianHienThi: "22/09/2026 • 14:30",
+                    ngayIso: `${nam}-09-22`,
+                    loai: "nhac-hen",
+                    daDoc: false,
+                    noiDung: `Lịch hẹn khám Răng Hàm Mặt: Nhổ răng khôn & trám răng thẩm mỹ lúc 14:30 ngày 22/09/${nam}. BSCKI. Phạm Minh Hải.`,
+                    loiDan: "Ăn no trước khi đến phòng khám 1 tiếng.",
+                    chuyenKhoa: "Răng Hàm Mặt"
+                },
+                {
+                    id: 7,
+                    thoiGianHienThi: "28/09/2026 • 10:00",
+                    ngayIso: `${nam}-09-28`,
+                    loai: "nhac-hen",
+                    daDoc: false,
+                    noiDung: `Lịch hẹn Da Liễu: Khám và soi da định kỳ lúc 10:00 ngày 28/09/${nam}. Phòng 405 - BS. Trần Thu Hà.`,
+                    loiDan: "Không thoa kem đặc trị trong vòng 12 giờ trước khám.",
+                    chuyenKhoa: "Khoa Da Liễu"
                 }
             ];
         })();
 
-        let cheDoXemTatCaThang = false; // false: Xem theo tuần, true: Xem tất cả các tuần trong tháng
-        let offsetThoiGian = 0; // offset tuần (hoặc offset tháng)
-        let customKhoangChon = null; // Khi chọn tuần cụ thể từ sheet
+        let cheDoXemTatCaThang = false;
+        let offsetThoiGian = 0;
+        let customKhoangChon = null;
         let tuKhoaTimKiemVcb = '';
+
+        // Biến lịch tháng
+        let calNam = 2026;
+        let calThang = 9;
+        let calSelectedNgayIso = '2026-09-08';
+
+        (function initCalTime() {
+            const h = new Date();
+            calNam = h.getFullYear();
+            calThang = h.getMonth() + 1;
+            calSelectedNgayIso = formatIso(h);
+        })();
+
+        function layNgayAmLichMoPhong(nam, thang, ngay) {
+            if (nam === 2026 && thang === 9) {
+                if (ngay < 11) return `${ngay + 20}/7`;
+                const am = ngay - 10;
+                if (am === 15) return '15/8 🌕';
+                return `${am}/8`;
+            }
+            if (nam === 2026 && thang === 10) {
+                if (ngay < 11) return `${ngay + 20}/8`;
+                const am = ngay - 10;
+                if (ngay === 20) return '20/10 🌸';
+                return `${am}/9`;
+            }
+            if (nam === 2026 && thang === 11) {
+                if (ngay < 10) return `${ngay + 21}/9`;
+                return `${ngay - 9}/10`;
+            }
+            return `${(ngay % 30) + 1}/AL`;
+        }
 
         function formatIso(dt) {
             const y = dt.getFullYear();
@@ -1181,7 +1702,311 @@
             return `${d}/${m}/${y}`;
         }
 
-        // Tạo danh sách tất cả các tuần trong tháng
+        function timNgayCanKeIso() {
+            const todayIso = formatIso(new Date());
+            const ds = window.danhSachThongBaoLich || [];
+            
+            const tuongLai = ds.filter(x => x.ngayIso >= todayIso).sort((a, b) => a.ngayIso.localeCompare(b.ngayIso));
+            if (tuongLai.length > 0) {
+                return tuongLai[0].ngayIso;
+            }
+            if (ds.length > 0) {
+                return ds[0].ngayIso;
+            }
+            return todayIso;
+        }
+
+        // ==================== RENDER LỊCH THÁNG (CHUẨN THEO ẢNH USER) ====================
+        function renderLichThangUi(animDir) {
+            const tieuDeEl = document.getElementById('vcbCalTieuDeThang');
+            if (tieuDeEl) {
+                tieuDeEl.innerText = `TH${String(calThang).padStart(2, '0')}`;
+            }
+
+            const badgeHomNay = document.getElementById('vcbCalNgayHienTaiBadge');
+            if (badgeHomNay) {
+                badgeHomNay.innerText = new Date().getDate();
+            }
+
+            const gridEl = document.getElementById('vcbCalNgayGrid');
+            if (!gridEl) return;
+            gridEl.innerHTML = '';
+
+            // Thêm animation chuyển động mượt mà khi vuốt hoặc bấm nút
+            if (animDir === 'left') {
+                gridEl.classList.remove('vcb-slide-left', 'vcb-slide-right');
+                void gridEl.offsetWidth; // Reflow
+                gridEl.classList.add('vcb-slide-left');
+            } else if (animDir === 'right') {
+                gridEl.classList.remove('vcb-slide-left', 'vcb-slide-right');
+                void gridEl.offsetWidth; // Reflow
+                gridEl.classList.add('vcb-slide-right');
+            }
+
+            const todayIso = formatIso(new Date());
+            const ngayCanKeIso = timNgayCanKeIso();
+            const dsLich = window.danhSachThongBaoLich || [];
+
+            const firstDayOfMonth = new Date(calNam, calThang - 1, 1);
+            const lastDayOfMonth = new Date(calNam, calThang, 0);
+
+            const startGridDate = new Date(firstDayOfMonth);
+            const dayOfWeek = startGridDate.getDay();
+            const diffToMonday = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
+            startGridDate.setDate(startGridDate.getDate() + diffToMonday);
+
+            // Xác định vẽ 35 hay 42 ô
+            let testDate = new Date(startGridDate);
+            testDate.setDate(testDate.getDate() + 34);
+            const totalCells = (testDate < lastDayOfMonth) ? 42 : 35;
+
+            let curDate = new Date(startGridDate);
+            for (let i = 0; i < totalCells; i++) {
+                const cellDate = new Date(curDate);
+                const cellIso = formatIso(cellDate);
+                const cellDay = cellDate.getDate();
+                const isCurrentMonth = (cellDate.getMonth() === calThang - 1);
+
+                const lichHenNgay = dsLich.filter(x => x.ngayIso === cellIso);
+                const coHen = lichHenNgay.length > 0;
+
+                let stateClass = '';
+                let tagText = '';
+
+                if (cellIso === ngayCanKeIso) {
+                    stateClass = 'cal-can-ke';
+                    tagText = lichHenNgay.length > 0 ? lichHenNgay[0].chuyenKhoa : 'Lịch hẹn';
+                } else if (cellIso < todayIso) {
+                    stateClass = 'cal-da-qua';
+                    if (coHen) {
+                        tagText = 'Đã khám';
+                    }
+                } else if (coHen) {
+                    stateClass = 'cal-co-hen';
+                    tagText = lichHenNgay[0].chuyenKhoa;
+                }
+
+                if (!isCurrentMonth) {
+                    stateClass += ' cal-ngoai-thang';
+                }
+
+                if (cellIso === calSelectedNgayIso) {
+                    stateClass += ' cal-selected';
+                }
+
+                const lunarText = layNgayAmLichMoPhong(cellDate.getFullYear(), cellDate.getMonth() + 1, cellDay);
+
+                const cellDiv = document.createElement('div');
+                cellDiv.className = `vcb-cal-cell ${stateClass}`;
+                cellDiv.onclick = () => chonNgayLich(cellIso);
+
+                cellDiv.innerHTML = `
+                    <span class="vcb-cal-solar">${cellDay}</span>
+                    <span class="vcb-cal-lunar">${lunarText}</span>
+                    ${tagText ? `<span class="vcb-cal-tag">${tagText}</span>` : ''}
+                `;
+
+                gridEl.appendChild(cellDiv);
+                curDate.setDate(curDate.getDate() + 1);
+            }
+
+            capNhatBottomBarLich();
+        }
+
+        function capNhatBottomBarLich() {
+            const bar = document.getElementById('vcbCalBottomBar');
+            if (!bar) return;
+
+            const dsLich = window.danhSachThongBaoLich || [];
+            const lichHen = dsLich.find(x => x.ngayIso === calSelectedNgayIso);
+            const todayIso = formatIso(new Date());
+            const ngayCanKeIso = timNgayCanKeIso();
+
+            const dParts = calSelectedNgayIso.split('-');
+            const ngayVn = `${dParts[2]}/${dParts[1]}/${dParts[0]}`;
+
+            if (calSelectedNgayIso === ngayCanKeIso && lichHen) {
+                bar.innerHTML = `
+                    <button type="button" class="vcb-cal-btn-action can-ke" onclick="xemTinTheoNgay('${calSelectedNgayIso}')">
+                        <span>🔴 Lịch cận kề ${ngayVn}: ${lichHen.chuyenKhoa} (${lichHen.thoiGianHienThi.split('•')[1] || ''}) ➔</span>
+                    </button>
+                `;
+            } else if (lichHen && calSelectedNgayIso >= todayIso) {
+                bar.innerHTML = `
+                    <button type="button" class="vcb-cal-btn-action co-hen" onclick="xemTinTheoNgay('${calSelectedNgayIso}')">
+                        <span>🟢 Lịch hẹn ${ngayVn}: ${lichHen.chuyenKhoa} ➔</span>
+                    </button>
+                `;
+            } else if (lichHen && calSelectedNgayIso < todayIso) {
+                bar.innerHTML = `
+                    <button type="button" class="vcb-cal-btn-action da-qua" onclick="xemTinTheoNgay('${calSelectedNgayIso}')">
+                        <span>⚪ Đã qua (${ngayVn}): ${lichHen.chuyenKhoa} ➔</span>
+                    </button>
+                `;
+            } else {
+                bar.innerHTML = `
+                    <button type="button" class="vcb-cal-btn-action khong-hen" onclick="dongModalLichThang()">
+                        <span>Thêm / Xem lịch vào ngày ${dParts[2]} Th${dParts[1]} +</span>
+                    </button>
+                `;
+            }
+        }
+
+        function chonNgayLich(ngayIso) {
+            calSelectedNgayIso = ngayIso;
+            renderLichThangUi();
+        }
+
+        function chuyenThangLich(delta, animDir) {
+            calThang += delta;
+            if (calThang > 12) {
+                calThang = 1;
+                calNam++;
+            } else if (calThang < 1) {
+                calThang = 12;
+                calNam--;
+            }
+            renderLichThangUi(animDir || (delta > 0 ? 'left' : 'right'));
+        }
+
+        function veHomNayLich() {
+            const h = new Date();
+            const prevThang = calThang;
+            const prevNam = calNam;
+            calNam = h.getFullYear();
+            calThang = h.getMonth() + 1;
+            calSelectedNgayIso = formatIso(h);
+            
+            let anim = 'left';
+            if (calNam < prevNam || (calNam === prevNam && calThang < prevThang)) {
+                anim = 'right';
+            }
+            renderLichThangUi(anim);
+        }
+
+        // ==================== CỬ CHỈ VUỐT TOÀN DIỆN (TOUCH & MOUSE SWIPE) ====================
+        (function initGlobalSwipe() {
+            let startX = 0;
+            let startY = 0;
+            let curX = 0;
+            let curY = 0;
+            let isTouching = false;
+
+            function isCalendarOpen() {
+                const el = document.getElementById('vcbModalLichThang');
+                return el && el.style.display !== 'none';
+            }
+
+            // 1. Cảm ứng trên điện thoại
+            document.addEventListener('touchstart', function(e) {
+                if (!isCalendarOpen()) return;
+                if (e.touches.length !== 1) return;
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                curX = startX;
+                curY = startY;
+                isTouching = true;
+            }, { passive: true });
+
+            document.addEventListener('touchmove', function(e) {
+                if (!isTouching || !isCalendarOpen() || !e.touches || e.touches.length !== 1) return;
+                curX = e.touches[0].clientX;
+                curY = e.touches[0].clientY;
+            }, { passive: true });
+
+            function handleTouchEnd() {
+                if (!isTouching || !isCalendarOpen()) return;
+                isTouching = false;
+
+                const deltaX = curX - startX;
+                const deltaY = curY - startY;
+
+                // Chỉ cần vuốt dứt khoát > 20px
+                if (Math.abs(deltaX) > 20 && Math.abs(deltaX) > Math.abs(deltaY) * 0.6) {
+                    if (deltaX < 0) {
+                        chuyenThangLich(1, 'left'); // Vuốt sang trái 👈 -> Tháng 10
+                    } else {
+                        chuyenThangLich(-1, 'right'); // Vuốt sang phải 👉 -> Tháng 8
+                    }
+                }
+            }
+
+            document.addEventListener('touchend', handleTouchEnd, { passive: true });
+            document.addEventListener('touchcancel', handleTouchEnd, { passive: true });
+
+            // 2. Kéo chuột trên máy tính
+            let mouseStartX = 0;
+            let mouseStartY = 0;
+            let mouseCurX = 0;
+            let mouseCurY = 0;
+            let isMouseDown = false;
+
+            document.addEventListener('mousedown', function(e) {
+                if (!isCalendarOpen()) return;
+                if (e.target.closest('button')) return;
+                mouseStartX = e.clientX;
+                mouseStartY = e.clientY;
+                mouseCurX = mouseStartX;
+                mouseCurY = mouseStartY;
+                isMouseDown = true;
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (!isMouseDown || !isCalendarOpen()) return;
+                mouseCurX = e.clientX;
+                mouseCurY = e.clientY;
+            });
+
+            document.addEventListener('mouseup', function(e) {
+                if (!isMouseDown || !isCalendarOpen()) return;
+                isMouseDown = false;
+                const dX = mouseCurX - mouseStartX;
+                const dY = mouseCurY - mouseStartY;
+
+                if (Math.abs(dX) > 25 && Math.abs(dX) > Math.abs(dY) * 0.6) {
+                    if (dX < 0) {
+                        chuyenThangLich(1, 'left');
+                    } else {
+                        chuyenThangLich(-1, 'right');
+                    }
+                }
+            });
+        })();
+
+        function moModalLichThang() {
+            const modal = document.getElementById('vcbModalLichThang');
+            if (modal) {
+                modal.style.display = 'flex';
+                renderLichThangUi();
+            }
+        }
+
+        function dongModalLichThang() {
+            const modal = document.getElementById('vcbModalLichThang');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        function xemTinTheoNgay(ngayIso) {
+            dongModalLichThang();
+            customKhoangChon = {
+                startIso: ngayIso,
+                endIso: ngayIso,
+                chuoiHienThi: `Ngày ${ngayIso.split('-')[2]}/${ngayIso.split('-')[1]}/${ngayIso.split('-')[0]}`
+            };
+            cheDoXemTatCaThang = false;
+
+            const btn = document.getElementById('vcbBtnXemTatCa');
+            const textEl = document.getElementById('vcbTextTatCa');
+            if (btn) btn.classList.add('active');
+            if (textEl) textEl.innerText = `Lọc: ${customKhoangChon.chuoiHienThi} (Bấm để xem lịch tháng)`;
+
+            capNhatKhoangThoiGianUi();
+            renderDanhSachVcb();
+        }
+
+        // ==================== CÁC HÀM XỬ LÝ TUẦN & MODAL THÔNG BÁO ====================
         function layCacTuanTrongThang(nam, thang1Indexed) {
             const firstDayOfMonth = new Date(nam, thang1Indexed - 1, 1);
             const lastDayOfMonth = new Date(nam, thang1Indexed, 0);
@@ -1227,7 +2052,6 @@
             const homNay = new Date();
 
             if (cheDoXemTatCaThang) {
-                // Chế độ xem cả tháng: Lấy từ ngày 1 đến ngày cuối tháng
                 const targetMonth = new Date(homNay.getFullYear(), homNay.getMonth() + offset, 1);
                 const startMonth = new Date(targetMonth.getFullYear(), targetMonth.getMonth(), 1);
                 const endMonth = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0);
@@ -1242,7 +2066,6 @@
                     chuoiHienThi: `Tháng ${mStr}/${yStr} (01/${mStr} đến ${String(endMonth.getDate()).padStart(2, '0')}/${mStr}/${yStr})`
                 };
             } else {
-                // Chế độ xem theo tuần: Lấy Thứ Hai đến Chủ Nhật
                 const dayOfWeek = homNay.getDay();
                 const diffToMonday = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
                 
@@ -1262,102 +2085,6 @@
             }
         }
 
-        function moSheetChonTuan() {
-            const homNay = new Date();
-            const nam = homNay.getFullYear();
-            const thang = homNay.getMonth() + 1;
-            
-            const sheetTenThang = document.getElementById('vcbSheetTenThang');
-            if (sheetTenThang) {
-                sheetTenThang.innerText = `Tháng ${String(thang).padStart(2, '0')}/${nam}`;
-            }
-
-            const danhsachContainer = document.getElementById('vcbSheetDanhSachTuan');
-            if (!danhsachContainer) return;
-
-            const cacTuan = layCacTuanTrongThang(nam, thang);
-            const khoangHienTai = layKhoangThoiGian(offsetThoiGian);
-            const dsNotif = window.danhSachThongBaoLich;
-
-            const startThangIso = `${nam}-${String(thang).padStart(2, '0')}-01`;
-            const endThangIso = formatIso(new Date(nam, thang, 0));
-            const soLuongCaThang = dsNotif.filter(x => x.ngayIso >= startThangIso && x.ngayIso <= endThangIso).length;
-
-            let html = `
-                <!-- Tùy chọn 1: Xem tất cả các tuần trong tháng -->
-                <div class="vcb-sheet-item tat-ca ${cheDoXemTatCaThang ? 'active' : ''}" onclick="chonTuSheet('tat-ca-thang')">
-                    <div class="vcb-sheet-item-trai">
-                        <span class="vcb-sheet-icon">🌟</span>
-                        <div>
-                            <div class="vcb-sheet-ten">Xem tất cả các tuần trong tháng</div>
-                            <div class="vcb-sheet-khoang">01/${String(thang).padStart(2,'0')} đến ${String(new Date(nam, thang, 0).getDate()).padStart(2,'0')}/${String(thang).padStart(2,'0')}/${nam}</div>
-                        </div>
-                    </div>
-                    <span class="vcb-sheet-dem">${soLuongCaThang} lịch hẹn</span>
-                </div>
-            `;
-
-            // Tùy chọn từng tuần
-            const homNayIso = formatIso(homNay);
-            cacTuan.forEach((tuan, idx) => {
-                const isActive = !cheDoXemTatCaThang && (khoangHienTai.startIso === tuan.mondayIso);
-                const isTuanNay = (homNayIso >= tuan.mondayIso && homNayIso <= tuan.sundayIso);
-                const soLuongTuan = dsNotif.filter(x => x.ngayIso >= tuan.mondayIso && x.ngayIso <= tuan.sundayIso).length;
-
-                html += `
-                    <div class="vcb-sheet-item ${isActive ? 'active' : ''}" onclick="chonTuSheet('tuan', '${tuan.mondayIso}', '${tuan.sundayIso}', '${tuan.chuoiHienThi}')">
-                        <div class="vcb-sheet-item-trai">
-                            <span class="vcb-sheet-icon">📅</span>
-                            <div>
-                                <div class="vcb-sheet-ten">
-                                    ${tuan.tenTuan}
-                                    ${isTuanNay ? '<span class="vcb-sheet-badge-nay">Tuần này</span>' : ''}
-                                </div>
-                                <div class="vcb-sheet-khoang">${tuan.chuoiHienThi}</div>
-                            </div>
-                        </div>
-                        <span class="vcb-sheet-dem">${soLuongTuan} lịch hẹn</span>
-                    </div>
-                `;
-            });
-
-            danhsachContainer.innerHTML = html;
-            document.getElementById('vcbSheetChonTuan').style.display = 'flex';
-        }
-
-        function dongSheetChonTuan() {
-            document.getElementById('vcbSheetChonTuan').style.display = 'none';
-        }
-
-        function chonTuSheet(loai, mondayIso, sundayIso, chuoiHienThi) {
-            if (loai === 'tat-ca-thang') {
-                cheDoXemTatCaThang = true;
-                customKhoangChon = null;
-                offsetThoiGian = 0;
-                
-                const btn = document.getElementById('vcbBtnXemTatCa');
-                const textEl = document.getElementById('vcbTextTatCa');
-                if (btn) btn.classList.add('active');
-                if (textEl) textEl.innerText = 'Đang xem tất cả tháng (Bấm để chọn lại)';
-            } else {
-                cheDoXemTatCaThang = false;
-                customKhoangChon = {
-                    startIso: mondayIso,
-                    endIso: sundayIso,
-                    chuoiHienThi: chuoiHienThi
-                };
-
-                const btn = document.getElementById('vcbBtnXemTatCa');
-                const textEl = document.getElementById('vcbTextTatCa');
-                if (btn) btn.classList.remove('active');
-                if (textEl) textEl.innerText = 'Xem tất cả các tuần trong tháng';
-            }
-
-            dongSheetChonTuan();
-            capNhatKhoangThoiGianUi();
-            renderDanhSachVcb();
-        }
-
         function capNhatKhoangThoiGianUi() {
             const khoang = layKhoangThoiGian(offsetThoiGian);
             const el = document.getElementById('vcbChuoiKhoangNgay');
@@ -1367,14 +2094,20 @@
         }
 
         function chuyenKhoangThoiGian(direction) {
-            customKhoangChon = null; // Khi bấm nút mũi tên thì chuyển theo tuần tự
+            customKhoangChon = null;
             offsetThoiGian += direction;
+            
+            const btn = document.getElementById('vcbBtnXemTatCa');
+            const textEl = document.getElementById('vcbTextTatCa');
+            if (btn) btn.classList.remove('active');
+            if (textEl) textEl.innerText = 'Xem tất cả các tuần trong tháng';
+
             capNhatKhoangThoiGianUi();
             renderDanhSachVcb();
         }
 
         function capNhatBadgeChuaDoc() {
-            const soChuaDoc = window.danhSachThongBaoLich.filter(x => !x.daDoc).length;
+            const soChuaDoc = (window.danhSachThongBaoLich || []).filter(x => !x.daDoc).length;
             const badgeEl = document.getElementById('vcbBadgeChuaDoc');
             
             if (badgeEl) {
@@ -1388,9 +2121,9 @@
             if (!container) return;
 
             const khoang = layKhoangThoiGian(offsetThoiGian);
-            let ds = window.danhSachThongBaoLich;
+            let ds = window.danhSachThongBaoLich || [];
 
-            // 1. Lọc theo khoảng thời gian đang chọn (tuần hoặc toàn bộ tháng)
+            // 1. Lọc theo khoảng thời gian đang chọn (ngày/tuần/tháng)
             ds = ds.filter(x => x.ngayIso >= khoang.startIso && x.ngayIso <= khoang.endIso);
 
             // 2. Lọc theo Từ khóa tìm kiếm nếu có
@@ -1404,9 +2137,11 @@
             container.innerHTML = '';
 
             if (ds.length === 0) {
-                const thongBaoRong = cheDoXemTatCaThang 
-                    ? "Không có thông báo lịch hẹn nào trong tháng này"
-                    : "Không có thông báo lịch hẹn trong tuần này";
+                const thongBaoRong = customKhoangChon 
+                    ? `Không có thông báo lịch hẹn trong ${customKhoangChon.chuoiHienThi}`
+                    : (cheDoXemTatCaThang 
+                        ? "Không có thông báo lịch hẹn nào trong tháng này"
+                        : "Không có thông báo lịch hẹn trong tuần này");
                 container.innerHTML = `<div class="vcb-trang-rong">${thongBaoRong}</div>`;
                 capNhatBadgeChuaDoc();
                 return;
@@ -1414,12 +2149,10 @@
 
             ds.forEach(item => {
                 const card = document.createElement('div');
-                // Chưa đọc: class 'chua-doc' (Sáng + Chữ MỚI) | Đã đọc: class 'da-doc' (Tối hơn tí + Tick xanh)
                 card.className = `vcb-the-thong-bao ${item.daDoc ? 'da-doc' : 'chua-doc'}`;
                 card.setAttribute('role', 'button');
                 card.setAttribute('tabindex', '0');
                 
-                // Khi nhấn vào xem -> Đánh dấu đã đọc và chuyển màu tối hơn
                 card.onclick = () => xuLyXemThongBao(item.id);
                 card.onkeydown = (e) => { if (e.key === 'Enter') xuLyXemThongBao(item.id); };
 
@@ -1452,19 +2185,16 @@
             capNhatBadgeChuaDoc();
         }
 
-        // Khi người dùng bấm vào xem thẻ thông báo
         function xuLyXemThongBao(id) {
             const item = window.danhSachThongBaoLich.find(x => x.id === id);
             if (item) {
-                // Đổi trạng thái thành ĐÃ ĐỌC (Tối hơn một tí, mất chữ MỚI)
                 item.daDoc = true;
                 renderDanhSachVcb();
             }
         }
 
-        // Đánh dấu tất cả đã đọc
         function danhDauTatCaDaDoc() {
-            window.danhSachThongBaoLich.forEach(item => item.daDoc = true);
+            (window.danhSachThongBaoLich || []).forEach(item => item.daDoc = true);
             renderDanhSachVcb();
         }
 
@@ -1493,8 +2223,9 @@
 
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                if (document.getElementById('vcbSheetChonTuan') && document.getElementById('vcbSheetChonTuan').style.display === 'flex') {
-                    dongSheetChonTuan();
+                const calModal = document.getElementById('vcbModalLichThang');
+                if (calModal && calModal.style.display === 'flex') {
+                    dongModalLichThang();
                 } else {
                     dongModalLichHen();
                 }
