@@ -27,6 +27,25 @@
             // va an nguyen man DANG NHAP ADMIN — localStorage dung chung ca trinh
             // duyet nen benh nhan/khach tren cung may cung dinh.
             var laTrangChiAdmin = function (p) { return /^\/Home\/GuiTinNhan/i.test(p); };
+
+            // Chi khoi phuc nhung duong CON SONG. lastVisitedUrl song lau hon ca
+            // mot dot doi route: 09/09/2026 bat duoc mot cai ket lai la '/pk/benh-vien-ung-buou'
+            // — route do da doi thanh '/DangKyOnline/{slug}' tu vai tuan truoc, nen
+            // moi lan mo app la bi nem thang vao 404 va KHONG TU THOAT RA DUOC:
+            // app chua bat 404 (Program.cs khong co UseStatusCodePages) nen trang
+            // loi do la trang cua TRINH DUYET, _Layout khong chay, khong ai xoa
+            // duoc cai key nay. Ket vinh vien cho toi khi mo DevTools go tay.
+            //
+            // Danh sach duoi day bam theo route THAT trong Controllers/ + Program.cs:
+            //   /benh-nhan[/...]  ·  /DangKyOnline/{slug}  ·  /Home/{action}
+            // (/DangNhap va /Admin khong bao gio duoc ghi — isIgnored chan o tren;
+            //  /anh/{*duongDan} co that nhung la ANH, khoi phuc toi do la vo nghia.)
+            // Sai sot theo huong CHAT chi lam mat tinh nang khoi phuc mot lan roi
+            // ve trang goc; sai theo huong RONG thi de lot dung con bug nay. Nen
+            // khi them route moi ma muon no khoi phuc duoc thi bo sung vao day.
+            var duongConSong = function (p) {
+                return /^\/(benh-nhan(\/|$)|DangKyOnline\/|Home(\/|$))/i.test(p);
+            };
             var dangLaAdmin = @(layoutLaAdmin ? "true" : "false");
 
             if (!isIgnored) {
@@ -43,6 +62,11 @@
                             // Chan ca gia tri CU con ket trong localStorage tu phien
                             // admin truoc do — xoa luon de khong lam phien lan sau.
                             if (laTrangChiAdmin(targetPath) && !dangLaAdmin) {
+                                localStorage.removeItem('lastVisitedUrl');
+                            } else if (!duongConSong(targetPath)) {
+                                // Duong da chet (route cu, doi ten, go bo) — XOA han
+                                // thay vi nhay vao hu khong. Khong xoa thi lan sau
+                                // van dinh dung cho nay.
                                 localStorage.removeItem('lastVisitedUrl');
                             } else if (!isTargetRoot) {
                                 window.location.replace(lastVisited);
