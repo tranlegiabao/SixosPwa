@@ -43,6 +43,20 @@ public class DoiTacApi
     /// </summary>
     public int? MaChiNhanh { get; set; }
 
+    /// <summary>
+    /// Khoa CONG dung de goi NGUOC vao HIS — doi dau voi
+    /// <c>ThongTinDoanhNghiep.SpwaKhoaNhanBam</c> ben HIS (ben do giu BAM, ben nay
+    /// giu THO). Chi co nghia voi <see cref="KieuApiDoiTac.His"/>.
+    ///
+    /// <para>
+    /// 🔴 Luu THO, khong bam: phai gui nguyen van trong header <c>X-API-Key</c> thi
+    /// HIS moi bam ra de so. Cung le voi <c>TaiKhoanDoiTac.MatKhau</c> (ADR 0005).
+    /// Dung nham voi <c>HT_KhoaApiCoSo.KhoaBam</c> — do la khoa chieu NGUOC LAI
+    /// (HIS goi LEN cong) va ben do thi chi giu bam.
+    /// </para>
+    /// </summary>
+    public string? KhoaGoiHIS { get; set; }
+
     public bool Active { get; set; } = true;
 
     public DateTime NgayTao { get; set; } = DateTime.Now;

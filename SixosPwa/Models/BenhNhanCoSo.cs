@@ -25,5 +25,20 @@ public class BenhNhanCoSo
     /// KHONG duoc xac thuc — OTP chi xac thuc so dien thoai.
     /// </summary>
     public bool DaMoTaiLieu { get; set; }
+    /// <summary>
+    /// *Moc xem lich* (ADR 0025) — lan gan nhat nguoi dung mo o *Lich kham cua toi*
+    /// cho ho so nay. Muc nao sinh SAU moc thi deo huy hieu MOI.
+    ///
+    /// <para>
+    /// 🔴 MOT COT, khong phai mot bang "da doc tung muc". Lich hen la mot TRANG
+    /// THAI xem di xem lai, khong phai su kien duoc day toi kieu thong bao ngan
+    /// hang — thu dang bao la "co hen moi ke tu lan ban xem". Hai he qua co y:
+    /// mo mot lan la sach huy hieu ca danh sach, va hen BI DOI NGAY thi TU BAT LAI
+    /// moi (vi <c>NgayKe</c>/<c>NgayCapNhat</c> nhich len).
+    /// </para>
+    /// <para>NULL = chua mo lan nao => moi muc deu la moi.</para>
+    /// </summary>
+    public DateTime? NgayXemLichCuoi { get; set; }
+
     public DateTime NgayTao { get; set; } = DateTime.Now;
 }

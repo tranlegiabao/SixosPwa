@@ -20,6 +20,7 @@ public class HomeController : Controller
     private readonly AdminStoredProcedureService _thuTuc;
     private readonly ILuongCongBenhNhan _luong;
     private readonly IHoSoBenhNhanService _hoSo;
+    private readonly Services.His.IHisDocService _his;
 
     public HomeController(
         ILogger<HomeController> logger,
@@ -27,7 +28,8 @@ public class HomeController : Controller
         IConfiguration config,
         AdminStoredProcedureService thuTuc,
         ILuongCongBenhNhan luong,
-        IHoSoBenhNhanService hoSo)
+        IHoSoBenhNhanService hoSo,
+        Services.His.IHisDocService his)
     {
         _logger = logger;
         _db = db;
@@ -35,6 +37,7 @@ public class HomeController : Controller
         _thuTuc = thuTuc;
         _luong = luong;
         _hoSo = hoSo;
+        _his = his;
     }
 
     /// <summary>
@@ -328,7 +331,46 @@ public class HomeController : Controller
         var cuaCoSo = await _luong.LayCuaAsync(maCoSo);
         ViewBag.DungManDoiTac = cuaCoSo?.DungManDoiTac == true;
 
+        // ── CAI VAN cua o *Lich kham cua toi* (ADR 0025) ───────────────────
+        // 🔴 Co so CHUA NOI thi o BIEN MAT khoi trang, khong hien roi bao loi:
+        // o co so chua noi thi 100% so lan bam la bam vao thu khong dung duoc.
+        // Da co tien le ngay trong glossary — o *Dang ky kham theo goi* AN toi
+        // giai doan 3. Phep kiem nay chi doc CSDL cong, KHONG goi sang HIS:
+        // hoi HIS la viec cua luc nguoi dung BAM mo o.
+        ViewBag.HienOLichKham = coSo != null && await _his.CoNoiHisAsync(coSo.Id);
+
+        // ── Dai nhac hoan thien ho so (ADR 0024, chot 12) ──────────────────
+        // 🔴 NHAC MEM, KHONG CHAN. Chan cung theo "thieu truong" se khoa luon
+        // nhung ho so DA NOI MA ma con khuyet du lieu — dung trang thai cua tai
+        // khoan nghiem thu 0363982926 (co MaBN 100992, thieu ngay sinh): mot man
+        // dang chay va dang phuc vu tai lieu that bong thanh man chan.
+        // Cho moc neu sau nay doi y: Services/Partner/LuongCongBenhNhan.cs — cong
+        // ha canh duy nhat sau xac thuc.
+        ViewBag.HoSoThieuTruong = benhNhan != null
+            && (LaTenTam(benhNhan.TenBN, dinhDanh)
+                || benhNhan.NgaySinh is null
+                || string.IsNullOrWhiteSpace(benhNhan.GioiTinh));
+
+        ViewBag.IdHoSoDangXem = benhNhan?.Id;
+
         return View();
+    }
+
+    /// <summary>
+    /// Ten ho so mang SO DIEN THOAI chu khong phai ten nguoi — 14/19 tai khoan do
+    /// tren cong ngay 2026-09-09. Chung tu de ra luc dang ky bang OTP, khong bao
+    /// gio di qua man *Them ho so*.
+    /// </summary>
+    private static bool LaTenTam(string? ten, string dinhDanh)
+    {
+        if (string.IsNullOrWhiteSpace(ten)) return true;
+
+        var t = ten.Trim();
+
+        if (string.Equals(t, dinhDanh?.Trim(), StringComparison.OrdinalIgnoreCase)) return true;
+
+        // Toan chu so (co the co dau + o dau) => la so dien thoai, khong phai ten.
+        return t.TrimStart('+').All(char.IsDigit);
     }
 
     /// <summary>

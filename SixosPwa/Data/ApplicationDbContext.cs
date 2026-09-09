@@ -63,6 +63,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<BenhNhan>().Property(e => e.IdTaiKhoan).HasColumnName("IDTaiKhoan");
         modelBuilder.Entity<BenhNhan>().Property(e => e.NgaySinh);
         modelBuilder.Entity<BenhNhan>().Property(e => e.HoTenKhongDau).HasMaxLength(100);
+        modelBuilder.Entity<BenhNhan>().Property(e => e.GioiTinh).HasMaxLength(10);
         modelBuilder.Entity<BenhNhan>().HasIndex(e => e.CCCD).IsUnique();
 
         // -------------------------------------------------------- DM_BenhNhanCoSo
@@ -74,6 +75,7 @@ public class ApplicationDbContext : DbContext
         // KHONG IsRequired nua: ho so tu khai chua co ma co so cap (chot 12).
         modelBuilder.Entity<BenhNhanCoSo>().Property(e => e.MaBN).HasMaxLength(20);
         modelBuilder.Entity<BenhNhanCoSo>().Property(e => e.DaMoTaiLieu).IsRequired();
+        modelBuilder.Entity<BenhNhanCoSo>().Property(e => e.NgayXemLichCuoi);
         modelBuilder.Entity<BenhNhanCoSo>().HasIndex(e => new { e.IdCoSo, e.MaBN }).IsUnique();
 
         // -------------------------------------------------------------- HT_ThietBi
@@ -207,6 +209,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<DoiTacApi>().Property(e => e.KieuApi).HasMaxLength(20).IsRequired();
         modelBuilder.Entity<DoiTacApi>().Property(e => e.BaseUrl).HasMaxLength(255);
         modelBuilder.Entity<DoiTacApi>().Property(e => e.TrangChu).HasMaxLength(255);
+        modelBuilder.Entity<DoiTacApi>().Property(e => e.KhoaGoiHIS).HasMaxLength(500);
         modelBuilder.Entity<DoiTacApi>().HasIndex(e => e.IdCoSo).IsUnique();
 
         // ------------------------------------------------------ HT_TaiKhoanDoiTac

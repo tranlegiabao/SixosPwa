@@ -12,9 +12,9 @@
         .hs-form { padding:16px; }
         .hs-o { margin-bottom:14px; }
         .hs-o label { display:block; font-size:13px; color:#374151; margin-bottom:6px; font-weight:600; }
-        .hs-o input { width:100%; box-sizing:border-box; padding:11px 12px; font-size:15px;
-                      border:1px solid #d1d5db; border-radius:10px; }
-        .hs-o input:focus { outline:none; border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.12); }
+        .hs-o input, .hs-o select { width:100%; box-sizing:border-box; padding:11px 12px; font-size:15px;
+                      border:1px solid #d1d5db; border-radius:10px; background:#fff; }
+        .hs-o input:focus, .hs-o select:focus { outline:none; border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.12); }
         .hs-goi-y { font-size:12px; color:#6b7280; margin-top:5px; line-height:1.45; }
         .hs-gui { width:100%; padding:13px; border:none; border-radius:10px;
                   background:#2563eb; color:#fff; font-size:15px; font-weight:600; cursor:pointer; }
@@ -63,11 +63,23 @@
                     </div>
                 </div>
 
+                @* Bon o BAT BUOC cua *Luat gop ho so* (ADR 0018 ban bon o): thieu mot
+                   o la khong noi duoc ho so, va nguoi dung khong biet vi sao. *@
                 <div class="hs-o">
-                    <label for="ngaySinh">Ngày sinh</label>
-                    <input id="ngaySinh" name="ngaySinh" type="date" />
+                    <label for="ngaySinh">Ngày sinh *</label>
+                    <input id="ngaySinh" name="ngaySinh" type="date" required />
+                </div>
+
+                <div class="hs-o">
+                    <label for="gioiTinh">Giới tính *</label>
+                    <select id="gioiTinh" name="gioiTinh" required>
+                        <option value="">— Chọn —</option>
+                        <option value="1">Nam</option>
+                        <option value="2">Nữ</option>
+                        <option value="3">Chưa xác định</option>
+                    </select>
                     <div class="hs-goi-y">
-                        Dùng để nối hồ sơ với bệnh án tại cơ sở — thiếu ngày sinh thì phải nối bằng tay.
+                        Họ tên, ngày sinh và giới tính dùng để tìm bệnh án của người này tại cơ sở.
                     </div>
                 </div>
 

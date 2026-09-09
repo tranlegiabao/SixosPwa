@@ -16,9 +16,6 @@
         .hs-the { display:flex; align-items:center; gap:12px; padding:14px 16px;
                   border:1px solid #e5e7eb; border-radius:12px; background:#fff; margin-bottom:10px; }
         .hs-the.dang-chon { border-color:#2563eb; box-shadow:0 0 0 2px rgba(37,99,235,.12); }
-        .hs-avatar { width:44px; height:44px; border-radius:50%; flex:0 0 44px;
-                     display:flex; align-items:center; justify-content:center;
-                     background:#eff6ff; color:#2563eb; font-weight:700; font-size:18px; }
         .hs-noi-dung { flex:1 1 auto; min-width:0; }
         .hs-ten { font-weight:600; color:#111827; }
         .hs-phu { font-size:13px; color:#6b7280; margin-top:2px;
@@ -32,6 +29,10 @@
         .hs-nut button { border:none; border-radius:8px; padding:8px 12px;
                          font-size:13px; cursor:pointer; }
         .hs-nut .hs-chon { background:#2563eb; color:#fff; }
+        /* Sua = tim nhat, tach han mau voi Chon (xanh dac) de hai nut canh nhau
+           khong bi doc nham. */
+        .hs-nut .hs-sua { background:#eef2ff; color:#4338ca; text-decoration:none;
+                          display:inline-block; padding:8px 12px; border-radius:8px; font-size:13px; }
         .hs-nut .hs-xoa { background:#fef2f2; color:#b91c1c; }
         .hs-bao { padding:12px 14px; border-radius:10px; margin-bottom:14px; font-size:14px; line-height:1.5; }
         .hs-bao-loi { background:#fef2f2; color:#991b1b; border:1px solid #fecaca; }
@@ -86,11 +87,9 @@
             {
                 @foreach (var hs in Model)
                 {
+                    @* Bo o avatar (Dot 4): lay cho cho hai nut canh nhau. Chu cai dau
+                       khong noi len duoc gi ma an mat mot phan ba be ngang cua the. *@
                     <div class="hs-the @(hs.DangChon ? "dang-chon" : "")">
-                        <div class="hs-avatar">
-                            @(string.IsNullOrWhiteSpace(hs.TenBN) ? "?" : hs.TenBN.Trim().Substring(0, 1).ToUpper())
-                        </div>
-
                         <div class="hs-noi-dung">
                             <div class="hs-ten">
                                 @hs.TenBN
@@ -113,14 +112,22 @@
                                 {
                                     <text> · @hs.NgaySinh.Value.ToString("dd/MM/yyyy")</text>
                                 }
-                                @if (!string.IsNullOrWhiteSpace(hs.Sdt))
+                                @switch (hs.GioiTinh)
                                 {
-                                    <text> · @hs.Sdt</text>
+                                    case "1": <text> · Nam</text> break;
+                                    case "2": <text> · Nữ</text> break;
+                                }
+                                @* Chi SO ma. Danh sach ma va nut *Go noi* nam trong man
+                                   *Sua ho so* — man nay de CHON NGUOI. *@
+                                @if (hs.SoMaDaNoi > 0)
+                                {
+                                    <text> · @hs.SoMaDaNoi mã</text>
                                 }
                             </div>
                         </div>
 
                         <div class="hs-nut">
+                            @* The dang xem khong co gi de "chon" nua => chi con *Sua*. *@
                             @if (!hs.DangChon)
                             {
                                 <form method="post" action="/benh-nhan/ho-so/chon">
@@ -129,8 +136,11 @@
                                     <button type="submit" class="hs-chon">Chọn</button>
                                 </form>
                             }
+                            <a class="hs-sua" href="/benh-nhan/ho-so/sua?id=@hs.IdBenhNhan">Sửa</a>
                             @* Ho so da noi benh an hoac da co du lieu kham thi KHONG cho xoa —
-                               xoa la mat du lieu y te that. Thu tuc cung chan lai o tang CSDL. *@
+                               xoa la mat du lieu y te that. Thu tuc cung chan lai o tang CSDL.
+                               🔴 Nut *Go noi* KHONG o day: man nay de chon nguoi, tron mot nut
+                               pha huy vao danh sach chon la moi nguoi dung bam nham. *@
                             @if (hs.XoaDuoc)
                             {
                                 <form method="post" action="/benh-nhan/ho-so/xoa"

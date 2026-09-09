@@ -1,6 +1,6 @@
 # 0018 — Gộp hồ sơ đòi cả CCCD + tên + ngày sinh, không gộp bằng CCCD trần
 
-- **Trạng thái:** Đã chấp nhận
+- **Trạng thái:** Đã chấp nhận · **sửa đổi 2026-09-09** (ba ô → bốn ô, xem cuối tài liệu)
 - **Ngày:** 2026-09-08
 - **Bối cảnh liên quan:** [0011](0011-co-so-thuoc-doi-tac-mot-nhieu.md) — bài học "lọc chết âm thầm là
   loại hỏng tệ nhất". [0017](0017-hai-chieu-theo-loai-du-lieu.md) — dữ liệu HIS đẩy lên phải khớp vào
@@ -80,3 +80,43 @@ HIS đụng công nợ, BHYT, bảng kê — rủi ro cao hơn hẳn việc ch�
 **Không tự gộp gì, bệnh nhân tự nhận hết.** Không bao giờ gộp nhầm, quy trình đồng nhất. Bỏ vì bắt
 100% người dùng làm thêm một bước ngay lần đầu — kể cả ~83% chỉ có đúng một hồ sơ — là đánh đổi sai
 chỗ, và rớt người dùng ngay tại cửa.
+
+---
+
+## Sửa đổi 2026-09-09 — luật gộp nâng từ BA ô lên BỐN ô
+
+Đợt 4 đọc luồng *bệnh nhân cũ / bệnh nhân mới* của chính màn Tiếp nhận HisSoft
+(`NhanBenhServices.kiemTraTrungKhopBenhNhan`) và phát hiện HIS khớp bằng một bộ ô **khác hẳn**:
+họ tên (có dấu) + ngày sinh + **năm sinh** + **giới tính**, và **không dùng CCCD**.
+
+Đo thử luật đó trên `PKDK_ThienNam` (74.950 người):
+
+| Phép đo | Số |
+|---|---|
+| Nhóm trùng tên + ngày sinh + giới tính | **12.258** nhóm, ôm **27.422 người (36,6%)** |
+| 🔴 Trong đó, nhóm có **CCCD hợp lệ KHÁC NHAU** | **348** |
+
+348 nhóm ấy **chắc chắn là hai con người khác nhau**. Nó soi gương với con số 345 nhóm cùng CCCD khác
+tên ở phần trên: bỏ ô nào ra khỏi phép khớp cũng có người trả giá.
+
+**Quyết định sửa:** luật gộp từ nay đòi khớp **cả bốn** — CCCD hợp lệ · Họ tên không dấu · Ngày sinh ·
+**Giới tính**. Kèm hai điều chỉnh:
+
+- **Hạ cấp có điều kiện cho ngày sinh.** `5.611/74.950` hồ sơ (7,5%) mang `NgaySinh = 01/01` — ngày
+  giả HIS lưu khi chỉ biết năm sinh. Bản HIS mang `01/01` thì ô ngày sinh **chỉ so năm**. Xử ngầm ở
+  máy chủ; **không** bày lên màn, vì dạy bệnh nhân gõ một ngày giả là làm hỏng chính ô dùng để nhận
+  ra họ.
+- **Bò theo chuỗi `DM_BenhNhan.IdBncu`** sau khi khớp. Đây là cột HIS tự đặt khi lễ tân lưu một người
+  *"đã từng khám nhưng khác thông tin hành chánh"*: Thiên Nam có **8.919/74.946** dòng mang nó, trong
+  đó **596 cặp** lệch ít nhất một ô danh tính. Không bò theo chuỗi thì tìm ra bản mới mà **giấu mất
+  tài liệu cũ** của đúng người đó.
+
+**Vì sao sửa luật gốc thay vì thêm một lớp lọc riêng bên cổng:** một luật khớp duy nhất, áp ở mọi nơi,
+là thứ người sau còn đọc hiểu được; hai tầng luật song song thì chỗ nào dùng luật nào sẽ thành câu hỏi
+mỗi lần sửa. Phạm vi đổi hoá ra hẹp hơn lo ngại — `SpwaTraCuuService.TraCuuTheoDanhTinh` chỉ có **đúng
+một** nơi gọi (`SPWA_TraCuuHoSo`), và **nhánh đẩy tài liệu đã nghiệm thu đầu–cuối KHÔNG dùng luật gộp**
+(nó đi bằng `MaBN`). Cửa đọc phải nhận thêm tham số `gioiTinh` và trả thêm trường cùng tên; đây là
+thời điểm duy nhất đổi được rẻ, vì chưa có bên thứ ba nào gọi vào.
+
+**Không sửa:** hai bảng số đo phía trên vẫn đúng nguyên văn, và vế thứ nhất của quyết định (một người
+có nhiều hồ sơ tại cùng một cơ sở) không đổi.

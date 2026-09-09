@@ -45,7 +45,8 @@ DECLARE @TenCoSo  nvarchar(500) = N'PKĐK Thiên Nam';
 DECLARE @Slug     varchar(100)  = 'pkdk-thien-nam';   -- doan chu tren URL /DangKyOnline/{slug}
 DECLARE @MaNhom   varchar(50)   = 'pkdk';    -- benhvien | pkdk | nhakhoa | phongmach | nhathuoc
 DECLARE @BaseUrl  nvarchar(255) = @CHUA_SUA;  -- goc dia chi HIS cua co so
-DECLARE @KhoaTho  varchar(200)  = @CHUA_SUA;  -- khoa HIS dung de goi LEN cong
+DECLARE @KhoaTho  varchar(200)  = @CHUA_SUA;  -- khoa A: HIS dung de goi LEN cong
+DECLARE @KhoaGoiHIS nvarchar(500) = @CHUA_SUA;  -- khoa B: CONG dung de goi VAO HIS
 DECLARE @GhiDeKhoa bit          = 0;  -- 1 = cap lai khoa moi cho co so da co khoa
 -- ─────────────────────────────────────────────────────────────────────────────
 
@@ -55,7 +56,7 @@ SELECT @IdCoSo = Id FROM dbo.DM_CSKCB WHERE MaCoSo = @MaCoSo;
 /* Chot chan co y: file nay KHONG chay duoc nguyen ban. Bao ro phai lam gi chu
    khong chi bao "sai o dau" -- nguoi doc thong bao loi thuong khong doc header.
    Dat TRUOC moi thao tac ghi, de chay nham khong de lai gi. */
-IF @KhoaTho = @CHUA_SUA OR @BaseUrl = @CHUA_SUA
+IF @KhoaTho = @CHUA_SUA OR @BaseUrl = @CHUA_SUA OR @KhoaGoiHIS = @CHUA_SUA
 BEGIN
     PRINT N'';
     PRINT N'====================================================================';
@@ -64,12 +65,15 @@ BEGIN
     PRINT N'';
     PRINT N'    @MaCoSo  = ma co so, PHAI BANG ThongTinDoanhNghiep.MaCSKCB ben HIS';
     PRINT N'    @BaseUrl = goc dia chi HIS (vd https://xxx.trycloudflare.com)';
-    PRINT N'    @KhoaTho = mot khoa THAT do ban tu dat (chuoi ngau nhien dai)';
+    PRINT N'    @KhoaTho = khoa A -- mot khoa THAT do ban tu dat (chuoi ngau nhien dai),';
+    PRINT N'               chinh la @KhoaGuiDi ben HIS (script 06_CAU_HINH_SPWA.sql)';
+    PRINT N'    @KhoaGoiHIS = khoa B -- ban THO cua @KhoaNhanVe ben HIS. Hai khoa KHAC NHAU:';
+    PRINT N'               A cho HIS goi LEN cong, B cho cong goi VAO HIS.';
     PRINT N'';
     PRINT N'  Roi chay lai. File nay CHAY LAI DUOC, chay nhieu lan khong sao.';
     PRINT N'====================================================================';
 
-    RAISERROR (N'Chưa sửa @KhoaTho / @BaseUrl — xem hướng dẫn vừa in ở tab Messages.', 16, 1);
+    RAISERROR (N'Chưa sửa @KhoaTho / @KhoaGoiHIS / @BaseUrl — xem hướng dẫn vừa in ở tab Messages.', 16, 1);
     RETURN;
 END
 
@@ -123,15 +127,27 @@ ALTER TABLE dbo.DM_DoiTacApi WITH CHECK
     CHECK (KieuApi IN ('NONE', 'UB', 'HIS'));
 
 /* --- 1. DM_DoiTacApi: bat nhanh man chung --------------------------------- */
+/* Cot KhoaGoiHIS sinh o script 13. Tu bao dam co mat de file nay chay duoc du
+   thu tu nao -- ca hai deu idempotent. */
+IF NOT EXISTS (SELECT 1 FROM sys.columns
+               WHERE object_id = OBJECT_ID(N'dbo.DM_DoiTacApi') AND name = 'KhoaGoiHIS')
+    EXEC('ALTER TABLE dbo.DM_DoiTacApi ADD KhoaGoiHIS nvarchar(500) NULL');
+
+/* EXEC de cau lenh khong bi bien dich truoc khi cot kip sinh o dong tren --
+   cung mot batch thi SQL Server phan giai ten cot ngay luc bien dich. */
 IF EXISTS (SELECT 1 FROM dbo.DM_DoiTacApi WHERE IdCoSo = @IdCoSo)
-    UPDATE dbo.DM_DoiTacApi
-       SET KieuApi = 'HIS',
-           BaseUrl = @BaseUrl,
-           Active  = 1
-     WHERE IdCoSo = @IdCoSo;
+    EXEC sp_executesql
+        N'UPDATE dbo.DM_DoiTacApi
+             SET KieuApi = ''HIS'', BaseUrl = @BaseUrl, KhoaGoiHIS = @KhoaGoiHIS, Active = 1
+           WHERE IdCoSo = @IdCoSo;',
+        N'@BaseUrl nvarchar(255), @KhoaGoiHIS nvarchar(500), @IdCoSo bigint',
+        @BaseUrl, @KhoaGoiHIS, @IdCoSo;
 ELSE
-    INSERT INTO dbo.DM_DoiTacApi (IdCoSo, KieuApi, BaseUrl, TrangChu, Active, NgayTao)
-    VALUES (@IdCoSo, 'HIS', @BaseUrl, NULL, 1, GETDATE());
+    EXEC sp_executesql
+        N'INSERT INTO dbo.DM_DoiTacApi (IdCoSo, KieuApi, BaseUrl, TrangChu, KhoaGoiHIS, Active, NgayTao)
+          VALUES (@IdCoSo, ''HIS'', @BaseUrl, NULL, @KhoaGoiHIS, 1, GETDATE());',
+        N'@BaseUrl nvarchar(255), @KhoaGoiHIS nvarchar(500), @IdCoSo bigint',
+        @BaseUrl, @KhoaGoiHIS, @IdCoSo;
 
 /* --- 2. HT_KhoaApiCoSo: khoa cho HIS goi len cong ------------------------- */
 /* Bam SHA-256 tren BYTE UTF-8 -- phai giong het cach ben HIS bam, lech mot chi
