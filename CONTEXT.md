@@ -289,6 +289,15 @@ Cơ sở giữ chuỗi thô trong cấu hình HIS; cổng chỉ giữ **bản b�
 Cờ `Active` của nó là công tắc **duy nhất** của đường API, tách hẳn khỏi *Cờ `Active`* của cơ sở.
 _Tránh_: API key (trần), token, mật khẩu đối tác
 
+**Khoá gọi HIS**:
+Cột `DM_DoiTacApi.KhoaGoiHIS` — chuỗi bí mật cổng dùng để gọi **ngược vào** HIS của cơ sở, đối đầu với
+`ThongTinDoanhNghiep.SpwaKhoaNhanBam` bên HIS (bên đó giữ **băm**, bên này giữ **thô** vì phải gửi
+nguyên văn trong header `X-API-Key`). 🔴 Đây là chiều **ngược lại** của *Khoá cơ sở* — hai khoá khác
+nhau, đừng dùng lẫn: A cho HIS gọi lên cổng, B cho cổng gọi vào HIS. Trước Đợt 4 khoá B không có chỗ
+lưu nào (màn *Kiểm tra HIS* nhận qua query string vì nó chỉ gọi thử một lần), nên đường đọc thật chạy
+tự động sẽ luôn nhận `401`.
+_Tránh_: khoá API (trần), token, khoá cơ sở
+
 **Khu API nhận**:
 Các đường dưới `api/v1` — chỗ **MÁY** gọi vào: HIS của cơ sở đẩy tài liệu, đẩy đợt khám, hỏi ai đã nối
 hồ sơ. Vào bằng *Khoá cơ sở*, không bao giờ bằng cookie. Đối lại là các đường của **NGƯỜI** bệnh nhân
@@ -353,6 +362,15 @@ khám nhưng khác thông tin hành chánh"*. Thiên Nam có **8.919/74.946** d�
 lệch ít nhất một ô danh tính. *Nối hồ sơ* phải **bò theo chuỗi này** sau khi khớp, nếu không thì tìm ra
 bản mới mà **giấu mất tài liệu cũ** của đúng người đó.
 _Tránh_: bệnh nhân trùng, bản ghi cũ
+
+**Sửa hồ sơ**:
+Màn ở `/benh-nhan/ho-so/sua` — nơi duy nhất sửa được dữ liệu của một *Con người*, và cũng là nơi duy
+nhất có nút *Gỡ nối*. Tách hẳn khỏi *Hồ sơ của tôi*: màn đó để **chọn người**, màn này để **sửa dữ
+liệu**. 🔴 Nó tồn tại chủ yếu vì nhóm hồ sơ **chính chủ** — 14/19 tài khoản đang mang tên là số điện
+thoại, hồ sơ của họ tự đẻ lúc đăng ký bằng OTP nên không bao giờ đi qua màn *Thêm hồ sơ*; mọi phương án
+chỉ sửa màn *Thêm* đều bỏ rơi đúng nhóm đông nhất. Hồ sơ **đã nối** thì bốn ô danh tính khoá cứng, chỉ
+còn số điện thoại sửa được.
+_Tránh_: sửa thông tin, cập nhật hồ sơ, chỉnh sửa
 
 **Hồ sơ đang chọn**:
 Claim trong phiên nói người dùng đang xem hồ sơ nào. Bám khuôn `DangKyOnlineUB`
