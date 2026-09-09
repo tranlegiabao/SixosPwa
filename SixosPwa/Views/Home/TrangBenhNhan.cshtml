@@ -1207,26 +1207,22 @@
                             </div>
                         </div>
 
-                        <div class="vcb-cal-top-phai">
-                            <button type="button" class="vcb-cal-btn-homnay" onclick="veHomNayLich()" title="Về ngày hôm nay">
-                                <span id="vcbCalNgayHienTaiBadge">8</span>
-                            </button>
-                        </div>
+                        <div class="vcb-cal-top-phai" style="width: 38px;"></div>
                     </div>
 
                     <!-- Chú thích màu sắc (Legend) -->
                     <div class="vcb-cal-legend">
                         <div class="vcb-cal-legend-item">
                             <span class="vcb-cal-dot dot-can-ke"></span>
-                            <span>🔴 Cận kề / Hôm nay</span>
+                            <span>Cận kề / Hôm nay</span>
                         </div>
                         <div class="vcb-cal-legend-item">
                             <span class="vcb-cal-dot dot-co-hen"></span>
-                            <span>🟢 Ngày hẹn</span>
+                            <span>Ngày hẹn</span>
                         </div>
                         <div class="vcb-cal-legend-item">
                             <span class="vcb-cal-dot dot-da-qua"></span>
-                            <span>⚪ Đã qua</span>
+                            <span>Đã qua</span>
                         </div>
                     </div>
 
@@ -1243,11 +1239,6 @@
 
                     <!-- Lưới các ô ngày trong tháng -->
                     <div class="vcb-cal-ngay-grid" id="vcbCalNgayGrid">
-                        <!-- Rendered by JS -->
-                    </div>
-
-                    <!-- Thanh thông tin ngày chọn / Chi tiết lịch hẹn bên dưới -->
-                    <div class="vcb-cal-bottom-bar" id="vcbCalBottomBar">
                         <!-- Rendered by JS -->
                     </div>
                 </div>
@@ -1970,15 +1961,16 @@
         .vcb-cal-legend-item {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
             font-weight: 600;
         }
 
         .vcb-cal-dot {
-            width: 8px;
-            height: 8px;
+            width: 9px;
+            height: 9px;
             border-radius: 50%;
             display: inline-block;
+            flex-shrink: 0;
         }
         .vcb-cal-dot.dot-can-ke { background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.4); }
         .vcb-cal-dot.dot-co-hen { background: #10b981; box-shadow: 0 0 6px rgba(16, 185, 129, 0.4); }
@@ -2006,7 +1998,7 @@
             grid-template-columns: repeat(7, 1fr);
             grid-auto-rows: 1fr;
             gap: 4px;
-            padding: 4px 6px 8px;
+            padding: 4px 6px 14px;
             box-sizing: border-box;
             overflow-y: auto;
             background: #f8fafc;
@@ -2455,50 +2447,23 @@
                 curDate.setDate(curDate.getDate() + 1);
             }
 
-            capNhatBottomBarLich();
+            // Không cần thanh nút bấm dưới cùng
         }
 
         function capNhatBottomBarLich() {
             const bar = document.getElementById('vcbCalBottomBar');
             if (!bar) return;
-
-            const dsLich = window.danhSachThongBaoLich || [];
-            const lichHen = dsLich.find(x => x.ngayIso === calSelectedNgayIso);
-            const todayIso = formatIso(new Date());
-            const ngayCanKeIso = timNgayCanKeIso();
-
-            const dParts = calSelectedNgayIso.split('-');
-            const ngayVn = `${dParts[2]}/${dParts[1]}/${dParts[0]}`;
-
-            if (calSelectedNgayIso === ngayCanKeIso && lichHen) {
-                bar.innerHTML = `
-                    <button type="button" class="vcb-cal-btn-action can-ke" onclick="xemTinTheoNgay('${calSelectedNgayIso}')">
-                        <span>🔴 Lịch cận kề ${ngayVn}: ${lichHen.chuyenKhoa} (${lichHen.thoiGianHienThi.split('•')[1] || ''}) ➔</span>
-                    </button>
-                `;
-            } else if (lichHen && calSelectedNgayIso >= todayIso) {
-                bar.innerHTML = `
-                    <button type="button" class="vcb-cal-btn-action co-hen" onclick="xemTinTheoNgay('${calSelectedNgayIso}')">
-                        <span>🟢 Lịch hẹn ${ngayVn}: ${lichHen.chuyenKhoa} ➔</span>
-                    </button>
-                `;
-            } else if (lichHen && calSelectedNgayIso < todayIso) {
-                bar.innerHTML = `
-                    <button type="button" class="vcb-cal-btn-action da-qua" onclick="xemTinTheoNgay('${calSelectedNgayIso}')">
-                        <span>⚪ Đã qua (${ngayVn}): ${lichHen.chuyenKhoa} ➔</span>
-                    </button>
-                `;
-            } else {
-                bar.innerHTML = `
-                    <button type="button" class="vcb-cal-btn-action khong-hen" onclick="dongModalLichThang()">
-                        <span>Thêm / Xem lịch vào ngày ${dParts[2]} Th${dParts[1]} +</span>
-                    </button>
-                `;
-            }
+            bar.innerHTML = '';
         }
 
         function chonNgayLich(ngayIso) {
             calSelectedNgayIso = ngayIso;
+            const dsLich = window.danhSachThongBaoLich || [];
+            const lichHen = dsLich.find(x => x.ngayIso === ngayIso);
+            if (lichHen) {
+                xemTinTheoNgay(ngayIso);
+                return;
+            }
             renderLichThangUi();
         }
 
