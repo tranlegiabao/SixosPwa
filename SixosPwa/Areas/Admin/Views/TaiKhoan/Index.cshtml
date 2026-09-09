@@ -692,7 +692,7 @@
                                                             </td>
                                                             <!-- MÃ BN / CƠ SỞ -->
                                                             <td>
-                                                                <span class="badge bg-light text-secondary border">@maBnStr</span>
+                                                                <span class="val-mabn badge bg-light text-secondary border">@maBnStr</span>
                                                             </td>
                                                             <!-- THAO TÁC: SỬA - LƯU - XOÁ -->
                                                             <td class="text-end">
@@ -748,10 +748,10 @@
 
             <!-- 1. Mã bệnh nhân tại cơ sở + Nút Gỡ nối bên cạnh -->
             <div class="modal-hs-o">
-                <label>Mã bệnh nhân tại cơ sở</label>
+                <label for="modalSuaMaBN">Mã bệnh nhân tại cơ sở</label>
                 <div style="display: flex; gap: 10px; align-items: stretch;">
-                    <input id="modalSuaMaBN" disabled value="" placeholder="Chưa có mã tại cơ sở" style="flex: 1 1 auto; min-width: 0; background: #f8fafc;" />
-                    <button type="button" id="modalSuaBtnGoNoi" class="btn btn-outline-danger font-weight-bold" style="flex: 0 0 auto; width: 105px; height: 44px; border-radius: 10px; font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; justify-content: center;" onclick="goNoiModal()">
+                    <input id="modalSuaMaBN" type="text" maxlength="30" placeholder="Nhập mã bệnh nhân tại cơ sở..." style="flex: 1 1 auto; min-width: 0;" />
+                    <button type="button" id="modalSuaBtnGoNoi" class="btn btn-outline-danger font-weight-bold" style="flex: 0 0 auto; width: 105px; height: 44px; border-radius: 10px; font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; justify-content: center;" onclick="goNoiModal()" title="Xóa trắng mã cơ sở">
                         Gỡ nối
                     </button>
                 </div>
@@ -892,16 +892,13 @@
         document.getElementById('modalSuaTenSubtitle').innerText = tenBN;
 
         const inpMaBN = document.getElementById('modalSuaMaBN');
-        const btnGoNoi = document.getElementById('modalSuaBtnGoNoi');
         const daNoiNote = document.getElementById('modalSuaDaNoiNote');
-        const maGoiY = document.getElementById('modalSuaMaGoiY');
 
-        if (maBN) {
-            inpMaBN.value = `${maBN} ${tenCoSo ? `(${tenCoSo})` : ''}`;
-            if (daNoiNote) daNoiNote.style.display = 'block';
-        } else {
-            inpMaBN.value = '';
-            if (daNoiNote) daNoiNote.style.display = 'none';
+        inpMaBN.value = maBN || '';
+        if (maBN && daNoiNote) {
+            daNoiNote.style.display = 'block';
+        } else if (daNoiNote) {
+            daNoiNote.style.display = 'none';
         }
 
         document.getElementById('modalSuaCCCD').value = cccd;
@@ -948,6 +945,7 @@
         const sdt = document.getElementById('modalSuaSDT')?.value?.trim();
         const ngaySinhRaw = document.getElementById('modalSuaNgaySinh')?.value?.trim();
         const gioiTinh = document.getElementById('modalSuaGioiTinh')?.value;
+        const maBN = document.getElementById('modalSuaMaBN')?.value?.trim();
 
         if (!tenBN) {
             if (typeof showToast === 'function') showToast('Vui lòng nhập họ và tên bệnh nhân.', 'error');
@@ -982,7 +980,8 @@
                     cccd: cccd,
                     sdt: sdt,
                     ngaySinh: ngaySinhIso,
-                    gioiTinh: gioiTinh
+                    gioiTinh: gioiTinh,
+                    maBN: maBN || null
                 })
             });
 
@@ -996,12 +995,18 @@
                     tr.setAttribute('data-sdt', d.sdt);
                     tr.setAttribute('data-ngaysinh', d.ngaySinh ? moment(d.ngaySinh).format('YYYY-MM-DD') : '');
                     tr.setAttribute('data-gioitinh', d.gioiTinh);
+                    tr.setAttribute('data-mabn', d.maBN || '');
+                    tr.setAttribute('data-tencoso', d.tenCoSo || '');
 
                     tr.querySelector('.val-ten').innerText = d.tenBN;
                     tr.querySelector('.val-cccd').innerText = d.cccd || '—';
                     tr.querySelector('.val-sdt').innerText = d.sdt || '—';
                     tr.querySelector('.val-ngaysinh').innerText = d.ngaySinhVn || (d.ngaySinh ? moment(d.ngaySinh).format('DD/MM/YYYY') : '—');
                     tr.querySelector('.val-gioitinh').innerText = d.gioiTinhVn || 'Khác';
+                    const badge = tr.querySelector('.val-mabn');
+                    if (badge) {
+                        badge.innerText = d.maBN ? d.maBN : 'Chưa nối';
+                    }
                 }
 
                 document.getElementById('modalSuaHoSoBackdrop').style.display = 'none';
@@ -1023,21 +1028,14 @@
     function goNoiModal() {
         const inpMa = document.getElementById('modalSuaMaBN');
         if (!inpMa.value) {
-            if (typeof showToast === 'function') showToast('Hồ sơ này chưa có mã cơ sở để gỡ nối.', 'info');
-            else alert('Hồ sơ này chưa có mã cơ sở để gỡ nối.');
+            if (typeof showToast === 'function') showToast('Ô mã cơ sở đang trống.', 'info');
             return;
         }
-        if (confirm('Bạn có chắc chắn muốn gỡ nối mã cơ sở này?')) {
+        if (confirm('Bạn có chắc muốn xóa mã cơ sở này? Nhấn Lưu sau khi gỡ để cập nhật.')) {
             inpMa.value = '';
-            const id = document.getElementById('modalSuaId').value;
-            const tr = document.getElementById('hoso-row-' + id);
-            if (tr) {
-                tr.setAttribute('data-mabn', '');
-                tr.setAttribute('data-tencoso', '');
-            }
             const daNoiNote = document.getElementById('modalSuaDaNoiNote');
             if (daNoiNote) daNoiNote.style.display = 'none';
-            if (typeof showToast === 'function') showToast('Đã gỡ nối mã cơ sở.', 'success');
+            if (typeof showToast === 'function') showToast('Đã xóa mã cơ sở. Hãy nhấn nút "Lưu" để hoàn tất.', 'info');
         }
     }
 

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SixosPwa.Areas.Admin.Models;
 using SixosPwa.Data;
+using SixosPwa.Models;
 using SixosPwa.Services;
 
 namespace SixosPwa.Areas.Admin.Controllers;
@@ -157,6 +158,40 @@ public sealed class TaiKhoanController : AdminControllerBase
         bn.DiaChi = string.IsNullOrWhiteSpace(req.DiaChi) ? null : req.DiaChi.Trim();
         bn.HoTenKhongDau = ChuanHoaTen.BoDau(req.TenBN);
 
+        // Cập nhật Mã cơ sở (MaBN trong DM_BenhNhanCoSo)
+        var newMaBN = string.IsNullOrWhiteSpace(req.MaBN) ? null : req.MaBN.Trim();
+        var coSoRecord = await _db.BenhNhanCoSos.FirstOrDefaultAsync(x => x.IdBenhNhan == bn.Id);
+        string? tenCoSo = null;
+
+        if (coSoRecord != null)
+        {
+            if (string.IsNullOrEmpty(newMaBN))
+            {
+                _db.BenhNhanCoSos.Remove(coSoRecord);
+            }
+            else
+            {
+                coSoRecord.MaBN = newMaBN;
+                var cs = await _db.DMCSKCBs.AsNoTracking().FirstOrDefaultAsync(x => x.Id == coSoRecord.IdCoSo);
+                tenCoSo = cs?.TenCoSo;
+            }
+        }
+        else if (!string.IsNullOrEmpty(newMaBN))
+        {
+            var defaultCoSo = await _db.DMCSKCBs.OrderBy(x => x.Id).FirstOrDefaultAsync();
+            if (defaultCoSo != null)
+            {
+                _db.BenhNhanCoSos.Add(new BenhNhanCoSo
+                {
+                    IdBenhNhan = bn.Id,
+                    IdCoSo = defaultCoSo.Id,
+                    MaBN = newMaBN,
+                    DaMoTaiLieu = false
+                });
+                tenCoSo = defaultCoSo.TenCoSo;
+            }
+        }
+
         await _db.SaveChangesAsync();
 
         return Json(new
@@ -173,7 +208,9 @@ public sealed class TaiKhoanController : AdminControllerBase
                 ngaySinhVn = bn.NgaySinh?.ToString("dd/MM/yyyy") ?? "—",
                 gioiTinh = bn.GioiTinh ?? "1",
                 gioiTinhVn = bn.GioiTinh == "1" ? "Nam" : (bn.GioiTinh == "2" ? "Nữ" : "Khác"),
-                diaChi = bn.DiaChi ?? ""
+                diaChi = bn.DiaChi ?? "",
+                maBN = newMaBN ?? "",
+                tenCoSo = tenCoSo ?? ""
             }
         });
     }

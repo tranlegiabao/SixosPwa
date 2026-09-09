@@ -66,6 +66,7 @@ public sealed class CapNhatHoSoAdminRequest
     public DateTime? NgaySinh { get; set; }
     public string? GioiTinh { get; set; }
     public string? DiaChi { get; set; }
+    public string? MaBN { get; set; }
 }
 
 public sealed class XoaHoSoAdminRequest
