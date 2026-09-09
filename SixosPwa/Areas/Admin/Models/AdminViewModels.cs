@@ -40,9 +40,55 @@ public sealed class DashboardContentEditViewModel
     public string? NoiDung { get; set; }
 }
 
+public sealed class HoSoBenhNhanItemViewModel
+{
+    public long Id { get; set; }
+    public long? IdTaiKhoan { get; set; }
+    public string TenBN { get; set; } = "";
+    public string CCCD { get; set; } = "";
+    public string? SDT { get; set; }
+    public string? Email { get; set; }
+    public string? DiaChi { get; set; }
+    public DateTime? NgaySinh { get; set; }
+    public string? GioiTinh { get; set; }
+    public string? MaBN { get; set; }
+    public string? TenCoSo { get; set; }
+    public int SoCoSo { get; set; }
+}
+
+public sealed class CapNhatHoSoAdminRequest
+{
+    public long Id { get; set; }
+    public long? IdTaiKhoan { get; set; }
+    public string TenBN { get; set; } = "";
+    public string CCCD { get; set; } = "";
+    public string? SDT { get; set; }
+    public DateTime? NgaySinh { get; set; }
+    public string? GioiTinh { get; set; }
+    public string? DiaChi { get; set; }
+}
+
+public sealed class XoaHoSoAdminRequest
+{
+    public long Id { get; set; }
+    public long? IdTaiKhoan { get; set; }
+}
+
+public sealed class TaoHoSoAdminRequest
+{
+    public long IdTaiKhoan { get; set; }
+    public string TenBN { get; set; } = "";
+    public string CCCD { get; set; } = "";
+    public string? SDT { get; set; }
+    public DateTime? NgaySinh { get; set; }
+    public string? GioiTinh { get; set; }
+    public string? DiaChi { get; set; }
+}
+
 public sealed class TaiKhoanListViewModel
 {
     public IReadOnlyList<TaiKhoan> Items { get; init; } = Array.Empty<TaiKhoan>();
+    public IReadOnlyDictionary<long, List<HoSoBenhNhanItemViewModel>> HoSoTheoTaiKhoan { get; init; } = new Dictionary<long, List<HoSoBenhNhanItemViewModel>>();
     public string? Query { get; init; }
     public string? Role { get; init; }
     public int Page { get; init; }

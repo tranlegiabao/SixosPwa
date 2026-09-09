@@ -33,10 +33,17 @@ public class ApplicationDbContext : DbContext
     public DbSet<TaiKhoanDoiTac> TaiKhoanDoiTacs => Set<TaiKhoanDoiTac>();
     public DbSet<TaiLieuBenhNhan> TaiLieuBenhNhans => Set<TaiLieuBenhNhan>();
     public DbSet<KhoaApiCoSo> KhoaApiCoSos => Set<KhoaApiCoSo>();
+    public DbSet<DMGioiTinh> DMGioiTinhs => Set<DMGioiTinh>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // ------------------------------------------------------------- DM_GioiTinh
+        modelBuilder.Entity<DMGioiTinh>().ToTable("DM_GioiTinh");
+        modelBuilder.Entity<DMGioiTinh>().HasKey(e => e.MaGioiTinh);
+        modelBuilder.Entity<DMGioiTinh>().Property(e => e.MaGioiTinh).HasMaxLength(10).IsRequired();
+        modelBuilder.Entity<DMGioiTinh>().Property(e => e.TenGioiTinh).HasMaxLength(50).IsRequired();
 
         // ---------------------------------------------------------------- DM_DoiTac
         modelBuilder.Entity<DoiTac>().ToTable("DM_DoiTac");

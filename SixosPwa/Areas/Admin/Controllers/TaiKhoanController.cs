@@ -137,4 +137,110 @@ public sealed class TaiKhoanController : AdminControllerBase
         if (!AllowedRoles.Contains(role))
             ModelState.AddModelError(nameof(TaiKhoanEditViewModel.Role), "Vai trò không hợp lệ.");
     }
+
+    [HttpPost]
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> CapNhatHoSo([FromBody] CapNhatHoSoAdminRequest req)
+    {
+        if (req == null || req.Id <= 0 || string.IsNullOrWhiteSpace(req.TenBN))
+            return Json(new { success = false, message = "Vui lòng nhập đầy đủ họ tên hồ sơ." });
+
+        var bn = await _db.BenhNhans.FirstOrDefaultAsync(x => x.Id == req.Id);
+        if (bn == null)
+            return Json(new { success = false, message = "Không tìm thấy hồ sơ bệnh nhân." });
+
+        bn.TenBN = req.TenBN.Trim();
+        bn.CCCD = (req.CCCD ?? "").Trim();
+        bn.SDT = string.IsNullOrWhiteSpace(req.SDT) ? null : req.SDT.Trim();
+        bn.NgaySinh = req.NgaySinh;
+        bn.GioiTinh = req.GioiTinh;
+        bn.DiaChi = string.IsNullOrWhiteSpace(req.DiaChi) ? null : req.DiaChi.Trim();
+        bn.HoTenKhongDau = ChuanHoaTen.BoDau(req.TenBN);
+
+        await _db.SaveChangesAsync();
+
+        return Json(new
+        {
+            success = true,
+            message = "Đã lưu thông tin hồ sơ thành công.",
+            data = new
+            {
+                id = bn.Id,
+                tenBN = bn.TenBN,
+                cccd = bn.CCCD,
+                sdt = bn.SDT ?? "",
+                ngaySinh = bn.NgaySinh?.ToString("yyyy-MM-dd") ?? "",
+                ngaySinhVn = bn.NgaySinh?.ToString("dd/MM/yyyy") ?? "—",
+                gioiTinh = bn.GioiTinh ?? "1",
+                gioiTinhVn = bn.GioiTinh == "1" ? "Nam" : (bn.GioiTinh == "2" ? "Nữ" : "Khác"),
+                diaChi = bn.DiaChi ?? ""
+            }
+        });
+    }
+
+    [HttpPost]
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> XoaHoSo([FromBody] XoaHoSoAdminRequest req)
+    {
+        if (req == null || req.Id <= 0)
+            return Json(new { success = false, message = "ID hồ sơ không hợp lệ." });
+
+        var bn = await _db.BenhNhans.FirstOrDefaultAsync(x => x.Id == req.Id);
+        if (bn == null)
+            return Json(new { success = false, message = "Không tìm thấy hồ sơ bệnh nhân." });
+
+        var cosos = await _db.BenhNhanCoSos.Where(x => x.IdBenhNhan == bn.Id).ToListAsync();
+        if (cosos.Any())
+        {
+            _db.BenhNhanCoSos.RemoveRange(cosos);
+        }
+
+        _db.BenhNhans.Remove(bn);
+        await _db.SaveChangesAsync();
+
+        return Json(new { success = true, message = "Đã xóa hồ sơ bệnh nhân thành công." });
+    }
+
+    [HttpPost]
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> TaoHoSo([FromBody] TaoHoSoAdminRequest req)
+    {
+        if (req == null || req.IdTaiKhoan <= 0 || string.IsNullOrWhiteSpace(req.TenBN))
+            return Json(new { success = false, message = "Vui lòng nhập họ tên hồ sơ." });
+
+        var bn = new SixosPwa.Models.BenhNhan
+        {
+            IdTaiKhoan = req.IdTaiKhoan,
+            TenBN = req.TenBN.Trim(),
+            CCCD = (req.CCCD ?? "").Trim(),
+            SDT = string.IsNullOrWhiteSpace(req.SDT) ? null : req.SDT.Trim(),
+            NgaySinh = req.NgaySinh,
+            GioiTinh = req.GioiTinh ?? "1",
+            DiaChi = string.IsNullOrWhiteSpace(req.DiaChi) ? null : req.DiaChi.Trim(),
+            HoTenKhongDau = ChuanHoaTen.BoDau(req.TenBN),
+            NgayTao = DateTime.Now
+        };
+
+        _db.BenhNhans.Add(bn);
+        await _db.SaveChangesAsync();
+
+        return Json(new
+        {
+            success = true,
+            message = "Đã tạo hồ sơ mới thành công.",
+            data = new
+            {
+                id = bn.Id,
+                idTaiKhoan = bn.IdTaiKhoan,
+                tenBN = bn.TenBN,
+                cccd = bn.CCCD,
+                sdt = bn.SDT ?? "",
+                ngaySinh = bn.NgaySinh?.ToString("yyyy-MM-dd") ?? "",
+                ngaySinhVn = bn.NgaySinh?.ToString("dd/MM/yyyy") ?? "—",
+                gioiTinh = bn.GioiTinh ?? "1",
+                gioiTinhVn = bn.GioiTinh == "1" ? "Nam" : (bn.GioiTinh == "2" ? "Nữ" : "Khác"),
+                diaChi = bn.DiaChi ?? ""
+            }
+        });
+    }
 }
