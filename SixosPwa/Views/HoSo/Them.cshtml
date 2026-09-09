@@ -84,8 +84,11 @@
                 </div>
 
                 <div class="hs-o">
-                    <label for="sdt">Số điện thoại <span style="font-weight:400;color:#6b7280;">(không bắt buộc)</span></label>
-                    <input id="sdt" name="sdt" type="tel" maxlength="20"
+                    @* 🔴 BAT BUOC, cung luat voi man *Sua ho so*: so nay la thu dung de
+                       DANG NHAP vao cong. Bat o mot cua ma tha o cua kia thi khong
+                       phai la bat buoc. *@
+                    <label for="sdt">Số điện thoại *</label>
+                    <input id="sdt" name="sdt" type="tel" maxlength="20" required
                            inputmode="tel" autocomplete="off" placeholder="09xxxxxxxx" />
                 </div>
 

@@ -233,6 +233,12 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
         if (string.IsNullOrWhiteSpace(hoTen))
             return new KetQuaLuuHoSo(false, "Chưa nhập họ tên.", 0);
 
+        // 🔴 Cung luat voi SuaAsync: SDT la thu dung de DANG NHAP nen BAT BUOC. Bat
+        // o mot cua ma tha o cua kia thi khong phai la bat buoc — nguoi dung tao ho
+        // so khong so, roi den lan sua dau tien moi bi chan.
+        if (string.IsNullOrWhiteSpace(sdt))
+            return new KetQuaLuuHoSo(false, "Chưa nhập số điện thoại.", 0);
+
         var (luu, idBenhNhan) = await _thuTuc.SaveBenhNhanAsync(
             cccd: cccd,
             tenBN: hoTen,
@@ -312,6 +318,12 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
 
         if (string.IsNullOrWhiteSpace(hoTen))
             return new KetQuaLuuHoSo(false, "Chưa nhập họ tên.", idBenhNhan);
+
+        // 🔴 SDT BAT BUOC: no la thu dung de DANG NHAP vao cong. Ho so khong co so
+        // thi den luc can vao lai la khong con duong nao. Chan o day chu khong chi
+        // dat `required` tren o input — thuoc tinh do go bang DevTools la xong.
+        if (string.IsNullOrWhiteSpace(sdt))
+            return new KetQuaLuuHoSo(false, "Chưa nhập số điện thoại.", idBenhNhan);
 
         var ketQua = await _thuTuc.SuaHoSoAsync(
             idBenhNhan: idBenhNhan,
