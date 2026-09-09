@@ -9,6 +9,55 @@
 --     Doan duoi chi tra lai COT rong.
 -- ============================================================================
 
+-- --- Nguoc 14 (Seed 20 tai khoan test / benh nhan that Dev_Master3) --------
+-- Xoa sach cac tai khoan test trich xuat tu Dev_Master3 kem ho so con nguoi
+-- va ho so tai co so tuong ung.
+DECLARE @SdtTest14 TABLE (SDT varchar(20));
+INSERT INTO @SdtTest14 (SDT)
+VALUES
+-- 20 benh nhan that tu Dev_Master3:
+('0348932730'),('0773746879'),('0346960066'),('0987092200'),('0896677433'),
+('0962700638'),('0915196167'),('0932243382'),('0357188959'),('0915631258'),
+('0969359948'),('0933270921'),('0933432722'),('0798637535'),('0977436455'),
+('0707227512'),('0793062239'),('0704450259'),('0342286775'),('0973754877'),
+-- Cac SDT dummy test cu (neu co):
+('079075005678'),
+('0900000001'),('0900000002'),('0900000003'),('0900000004'),('0900000005'),
+('0900000006'),('0900000007'),('0900000008'),('0900000009'),('0900000010'),
+('0900000011'),('0900000012'),('0900000013'),('0900000014'),('0900000015'),
+('0900000016'),('0900000017'),('0900000018'),('0900000019'),('0900000020');
+
+-- 1. Xoa thiet bi dang nhap (HT_ThietBi)
+DELETE tb
+  FROM dbo.HT_ThietBi tb
+  JOIN dbo.HT_TaiKhoan tk ON tk.Id = tb.IDTaiKhoan
+ WHERE tk.SDT IN (SELECT SDT FROM @SdtTest14);
+
+-- 2. Go khoa ngoai vong: HT_TaiKhoan.IdBenhNhan tro toi DM_BenhNhan
+UPDATE dbo.HT_TaiKhoan
+   SET IdBenhNhan = NULL
+ WHERE SDT IN (SELECT SDT FROM @SdtTest14);
+
+-- 3. Xoa ho so tai co so (DM_BenhNhanCoSo)
+DELETE cs
+  FROM dbo.DM_BenhNhanCoSo cs
+  JOIN dbo.DM_BenhNhan bn ON bn.ID = cs.IDBenhNhan
+  JOIN dbo.HT_TaiKhoan tk ON tk.Id = bn.IDTaiKhoan
+ WHERE tk.SDT IN (SELECT SDT FROM @SdtTest14);
+
+-- 4. Xoa con nguoi (DM_BenhNhan)
+DELETE bn
+  FROM dbo.DM_BenhNhan bn
+  JOIN dbo.HT_TaiKhoan tk ON tk.Id = bn.IDTaiKhoan
+ WHERE tk.SDT IN (SELECT SDT FROM @SdtTest14);
+
+-- 5. Xoa tai khoan (HT_TaiKhoan)
+DELETE FROM dbo.HT_TaiKhoan
+ WHERE SDT IN (SELECT SDT FROM @SdtTest14);
+
+PRINT N'Da rollback/xoa sach 20 tai khoan test 14.';
+GO
+
 -- --- Nguoc 13 (Dot 4) -------------------------------------------------------
 -- KHONG khoi phuc duoc mot cach tuyet doi: tai lieu / dot kham da bi *Go noi*
 -- xoa thi nam o bak.GoNoi_*_V001 nhung KHONG do nguoc ve duoc, vi dong

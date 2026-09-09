@@ -350,7 +350,114 @@
         flex: 1;
     }
     .modal-hs-o {
+        position: relative;
         margin-bottom: 16px;
+    }
+    /* Tùy biến DateTimePicker chuẩn HisSoft cho Admin */
+    .bootstrap-datetimepicker-widget {
+        z-index: 1065 !important;
+        font-family: inherit;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
+        border: 1px solid #e2e8f0;
+        padding: 10px;
+    }
+    .bootstrap-datetimepicker-widget .datepicker {
+        position: static !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        width: 100% !important;
+        display: block !important;
+    }
+    .bootstrap-datetimepicker-widget table {
+        width: 100% !important;
+        table-layout: auto !important;
+        border-collapse: collapse !important;
+        border-spacing: 0 !important;
+        background-color: transparent !important;
+        margin: 0 !important;
+    }
+    .bootstrap-datetimepicker-widget table th,
+    .bootstrap-datetimepicker-widget table td {
+        border: none !important;
+        padding: 5px 3px !important;
+        font-size: 13px !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+        overflow: visible !important;
+    }
+    .bootstrap-datetimepicker-widget table th.picker-switch {
+        font-weight: 700;
+        color: #1e293b;
+        font-size: 14px;
+        cursor: pointer;
+    }
+    .bootstrap-datetimepicker-widget table th.picker-switch:hover {
+        background: #f1f5f9;
+        border-radius: 6px;
+    }
+    .bootstrap-datetimepicker-widget table th.prev:hover,
+    .bootstrap-datetimepicker-widget table th.next:hover {
+        background: #f1f5f9;
+        border-radius: 6px;
+    }
+    .bootstrap-datetimepicker-widget table td.day:hover {
+        background: #e2e8f0;
+        border-radius: 6px;
+    }
+    .bootstrap-datetimepicker-widget table td.active,
+    .bootstrap-datetimepicker-widget table td.active:hover {
+        background-color: #2563eb !important;
+        color: #ffffff !important;
+        font-weight: 700;
+        border-radius: 6px;
+    }
+    .bootstrap-datetimepicker-widget table td.today:before {
+        border-bottom-color: #2563eb !important;
+    }
+    .bootstrap-datetimepicker-widget .datepicker-months table,
+    .bootstrap-datetimepicker-widget .datepicker-years table,
+    .bootstrap-datetimepicker-widget .datepicker-decades table,
+    .bootstrap-datetimepicker-widget .datepicker-centuries table {
+        width: 100% !important;
+        table-layout: fixed !important;
+    }
+    .bootstrap-datetimepicker-widget .datepicker-months tbody td,
+    .bootstrap-datetimepicker-widget .datepicker-years tbody td,
+    .bootstrap-datetimepicker-widget .datepicker-decades tbody td,
+    .bootstrap-datetimepicker-widget .datepicker-centuries tbody td {
+        white-space: normal !important;
+        box-sizing: border-box !important;
+        width: auto !important;
+        height: auto !important;
+        line-height: normal !important;
+        padding: 2px !important;
+        text-align: center !important;
+    }
+    .bootstrap-datetimepicker-widget .datepicker-months tbody td span,
+    .bootstrap-datetimepicker-widget .datepicker-years tbody td span,
+    .bootstrap-datetimepicker-widget .datepicker-decades tbody td span,
+    .bootstrap-datetimepicker-widget .datepicker-centuries tbody td span {
+        display: inline-block !important;
+        box-sizing: border-box !important;
+        width: 25% !important;
+        height: 2.6em !important;
+        line-height: 2.6em !important;
+        margin: 0 !important;
+        white-space: nowrap !important;
+        vertical-align: middle !important;
+        border-radius: 6px;
+    }
+    .bootstrap-datetimepicker-widget .datepicker-months tbody td span.active,
+    .bootstrap-datetimepicker-widget .datepicker-years tbody td span.active,
+    .bootstrap-datetimepicker-widget .datepicker-decades tbody td span.active {
+        background-color: #2563eb !important;
+        color: #ffffff !important;
+        font-weight: 700;
+    }
+    .bootstrap-datetimepicker-widget .datepicker-decades tbody td span,
+    .bootstrap-datetimepicker-widget .datepicker-centuries tbody td span {
+        width: 50% !important;
     }
     .modal-hs-o label {
         display: block;
@@ -705,22 +812,41 @@
 </div>
 
 @section Scripts {
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
 <script>
-    let flatpickrModalInstance = null;
-
     document.addEventListener("DOMContentLoaded", function() {
-        khoiTaoFlatpickr();
+        khoiTaoDatePicker();
     });
 
-    function khoiTaoFlatpickr() {
-        flatpickr(".datepicker-input", {
-            dateFormat: "Y-m-d",
-            altInput: true,
-            altFormat: "d/m/Y",
-            allowInput: true,
-            locale: "vn"
+    function khoiTaoDatePicker(scopeSelector) {
+        const $targets = scopeSelector ? $(scopeSelector) : $('.datepicker-input');
+        $targets.each(function() {
+            const $this = $(this);
+            if (!$this.data('DateTimePicker')) {
+                $this.datetimepicker({
+                    locale: "vi",
+                    format: "DD/MM/YYYY",
+                    useStrict: false,
+                    widgetPositioning: {
+                        horizontal: "auto",
+                        vertical: "bottom",
+                    },
+                    extraFormats: ["DD/MM/YYYY", "DD-MM-YYYY", "YYYY-MM-DD", "YYYY"],
+                    icons: {
+                        date: "ti ti-calendar",
+                        up: "ti ti-chevron-up",
+                        down: "ti ti-chevron-down",
+                        previous: "ti ti-chevron-left",
+                        next: "ti ti-chevron-right",
+                        time: "ti ti-alarm",
+                        close: 'ti ti-x'
+                    },
+                    keyBinds: {
+                        left: null,
+                        right: null,
+                    },
+                    showClose: true
+                });
+            }
         });
     }
 
@@ -737,7 +863,7 @@
         if (drawer.style.display === 'none' || drawer.style.display === '') {
             drawer.style.display = 'table-row';
             row.classList.add('is-open');
-            khoiTaoFlatpickr();
+            khoiTaoDatePicker('#drawer-' + accountId + ' .datepicker-input');
         } else {
             drawer.style.display = 'none';
             row.classList.remove('is-open');
@@ -750,7 +876,9 @@
         if (!f) return;
         const isShow = (f.style.display === 'none' || f.style.display === '');
         f.style.display = isShow ? 'block' : 'none';
-        if (isShow) khoiTaoFlatpickr();
+        if (isShow) {
+            khoiTaoDatePicker('#form-them-' + accountId + ' .datepicker-input');
+        }
     }
 
     // ==================== MỞ MODAL SỬA HỒ SƠ THEO MẪU USER ====================
@@ -793,19 +921,24 @@
         document.getElementById('modalSuaSDT').value = sdt;
         document.getElementById('modalSuaGioiTinh').value = gioiTinh;
 
-        // Khởi tạo Flatpickr cho Modal
-        const inpNgaySinh = document.getElementById('modalSuaNgaySinh');
-        if (flatpickrModalInstance) {
-            flatpickrModalInstance.destroy();
+        // Khởi tạo DateTimePicker cho Modal Sửa hồ sơ
+        const $inpNgaySinh = $('#modalSuaNgaySinh');
+        if ($inpNgaySinh.data('DateTimePicker')) {
+            $inpNgaySinh.data('DateTimePicker').destroy();
         }
-        flatpickrModalInstance = flatpickr(inpNgaySinh, {
-            dateFormat: "Y-m-d",
-            altInput: true,
-            altFormat: "d/m/Y",
-            defaultDate: ngaySinhIso || null,
-            allowInput: true,
-            locale: "vn"
-        });
+
+        let ngaySinhDisplay = '';
+        if (ngaySinhIso) {
+            const m = moment(ngaySinhIso, ['YYYY-MM-DD', 'YYYY/MM/DD', 'DD/MM/YYYY']);
+            if (m.isValid()) {
+                ngaySinhDisplay = m.format('DD/MM/YYYY');
+            }
+        }
+        $inpNgaySinh.val(ngaySinhDisplay);
+        khoiTaoDatePicker('#modalSuaNgaySinh');
+        if (ngaySinhDisplay) {
+            $inpNgaySinh.data('DateTimePicker').date(moment(ngaySinhDisplay, 'DD/MM/YYYY'));
+        }
 
         document.getElementById('modalSuaHoSoBackdrop').style.display = 'flex';
     }
@@ -825,13 +958,25 @@
         const tenBN = document.getElementById('modalSuaTen')?.value?.trim();
         const cccd = document.getElementById('modalSuaCCCD')?.value?.trim();
         const sdt = document.getElementById('modalSuaSDT')?.value?.trim();
-        const ngaySinh = document.getElementById('modalSuaNgaySinh')?.value;
+        const ngaySinhRaw = document.getElementById('modalSuaNgaySinh')?.value?.trim();
         const gioiTinh = document.getElementById('modalSuaGioiTinh')?.value;
 
         if (!tenBN) {
             if (typeof showToast === 'function') showToast('Vui lòng nhập họ và tên bệnh nhân.', 'error');
             else alert('Vui lòng nhập họ và tên bệnh nhân.');
             return;
+        }
+
+        let ngaySinhIso = null;
+        if (ngaySinhRaw) {
+            const m = moment(ngaySinhRaw, ['DD/MM/YYYY', 'DD-MM-YYYY', 'YYYY-MM-DD']);
+            if (m.isValid()) {
+                ngaySinhIso = m.format('YYYY-MM-DD');
+            } else {
+                if (typeof showToast === 'function') showToast('Ngày sinh không hợp lệ (định dạng dd/mm/yyyy).', 'error');
+                else alert('Ngày sinh không hợp lệ.');
+                return;
+            }
         }
 
         const btnSave = document.getElementById('modalSuaBtnSave');
@@ -848,7 +993,7 @@
                     tenBN: tenBN,
                     cccd: cccd,
                     sdt: sdt,
-                    ngaySinh: ngaySinh || null,
+                    ngaySinh: ngaySinhIso,
                     gioiTinh: gioiTinh
                 })
             });
@@ -861,13 +1006,13 @@
                     tr.setAttribute('data-ten', d.tenBN);
                     tr.setAttribute('data-cccd', d.cccd);
                     tr.setAttribute('data-sdt', d.sdt);
-                    tr.setAttribute('data-ngaysinh', d.ngaySinh);
+                    tr.setAttribute('data-ngaysinh', d.ngaySinh ? moment(d.ngaySinh).format('YYYY-MM-DD') : '');
                     tr.setAttribute('data-gioitinh', d.gioiTinh);
 
                     tr.querySelector('.val-ten').innerText = d.tenBN;
                     tr.querySelector('.val-cccd').innerText = d.cccd || '—';
                     tr.querySelector('.val-sdt').innerText = d.sdt || '—';
-                    tr.querySelector('.val-ngaysinh').innerText = d.ngaySinhVn || '—';
+                    tr.querySelector('.val-ngaysinh').innerText = d.ngaySinhVn || (d.ngaySinh ? moment(d.ngaySinh).format('DD/MM/YYYY') : '—');
                     tr.querySelector('.val-gioitinh').innerText = d.gioiTinhVn || 'Khác';
                 }
 
@@ -942,13 +1087,25 @@
         const tenBN = tenEl?.value?.trim();
         const cccd = cccdEl?.value?.trim();
         const sdt = sdtEl?.value?.trim();
-        const ngaySinh = nsEl?.value;
+        const ngaySinhRaw = nsEl?.value?.trim();
         const gioiTinh = gtEl?.value;
 
         if (!tenBN) {
             if (typeof showToast === 'function') showToast('Vui lòng nhập họ và tên hồ sơ.', 'error');
             else alert('Vui lòng nhập họ và tên hồ sơ.');
             return;
+        }
+
+        let ngaySinhIso = null;
+        if (ngaySinhRaw) {
+            const m = moment(ngaySinhRaw, ['DD/MM/YYYY', 'DD-MM-YYYY', 'YYYY-MM-DD']);
+            if (m.isValid()) {
+                ngaySinhIso = m.format('YYYY-MM-DD');
+            } else {
+                if (typeof showToast === 'function') showToast('Ngày sinh không hợp lệ (định dạng dd/mm/yyyy).', 'error');
+                else alert('Ngày sinh không hợp lệ.');
+                return;
+            }
         }
 
         try {
@@ -960,7 +1117,7 @@
                     tenBN: tenBN,
                     cccd: cccd,
                     sdt: sdt,
-                    ngaySinh: ngaySinh || null,
+                    ngaySinh: ngaySinhIso,
                     gioiTinh: gioiTinh
                 })
             });
@@ -979,8 +1136,10 @@
                 newRow.setAttribute('data-ten', d.tenBN);
                 newRow.setAttribute('data-cccd', d.cccd);
                 newRow.setAttribute('data-sdt', d.sdt);
-                newRow.setAttribute('data-ngaysinh', d.ngaySinh);
+                newRow.setAttribute('data-ngaysinh', d.ngaySinh ? moment(d.ngaySinh).format('YYYY-MM-DD') : '');
                 newRow.setAttribute('data-gioitinh', d.gioiTinh);
+
+                const ngaySinhHienThi = d.ngaySinhVn || (d.ngaySinh ? moment(d.ngaySinh).format('DD/MM/YYYY') : '—');
 
                 newRow.innerHTML = `
                     <td>
@@ -993,7 +1152,7 @@
                         <span class="val-sdt">${d.sdt || '—'}</span>
                     </td>
                     <td>
-                        <span class="val-ngaysinh">${d.ngaySinhVn || '—'}</span>
+                        <span class="val-ngaysinh">${ngaySinhHienThi}</span>
                     </td>
                     <td>
                         <span class="val-gioitinh">${d.gioiTinhVn || 'Khác'}</span>
@@ -1018,7 +1177,12 @@
                 // Reset form
                 if (tenEl) tenEl.value = '';
                 if (cccdEl) cccdEl.value = '';
-                if (nsEl) nsEl.value = '';
+                if (nsEl) {
+                    nsEl.value = '';
+                    if ($(nsEl).data('DateTimePicker')) {
+                        $(nsEl).data('DateTimePicker').clear();
+                    }
+                }
                 toggleFormThem(accountId);
 
                 capNhatSoLuongHoSo(accountId);

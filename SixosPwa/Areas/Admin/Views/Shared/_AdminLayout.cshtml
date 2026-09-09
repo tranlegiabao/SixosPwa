@@ -13,6 +13,8 @@
     <title>@ViewData["Title"] - Quản trị Y TẾ VIỆT</title>
     <partial name="_PwaHead" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/dist/webfont/tabler-icons.min.css" />
+    <link rel="stylesheet" href="~/dist/datetimepicker/bootstrap-datetimepicker.min.css" />
     <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/show-toast.css" asp-append-version="true" />
     <script src="~/js/show-toast.js" asp-append-version="true"></script>
@@ -103,9 +105,12 @@
         </main>
     </div>
 
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/dist/datetimepicker/moment.min.js"></script>
+    <script src="~/dist/datetimepicker/moment-with-locales.min.js"></script>
+    <script src="~/dist/datetimepicker/bootstrap-datetimepicker.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
     <script src="~/js/admin.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
