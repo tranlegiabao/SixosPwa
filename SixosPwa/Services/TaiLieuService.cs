@@ -169,13 +169,12 @@ public class TaiLieuService : ITaiLieuService
             };
         }
 
-        // 6. Upload lên máy chủ FTP dùng chung theo ADR 0012
+        // 6. Upload lên máy chủ FTP dùng chung theo cấu trúc: 1 bệnh nhân 1 thư mục
         var now = DateTime.Now;
-        var remoteDir = $"{KhoAnh.GocFtp}/tailieu/{cskcb.MaCoSo}/{now:yyyy}/{now:MM}";
-
         var safeMaBN = Regex.Replace(maBNSach, @"[^a-zA-Z0-9_\-]", "_");
         var safeLoaiTL = Regex.Replace(loaiTaiLieu.Trim(), @"[^a-zA-Z0-9_\-]", "_");
-        var fileName = $"{safeMaBN}_{safeLoaiTL}_{now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N")[..8]}.pdf";
+        var remoteDir = $"{KhoAnh.GocFtp}/{cskcb.MaCoSo}/tailieu/{safeMaBN}";
+        var fileName = $"{safeLoaiTL}_{now:yyyyMMddHHmmss}_{Guid.NewGuid().ToString("N")[..8]}.pdf";
 
         var remoteFilePath = await _ftpService.UploadBytesAsync(pdfBytes, fileName, remoteDir);
 

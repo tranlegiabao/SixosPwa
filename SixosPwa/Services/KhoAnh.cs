@@ -3,12 +3,16 @@ namespace SixosPwa.Services;
 /// <summary>
 /// Quy uoc duong dan anh giua kho FTP dung chung va URL cong khai.
 ///
-///     FTP   sixospwa/logo_cs/x.jpg
-///     URL   /anh/logo_cs/x.jpg
+///     Moi (theo co so):
+///     FTP   sixospwa/{MaCoSo}/{thuMuc}/{ten} (vd: sixospwa/CS1/logo/x.jpg, sixospwa/_chung/noi_dung/y.jpg)
+///     URL   /anh/{MaCoSo}/{thuMuc}/{ten} (vd: /anh/CS1/logo/x.jpg, /anh/_chung/noi_dung/y.jpg)
 ///
-/// Kho FTP nay dung CHUNG voi HisSoft (goc FTP dang co ttpt_images, HinhAnh,
-/// 79423... cua master_3). Moi thu cua SixosPwa nam gon duoi mot thu muc goc
-/// de khong the xoa nham do cua HisSoft: xem HangRao trong DonAnhService.
+///     Cu (backward-compatible):
+///     FTP   sixospwa/{thuMuc}/{ten} (vd: sixospwa/logo_cs/x.jpg)
+///     URL   /anh/{thuMuc}/{ten} (vd: /anh/logo_cs/x.jpg)
+///
+/// Kho FTP nay dung CHUNG voi HisSoft. Moi thu cua SixosPwa nam gon duoi thu muc goc
+/// 'sixospwa' de khong the xoa nham do cua HisSoft: xem HangRao trong DonAnhService.
 /// </summary>
 public static class KhoAnh
 {
@@ -18,30 +22,49 @@ public static class KhoAnh
     /// <summary>Tien to URL cua route doc anh (AnhController).</summary>
     public const string TienToUrl = "/anh";
 
-    public const string ThuMucLogo = "logo_cs";
-    public const string ThuMucQuangCao = "img_qc_kcb";
-    public const string ThuMucCoSo = "img_cs";
-    public const string ThuMucNoiDung = "img_nd";
+    public const string CoSoChung = "_chung";
 
-    /// <summary>
-    /// Bon thu muc nay giu dung ten cu trong wwwroot/static de con doi chieu
-    /// duoc voi du lieu truoc khi chuyen kho.
-    /// </summary>
-    public static readonly string[] ThuMucHopLe =
+    // Ten thu muc con moi (chuẩn hóa theo từng cơ sở)
+    public const string ThuMucLogo = "logo";
+    public const string ThuMucQuangCao = "quang_cao";
+    public const string ThuMucHinhAnh = "hinh_anh";
+    public const string ThuMucCoSo = "hinh_anh"; // Alias giu tuong thich code cu
+    public const string ThuMucNoiDung = "noi_dung";
+    public const string ThuMucTaiLieu = "tailieu";
+
+    /// <summary>Danh sach thu muc con moi hop le duoi co so.</summary>
+    public static readonly string[] ThuMucMoiHopLe =
     {
-        ThuMucLogo, ThuMucQuangCao, ThuMucCoSo, ThuMucNoiDung
+        ThuMucLogo, ThuMucQuangCao, ThuMucHinhAnh, ThuMucNoiDung
     };
+
+    /// <summary>Bon thu muc cu truoc dot tai cau truc (backward compatibility).</summary>
+    public static readonly string[] ThuMucCuHopLe =
+    {
+        "logo_cs", "img_qc_kcb", "img_cs", "img_nd"
+    };
+
+    /// <summary>Tat ca thu muc anh hop le (ca moi va cu).</summary>
+    public static readonly string[] ThuMucHopLe =
+        ThuMucMoiHopLe.Concat(ThuMucCuHopLe).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
 
     public static bool LaThuMucHopLe(string? thuMuc) =>
         !string.IsNullOrWhiteSpace(thuMuc)
         && ThuMucHopLe.Contains(thuMuc, StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Duong dan thu muc tren FTP, vd "sixospwa/logo_cs".</summary>
+    /// <summary>Duong dan thu muc tren FTP theo co so, vd "sixospwa/CS1/logo".</summary>
+    public static string ThuMucFtp(string? maCoSo, string thuMuc)
+    {
+        var safeMa = string.IsNullOrWhiteSpace(maCoSo) ? CoSoChung : maCoSo.Trim();
+        return $"{GocFtp}/{safeMa}/{thuMuc}";
+    }
+
+    /// <summary>Duong dan thu muc cu tren FTP, vd "sixospwa/logo_cs" hoac fallback.</summary>
     public static string ThuMucFtp(string thuMuc) => $"{GocFtp}/{thuMuc}";
 
     /// <summary>
-    /// Doi ket qua cua IFtpService.UploadFileAsync ("sixospwa/logo_cs/x.jpg")
-    /// thanh URL cat vao cot DB ("/anh/logo_cs/x.jpg").
+    /// Doi ket qua cua IFtpService.UploadFileAsync ("sixospwa/CS1/logo/x.jpg" hoac "sixospwa/logo_cs/x.jpg")
+    /// thanh URL cat vao cot DB ("/anh/CS1/logo/x.jpg" hoac "/anh/logo_cs/x.jpg").
     /// </summary>
     public static string? UrlTuDuongDanFtp(string? duongDanFtp)
     {
@@ -60,28 +83,45 @@ public static class KhoAnh
     /// </summary>
     public static string? DuongDanFtpTuUrl(string? url)
     {
-        var thuMuc = ThuMucTuUrl(url);
-        var ten = TenTepTuUrl(url);
-        if (thuMuc == null || ten == null) return null;
+        var doan = TachDoan(url);
+        if (doan == null) return null;
 
-        return $"{ThuMucFtp(thuMuc)}/{ten}";
+        if (doan.Length == 3) // [maCoSo, thuMuc, ten]
+        {
+            var maCoSo = doan[0];
+            var thuMuc = doan[1];
+            var ten = doan[2];
+            return $"{GocFtp}/{maCoSo}/{thuMuc}/{ten}";
+        }
+
+        if (doan.Length == 2) // [thuMuc, ten]
+        {
+            var thuMuc = doan[0];
+            var ten = doan[1];
+            return $"{GocFtp}/{thuMuc}/{ten}";
+        }
+
+        return null;
     }
 
     public static string? ThuMucTuUrl(string? url)
     {
         var doan = TachDoan(url);
-        return doan != null && LaThuMucHopLe(doan[0]) ? doan[0] : null;
+        if (doan == null) return null;
+        return doan.Length == 3 ? doan[1] : doan[0];
     }
 
     public static string? TenTepTuUrl(string? url)
     {
         var doan = TachDoan(url);
-        return doan != null && LaThuMucHopLe(doan[0]) ? doan[1] : null;
+        if (doan == null) return null;
+        return doan.Length == 3 ? doan[2] : doan[1];
     }
 
     /// <summary>
-    /// Tach "/anh/logo_cs/x.jpg" thanh ["logo_cs", "x.jpg"]. Bo qua chuoi rong,
-    /// URL tuyet doi, va moi thu khong bat dau bang tien to cua kho.
+    /// Tach URL "/anh/..." thanh mang cac phan:
+    /// - "/anh/CS1/logo/x.jpg" -> ["CS1", "logo", "x.jpg"]
+    /// - "/anh/logo_cs/x.jpg" -> ["logo_cs", "x.jpg"]
     /// </summary>
     private static string[]? TachDoan(string? url)
     {
@@ -90,22 +130,34 @@ public static class KhoAnh
         var duongDan = url.Trim();
         if (!duongDan.StartsWith(TienToUrl + "/", StringComparison.OrdinalIgnoreCase)) return null;
 
-        var phanConLai = duongDan[(TienToUrl.Length + 1)..];
-        var viTri = phanConLai.IndexOf('/');
-        if (viTri <= 0 || viTri == phanConLai.Length - 1) return null;
+        var phanConLai = duongDan[(TienToUrl.Length + 1)..].Trim('/');
+        var parts = phanConLai.Split('/', StringSplitOptions.RemoveEmptyEntries);
 
-        var thuMuc = phanConLai[..viTri];
-        var ten = phanConLai[(viTri + 1)..];
+        // Chan traversal ra ngoai kho
+        if (parts.Any(p => p.Contains("..") || p.Contains('\\'))) return null;
 
-        // Ten tep khong duoc chua them dau gach cheo hay ".." — chan di ra ngoai kho.
-        if (ten.Contains('/') || ten.Contains('\\') || ten.Contains("..")) return null;
+        if (parts.Length == 3)
+        {
+            var maCoSo = parts[0];
+            var thuMuc = parts[1];
+            var ten = parts[2];
+            if (!LaThuMucHopLe(thuMuc)) return null;
+            return new[] { maCoSo, thuMuc, ten };
+        }
 
-        return new[] { thuMuc, ten };
+        if (parts.Length == 2)
+        {
+            var thuMuc = parts[0];
+            var ten = parts[1];
+            if (!LaThuMucHopLe(thuMuc)) return null;
+            return new[] { thuMuc, ten };
+        }
+
+        return null;
     }
 
     /// <summary>
-    /// Suy kieu noi dung theo duoi tep. Ban master_3 (HomeController.cs:133) tra
-    /// cung "image/png" cho moi anh; o day kho co du bon loai nen phai suy that.
+    /// Suy kieu noi dung theo duoi tep.
     /// </summary>
     public static string KieuNoiDung(string tenTep) =>
         Path.GetExtension(tenTep).ToLowerInvariant() switch

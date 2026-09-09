@@ -720,6 +720,8 @@
                     form.append('file', blobInfo.blob(), blobInfo.filename());
                     var token = document.querySelector('#coSoYTeForm input[name="__RequestVerificationToken"]');
                     if (token) form.append('__RequestVerificationToken', token.value);
+                    var maCoSoInput = document.querySelector('#coSoYTeForm input[name="MaCoSo"]') || document.querySelector('[name="MaCoSo"]');
+                    if (maCoSoInput && maCoSoInput.value) form.append('maCoSo', maCoSoInput.value.trim());
 
                     fetch('/Admin/CoSoYTe/UploadImage', {
                         method: 'POST',

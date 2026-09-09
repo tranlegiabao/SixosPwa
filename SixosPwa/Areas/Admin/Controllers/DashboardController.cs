@@ -193,7 +193,7 @@ public sealed class DashboardController : AdminControllerBase
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UploadImage(IFormFile? file)
+    public async Task<IActionResult> UploadImage(IFormFile? file, [FromQuery] string? maCoSo = null, [FromForm] string? maCoSoForm = null)
     {
         if (file == null || file.Length == 0)
             return Json(new { error = "Chưa chọn ảnh." });
@@ -205,9 +205,11 @@ public sealed class DashboardController : AdminControllerBase
         if (string.IsNullOrWhiteSpace(extension) || !AllowedContentImageExtensions.Contains(extension))
             return Json(new { error = "Chỉ hỗ trợ ảnh JPG, PNG, WEBP hoặc GIF." });
 
+        var maCS = !string.IsNullOrWhiteSpace(maCoSo) ? maCoSo : maCoSoForm;
+
         try
         {
-            var duongDanFtp = await _ftp.UploadFileAsync(file, KhoAnh.ThuMucFtp(KhoAnh.ThuMucNoiDung));
+            var duongDanFtp = await _ftp.UploadFileAsync(file, KhoAnh.ThuMucFtp(maCS, KhoAnh.ThuMucNoiDung));
             var url = KhoAnh.UrlTuDuongDanFtp(duongDanFtp);
             if (url == null) return Json(new { error = "Không tải được ảnh lên máy chủ FTP." });
 
