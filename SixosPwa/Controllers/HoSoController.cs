@@ -196,11 +196,19 @@ public class HoSoController : Controller
             return RedirectToAction(nameof(Sua), new { id, loi = ketQua.ThongBao });
         }
 
-        if (ketQua.KetCuc == KetCucNoi.ChoXacNhan) GiuUngVien(ketQua);
+        // 🔴 *Cho xac nhan* la ngoai le DUY NHAT phai O LAI man Sua: danh sach ung
+        // vien de benh nhan tu nhan ma chi ve o day. Day ho ve *Ho so cua toi* luc
+        // nay la cat dut tang 2 — ho khong con duong nao nhan ma nua.
+        if (ketQua.KetCuc == KetCucNoi.ChoXacNhan)
+        {
+            GiuUngVien(ketQua);
+            return RedirectToAction(nameof(Sua), new { id, xong = MaKetCuc(ketQua) });
+        }
 
-        // O LAI man *Sua ho so*: chinh o day moi co khoi *Ma benh nhan tai co so*
-        // de nguoi dung thay ket qua cua lan luu vua roi.
-        return RedirectToAction(nameof(Sua), new { id, xong = MaKetCuc(ketQua) });
+        // Luu xong la VE *Ho so cua toi*. Nguoi dung vao man Sua de sua mot ho so,
+        // sua xong thi viec da het; giu ho lai o cai form vua nop chi de doc mot
+        // dong bao thanh cong la bat ho tu tim duong ra.
+        return RedirectToAction(nameof(Index), new { xong = MaKetCuc(ketQua) });
     }
 
     /// <summary>
@@ -225,8 +233,11 @@ public class HoSoController : Controller
 
         XoaUngVienDaGiu(id);
 
+        // Nhan xong la het viec o man Sua => ve *Ho so cua toi*, cung duong ra voi
+        // luc bam Luu. Loi thi PHAI o lai — vd ma vua bi nguoi khac nhan mat, nguoi
+        // dung con phai doc cau chi duong sang bo phan ho tro.
         return thanhCong
-            ? RedirectToAction(nameof(Sua), new { id, xong = soMa > 0 ? "da-noi" : "khong-noi" })
+            ? RedirectToAction(nameof(Index), new { xong = soMa > 0 ? "da-noi" : "khong-noi" })
             : RedirectToAction(nameof(Sua), new { id, loi = thongBao });
     }
 

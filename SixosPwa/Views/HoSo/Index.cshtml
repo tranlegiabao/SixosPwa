@@ -37,6 +37,8 @@
         .hs-bao { padding:12px 14px; border-radius:10px; margin-bottom:14px; font-size:14px; line-height:1.5; }
         .hs-bao-loi { background:#fef2f2; color:#991b1b; border:1px solid #fecaca; }
         .hs-bao-xong { background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; }
+        /* Tin "chua hoi duoc co so" — khong phai loi, cung khong phai xong tron ven */
+        .hs-bao-cho { background:#fffbeb; color:#92400e; border:1px solid #fde68a; }
         .hs-rong { text-align:center; color:#6b7280; padding:32px 16px; }
     </style>
 </head>
@@ -65,9 +67,32 @@
             {
                 <div class="hs-bao hs-bao-loi">@ViewBag.Loi</div>
             }
-            @if (!string.IsNullOrEmpty(ViewBag.Xong as string))
+            @* Man *Sua ho so* nay day ve day sau khi luu, nen thong bao phai noi dung
+               ket cuc cua lan luu do. In chung mot cau "Da cap nhat" cho moi truong
+               hop thi nguoi dung mat han tin *da noi duoc ma* va tin *chua hoi duoc
+               co so* — hai cai duy nhat dang co ich. *@
+            @switch (ViewBag.Xong as string)
             {
-                <div class="hs-bao hs-bao-xong">Đã cập nhật.</div>
+                case "da-noi":
+                    <div class="hs-bao hs-bao-xong">
+                        Đã lưu. Hồ sơ đã được <b>nối với bệnh án tại cơ sở</b>.
+                    </div>
+                    break;
+                case "chua-hoi-duoc":
+                    <div class="hs-bao hs-bao-cho">
+                        Đã lưu hồ sơ. Chưa hỏi được cơ sở lúc này nên chưa biết bạn đã từng khám ở đây
+                        hay chưa — bạn mở lại hồ sơ và lưu lại sau ít phút.
+                    </div>
+                    break;
+                case "khong-noi":
+                    <div class="hs-bao hs-bao-xong">Đã lưu. Chưa nối mã nào.</div>
+                    break;
+                case null:
+                case "":
+                    break;
+                default:
+                    <div class="hs-bao hs-bao-xong">Đã cập nhật.</div>
+                    break;
             }
 
             <a href="/benh-nhan/ho-so/them"
