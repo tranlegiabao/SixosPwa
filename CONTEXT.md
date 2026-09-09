@@ -245,6 +245,14 @@ Một lần bệnh nhân đặt lịch từ cổng, lưu ở **bảng riêng bê
 và gắn vào một đợt khám đã xảy ra.
 _Tránh_: giấy hẹn, lịch hẹn (trần), appointment
 
+**Ô Lịch hẹn**:
+Ô đầu trong khối *DỊCH VỤ* của *Trang bệnh nhân nội bộ*. Tính tới 2026-09-09 nó là **vỏ giao diện
+chạy bằng dữ liệu mẫu nằm ngay trong view** (`window.danhSachThongBaoLich`) — không đọc HIS, không
+đọc cơ sở dữ liệu nào. 🔴 Nội dung nó hiện là *nhắc hẹn / tái khám đã xảy ra*, nên **không phải**
+*Lịch đặt* (thứ bệnh nhân đặt từ cổng) mà gần *Giấy hẹn tái khám* + *Đợt khám* hơn. Tên đúng chỉ
+chốt được khi Đợt 4 nối cửa thật của HIS. Xem ADR 0023.
+_Tránh_: lịch hẹn (trần), lịch khám, appointment
+
 **Khoá cơ sở**:
 Một dòng `HT_KhoaApiCoSo` — chuỗi bí mật cấp cho **một cơ sở** để HIS của họ gọi vào *khu API nhận*.
 Cơ sở giữ chuỗi thô trong cấu hình HIS; cổng chỉ giữ **bản băm**, nên đọc cơ sở dữ liệu không đọc ra
@@ -363,3 +371,6 @@ _Tránh_: ảnh thừa, ảnh rác, file cũ
 - [0018](docs/adr/0018-luat-gop-ho-so-cccd-ten-ngaysinh.md) — vì sao gộp hồ sơ đòi cả CCCD + tên + ngày sinh chứ không chỉ CCCD.
 - [0019](docs/adr/0019-mot-tai-khoan-nhieu-ho-so.md) — vì sao một tài khoản quản nhiều hồ sơ, và vì sao ai khai trước giữ CCCD.
 - [0020](docs/adr/0020-tin-cccd-o-loi-vao-chan-o-tang-tai-lieu.md) — vì sao tin CCCD ở lối vào nhưng đặt cửa chắn ở tầng tài liệu.
+- [0021](docs/adr/0021-tu-choi-tai-lieu-mo-coi.md) — vì sao tài liệu đẩy lên cho mã BN chưa có hồ sơ bị từ chối thay vì giữ lại.
+- [0022](docs/adr/0022-khoa-api-bang-rieng-khong-dung-co-active.md) — vì sao khoá API nằm ở bảng riêng, không dùng chung cờ `Active` của cơ sở.
+- [0023](docs/adr/0023-o-lich-hen-len-trunk-voi-du-lieu-mau.md) — vì sao ô *Lịch hẹn* lên trunk khi còn chạy dữ liệu mẫu, và điều kiện đóng nợ.
