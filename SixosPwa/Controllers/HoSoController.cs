@@ -157,9 +157,19 @@ public class HoSoController : Controller
             return RedirectToAction(nameof(Index), new { loi = "Hồ sơ này không thuộc tài khoản của bạn." });
         }
 
+        var ungVien = LayUngVienDaGiu(id);
+
         ViewBag.Loi = loi;
         ViewBag.Xong = xong;
-        ViewBag.UngVien = LayUngVienDaGiu(id);
+        ViewBag.UngVien = ungVien;
+
+        // 🔴 Ma nao DA co ho so khac nhan thi man KHOA lai, khong cho tick. Tra o
+        // day chu khong nhet vao TempData luc luu: giua luc luu va luc bam xac nhan
+        // co the co nguoi khac vua nhan mat ma do, va cai nguoi dung nhin thay phai
+        // la trang thai BAY GIO.
+        ViewBag.MaDaCoChu = ungVien is { Count: > 0 }
+            ? await _hoSo.LayMaDaCoChuAsync(id, maCoSo, ungVien.Select(x => x.MaBN ?? string.Empty))
+            : new List<string>();
 
         return View(hoSo);
     }
@@ -193,10 +203,13 @@ public class HoSoController : Controller
         return RedirectToAction(nameof(Sua), new { id, xong = MaKetCuc(ketQua) });
     }
 
-    /// <summary>*Tang 2* — benh nhan tick nhung ma la cua minh roi bam nhan.</summary>
+    /// <summary>
+    /// *Tang 2* — benh nhan chon DUNG MOT ma la cua minh roi bam nhan.
+    /// Man hien radio chu khong phai checkbox: mot ho so &lt;-&gt; mot ma.
+    /// </summary>
     [HttpPost("/benh-nhan/ho-so/xac-nhan-noi")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> XacNhanNoi(long id, string[]? maBN)
+    public async Task<IActionResult> XacNhanNoi(long id, string? maBN)
     {
         var idTaiKhoan = await LayIdTaiKhoanAsync();
 
@@ -208,7 +221,7 @@ public class HoSoController : Controller
         var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
 
         var (thanhCong, thongBao, soMa) = await _hoSo.XacNhanNoiAsync(
-            id, idTaiKhoan.Value, maCoSo, maBN ?? Array.Empty<string>());
+            id, idTaiKhoan.Value, maCoSo, maBN);
 
         XoaUngVienDaGiu(id);
 

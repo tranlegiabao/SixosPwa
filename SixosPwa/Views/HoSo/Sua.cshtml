@@ -6,6 +6,12 @@
     // co so* thi hien danh sach cho nguoi dung tu nhan.
     var ungVien = ViewBag.UngVien as List<SixosPwa.Services.His.HoSoHis>;
     var xong = ViewBag.Xong as string;
+
+    // Ma DA co ho so khac tai co so nay nhan => KHOA lai, khong cho tick. Nhan lai
+    // la keo benh an dang thuoc ve nguoi khac sang minh; cong khong tu thao duoc,
+    // phai qua bo phan ho tro cua co so.
+    var maDaCoChu = ViewBag.MaDaCoChu as List<string> ?? new List<string>();
+    var conNhanDuoc = ungVien?.Count(x => !maDaCoChu.Contains(x.MaBN ?? "")) ?? 0;
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -44,7 +50,12 @@
         .kq-hang { display:flex; align-items:flex-start; gap:12px; padding:12px 0;
                    border-bottom:1px solid #f3f4f6; }
         .kq-hang:last-child { border-bottom:none; }
-        .kq-hang input[type=checkbox] { width:20px; height:20px; margin-top:2px; flex:0 0 auto; }
+        .kq-hang input[type=radio] { width:20px; height:20px; margin-top:2px; flex:0 0 auto; }
+        /* Ma da co ho so khac nhan: khoa lai, van hien de nguoi dung biet ma do ton
+           tai va biet duong lien he ho tro — an di thi ho tuong co so khong co ma. */
+        .kq-hang.kq-khoa { opacity:.62; cursor:not-allowed; }
+        .kq-hang.kq-khoa .kq-ma { color:#6b7280; }
+        .kq-khoa-nhan { display:block; margin-top:4px; font-size:12px; color:#b45309; }
     </style>
 </head>
 <body class="tl-trang">
@@ -73,9 +84,13 @@
             @switch (xong)
             {
                 case "da-noi":
+                    @* Mot ho so <-> mot ma, nen cau nay noi thang ma vua noi. Ban cu
+                       in DanhSachMa.Count roi goi la "so ma co so tung cap" — vua sai
+                       nghia (do la so ma DANG NOI, khong phai so ma co so cap) vua
+                       che mat viec cong da bo bot ma. *@
                     <div class="hs-bao hs-bao-xong">
-                        Đã lưu. Cơ sở từng cấp cho bạn <b>@Model.DanhSachMa.Count mã bệnh nhân</b>,
-                        đã được gắn vào hồ sơ này.
+                        Đã lưu. Hồ sơ của bạn đã nối với mã bệnh nhân
+                        <b>@(Model.DanhSachMa.FirstOrDefault()?.MaBN)</b> tại cơ sở.
                     </div>
                     break;
                 case "chua-hoi-duoc":
@@ -101,9 +116,38 @@
                ───────────────────────────────────────────────────────────────── *@
             @if (ungVien != null && ungVien.Count > 0)
             {
+                @* 🔴 MOT ho so &lt;-&gt; MOT ma benh nhan. Nen day la RADIO, khong phai
+                   checkbox: benh nhan chon dung mot ma la cua minh. Ra tu hai ma tro
+                   len thi cong KHONG duoc tu quyet, ke ca khi CCCD khop het — chon ho
+                   mot ma la chon luon phan benh an ho nhin thay.
+
+                   Ma DA co ho so khac nhan thi KHOA lai, khong cho tick: nhan lai la
+                   keo benh an dang thuoc ve nguoi khac sang minh. Cong khong tu thao
+                   duoc, phai qua bo phan ho tro cua co so. *@
                 <div class="hs-bao hs-bao-cho">
-                    Căn cước không đối chiếu được. Cơ sở có <b>@ungVien.Count hồ sơ</b> trùng
-                    họ tên, ngày sinh và giới tính. Đây có phải bạn không?
+                    @if (conNhanDuoc == 0)
+                    {
+                        <text>
+                            Cơ sở có <b>@ungVien.Count hồ sơ</b> trùng họ tên, ngày sinh và giới tính
+                            với bạn, nhưng <b>mã nào cũng đã có hồ sơ khác nhận</b>. Bạn cần
+                            <b>liên hệ bộ phận hỗ trợ của cơ sở</b> để được gỡ — cổng không tự tháo được.
+                        </text>
+                    }
+                    else if (ungVien.Count == 1)
+                    {
+                        <text>
+                            Cơ sở có <b>1 hồ sơ</b> trùng họ tên, ngày sinh và giới tính với bạn.
+                            Đây có phải bạn không?
+                        </text>
+                    }
+                    else
+                    {
+                        <text>
+                            Cơ sở có <b>@ungVien.Count hồ sơ</b> trùng họ tên, ngày sinh và giới tính.
+                            <b>Chọn đúng một mã là của bạn</b> — nếu không chắc, hỏi lại quầy tiếp nhận
+                            của cơ sở.
+                        </text>
+                    }
                 </div>
 
                 <form method="post" action="/benh-nhan/ho-so/xac-nhan-noi">
@@ -113,8 +157,13 @@
                     <div class="kq">
                         @foreach (var uv in ungVien)
                         {
-                            <label class="kq-hang">
-                                <input type="checkbox" name="maBN" value="@uv.MaBN" checked />
+                            var daCoChu = maDaCoChu.Contains(uv.MaBN ?? "");
+
+                            <label class="kq-hang @(daCoChu ? "kq-khoa" : "")">
+                                <input type="radio" name="maBN" value="@uv.MaBN"
+                                       required
+                                       disabled="@daCoChu"
+                                       @(conNhanDuoc == 1 && !daCoChu ? "checked" : "") />
                                 <span>
                                     <span class="kq-ma">@uv.MaBN</span>
                                     <span class="kq-phu" style="display:block;">
@@ -131,12 +180,24 @@
                                             <text> · @uv.DienThoai</text>
                                         }
                                     </span>
+                                    @if (daCoChu)
+                                    {
+                                        @* KHONG noi ma do thuoc ve AI — chi noi la da co nguoi nhan. *@
+                                        <span class="kq-khoa-nhan">
+                                            Mã này đã có hồ sơ khác nhận — cần bộ phận hỗ trợ của cơ sở gỡ giúp.
+                                        </span>
+                                    }
                                 </span>
                             </label>
                         }
                     </div>
 
-                    <button type="submit" class="hs-gui">Đúng là tôi — nối hồ sơ</button>
+                    @if (conNhanDuoc > 0)
+                    {
+                        <button type="submit" class="hs-gui">
+                            @(conNhanDuoc == 1 ? "Đúng là tôi — nối hồ sơ" : "Nối mã đã chọn")
+                        </button>
+                    }
                 </form>
 
                 <form method="post" action="/benh-nhan/ho-so/xac-nhan-noi">

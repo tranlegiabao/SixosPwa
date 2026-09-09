@@ -79,9 +79,17 @@ public interface IHoSoBenhNhanService
         long idBenhNhan, long idTaiKhoan, string? maCoSo, string cccd, string hoTen,
         DateTime? ngaySinh, string? sdt, string? gioiTinh);
 
-    /// <summary>*Tang 2* — benh nhan tick nhung ma la cua minh roi bam nhan.</summary>
+    /// <summary>*Tang 2* — benh nhan chon DUNG MOT ma la cua minh roi bam nhan.</summary>
     Task<(bool ThanhCong, string ThongBao, int SoMaVuaGan)> XacNhanNoiAsync(
-        long idBenhNhan, long idTaiKhoan, string? maCoSo, IEnumerable<string> maBN);
+        long idBenhNhan, long idTaiKhoan, string? maCoSo, string? maBN);
+
+    /// <summary>
+    /// Trong danh sach ma dua vao, ma nao DA co ho so khac tai co so nay nhan.
+    /// Man *Sua ho so* dung de KHOA nhung ma do lai: nhan lai la doi benh an cua
+    /// nguoi khac, phai qua Support thao ra truoc.
+    /// </summary>
+    Task<List<string>> LayMaDaCoChuAsync(
+        long idBenhNhan, string? maCoSo, IEnumerable<string> maBN);
 
     Task<(bool ThanhCong, string ThongBao)> GoNoiAsync(long idBenhNhanCoSo, long idTaiKhoan);
 }
@@ -361,6 +369,20 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
         if (idCoSo is null || ngaySinh is null || string.IsNullOrWhiteSpace(gioiTinh))
             return new KetQuaLuuHoSo(true, "OK", idBenhNhan, KetCucNoi.KhongCoGi);
 
+        // 🔴 DA NOI ROI THI DUNG LAI — khong hoi HIS, khong doi gi. Mot ho so giu
+        // DUNG MOT ma (luat nghiep vu chot 09/09: MaBN la danh tinh cua benh nhan
+        // tai co so, nhieu ma cung mot nguoi la du lieu nhap lon). Truoc day moi
+        // lan LUU deu tra lai roi ghi de, nen ma dang noi TU DOI sang ma khac ma
+        // khong mot dau hieu nao — do la doi benh an cua nguoi ta sau lung ho.
+        // Muon doi thi bam *Go noi* truoc, dung nhu man *Sua ho so* dang huong dan.
+        var daNoiMa = await _db.BenhNhanCoSos.AsNoTracking()
+            .AnyAsync(h => h.IdBenhNhan == idBenhNhan
+                        && h.IdCoSo == idCoSo.Value
+                        && h.MaBN != null);
+
+        if (daNoiMa)
+            return new KetQuaLuuHoSo(true, "OK", idBenhNhan, KetCucNoi.KhongCoGi);
+
         var traLoi = await _his.TraCuuHoSoAsync(idCoSo.Value, cccd, hoTen, ngaySinh.Value, gioiTinh);
 
         if (traLoi.TrangThai == His.TrangThaiHoiHis.ChuaNoi)
@@ -376,34 +398,30 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
         if (ungVien.Count == 0)
             return new KetQuaLuuHoSo(true, "OK", idBenhNhan, KetCucNoi.KhongCoGi);
 
-        // Bo nhung ma DA thuoc ve chinh ho so nay — ca hai tang deu bo, khong thi
-        // tang 2 hoi lai nguoi dung ve thu ho da nhan roi, con tang 1 dem thua.
-        var daCo = await _db.BenhNhanCoSos.AsNoTracking()
-            .Where(h => h.IdBenhNhan == idBenhNhan && h.IdCoSo == idCoSo.Value && h.MaBN != null)
-            .Select(h => h.MaBN!)
-            .ToListAsync();
-
-        var conLai = ungVien.Where(x => !daCo.Contains(x.MaBN!, StringComparer.Ordinal)).ToList();
-
-        if (conLai.Count == 0)
-            return new KetQuaLuuHoSo(true, "OK", idBenhNhan, KetCucNoi.KhongCoGi);
-
-        var chacChan = conLai.Where(x => x.CccdKhop).ToList();
-
-        if (chacChan.Count > 0)
+        // *Tang 1* nay chi con DUNG MOT truong hop: co so cap dung MOT ma, CCCD
+        // trung khit, va ma do CHUA co ho so nao khac nhan. Ra tu HAI ma tro len la
+        // KHONG duoc tu quyet, du CCCD khop het — chon ho mot ma la chon luon phan
+        // benh an ho nhin thay, va o Thien Nam cac ma trung nhau la do nhap lon nen
+        // may khong biet ma nao con dung.
+        if (ungVien.Count == 1 && ungVien[0].CccdKhop)
         {
-            var so = await GanMaAsync(idBenhNhan, idCoSo.Value, chacChan.Select(x => x.MaBN!));
-            return new KetQuaLuuHoSo(true, "OK", idBenhNhan, KetCucNoi.DaGanImLang, so);
+            var so = await GanMotMaAsync(idBenhNhan, idCoSo.Value, ungVien[0].MaBN!);
+
+            // so = 0 nghia la ma da co chu. KHONG duoc bao "da noi" (man se in ra o
+            // ma rong), cung KHONG duoc im lang: day xuong tang 2 de man khoa ma lai
+            // va chi duong sang Support.
+            if (so > 0)
+                return new KetQuaLuuHoSo(true, "OK", idBenhNhan, KetCucNoi.DaGanImLang, so);
         }
 
-        return new KetQuaLuuHoSo(true, "OK", idBenhNhan, KetCucNoi.ChoXacNhan, 0, conLai);
+        return new KetQuaLuuHoSo(true, "OK", idBenhNhan, KetCucNoi.ChoXacNhan, 0, ungVien);
     }
 
     public async Task<(bool ThanhCong, string ThongBao, int SoMaVuaGan)> XacNhanNoiAsync(
-        long idBenhNhan, long idTaiKhoan, string? maCoSo, IEnumerable<string> maBN)
+        long idBenhNhan, long idTaiKhoan, string? maCoSo, string? maBN)
     {
-        // 🔴 Cong chan. Danh sach ma di qua trinh duyet nen khong tin duoc: thieu
-        // phep nay thi go ID ho so nguoi khac vao la gan ma vao ho so cua ho.
+        // 🔴 Cong chan. Ma di qua trinh duyet nen khong tin duoc: thieu phep nay
+        // thi go ID ho so nguoi khac vao la gan ma vao ho so cua ho.
         if (!await HoSoThuocTaiKhoanAsync(idBenhNhan, idTaiKhoan))
             return (false, "Hồ sơ này không thuộc tài khoản của bạn.", 0);
 
@@ -411,16 +429,53 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
         if (idCoSo is null)
             return (false, "Chưa xác định được cơ sở.", 0);
 
-        var ma = (maBN ?? Array.Empty<string>())
+        var ma = (maBN ?? string.Empty).Trim();
+
+        if (ma.Length == 0) return (true, "OK", 0);
+
+        // Cung cong chan voi NoiKhiLuuAsync: mot ho so DUNG MOT ma. Gui lai form
+        // cu (nut Back, bam hai lan) khong duoc de doi ma dang noi.
+        var daNoiMa = await _db.BenhNhanCoSos.AsNoTracking()
+            .AnyAsync(h => h.IdBenhNhan == idBenhNhan
+                        && h.IdCoSo == idCoSo.Value
+                        && h.MaBN != null);
+
+        if (daNoiMa)
+            return (false, "Hồ sơ này đã nối một mã rồi. Muốn đổi thì gỡ nối trước.", 0);
+
+        var so = await GanMotMaAsync(idBenhNhan, idCoSo.Value, ma);
+
+        // 🔴 Ma da co ho so khac nhan thi DUNG HAN o day — cong khong tu thao ra
+        // duoc. Nhan lai la keo benh an dang thuoc ve nguoi khac sang minh; go nham
+        // thi ca hai ben deu mat. Phai qua bo phan ho tro cua co so.
+        return so > 0
+            ? (true, "OK", so)
+            : (false, "Mã " + ma + " đã có hồ sơ khác nhận. Bạn cần liên hệ bộ phận hỗ trợ "
+                    + "của cơ sở để được gỡ, cổng không tự tháo được.", 0);
+    }
+
+    public async Task<List<string>> LayMaDaCoChuAsync(
+        long idBenhNhan, string? maCoSo, IEnumerable<string> maBN)
+    {
+        var ma = (maBN ?? Enumerable.Empty<string>())
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Select(x => x.Trim())
             .Distinct(StringComparer.Ordinal)
             .ToList();
 
-        if (ma.Count == 0) return (true, "OK", 0);
+        if (ma.Count == 0) return new List<string>();
 
-        var so = await GanMaAsync(idBenhNhan, idCoSo.Value, ma);
-        return (true, "OK", so);
+        var idCoSo = await LayIdCoSoAsync(maCoSo);
+        if (idCoSo is null) return new List<string>();
+
+        // "Chu" o day la ho so KHAC. Ma cua chinh ho so nay khong tinh la vuong.
+        return await _db.BenhNhanCoSos.AsNoTracking()
+            .Where(h => h.IdCoSo == idCoSo.Value
+                     && h.MaBN != null
+                     && h.IdBenhNhan != idBenhNhan
+                     && ma.Contains(h.MaBN))
+            .Select(h => h.MaBN!)
+            .ToListAsync();
     }
 
     public async Task<(bool ThanhCong, string ThongBao)> GoNoiAsync(long idBenhNhanCoSo, long idTaiKhoan)
@@ -432,35 +487,40 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
     }
 
     /// <summary>
-    /// Gan mot loat ma vao ho so, bo qua ma da co. Tra ve so ma THUC SU vua gan.
+    /// Gan DUNG MOT ma vao ho so. Tra <c>1</c> neu gan duoc, <c>0</c> neu khong.
     ///
-    /// 🔴 Mot ma da co nguoi khac nhan thi thu tuc tu tu choi (unique co loc tren
-    /// <c>(IDCoSo, MaBN)</c>) — nuot loi do va di tiep, khong dung ca me. Ai khai
-    /// truoc giu, va nguoi thu hai khong duoc biet ma do dang thuoc ve ai.
+    /// <para>
+    /// 🔴 KHONG nhan danh sach, va do la co y. Thu tuc <c>DM_BenhNhanCoSo_Save</c>
+    /// tra khoa theo <c>(IDBenhNhan, IDCoSo)</c> roi UPDATE, nen goi no nhieu lan
+    /// cho cung mot ho so chi GHI DE mot dong: vong lap cu bao "da noi N ma" trong
+    /// khi CSDL chi giu ma CUOI CUNG — mat im lang, do duoc ngay 09/09 (ma 111457
+    /// bien mat khi 100992 duoc gan de len). Mot ho so &lt;-&gt; mot ma.
+    /// </para>
+    ///
+    /// <para>
+    /// 🔴 Ma da co nguoi khac nhan thi tu choi (unique co loc tren
+    /// <c>(IDCoSo, MaBN)</c>). Chan o day de con thong bao tu te, nhung KHONG noi
+    /// ma do dang thuoc ve ai.
+    /// </para>
     /// </summary>
-    private async Task<int> GanMaAsync(long idBenhNhan, long idCoSo, IEnumerable<string> maBN)
+    private async Task<int> GanMotMaAsync(long idBenhNhan, long idCoSo, string maBN)
     {
-        var daCo = await _db.BenhNhanCoSos.AsNoTracking()
-            .Where(h => h.IdCoSo == idCoSo && h.MaBN != null)
-            .Select(h => h.MaBN!)
-            .ToListAsync();
+        var ma = (maBN ?? string.Empty).Trim();
 
-        int so = 0;
+        if (ma.Length == 0) return 0;
 
-        foreach (var ma in maBN.Where(x => !string.IsNullOrWhiteSpace(x))
-                               .Select(x => x.Trim())
-                               .Distinct(StringComparer.Ordinal))
-        {
-            if (daCo.Contains(ma, StringComparer.Ordinal)) continue;
+        var daCoChu = await _db.BenhNhanCoSos.AsNoTracking()
+            .AnyAsync(h => h.IdCoSo == idCoSo && h.MaBN == ma);
 
-            var (ketQua, _) = await _thuTuc.SaveBenhNhanCoSoAsync(idBenhNhan, idCoSo, ma);
+        if (daCoChu) return 0;
 
-            if (ketQua.Succeeded) so++;
-            else _logger.LogInformation("Khong gan duoc ma {MaBN} vao ho so {IdBenhNhan}: {ThongDiep}",
-                                        ma, idBenhNhan, ketQua.Message);
-        }
+        var (ketQua, _) = await _thuTuc.SaveBenhNhanCoSoAsync(idBenhNhan, idCoSo, ma);
 
-        return so;
+        if (ketQua.Succeeded) return 1;
+
+        _logger.LogInformation("Khong gan duoc ma {MaBN} vao ho so {IdBenhNhan}: {ThongDiep}",
+                               ma, idBenhNhan, ketQua.Message);
+        return 0;
     }
 
     private Task<long?> LayIdCoSoAsync(string? maCoSo) =>
