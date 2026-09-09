@@ -273,31 +273,33 @@
         /* Patient Info Section */
         .bn-danhtinh-card {
             background: #ffffff;
-            padding: 18px 20px;
+            padding: 16px 18px;
             border-bottom: 1px solid #f1f5f9;
-            display: grid;
-            grid-template-columns: 1.25fr 1fr;
-            gap: 14px;
-            align-items: center;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
-        @@media (max-width: 520px) {
-            .bn-danhtinh-card {
-                grid-template-columns: 1fr;
-                gap: 14px;
-            }
-        }
-
-        .bn-danhtinh-trai {
+        .bn-danhtinh-hang-dau {
             display: flex;
             align-items: center;
-            gap: 14px;
+            justify-content: space-between;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .bn-danhtinh-avatar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+            flex: 1;
         }
 
         .bn-avatar-bn {
-            width: 64px;
-            height: 64px;
-            flex: 0 0 64px;
+            width: 52px;
+            height: 52px;
+            flex: 0 0 52px;
             border-radius: 50%;
             background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
             display: flex;
@@ -305,104 +307,54 @@
             justify-content: center;
             color: #0284c7;
             border: 2px solid #ffffff;
-            box-shadow: 0 4px 10px rgba(2, 132, 199, 0.15);
+            box-shadow: 0 3px 8px rgba(2, 132, 199, 0.15);
         }
 
-        .bn-danhtinh-thongtin {
+        .bn-mahoso-block {
             display: flex;
             flex-direction: column;
-            gap: 3px;
+            gap: 1px;
+            min-width: 0;
         }
 
         .bn-nhan-mahoso {
             font-size: 11.5px;
             color: var(--bn-chu-nhat);
-            font-weight: 500;
+            font-weight: 600;
         }
 
         .bn-giatri-mahoso {
-            font-size: 19px;
+            font-size: 20px;
             font-weight: 800;
             color: #0f172a;
-            line-height: 1.2;
+            line-height: 1.15;
+            letter-spacing: -0.01em;
         }
 
-        .bn-dong-phu {
-            font-size: 12.5px;
-            color: #475569;
-            line-height: 1.35;
-        }
-
-        .bn-dong-phu strong {
-            color: #0f172a;
-            font-weight: 600;
-        }
-
-        .bn-link-hoso {
-            color: #0284c7;
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .bn-link-hoso:hover {
-            text-decoration: underline;
-        }
-
-        .bn-danhtinh-phai {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 10px;
-        }
-
-        @@media (max-width: 520px) {
-            .bn-danhtinh-phai {
-                align-items: stretch;
-            }
-        }
-
-        .bn-badge-dangky {
-            background: #dcfce7;
-            color: #15803d;
-            font-size: 12px;
-            font-weight: 700;
-            padding: 5px 12px;
-            border-radius: 20px;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            box-shadow: 0 1px 3px rgba(22, 101, 52, 0.1);
-        }
-
-        .bn-badge-dangky svg {
-            color: #16a34a;
-        }
-
-        .bn-the-lankham {
+        .bn-the-hoso-top {
             background: #f0f9ff;
-            border: 1px solid #e0f2fe;
-            border-radius: 14px;
-            padding: 8px 12px;
+            border: 1px solid #bae6fd;
+            border-radius: 12px;
+            padding: 7px 12px;
             display: flex;
             align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            transition: all .2s ease;
-            width: 100%;
-            max-width: 220px;
+            gap: 8px;
             text-decoration: none;
+            transition: all .2s ease;
+            box-shadow: 0 2px 6px rgba(2, 132, 199, 0.08);
+            flex-shrink: 0;
         }
 
-        .bn-the-lankham:hover {
+        .bn-the-hoso-top:hover {
             background: #e0f2fe;
-            border-color: #bae6fd;
+            border-color: #7dd3fc;
             transform: translateY(-1px);
         }
 
-        .bn-icon-lankham {
-            width: 32px;
-            height: 32px;
-            background: #38bdf8;
+        .bn-the-hoso-top .bn-icon-hoso {
+            width: 28px;
+            height: 28px;
+            background: #0284c7;
             border-radius: 8px;
             display: flex;
             align-items: center;
@@ -411,33 +363,81 @@
             flex-shrink: 0;
         }
 
-        .bn-chu-lankham {
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-            min-width: 0;
-        }
-
-        .bn-nhan-lankham {
-            font-size: 11px;
-            color: var(--bn-chu-nhat);
-        }
-
-        .bn-ngay-lankham {
+        .bn-the-hoso-top .bn-ten-hoso {
             font-size: 13px;
             font-weight: 700;
             color: #0f172a;
+            white-space: nowrap;
         }
 
-        .bn-arrow-lankham {
+        .bn-the-hoso-top .bn-arrow-hoso {
             color: #0284c7;
             font-size: 16px;
             font-weight: 700;
         }
 
+        .bn-danhtinh-hang-duoi {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 10px;
+            padding-top: 8px;
+            border-top: 1px dashed #e2e8f0;
+        }
+
+        .bn-danhtinh-thongtin-list {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            min-width: 0;
+        }
+
+        .bn-dong-phu {
+            font-size: 12.5px;
+            color: #475569;
+            line-height: 1.35;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .bn-dong-phu strong {
+            color: #0f172a;
+            font-weight: 700;
+        }
+
+        .bn-link-hoso {
+            color: #0284c7;
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .bn-link-hoso:hover {
+            text-decoration: underline;
+        }
+
+        .bn-badge-dangky {
+            background: #dcfce7;
+            color: #15803d;
+            font-size: 11.5px;
+            font-weight: 700;
+            padding: 5px 10px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 1px 3px rgba(22, 101, 52, 0.1);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .bn-badge-dangky svg {
+            color: #16a34a;
+        }
+
         /* Section Title "DỊCH VỤ" */
         .bn-tieude-dichvu {
-            padding: 16px 20px 10px;
+            padding: 16px 18px 8px;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -456,30 +456,30 @@
         .bn-luoi-dichvu {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 14px;
-            padding: 0 20px 16px;
+            gap: 12px;
+            padding: 0 16px 16px;
         }
 
         @@media (max-width: 480px) {
             .bn-luoi-dichvu {
                 gap: 10px;
-                padding: 0 14px 14px;
+                padding: 0 12px 14px;
             }
         }
 
         /* Service Cards */
         .bn-the-dv {
-            border-radius: 18px;
-            padding: 16px 14px;
+            border-radius: 16px;
+            padding: 14px 12px;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             text-decoration: none;
             transition: all .22s cubic-bezier(0.16, 1, 0.3, 1);
             position: relative;
             overflow: hidden;
             border: 1px solid transparent;
-            min-height: 96px;
+            min-height: 84px;
             box-sizing: border-box;
             user-select: none;
         }
@@ -490,10 +490,10 @@
         }
 
         .bn-the-dv .bn-dv-icon {
-            width: 48px;
-            height: 48px;
-            flex: 0 0 48px;
-            border-radius: 14px;
+            width: 44px;
+            height: 44px;
+            flex: 0 0 44px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -503,10 +503,19 @@
             z-index: 2;
         }
 
+        @@media (max-width: 400px) {
+            .bn-the-dv .bn-dv-icon {
+                width: 38px;
+                height: 38px;
+                flex: 0 0 38px;
+                border-radius: 10px;
+            }
+        }
+
         .bn-the-dv .bn-dv-info {
             display: flex;
             flex-direction: column;
-            gap: 3px;
+            gap: 2px;
             flex: 1;
             min-width: 0;
             position: relative;
@@ -514,26 +523,25 @@
         }
 
         .bn-the-dv .bn-dv-ten {
-            font-size: 15px;
-            font-weight: 700;
+            font-size: 14.5px;
+            font-weight: 800;
             color: #0f172a;
-            line-height: 1.3;
+            line-height: 1.25;
         }
 
         .bn-the-dv .bn-dv-mota {
             font-size: 11.5px;
-            color: #64748b;
-            line-height: 1.3;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            color: #334155; /* Chữ đậm màu, rõ nét hơn */
+            font-weight: 600; /* In đậm nét hơn */
+            line-height: 1.35;
+            white-space: normal; /* Hiển thị đẹp không bị cắt đột ngột */
         }
 
         .bn-the-dv .bn-dv-watermark {
             position: absolute;
-            right: 8px;
-            bottom: 4px;
-            opacity: 0.18;
+            right: 6px;
+            bottom: 3px;
+            opacity: 0.12; /* Làm mờ nhẹ nhàng để nổi bật chữ */
             pointer-events: none;
             z-index: 1;
             transition: transform .25s ease, opacity .25s ease;
@@ -541,7 +549,7 @@
 
         .bn-the-dv:hover .bn-dv-watermark {
             transform: scale(1.08) rotate(-3deg);
-            opacity: 0.28;
+            opacity: 0.22;
         }
 
         .bn-the-dv .bn-dv-badge {
@@ -856,15 +864,6 @@
             </div>
 
             <div class="bn-dau-phai">
-                <!-- Nút Chuông Thông Báo -->
-                <button type="button" class="bn-nut-thongbao" onclick="moModalLichHen()" title="Thông báo lịch khám">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                    </svg>
-                    <span class="bn-badge-chuadoc-header" id="bnHeaderBadgeChuaDoc">3</span>
-                </button>
-
                 <!-- Nút Hamburger Menu -->
                 <button type="button" class="bn-nut-menu" onclick="toggleBnMenu(event)" title="Menu tùy chọn">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -902,44 +901,46 @@
 
         <!-- Thông Tin Bệnh Nhân -->
         <section class="bn-danhtinh-card">
-            <!-- Cột Trái: Avatar + Thông tin cơ bản -->
-            <div class="bn-danhtinh-trai">
-                <div class="bn-avatar-bn">
-                    <svg width="36" height="36" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                    </svg>
-                </div>
-                <div class="bn-danhtinh-thongtin">
-                    <div class="bn-nhan-mahoso">Mã hồ sơ</div>
-                    <div class="bn-giatri-mahoso">@(ViewBag.MaBN ?? ViewBag.MaCoSo ?? "7721")</div>
-                    <div class="bn-dong-phu">CCCD: <strong>@(ViewBag.CccdCheBot ?? "0772******069")</strong></div>
-                    <div class="bn-dong-phu">Điện thoại: <strong>@(ViewBag.DienThoai ?? "0369 892 926")</strong></div>
-                    <div class="bn-dong-phu">Họ và tên: <a class="bn-link-hoso" href="/benh-nhan/ho-so" title="Bấm để đổi hồ sơ">@ViewBag.TenBenhNhan</a></div>
-                </div>
-            </div>
-
-            <!-- Cột Phải: Trạng thái & Lần khám gần nhất -->
-            <div class="bn-danhtinh-phai">
-                <div class="bn-badge-dangky">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                    <span>Đã đăng ký khám</span>
+            <!-- Hàng đầu: Avatar + Mã hồ sơ (Trái) & Hồ sơ của tôi (Phải cùng hàng) -->
+            <div class="bn-danhtinh-hang-dau">
+                <div class="bn-danhtinh-avatar-wrap">
+                    <div class="bn-avatar-bn">
+                        <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                        </svg>
+                    </div>
+                    <div class="bn-mahoso-block">
+                        <span class="bn-nhan-mahoso">Mã hồ sơ</span>
+                        <span class="bn-giatri-mahoso">@(ViewBag.MaBN ?? ViewBag.MaCoSo ?? "77121")</span>
+                    </div>
                 </div>
 
-                <a class="bn-the-lankham" href="/benh-nhan/ho-so" title="Xem hồ sơ của tôi">
-                    <div class="bn-icon-lankham">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <a class="bn-the-hoso-top" href="/benh-nhan/ho-so" title="Xem & quản lý hồ sơ của tôi">
+                    <div class="bn-icon-hoso">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                             <circle cx="12" cy="7" r="4"></circle>
                         </svg>
                     </div>
-                    <div class="bn-chu-lankham">
-                        <span class="bn-nhan-lankham">Thông tin</span>
-                        <span class="bn-ngay-lankham">Hồ sơ của tôi</span>
-                    </div>
-                    <span class="bn-arrow-lankham">›</span>
+                    <span class="bn-ten-hoso">Hồ sơ của tôi</span>
+                    <span class="bn-arrow-hoso">›</span>
                 </a>
+            </div>
+
+            <!-- Hàng dưới: CCCD, Điện thoại, Họ và tên (Trái) & Trạng thái (Phải) -->
+            <div class="bn-danhtinh-hang-duoi">
+                <div class="bn-danhtinh-thongtin-list">
+                    <div class="bn-dong-phu">CCCD: <strong>@(ViewBag.CccdCheBot ?? "0772******069")</strong></div>
+                    <div class="bn-dong-phu">Điện thoại: <strong>@(ViewBag.DienThoai ?? "0369 892 926")</strong></div>
+                    <div class="bn-dong-phu">Họ và tên: <a class="bn-link-hoso" href="/benh-nhan/ho-so" title="Bấm để đổi hồ sơ">@ViewBag.TenBenhNhan</a></div>
+                </div>
+
+                <div class="bn-badge-dangky">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span>Đã đăng ký khám</span>
+                </div>
             </div>
         </section>
 
@@ -964,6 +965,7 @@
             
             <!-- 1. Lịch hẹn (Thẻ xanh nhạt) -->
             <div class="bn-the-dv bn-dv-lichhen" role="button" tabindex="0" onclick="moModalLichHen()" onkeydown="if(event.key==='Enter') moModalLichHen()" style="cursor: pointer;">
+                <span class="bn-dv-badge" id="bnLichHenBadge" title="Thông báo lịch hẹn">3</span>
                 <div class="bn-dv-icon">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -990,10 +992,6 @@
 
             <!-- 2. Đơn thuốc (Thẻ xanh ngọc mint) -->
             <a class="bn-the-dv bn-dv-donthuoc" href="/benh-nhan/tai-lieu?nhom=don-thuoc">
-                @if (ViewBag.SoLuongDonThuoc != null && (int)ViewBag.SoLuongDonThuoc > 0)
-                {
-                    <span class="bn-dv-badge" title="@ViewBag.SoLuongDonThuoc đơn thuốc">@ViewBag.SoLuongDonThuoc</span>
-                }
                 <div class="bn-dv-icon">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"></path>
@@ -1013,14 +1011,6 @@
 
             <!-- 3. Kết quả khám (Thẻ cam ấm) -->
             <a class="bn-the-dv bn-dv-ketquakham" href="/benh-nhan/tai-lieu?nhom=ket-qua-kham">
-                @if (ViewBag.SoLuongKetQuaKham != null && (int)ViewBag.SoLuongKetQuaKham > 0)
-                {
-                    <span class="bn-dv-badge" title="@ViewBag.SoLuongKetQuaKham kết quả khám">@ViewBag.SoLuongKetQuaKham</span>
-                }
-                else
-                {
-                    <span class="bn-dv-badge" title="4 thông báo kết quả mới">4</span>
-                }
                 <div class="bn-dv-icon">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -2764,10 +2754,15 @@
         function capNhatBadgeChuaDoc() {
             const soChuaDoc = (window.danhSachThongBaoLich || []).filter(x => !x.daDoc).length;
             const badgeEl = document.getElementById('vcbBadgeChuaDoc');
-            
             if (badgeEl) {
                 badgeEl.innerText = soChuaDoc;
                 badgeEl.style.display = soChuaDoc > 0 ? 'inline-block' : 'none';
+            }
+
+            const lhBadge = document.getElementById('bnLichHenBadge');
+            if (lhBadge) {
+                lhBadge.innerText = soChuaDoc;
+                lhBadge.style.display = soChuaDoc > 0 ? 'inline-block' : 'none';
             }
         }
 
@@ -2886,6 +2881,9 @@
                 }
             }
         });
+
+        document.addEventListener('DOMContentLoaded', capNhatBadgeChuaDoc);
+        capNhatBadgeChuaDoc();
     </script>
 </body>
 </html>
