@@ -9,6 +9,42 @@
 --     Doan duoi chi tra lai COT rong.
 -- ============================================================================
 
+-- --- Nguoc 13 (Dot 4) -------------------------------------------------------
+-- KHONG khoi phuc duoc mot cach tuyet doi: tai lieu / dot kham da bi *Go noi*
+-- xoa thi nam o bak.GoNoi_*_V001 nhung KHONG do nguoc ve duoc, vi dong
+-- DM_BenhNhanCoSo cu da mat ID (IDENTITY khong cap lai so cu). Muon lui thi de
+-- HIS day lai — khoa tu nhien (IDCoSo, LoaiTaiLieu, MaNguonHIS) con nguyen ben do.
+
+IF EXISTS (SELECT 1 FROM sys.objects WHERE name = 'DM_BenhNhanCoSo_DoiMocXemLich' AND type = 'P')
+    DROP PROCEDURE dbo.DM_BenhNhanCoSo_DoiMocXemLich;
+GO
+IF EXISTS (SELECT 1 FROM sys.objects WHERE name = 'DM_BenhNhanCoSo_GoNoi' AND type = 'P')
+    DROP PROCEDURE dbo.DM_BenhNhanCoSo_GoNoi;
+GO
+IF EXISTS (SELECT 1 FROM sys.objects WHERE name = 'DM_BenhNhan_SuaHoSo' AND type = 'P')
+    DROP PROCEDURE dbo.DM_BenhNhan_SuaHoSo;
+GO
+-- DM_BenhNhan_Save tra ve ban KHONG co @GioiTinh: chay lai script 09.
+--     Database/09_MOT_TAI_KHOAN_NHIEU_HO_SO.sql  (muc (2))
+-- Phai chay TRUOC khi bo cot GioiTinh ben duoi, khong thi thu tuc con tro toi
+-- mot cot khong ton tai.
+
+IF EXISTS (SELECT 1 FROM sys.columns
+           WHERE object_id = OBJECT_ID(N'dbo.DM_BenhNhanCoSo') AND name = 'NgayXemLichCuoi')
+    ALTER TABLE dbo.DM_BenhNhanCoSo DROP COLUMN NgayXemLichCuoi;
+GO
+IF EXISTS (SELECT 1 FROM sys.columns
+           WHERE object_id = OBJECT_ID(N'dbo.DM_BenhNhan') AND name = 'GioiTinh')
+    ALTER TABLE dbo.DM_BenhNhan DROP COLUMN GioiTinh;
+GO
+IF EXISTS (SELECT 1 FROM sys.columns
+           WHERE object_id = OBJECT_ID(N'dbo.DM_DoiTacApi') AND name = 'KhoaGoiHIS')
+    ALTER TABLE dbo.DM_DoiTacApi DROP COLUMN KhoaGoiHIS;
+GO
+-- Ban sao luu cua *Go noi* GIU LAI co y — xoa di la mat luon dau vet nhung gi
+-- da bi thao. Muon don han:
+--     DROP TABLE bak.GoNoi_TaiLieu_V001, bak.GoNoi_DotKham_V001, bak.GoNoi_HoSoCoSo_V001;
+
 -- --- Nguoc 06 ---------------------------------------------------------------
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'QL_LichSuKham')
    AND EXISTS (SELECT 1 FROM sys.tables t JOIN sys.schemas s ON s.schema_id = t.schema_id

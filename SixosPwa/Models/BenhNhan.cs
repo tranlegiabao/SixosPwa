@@ -22,11 +22,24 @@ public class BenhNhan
     /// </summary>
     public long? IdTaiKhoan { get; set; }
 
-    /// <summary>Mot trong ba o cua luat gop ho so (ADR 0018).</summary>
+    /// <summary>Mot trong BON o cua luat gop ho so (ADR 0018, ban sua doi 2026-09-09).</summary>
     public DateTime? NgaySinh { get; set; }
 
     /// <summary>
-    /// Ten da chuan hoa bo dau — o thu ba cua luat gop. Ben HIS cot cung ten nay
+    /// O thu TU cua luat gop, them 2026-09-09. Giu nguyen MA cua HIS
+    /// (<c>DM_GioiTinh.MaGioiTinh</c>): "1" Nam, "2" Nu, "3" Chua xac dinh —
+    /// khong dich sang bit/enum vi dich la them mot cho de lech.
+    ///
+    /// <para>
+    /// Vi sao them: bo CCCD ra khoi phep khop thi con <b>348 nhom</b> trung ca ho
+    /// ten, ngay sinh lan gioi tinh ma CCCD hop le KHAC NHAU — chac chan la hai con
+    /// nguoi. Ba o khong du chat.
+    /// </para>
+    /// </summary>
+    public string? GioiTinh { get; set; }
+
+    /// <summary>
+    /// Ten da chuan hoa bo dau — mot o cua luat gop. Ben HIS cot cung ten nay
     /// RONG 100% (74.725/74.725) nen day la ket qua chuan hoa cua CONG, khong
     /// phai ban chep tu HIS.
     /// </summary>

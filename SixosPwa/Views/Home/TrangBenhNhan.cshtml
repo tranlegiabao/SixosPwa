@@ -350,6 +350,23 @@
             </a>
         </section>
 
+        @* 🔴 NHẮC MỀM, KHÔNG CHẶN (ADR 0024, chốt 12). Chặn cứng theo "thiếu trường"
+           sẽ khoá luôn hồ sơ ĐÃ NỐI MÃ mà còn khuyết dữ liệu — đúng trạng thái tài
+           khoản nghiệm thu 0363982926: một màn đang phục vụ tài liệu thật bỗng thành
+           màn chặn. Thiệt hại có thật, đổi lấy một lợi ích giả định. *@
+        @if (ViewBag.HoSoThieuTruong == true && ViewBag.IdHoSoDangXem != null)
+        {
+            <div class="bn-canhbao">
+                Hồ sơ của bạn còn thiếu họ tên, ngày sinh hoặc giới tính nên cơ sở chưa
+                tìm được bệnh án cũ của bạn.
+                <a href="/benh-nhan/ho-so/sua?id=@ViewBag.IdHoSoDangXem"
+                   style="font-weight:600;text-decoration:underline;">Hoàn thiện hồ sơ</a>
+            </div>
+        }
+
+        @* Chi de lay anti-forgery token cho POST /benh-nhan/lich/da-xem. *@
+        <form id="formDaXemLich" style="display:none;">@Html.AntiForgeryToken()</form>
+
         @if (ViewBag.CoLoiKetNoi == true)
         {
             <div class="bn-canhbao">
@@ -361,7 +378,12 @@
         <div class="bn-muc">DỊCH VỤ</div>
 
         <div class="bn-luoi-dichvu">
-            <!-- 1. Lịch hẹn (Ô vuông xanh) -->
+            @* 1. Lịch khám của tôi.
+               🔴 CAI VAN (ADR 0025): cơ sở CHƯA NỐI thì ô BIẾN MẤT khỏi trang, không
+               hiện rồi báo lỗi — ở cơ sở chưa nối thì 100% số lần bấm là bấm vào thứ
+               không dùng được. Tiền lệ: ô *Đăng ký khám theo gói* ẩn tới giai đoạn 3. *@
+            @if (ViewBag.HienOLichKham == true)
+            {
             <div class="bn-o-vuong" role="button" tabindex="0" onclick="moModalLichHen()" onkeydown="if(event.key==='Enter') moModalLichHen()" style="cursor: pointer;">
                 <span class="bn-bieutuong" aria-hidden="true">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -372,11 +394,12 @@
                     </svg>
                 </span>
                 <span class="bn-noidung-the">
-                    <span class="bn-ten">Lịch hẹn</span>
-                    <span class="bn-mota">Xem ngày nhắc hẹn khám</span>
+                    <span class="bn-ten">Lịch khám của tôi</span>
+                    <span class="bn-mota">Hẹn sắp tới và những lần đã khám</span>
                 </span>
                 <span class="bn-mui-ten" aria-hidden="true">›</span>
             </div>
+            }
 
             <!-- 2. Đơn thuốc (Ô vuông xanh) -->
             <a class="bn-o-vuong" href="/benh-nhan/tai-lieu?nhom=don-thuoc">
@@ -480,13 +503,13 @@
                         <polyline points="12 19 5 12 12 5"></polyline>
                     </svg>
                 </button>
-                <h2 id="vcbTieuDe" class="vcb-tieude-chinh">Thông tin lịch khám</h2>
+                <h2 id="vcbTieuDe" class="vcb-tieude-chinh">Lịch khám của tôi</h2>
                 <button type="button" class="vcb-nut-doc-tat-ca" onclick="danhDauTatCaDaDoc()" title="Đánh dấu tất cả đã đọc">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                     </svg>
-                    <span class="vcb-badge-so-chua-doc" id="vcbBadgeChuaDoc">2</span>
+                    <span class="vcb-badge-so-chua-doc" id="vcbBadgeChuaDoc" style="display:none;"></span>
                 </button>
             </div>
 
@@ -1131,22 +1154,9 @@
             color: #475569; /* Chữ trầm hơn cho tin đã đọc */
         }
 
-        /* Khối dặn dò mở rộng */
-        .vcb-loi-dan-box {
-            margin-top: 10px;
-            padding: 10px 12px;
-            background: #fff8e6;
-            border-left: 3px solid #f59e0b;
-            border-radius: 6px;
-            font-size: 12.5px;
-            color: #92400e;
-            line-height: 1.4;
-        }
-
-        .vcb-the-thong-bao.da-doc .vcb-loi-dan-box {
-            background: rgba(245, 158, 11, 0.1);
-            color: #78350f;
-        }
+        /* 🔴 CSS cua khoi *Loi dan* da bo cung voi khoi do: QL_ToaThuoc KHONG co
+           cot LoiDan (chi co GhiChu cua toa), nen moi loi dan hien ra deu la bia —
+           va day la loi dan Y TE. Dung dung lai class nay. */
 
         /* Footer chi tiết trong thẻ */
         .vcb-the-chan {
@@ -1163,6 +1173,37 @@
         .vcb-khoa-bac-si {
             font-weight: 600;
             color: #0d5bd4;
+        }
+
+        /* Tieu de nhom SAP TOI / DA KHAM — o nay tron HAI loai viec di hai duong
+           khac nhau nen phai co vach ngan, khong thi nguoi doc tuong tat ca la hen. */
+        .vcb-nhom {
+            font-size: 11.5px;
+            font-weight: 700;
+            letter-spacing: .04em;
+            color: #64748b;
+            padding: 14px 4px 8px;
+        }
+
+        /* Trang thai thu BA: da noi nhung HIS khong tra loi. Tach han khoi
+           "khong co hen" — dich im lang thanh "ban khong co hen" la bay cua Dot 3. */
+        .vcb-canh-bao {
+            padding: 12px 14px;
+            border-radius: 10px;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            color: #92400e;
+            font-size: 13.5px;
+            line-height: 1.5;
+        }
+
+        .vcb-thu-lai {
+            display: inline-block;
+            margin-left: 4px;
+            font-weight: 600;
+            color: #b45309;
+            text-decoration: underline;
+            cursor: pointer;
         }
 
         .vcb-trang-rong {
@@ -1568,89 +1609,71 @@
     </style>
 
     <script>
-        // Danh sách thông báo lịch khám mô phỏng chuẩn phong cách thông báo tài khoản
-        (function() {
-            const homNay = new Date();
-            const nam = homNay.getFullYear();
-            const thang = String(homNay.getMonth() + 1).padStart(2, '0');
-            const ngay = String(homNay.getDate()).padStart(2, '0');
+        // ═══════════════════════════════════════════════════════════════════
+        // O *Lich kham cua toi* — DU LIEU THAT (ADR 0025, dong no ADR 0023)
+        //
+        // 🔴 Khoi du lieu mau hardcode cu (7 muc, co ca LOI DAN Y TE BIA) da bi
+        // xoa han. No la mon no ma chinh ADR 0023 tu dat dieu kien: noi cua doc
+        // cua HIS truoc khi bat cho co so that nao.
+        //
+        // Nap bang AJAX KHI NGUOI DUNG BAM mo o, khong phai luc render trang:
+        // mot tai khoan N ho so thi mo trang mot lan se thanh N cuoc goi sang
+        // may khach.
+        // ═══════════════════════════════════════════════════════════════════
 
-            window.danhSachThongBaoLich = [
-                // 1. HẸN CẬN KỀ / HÔM NAY (MÀU ĐỎ)
-                {
-                    id: 1,
-                    thoiGianHienThi: "Hôm nay • 08:30",
-                    ngayIso: `${nam}-${thang}-${ngay}`,
-                    loai: "nhac-hen",
-                    daDoc: false,
-                    noiDung: `Lịch nhắc khám: Quý khách có lịch hẹn tái khám tại Khoa Nội Tiết - Phòng 204 lúc 08:30 ngày ${ngay}/${thang}/${nam}. Bác sĩ phụ trách: BSCKII. Nguyễn Văn An.`,
-                    loiDan: "Vui lòng nhịn ăn sáng để làm xét nghiệm máu và lấy kết quả trong buổi sáng.",
-                    chuyenKhoa: "Khoa Nội Tiết"
-                },
-                // 2. NGÀY ĐÃ QUA TRONG QUÁ KHỨ (MÀU XÁM)
-                {
-                    id: 2,
-                    thoiGianHienThi: "Hôm qua • 21:31",
-                    ngayIso: `${nam}-09-07`,
-                    loai: "nhac-hen",
-                    daDoc: false,
-                    noiDung: `Lịch nhắc hẹn: Lịch khám định kỳ Mắt - Phòng 302 của quý khách vào 14:00 ngày 07/09/${nam}. ThS.BS. Hoàng Minh Tuấn phụ trách.`,
-                    loiDan: "Kiểm tra thị lực định kỳ và đo nhãn áp.",
-                    chuyenKhoa: "Khoa Mắt"
-                },
-                {
-                    id: 3,
-                    thoiGianHienThi: "06/09/2026 • 21:30",
-                    ngayIso: `${nam}-09-06`,
-                    loai: "tai-kham",
-                    daDoc: true,
-                    noiDung: `Thông báo khám: Quý khách đã hoàn thành lịch hẹn khám Tim Mạch lúc 09:30 ngày 06/09/${nam}. BSCKII. Lê Thị Mai. Toa thuốc đã được cập nhật vào hồ sơ.`,
-                    loiDan: "Tái khám sau 1 tháng hoặc khi có biểu hiện tức ngực.",
-                    chuyenKhoa: "Khoa Tim Mạch"
-                },
-                {
-                    id: 4,
-                    thoiGianHienThi: "02/09/2026 • 08:00",
-                    ngayIso: `${nam}-09-02`,
-                    loai: "tai-kham",
-                    daDoc: true,
-                    noiDung: `Lịch hẹn khám: Nhắc lịch khám sức khỏe định kỳ lúc 08:00 ngày 02/09/${nam}. Bác sĩ phụ trách: BSCKI. Trần Văn Bình.`,
-                    loiDan: "Mang theo sổ khám và thẻ BHYT.",
-                    chuyenKhoa: "Khám Tổng Quát"
-                },
-                // 3. NGÀY CÓ HẸN TRONG TƯƠNG LAI (MÀU XANH)
-                {
-                    id: 5,
-                    thoiGianHienThi: "15/09/2026 • 09:00",
-                    ngayIso: `${nam}-09-15`,
-                    loai: "nhac-hen",
-                    daDoc: false,
-                    noiDung: `Lịch hẹn tái khám Mắt: Tái khám đo nhãn áp và kiểm tra đáy mắt lúc 09:00 ngày 15/09/${nam}. Phòng 302 - ThS.BS. Hoàng Minh Tuấn.`,
-                    loiDan: "Mang theo kính mắt hiện tại và đơn thuốc cũ.",
-                    chuyenKhoa: "Khoa Mắt"
-                },
-                {
-                    id: 6,
-                    thoiGianHienThi: "22/09/2026 • 14:30",
-                    ngayIso: `${nam}-09-22`,
-                    loai: "nhac-hen",
-                    daDoc: false,
-                    noiDung: `Lịch hẹn khám Răng Hàm Mặt: Nhổ răng khôn & trám răng thẩm mỹ lúc 14:30 ngày 22/09/${nam}. BSCKI. Phạm Minh Hải.`,
-                    loiDan: "Ăn no trước khi đến phòng khám 1 tiếng.",
-                    chuyenKhoa: "Răng Hàm Mặt"
-                },
-                {
-                    id: 7,
-                    thoiGianHienThi: "28/09/2026 • 10:00",
-                    ngayIso: `${nam}-09-28`,
-                    loai: "nhac-hen",
-                    daDoc: false,
-                    noiDung: `Lịch hẹn Da Liễu: Khám và soi da định kỳ lúc 10:00 ngày 28/09/${nam}. Phòng 405 - BS. Trần Thu Hà.`,
-                    loiDan: "Không thoa kem đặc trị trong vòng 12 giờ trước khám.",
-                    chuyenKhoa: "Khoa Da Liễu"
-                }
-            ];
-        })();
+        // Ba trang thai TACH BAC — xem chu thich o LichKhamController.
+        window.lichTrangThai = 'CHUA_TAI';
+        window.dsLichKham = [];
+        var daTaiLich = false;
+
+        async function taiLichKham(batBuocTaiLai) {
+            if (daTaiLich && !batBuocTaiLai) return;
+
+            try {
+                const res = await fetch('/benh-nhan/lich', { credentials: 'same-origin' });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+
+                const data = await res.json();
+
+                window.lichTrangThai = data.trangThai || 'CHUA_HOI_DUOC';
+                window.dsLichKham = (data.the || []).map(function (x, idx) {
+                    return {
+                        id: idx + 1,
+                        ngayIso: x.ngayIso,
+                        ngayHienThi: x.ngayHienThi,
+                        nhom: x.nhom,
+                        noiDung: x.noiDung,
+                        chuyenKhoa: x.chuyenKhoa,
+                        moi: x.moi
+                    };
+                });
+
+                daTaiLich = true;
+            } catch (e) {
+                // Im lang bi dich thanh "ban khong co hen" la dung bay cua Dot 3.
+                window.lichTrangThai = 'CHUA_HOI_DUOC';
+                window.dsLichKham = [];
+                daTaiLich = true;
+            }
+        }
+
+        /// Doi *Moc xem lich* — goi khi nguoi dung MO o (ADR 0025).
+        async function doiMocXemLich() {
+            try {
+                const token = document.querySelector('#formDaXemLich input[name="__RequestVerificationToken"]');
+                if (!token) return;
+
+                await fetch('/benh-nhan/lich/da-xem', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'RequestVerificationToken': token.value }
+                });
+
+                // Doi moc xong thi huy hieu tren MAN phai tat theo ngay, khong doi
+                // lan mo sau — nguoi dung vua nhin thay chung.
+                window.dsLichKham.forEach(function (x) { x.moi = false; });
+            } catch (e) { /* Doi moc that bai chi lam huy hieu con lai, khong pha gi */ }
+        }
 
         let cheDoXemTatCaThang = false;
         let offsetThoiGian = 0;
@@ -1705,7 +1728,7 @@
 
         function timNgayCanKeIso() {
             const todayIso = formatIso(new Date());
-            const ds = window.danhSachThongBaoLich || [];
+            const ds = window.dsLichKham || [];
             
             const tuongLai = ds.filter(x => x.ngayIso >= todayIso).sort((a, b) => a.ngayIso.localeCompare(b.ngayIso));
             if (tuongLai.length > 0) {
@@ -1746,7 +1769,7 @@
 
             const todayIso = formatIso(new Date());
             const ngayCanKeIso = timNgayCanKeIso();
-            const dsLich = window.danhSachThongBaoLich || [];
+            const dsLich = window.dsLichKham || [];
 
             const firstDayOfMonth = new Date(calNam, calThang - 1, 1);
             const lastDayOfMonth = new Date(calNam, calThang, 0);
@@ -1818,7 +1841,7 @@
             const bar = document.getElementById('vcbCalBottomBar');
             if (!bar) return;
 
-            const dsLich = window.danhSachThongBaoLich || [];
+            const dsLich = window.dsLichKham || [];
             const lichHen = dsLich.find(x => x.ngayIso === calSelectedNgayIso);
             const todayIso = formatIso(new Date());
             const ngayCanKeIso = timNgayCanKeIso();
@@ -1829,19 +1852,19 @@
             if (calSelectedNgayIso === ngayCanKeIso && lichHen) {
                 bar.innerHTML = `
                     <button type="button" class="vcb-cal-btn-action can-ke" onclick="xemTinTheoNgay('${calSelectedNgayIso}')">
-                        <span>🔴 Lịch cận kề ${ngayVn}: ${lichHen.chuyenKhoa} (${lichHen.thoiGianHienThi.split('•')[1] || ''}) ➔</span>
+                        <span>🔴 Lịch cận kề ${ngayVn}: ${lichHen.chuyenKhoa || ''} ➔</span>
                     </button>
                 `;
             } else if (lichHen && calSelectedNgayIso >= todayIso) {
                 bar.innerHTML = `
                     <button type="button" class="vcb-cal-btn-action co-hen" onclick="xemTinTheoNgay('${calSelectedNgayIso}')">
-                        <span>🟢 Lịch hẹn ${ngayVn}: ${lichHen.chuyenKhoa} ➔</span>
+                        <span>🟢 Lịch hẹn ${ngayVn}: ${lichHen.chuyenKhoa || ''} ➔</span>
                     </button>
                 `;
             } else if (lichHen && calSelectedNgayIso < todayIso) {
                 bar.innerHTML = `
                     <button type="button" class="vcb-cal-btn-action da-qua" onclick="xemTinTheoNgay('${calSelectedNgayIso}')">
-                        <span>⚪ Đã qua (${ngayVn}): ${lichHen.chuyenKhoa} ➔</span>
+                        <span>⚪ Đã qua (${ngayVn}): ${lichHen.chuyenKhoa || ''} ➔</span>
                     </button>
                 `;
             } else {
@@ -2108,7 +2131,7 @@
         }
 
         function capNhatBadgeChuaDoc() {
-            const soChuaDoc = (window.danhSachThongBaoLich || []).filter(x => !x.daDoc).length;
+            const soChuaDoc = (window.dsLichKham || []).filter(x => x.moi).length;
             const badgeEl = document.getElementById('vcbBadgeChuaDoc');
             
             if (badgeEl) {
@@ -2122,81 +2145,88 @@
             if (!container) return;
 
             const khoang = layKhoangThoiGian(offsetThoiGian);
-            let ds = window.danhSachThongBaoLich || [];
+            let ds = window.dsLichKham || [];
 
-            // 1. Lọc theo khoảng thời gian đang chọn (ngày/tuần/tháng)
+            // 1. Loc theo khoang thoi gian dang chon (ngay/tuan/thang)
             ds = ds.filter(x => x.ngayIso >= khoang.startIso && x.ngayIso <= khoang.endIso);
 
-            // 2. Lọc theo Từ khóa tìm kiếm nếu có
+            // 2. Loc theo tu khoa tim kiem neu co
             if (tuKhoaTimKiemVcb.trim() !== '') {
                 const kw = tuKhoaTimKiemVcb.toLowerCase();
-                ds = ds.filter(x => x.noiDung.toLowerCase().includes(kw) || 
-                                    x.thoiGianHienThi.toLowerCase().includes(kw) || 
-                                    (x.loiDan && x.loiDan.toLowerCase().includes(kw)));
+                ds = ds.filter(x => (x.noiDung || '').toLowerCase().includes(kw) ||
+                                    (x.ngayHienThi || '').toLowerCase().includes(kw) ||
+                                    (x.chuyenKhoa || '').toLowerCase().includes(kw));
             }
 
             container.innerHTML = '';
 
-            if (ds.length === 0) {
-                const thongBaoRong = customKhoangChon 
-                    ? `Không có thông báo lịch hẹn trong ${customKhoangChon.chuoiHienThi}`
-                    : (cheDoXemTatCaThang 
-                        ? "Không có thông báo lịch hẹn nào trong tháng này"
-                        : "Không có thông báo lịch hẹn trong tuần này");
-                container.innerHTML = `<div class="vcb-trang-rong">${thongBaoRong}</div>`;
-                capNhatBadgeChuaDoc();
-                return;
+            const sapToi = ds.filter(x => x.nhom === 'SAP_TOI');
+            const daKham = ds.filter(x => x.nhom === 'DA_KHAM');
+
+            let html = '';
+
+            // ── SAP TOI ────────────────────────────────────────────────────
+            // 🔴 Nhom nay LUON hien tieu de, ke ca khi rong: no la cho dat nhan
+            // *chua hoi duoc co so*. Giau di thi im lang lai bi dich thanh
+            // "ban khong co hen".
+            html += '<div class="vcb-nhom">SẮP TỚI</div>';
+
+            if (window.lichTrangThai === 'CHUA_HOI_DUOC') {
+                html += '<div class="vcb-canh-bao">Chưa hỏi được cơ sở lúc này — chưa biết bạn có hẹn hay không. '
+                      + '<span class="vcb-thu-lai" onclick="thuLaiLich()">Thử lại</span></div>';
+            } else if (sapToi.length === 0) {
+                html += '<div class="vcb-trang-rong">Bạn chưa có lịch hẹn tái khám nào sắp tới.</div>';
+            } else {
+                sapToi.forEach(item => { html += veTheLich(item); });
             }
 
-            ds.forEach(item => {
-                const card = document.createElement('div');
-                card.className = `vcb-the-thong-bao ${item.daDoc ? 'da-doc' : 'chua-doc'}`;
-                card.setAttribute('role', 'button');
-                card.setAttribute('tabindex', '0');
-                
-                card.onclick = () => xuLyXemThongBao(item.id);
-                card.onkeydown = (e) => { if (e.key === 'Enter') xuLyXemThongBao(item.id); };
+            // ── DA KHAM ────────────────────────────────────────────────────
+            if (daKham.length > 0) {
+                html += '<div class="vcb-nhom">ĐÃ KHÁM</div>';
+                daKham.forEach(item => { html += veTheLich(item); });
+            }
 
-                const badgeHtml = !item.daDoc 
-                    ? `<span class="vcb-badge-moi">MỚI</span>` 
-                    : `<span class="vcb-tick-da-doc" title="Đã xem">✔✔</span>`;
-
-                card.innerHTML = `
-                    <div class="vcb-the-dau">
-                        <span class="vcb-thoi-gian">${item.thoiGianHienThi}</span>
-                        ${badgeHtml}
-                    </div>
-                    <div class="vcb-noi-dung-text">
-                        ${item.noiDung}
-                    </div>
-                    ${item.loiDan ? `
-                        <div class="vcb-loi-dan-box">
-                            <strong>📌 Lời dặn:</strong> ${item.loiDan}
-                        </div>
-                    ` : ''}
-                    <div class="vcb-the-chan">
-                        <span class="vcb-khoa-bac-si">🏥 ${item.chuyenKhoa}</span>
-                        <span>${item.daDoc ? 'Đã xem' : 'Chạm để xem'}</span>
-                    </div>
-                `;
-
-                container.appendChild(card);
-            });
-
+            container.innerHTML = html;
             capNhatBadgeChuaDoc();
         }
 
-        function xuLyXemThongBao(id) {
-            const item = window.danhSachThongBaoLich.find(x => x.id === id);
-            if (item) {
-                item.daDoc = true;
-                renderDanhSachVcb();
-            }
+        /// Mot the. 🔴 KHONG co GIO va KHONG co khoi *Lời dặn*: ca hai deu khong
+        /// co nguon that. NgayTaiKham ben HIS kieu `date` (khong gio), va
+        /// QL_ToaThuoc khong co cot LoiDan — bia ra la loi dan Y TE gia.
+        function veTheLich(item) {
+            const badgeHtml = item.moi
+                ? '<span class="vcb-badge-moi">MỚI</span>'
+                : '<span class="vcb-tick-da-doc" title="Đã xem">✔✔</span>';
+
+            const chan = item.chuyenKhoa
+                ? '<span class="vcb-khoa-bac-si">🏥 ' + item.chuyenKhoa + '</span>'
+                : '<span class="vcb-khoa-bac-si"></span>';
+
+            return '<div class="vcb-the-thong-bao ' + (item.moi ? 'chua-doc' : 'da-doc') + '">'
+                 +   '<div class="vcb-the-dau">'
+                 +     '<span class="vcb-thoi-gian">' + item.ngayHienThi + '</span>'
+                 +     badgeHtml
+                 +   '</div>'
+                 +   '<div class="vcb-noi-dung-text">' + item.noiDung + '</div>'
+                 +   '<div class="vcb-the-chan">' + chan
+                 +     '<span>' + (item.moi ? 'Chưa xem' : 'Đã xem') + '</span>'
+                 +   '</div>'
+                 + '</div>';
         }
 
-        function danhDauTatCaDaDoc() {
-            (window.danhSachThongBaoLich || []).forEach(item => item.daDoc = true);
+        async function thuLaiLich() {
+            await taiLichKham(true);
+            capNhatKhoangThoiGianUi();
             renderDanhSachVcb();
+        }
+
+        // 🔴 Bam vao MOT the KHONG doi trang thai rieng cua no. Co che la MOT
+        // MOC THOI GIAN cho ca ho so, khong phai co "da doc" tung muc: lich hen la
+        // mot TRANG THAI xem di xem lai, khong phai su kien duoc day toi kieu thong
+        // bao ngan hang. Vi the nhan goc phai la *Chua xem*, khong phai
+        // "Cham de xem" — cham vao khong lam gi ca.
+        function danhDauTatCaDaDoc() {
+            doiMocXemLich().then(renderDanhSachVcb);
         }
 
         function timKiemThongBaoVcb(value) {
@@ -2204,11 +2234,21 @@
             renderDanhSachVcb();
         }
 
-        function moModalLichHen() {
-            capNhatKhoangThoiGianUi();
-            renderDanhSachVcb();
+        async function moModalLichHen() {
             document.getElementById('modalLichHen').style.display = 'flex';
             document.body.style.overflow = 'hidden';
+
+            capNhatKhoangThoiGianUi();
+            renderDanhSachVcb();          // ve khung truoc de man khong trong tron
+
+            await taiLichKham(false);
+            renderDanhSachVcb();
+
+            // Doi moc SAU khi da ve: nguoi dung phai NHIN THAY huy hieu MOI mot
+            // lan roi no moi tat. Doi truoc thi ho khong bao gio thay.
+            if ((window.dsLichKham || []).some(x => x.moi)) {
+                setTimeout(function () { doiMocXemLich(); }, 1200);
+            }
         }
 
         function dongModalLichHen() {

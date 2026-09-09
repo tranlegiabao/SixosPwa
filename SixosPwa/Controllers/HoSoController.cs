@@ -90,10 +90,10 @@ public class HoSoController : Controller
 
     [HttpPost("/benh-nhan/ho-so/them")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Them(string cccd, string hoTen, DateTime? ngaySinh, string? sdt)
+    public async Task<IActionResult> Them(string cccd, string hoTen, DateTime? ngaySinh,
+                                          string? sdt, string? gioiTinh)
     {
-        var dinhDanh = User.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;
-        var idTaiKhoan = await _hoSo.LayIdTaiKhoanAsync(dinhDanh);
+        var idTaiKhoan = await LayIdTaiKhoanAsync();
 
         if (idTaiKhoan is null)
         {
@@ -102,20 +102,145 @@ public class HoSoController : Controller
 
         var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
 
-        var (thanhCong, thongBao, idBenhNhan) =
-            await _hoSo.TaoAsync(idTaiKhoan.Value, maCoSo, cccd, hoTen, ngaySinh, sdt);
+        var ketQua = await _hoSo.TaoAsync(idTaiKhoan.Value, maCoSo, cccd, hoTen, ngaySinh, sdt, gioiTinh);
 
-        if (!thanhCong)
+        if (!ketQua.ThanhCong)
         {
             // Loi "ai khai truoc giu CCCD" phai hien NGUYEN VAN — no co chi duong
             // ra. Hien o chinh man Them de nguoi dung khong mat nhung gi vua go.
-            return RedirectToAction(nameof(Them), new { loi = thongBao });
+            return RedirectToAction(nameof(Them), new { loi = ketQua.ThongBao });
         }
 
-        // Tao xong thi chuyen sang xem luon ho so vua tao — dung buoc nguoi dung
-        // phai bam them mot lan nua.
-        await PhatLaiClaimAsync(idBenhNhan);
-        return RedirectToAction(nameof(Index), new { xong = "1" });
+        await PhatLaiClaimAsync(ketQua.IdBenhNhan);
+
+        // Tang 2 thi phai dung lai o man *Sua ho so* de nguoi dung tu nhan ma —
+        // day thang ve danh sach la nuot mat buoc xac nhan.
+        if (ketQua.KetCuc == KetCucNoi.ChoXacNhan)
+        {
+            GiuUngVien(ketQua);
+            return RedirectToAction(nameof(Sua), new { id = ketQua.IdBenhNhan });
+        }
+
+        return RedirectToAction(nameof(Index), new { xong = MaKetCuc(ketQua) });
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Man *Sua ho so* — MOI o Dot 4 (ADR 0024 ve 1)
+    //
+    // 🔴 Thu duy nhat cuu duoc nhom ho so CHINH CHU: 14/19 tai khoan dang mang
+    // ten la SO DIEN THOAI vi ho so cua ho tu de ra luc dang ky bang OTP, khong
+    // bao gio di qua man *Them ho so*. Bat ky phuong an nao chi sua man *Them*
+    // deu bo roi dung nhom dong nhat.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    [HttpGet("/benh-nhan/ho-so/sua")]
+    public async Task<IActionResult> Sua(long id, string? loi = null, string? xong = null)
+    {
+        var idTaiKhoan = await LayIdTaiKhoanAsync();
+
+        if (idTaiKhoan is null)
+        {
+            return RedirectToAction(nameof(Index), new { loi = "Không tìm thấy tài khoản." });
+        }
+
+        var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
+
+        // 🔴 Cong chan — service loc theo ca ID lan chu so huu, tra null khi ho so
+        // khong phai cua tai khoan nay.
+        var hoSo = await _hoSo.LayDeSuaAsync(id, idTaiKhoan.Value, maCoSo);
+
+        if (hoSo is null)
+        {
+            _logger.LogWarning("Tai khoan {IdTaiKhoan} thu sua ho so {IdHoSo} khong thuoc ve minh.",
+                idTaiKhoan.Value, id);
+
+            return RedirectToAction(nameof(Index), new { loi = "Hồ sơ này không thuộc tài khoản của bạn." });
+        }
+
+        ViewBag.Loi = loi;
+        ViewBag.Xong = xong;
+        ViewBag.UngVien = LayUngVienDaGiu(id);
+
+        return View(hoSo);
+    }
+
+    [HttpPost("/benh-nhan/ho-so/sua")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Sua(long id, string cccd, string hoTen, DateTime? ngaySinh,
+                                         string? sdt, string? gioiTinh)
+    {
+        var idTaiKhoan = await LayIdTaiKhoanAsync();
+
+        if (idTaiKhoan is null)
+        {
+            return RedirectToAction(nameof(Index), new { loi = "Không tìm thấy tài khoản." });
+        }
+
+        var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
+
+        var ketQua = await _hoSo.SuaAsync(id, idTaiKhoan.Value, maCoSo, cccd, hoTen,
+                                          ngaySinh, sdt, gioiTinh);
+
+        if (!ketQua.ThanhCong)
+        {
+            return RedirectToAction(nameof(Sua), new { id, loi = ketQua.ThongBao });
+        }
+
+        if (ketQua.KetCuc == KetCucNoi.ChoXacNhan) GiuUngVien(ketQua);
+
+        // O LAI man *Sua ho so*: chinh o day moi co khoi *Ma benh nhan tai co so*
+        // de nguoi dung thay ket qua cua lan luu vua roi.
+        return RedirectToAction(nameof(Sua), new { id, xong = MaKetCuc(ketQua) });
+    }
+
+    /// <summary>*Tang 2* — benh nhan tick nhung ma la cua minh roi bam nhan.</summary>
+    [HttpPost("/benh-nhan/ho-so/xac-nhan-noi")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> XacNhanNoi(long id, string[]? maBN)
+    {
+        var idTaiKhoan = await LayIdTaiKhoanAsync();
+
+        if (idTaiKhoan is null)
+        {
+            return RedirectToAction(nameof(Index), new { loi = "Không tìm thấy tài khoản." });
+        }
+
+        var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
+
+        var (thanhCong, thongBao, soMa) = await _hoSo.XacNhanNoiAsync(
+            id, idTaiKhoan.Value, maCoSo, maBN ?? Array.Empty<string>());
+
+        XoaUngVienDaGiu(id);
+
+        return thanhCong
+            ? RedirectToAction(nameof(Sua), new { id, xong = soMa > 0 ? "da-noi" : "khong-noi" })
+            : RedirectToAction(nameof(Sua), new { id, loi = thongBao });
+    }
+
+    /// <summary>
+    /// *Go noi* — thao MOT ma khoi ho so (ADR 0024 ve 3). Nam o man *Sua ho so*,
+    /// KHONG o *Ho so cua toi*: man do de chon nguoi, tron mot nut pha huy vao
+    /// danh sach chon la moi nguoi dung bam nham.
+    /// </summary>
+    [HttpPost("/benh-nhan/ho-so/go-noi")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> GoNoi(long id, long idHoSoCoSo)
+    {
+        var idTaiKhoan = await LayIdTaiKhoanAsync();
+
+        if (idTaiKhoan is null)
+        {
+            return RedirectToAction(nameof(Index), new { loi = "Không tìm thấy tài khoản." });
+        }
+
+        // 🔴 Phep kiem chu so huu nam TRONG thu tuc (no join sang DM_BenhNhan de
+        // doi chieu IDTaiKhoan), nen khong the go ma cua nguoi khac bang cach doan
+        // idHoSoCoSo.
+        var (thanhCong, thongBao) = await _hoSo.GoNoiAsync(idHoSoCoSo, idTaiKhoan.Value);
+
+        return thanhCong
+            ? RedirectToAction(nameof(Sua), new { id, xong = "da-go" })
+            : RedirectToAction(nameof(Sua), new { id, loi = thongBao });
     }
 
     [HttpPost("/benh-nhan/ho-so/xoa")]
@@ -146,6 +271,55 @@ public class HoSoController : Controller
 
         return RedirectToAction(nameof(Index), new { xong = "1" });
     }
+
+    private Task<long?> LayIdTaiKhoanAsync() =>
+        _hoSo.LayIdTaiKhoanAsync(User.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty);
+
+    /// <summary>Ma trang thai cho man doc, khong phai cau chu — cau chu nam o view.</summary>
+    private static string MaKetCuc(KetQuaLuuHoSo ketQua) => ketQua.KetCuc switch
+    {
+        KetCucNoi.DaGanImLang      => "da-noi",
+        KetCucNoi.ChuaHoiDuocCoSo  => "chua-hoi-duoc",
+        _                          => "1"
+    };
+
+    // ── Giu danh sach ung vien cua *Tang 2* qua mot lan chuyen huong ──────────
+    //
+    // 🔴 Dung TempData chu khong hoi lai HIS o man GET: hoi lai la mot cuoc goi
+    // nua sang may khach cho cung mot cau hoi, va te hon — danh sach co the DOI
+    // giua hai lan hoi, thanh ra nguoi dung tick mot dang roi nhan mot dang khac.
+    // Khoa co kem ID ho so de danh sach cua ho so nay khong lot sang ho so kia.
+
+    private string KhoaUngVien(long idHoSo) => $"UngVienNoi_{idHoSo}";
+
+    private void GiuUngVien(KetQuaLuuHoSo ketQua)
+    {
+        if (ketQua.UngVien is null || ketQua.UngVien.Count == 0) return;
+
+        TempData[KhoaUngVien(ketQua.IdBenhNhan)] =
+            System.Text.Json.JsonSerializer.Serialize(ketQua.UngVien);
+    }
+
+    private List<SixosPwa.Services.His.HoSoHis>? LayUngVienDaGiu(long idHoSo)
+    {
+        // Peek chu khong doc dut: nguoi dung tai lai trang (F5) van con danh sach,
+        // khong thi ho mat luon buoc xac nhan ma khong hieu vi sao.
+        if (TempData.Peek(KhoaUngVien(idHoSo)) is not string json) return null;
+
+        TempData.Keep(KhoaUngVien(idHoSo));
+
+        try
+        {
+            return System.Text.Json.JsonSerializer
+                .Deserialize<List<SixosPwa.Services.His.HoSoHis>>(json);
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return null;
+        }
+    }
+
+    private void XoaUngVienDaGiu(long idHoSo) => TempData.Remove(KhoaUngVien(idHoSo));
 
     private long? LayIdDangChon() =>
         long.TryParse(User.FindFirst(LuongCongBenhNhan.ClaimHoSoDangChon)?.Value, out var id)

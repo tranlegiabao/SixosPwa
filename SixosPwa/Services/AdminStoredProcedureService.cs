@@ -112,7 +112,8 @@ public sealed class AdminStoredProcedureService
         string? diaChi,
         long? idTaiKhoan = null,
         DateTime? ngaySinh = null,
-        string? hoTenKhongDau = null) =>
+        string? hoTenKhongDau = null,
+        string? gioiTinh = null) =>
         ExecuteWithIdAsync("dbo.DM_BenhNhan_Save", "@IDBenhNhan", command =>
         {
             AddParameter(command, "@CCCD", DbType.AnsiString, cccd, 20);
@@ -123,6 +124,68 @@ public sealed class AdminStoredProcedureService
             AddParameter(command, "@IDTaiKhoan", DbType.Int64, idTaiKhoan);
             AddParameter(command, "@NgaySinh", DbType.DateTime, ngaySinh);
             AddParameter(command, "@HoTenKhongDau", DbType.String, hoTenKhongDau, 100);
+            AddParameter(command, "@GioiTinh", DbType.AnsiString, gioiTinh, 10);
+        });
+
+    /// <summary>
+    /// Man *Sua ho so* (Dot 4). 🔴 KHONG dung lai <see cref="SaveBenhNhanAsync"/>:
+    /// cai do nhan dien bang CCCD, ma o day nguoi dung DOI DUOC ca CCCD — goi Save
+    /// voi CCCD moi se de ra mot CON NGUOI THU HAI thay vi sua nguoi dang co.
+    ///
+    /// Thu tuc tu chan: khong phai ho so cua minh (<c>ResultCode 5</c>), CCCD dam
+    /// vao nguoi khac (<c>3</c>). Ho so DA NOI HIS thi bon o danh tinh khoa cung,
+    /// chi con so dien thoai sua duoc — thu tuc tu bo qua, ben goi khong phai biet.
+    /// </summary>
+    public Task<AdminStoredProcedureResult> SuaHoSoAsync(
+        long idBenhNhan,
+        long idTaiKhoan,
+        string? cccd,
+        string? tenBN,
+        string? sdt,
+        DateTime? ngaySinh,
+        string? hoTenKhongDau,
+        string? gioiTinh) =>
+        ExecuteAsync("dbo.DM_BenhNhan_SuaHoSo", command =>
+        {
+            AddParameter(command, "@IDBenhNhan", DbType.Int64, idBenhNhan);
+            AddParameter(command, "@IDTaiKhoan", DbType.Int64, idTaiKhoan);
+            AddParameter(command, "@CCCD", DbType.AnsiString, cccd, 20);
+            AddParameter(command, "@TenBN", DbType.String, tenBN, 100);
+            AddParameter(command, "@SDT", DbType.AnsiString, sdt, 20);
+            AddParameter(command, "@NgaySinh", DbType.DateTime, ngaySinh);
+            AddParameter(command, "@HoTenKhongDau", DbType.String, hoTenKhongDau, 100);
+            AddParameter(command, "@GioiTinh", DbType.AnsiString, gioiTinh, 10);
+        });
+
+    /// <summary>
+    /// *Go noi* — thao MOT ma khoi mot ho so (ADR 0024 ve 3).
+    ///
+    /// 🔴 Thu tuc XOA CA tai lieu va dot kham cua dong do (sao luu sang
+    /// <c>bak.GoNoi_*_V001</c> truoc). Khong phai tuy chon: khoa ngoai la
+    /// NO_ACTION nen khong xoa dong duoc chung nao con con, va neu ma bi noi NHAM
+    /// thi de tai lieu lai chinh la giu nguyen cai hai ma nut nay sinh ra de chua.
+    /// Mat khong vinh vien — cua <c>kiem-tra-nhan</c> se dua ma ve trang thai
+    /// "chua ai nhan" nen hang doi ben HIS day lai duoc.
+    /// </summary>
+    public Task<AdminStoredProcedureResult> GoNoiAsync(long idBenhNhanCoSo, long idTaiKhoan) =>
+        ExecuteAsync("dbo.DM_BenhNhanCoSo_GoNoi", command =>
+        {
+            AddParameter(command, "@IDBenhNhanCoSo", DbType.Int64, idBenhNhanCoSo);
+            AddParameter(command, "@IDTaiKhoan", DbType.Int64, idTaiKhoan);
+        });
+
+    /// <summary>
+    /// Doi *Moc xem lich* cho TAT CA dong cua mot con nguoi tai mot co so (ADR 0025).
+    /// Doi tung dong thi mo modal xong huy hieu van con — o *Lich kham cua toi* gop
+    /// het cac ma lai thanh mot danh sach nen "da xem" phai la mot trang thai duy nhat.
+    /// </summary>
+    public Task<AdminStoredProcedureResult> DoiMocXemLichAsync(
+        long idBenhNhan, long idCoSo, long idTaiKhoan) =>
+        ExecuteAsync("dbo.DM_BenhNhanCoSo_DoiMocXemLich", command =>
+        {
+            AddParameter(command, "@IDBenhNhan", DbType.Int64, idBenhNhan);
+            AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
+            AddParameter(command, "@IDTaiKhoan", DbType.Int64, idTaiKhoan);
         });
 
     /// <summary>

@@ -97,8 +97,10 @@ _Tránh_: kết nối, đồng bộ tài khoản, nối hồ sơ
 
 **Trang bệnh nhân nội bộ**:
 Trang chủ dành cho bệnh nhân của cơ sở đi theo *nhánh màn chung*. Đợt 2026-08 mới chỉ có giao diện;
-giai đoạn 2 đổ dữ liệu thật vào. Ba ô: *Đăng ký khám theo gói* (ẩn tới giai đoạn 3) · *Lịch sử hẹn
-khám* · *Tra cứu hồ sơ khám bệnh*.
+giai đoạn 2 đổ dữ liệu thật vào. Các ô tính tới 2026-09-09: *Lịch khám của tôi* · *Đơn thuốc* ·
+*Kết quả khám* · *Quản lý hoá đơn* (sắp có) · *Kế hoạch điều trị* (sắp có). *Đăng ký khám theo gói*
+**ẩn** tới giai đoạn 3 — và đó là tiền lệ cho việc ô *Lịch khám của tôi* **biến mất** ở cơ sở chưa
+nối HIS, chứ không hiện ra rồi báo lỗi.
 _Tránh_: dashboard, trang chủ (chung chung)
 
 ### Xác thực & vé bàn giao (chốt 2026-08-25)
@@ -227,11 +229,20 @@ tồn, cái gì gửi hỏng cần gửi lại.
 _Tránh_: queue, bảng log, bảng đồng bộ
 
 **Luật gộp hồ sơ**:
-Điều kiện để SixosPwa coi hai `MaBN` là cùng một *Con người*: khớp **cả ba** — CCCD hợp lệ, Họ tên
-không dấu, Ngày sinh. Lệch bất kỳ ô nào thì **không tự gộp**, đẩy sang *Liên kết một lần* cho bệnh
-nhân tự nhận. 🔴 **Không bao giờ gộp chỉ bằng CCCD**: đo thật ở Thiên Nam có **345 nhóm** cùng CCCD
-mà khác tên. Xem ADR 0018.
+Điều kiện để SixosPwa coi hai `MaBN` là cùng một *Con người*: khớp **cả bốn** — CCCD hợp lệ, Họ tên
+không dấu, Ngày sinh, **Giới tính**. Lệch bất kỳ ô nào thì **không tự gộp**, đẩy sang *Xác nhận tay*
+cho bệnh nhân tự nhận. 🔴 **Không bao giờ gộp chỉ bằng CCCD**: đo thật ở Thiên Nam có **345 nhóm**
+cùng CCCD mà khác tên. 🔴 Và **không bao giờ gộp mà thiếu CCCD**: bỏ CCCD ra khỏi phép khớp thì có
+**348 nhóm** trùng cả họ tên, ngày sinh lẫn giới tính mà CCCD **hợp lệ và khác nhau** — chắc chắn là
+hai con người. Xem ADR 0018 (bản 2026-09-09 nâng ba ô lên bốn ô).
 _Tránh_: khớp bệnh nhân, matching, gộp theo CCCD
+
+**Ngày sinh 01/01**:
+Ngày sinh mà HIS lưu khi chỉ biết **năm sinh** — `5.611/74.950` hồ sơ Thiên Nam (7,5%). Bệnh nhân gõ
+ngày thật của mình thì **không khớp** với bản HIS. Nên *Luật gộp hồ sơ* **hạ cấp có điều kiện**: bản
+HIS mang ngày `01/01` thì ô ngày sinh chỉ so **năm**. Xử ngầm ở máy chủ — **không** bày lên màn, vì
+dạy bệnh nhân gõ một ngày giả là làm hỏng chính ô dùng để nhận ra họ.
+_Tránh_: ngày sinh mặc định, ngày rác
 
 **CCCD rác**:
 Giá trị nằm ở cột CCCD nhưng không định danh ai — `000000000000` (2.847 lần trên `Dev_Master3`),
@@ -245,13 +256,31 @@ Một lần bệnh nhân đặt lịch từ cổng, lưu ở **bảng riêng bê
 và gắn vào một đợt khám đã xảy ra.
 _Tránh_: giấy hẹn, lịch hẹn (trần), appointment
 
-**Ô Lịch hẹn**:
-Ô đầu trong khối *DỊCH VỤ* của *Trang bệnh nhân nội bộ*. Tính tới 2026-09-09 nó là **vỏ giao diện
-chạy bằng dữ liệu mẫu nằm ngay trong view** (`window.danhSachThongBaoLich`) — không đọc HIS, không
-đọc cơ sở dữ liệu nào. 🔴 Nội dung nó hiện là *nhắc hẹn / tái khám đã xảy ra*, nên **không phải**
-*Lịch đặt* (thứ bệnh nhân đặt từ cổng) mà gần *Giấy hẹn tái khám* + *Đợt khám* hơn. Tên đúng chỉ
-chốt được khi Đợt 4 nối cửa thật của HIS. Xem ADR 0023.
-_Tránh_: lịch hẹn (trần), lịch khám, appointment
+**Lịch khám của tôi** *(tên chốt 2026-09-09, thay cho **Ô Lịch hẹn**)*:
+Ô đầu trong khối *DỊCH VỤ* của *Trang bệnh nhân nội bộ*. Nó gộp **hai** loại việc đi hai đường khác
+nhau: phần *Sắp tới* là **hẹn tái khám bác sĩ đã ghi** — *gọi thẳng* HIS, không có bản sao — và phần
+*Đã khám* là **Đợt khám** đã nằm sẵn trong cơ sở dữ liệu cổng. Tên cũ *Lịch hẹn* bị bỏ vì ô này chưa
+bao giờ chỉ nói về hẹn; và **không** được gọi là *Lịch đặt* — thứ bệnh nhân đặt từ cổng chưa tồn tại
+(Đợt 5). Nguồn của phần *Sắp tới* là `QL_ToaThuoc.NgayTaiKham` (7.566 hẹn tương lai ở Thiên Nam) ∪
+`QL_GiayHenTaiKham` (4 dòng — gần như chết), **không** phải bảng giấy hẹn như từng tưởng.
+🔴 Chỉ **7,2%** người từng khám có hẹn tương lai, nên nếu ô chỉ hiện *hẹn* thì 92,8% mở ra thấy rỗng —
+đó là lý do phải trộn hai phần. Xem ADR 0023 (nợ) và ADR 0024 (đóng nợ).
+_Tránh_: lịch hẹn, ô Lịch hẹn, lịch đặt, appointment
+
+**Mốc xem lịch**:
+Cột `DM_BenhNhanCoSo.NgayXemLichCuoi` — lần gần nhất người dùng mở *Lịch khám của tôi* cho hồ sơ đó.
+Mục nào sinh sau mốc thì đeo huy hiệu **MỚI** và nhãn ***Chưa xem***; mở modal xong thì mốc dời lên.
+🔴 Đây **không phải** *đã đọc từng mục* kiểu thông báo ngân hàng: lịch hẹn là một **trạng thái** xem đi
+xem lại, không phải sự kiện được đẩy tới, nên thứ đáng báo là *"có hẹn mới kể từ lần bạn xem"*. Hệ quả
+đúng và cố ý: mở một lần là sạch huy hiệu cả danh sách, còn hẹn **bị đổi ngày** thì **bật lại MỚI**.
+_Tránh_: đã đọc, unread, thông báo
+
+**Chưa hỏi được cơ sở**:
+Trạng thái thứ ba của *Lịch khám của tôi*, tách hẳn khỏi *không có hẹn*: cơ sở **đã nối** nhưng HIS
+không trả lời lúc này. Màn vẫn hiện phần *Đã khám* và dán đúng nhãn này vào chỗ lẽ ra là *Sắp tới*.
+🔴 Dịch im lặng thành *"bạn không có hẹn"* là loại lỗi đã cắn một lần ở Đợt 3 với `HoiMaDaCoNguoiNhan`.
+Cơ sở **chưa nối** thì khác hẳn: ô **không hiện** trên trang.
+_Tránh_: lỗi kết nối, timeout, không có dữ liệu
 
 **Khoá cơ sở**:
 Một dòng `HT_KhoaApiCoSo` — chuỗi bí mật cấp cho **một cơ sở** để HIS của họ gọi vào *khu API nhận*.
@@ -292,14 +321,38 @@ _Tránh_: user, người dùng, tài khoản (trần — dễ lẫn với `HT_Ta
 **Hồ sơ tự khai**:
 Một *Con người* do chính người dùng gõ tay trên màn *Hồ sơ của tôi*, khi cơ sở **chưa** có người đó.
 Chưa mang `MaBN`, chưa có đợt khám nào, và **sửa được mọi ô**. Đối lập với *hồ sơ đã nối*, nơi họ tên
-/ ngày sinh / CCCD đọc từ HIS và **khoá cứng** — vì đó đúng là ba ô của *Luật gộp hồ sơ*.
+/ ngày sinh / CCCD / giới tính đọc từ HIS và **khoá cứng** — vì đó đúng là bốn ô của *Luật gộp hồ sơ*.
 _Tránh_: hồ sơ tạm, hồ sơ nháp, hồ sơ trống
 
 **Nối hồ sơ**:
-Việc gắn một *Hồ sơ tự khai* với hồ sơ thật bên HIS. Tự động khi khớp cả ba ô của *Luật gộp hồ sơ*;
-lệch thì bệnh nhân gõ **Mã BN** in trên phiếu. SixosPwa chỉ hỏi HIS **khi người dùng bấm**, không hỏi
-mỗi lần mở màn — một tài khoản N hồ sơ thì mở màn một lần là N cuộc gọi sang máy khách.
-_Tránh_: liên kết, đồng bộ, tra cứu (trần)
+Việc gắn một *Hồ sơ tự khai* với hồ sơ thật bên HIS. 🔴 **Không có nút *Nối hồ sơ* trên giao diện** —
+nó xảy ra ở **mỗi lần LƯU** một hồ sơ tự khai, dù là *Thêm* hay *Sửa*. Bệnh nhân không phải tự biết
+mình đã từng khám ở cơ sở này hay chưa; đó là câu chỉ HIS trả lời được. SixosPwa vẫn chỉ hỏi HIS **khi
+người dùng bấm Lưu**, không hỏi mỗi lần mở màn — một tài khoản N hồ sơ thì mở màn một lần là N cuộc
+gọi sang máy khách.
+_Tránh_: liên kết, đồng bộ, tra cứu (trần), nút nối
+
+**Tầng 1** / **Tầng 2**:
+Hai lối ra của một lần *Nối hồ sơ*. **Tầng 1** = khớp đủ bốn ô của *Luật gộp hồ sơ* với CCCD **hợp lệ**
+⇒ gán mã **im lặng**, không hỏi. **Tầng 2** = CCCD rác hoặc trống, hoặc chỉ khớp ba ô còn lại ⇒ **hiện
+danh sách và bắt bệnh nhân xác nhận tay**, không gán gì cho tới khi có người bấm. Ranh giới này là chỗ
+348 nhóm trùng-tên-khác-người bị chặn lại.
+_Tránh_: auto/manual, chế độ, mức
+
+**Gỡ nối**:
+Tháo **một mã** khỏi một *Hồ sơ*, thao tác **nằm trong màn *Sửa hồ sơ*** (không nằm ở
+*Hồ sơ của tôi* — màn đó chỉ để **chọn người**) — xoá đúng dòng `DM_BenhNhanCoSo` đó, nhả mã ra cho tài khoản khác
+nhận. **Không xoá hồ sơ, không đụng gì bên HIS.** Hết mã thì hồ sơ tụt về *Hồ sơ tự khai*. Nó tồn tại
+vì *Tầng 1* gán mà không hỏi: tự động mà không có đường lùi là đặt cược rằng luật khớp không bao giờ
+sai. Khác *xoá hồ sơ* — thao tác đó vẫn bị chặn khi hồ sơ đã có dữ liệu khám.
+_Tránh_: huỷ liên kết, tách hồ sơ, xoá mã
+
+**Chuỗi hồ sơ cũ**:
+Cột `DM_BenhNhan.IdBncu` **bên HIS** — do chính màn Tiếp nhận đặt khi lễ tân lưu một người *"đã từng
+khám nhưng khác thông tin hành chánh"*. Thiên Nam có **8.919/74.946** dòng mang nó, trong đó **596 cặp**
+lệch ít nhất một ô danh tính. *Nối hồ sơ* phải **bò theo chuỗi này** sau khi khớp, nếu không thì tìm ra
+bản mới mà **giấu mất tài liệu cũ** của đúng người đó.
+_Tránh_: bệnh nhân trùng, bản ghi cũ
 
 **Hồ sơ đang chọn**:
 Claim trong phiên nói người dùng đang xem hồ sơ nào. Bám khuôn `DangKyOnlineUB`
