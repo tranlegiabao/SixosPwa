@@ -873,24 +873,12 @@
                     </svg>
                 </button>
 
-                <!-- Dropdown Menu -->
+                @* Menu ba gach CHI CON *Dang xuat*.
+                   - *Ho so cua toi* da co nut rieng ngay duoi tieu de, to va ro hon.
+                   - *Doi mat khau* / *Danh sach co so* khong phai viec nguoi ta mo
+                     trang benh nhan de lam; nhet vao day chi lam cai menu thanh mot
+                     danh sach phai doc moi lan chi de bam mot muc. *@
                 <div id="bnMenuDropdown" class="bn-menu-dropdown" onclick="event.stopPropagation()">
-                    <a class="bn-menu-item" href="/benh-nhan/ho-so">
-                        <span>👤</span>
-                        <span>Hồ sơ của tôi</span>
-                    </a>
-                    @if (ViewBag.DungManDoiTac != true)
-                    {
-                        <a class="bn-menu-item" href="/DangNhap/DoiMatKhau?coSo=@ViewBag.MaCoSo">
-                            <span>🔑</span>
-                            <span>Đổi mật khẩu</span>
-                        </a>
-                    }
-                    <a class="bn-menu-item" href="/Home/DanhSachCoSo-@ViewBag.MaNhomCS">
-                        <span>🏥</span>
-                        <span>Danh sách cơ sở</span>
-                    </a>
-                    <div class="bn-menu-divider"></div>
                     <a class="bn-menu-item dangxuat" href="/DangNhap/DangXuat">
                         <span>🚪</span>
                         <span>Đăng xuất</span>
@@ -937,7 +925,11 @@
                 <div class="bn-danhtinh-thongtin-list">
                     <div class="bn-dong-phu">CCCD: <strong>@(ViewBag.CccdCheBot ?? "0772******069")</strong></div>
                     <div class="bn-dong-phu">Điện thoại: <strong>@(ViewBag.DienThoai ?? "0369 892 926")</strong></div>
-                    <div class="bn-dong-phu">Họ và tên: <a class="bn-link-hoso" href="/benh-nhan/ho-so" title="Bấm để đổi hồ sơ">@ViewBag.TenBenhNhan</a></div>
+                    @* Ten CHI de doc, khong con la lien ket. Doi ho so da co nut *Ho so
+                       cua toi* ngay hang tren; de them mot duong nua vao dung cho la
+                       hai loi vao cho cung mot man, ma cai nay thi khong nhin ra la
+                       bam duoc. *@
+                    <div class="bn-dong-phu">Họ và tên: <strong>@ViewBag.TenBenhNhan</strong></div>
                 </div>
 
                 <div class="bn-badge-dangky">
