@@ -4,8 +4,8 @@
     <nav class="admin-pagination" aria-label="Phân trang">
         @if (Model.Page > 1)
         {
-            <a asp-route-page="1" asp-route-q="@Model.Query" asp-route-role="@Model.Role" asp-route-loaiCS="@Model.LoaiCS" asp-route-maCoSo="@Model.MaCoSo" aria-label="Trang đầu">&laquo;</a>
-            <a asp-route-page="@(Model.Page - 1)" asp-route-q="@Model.Query" asp-route-role="@Model.Role" asp-route-loaiCS="@Model.LoaiCS" asp-route-maCoSo="@Model.MaCoSo" aria-label="Trang trước">&lsaquo;</a>
+            <a asp-route-page="1" asp-route-q="@Model.Query" asp-route-role="@Model.Role" asp-route-loaiCS="@Model.LoaiCS" asp-route-maCoSo="@Model.MaCoSo" asp-route-cccd="@Model.CCCD" asp-route-sdt="@Model.SDT" asp-route-maBN="@Model.MaBN" aria-label="Trang đầu">&laquo;</a>
+            <a asp-route-page="@(Model.Page - 1)" asp-route-q="@Model.Query" asp-route-role="@Model.Role" asp-route-loaiCS="@Model.LoaiCS" asp-route-maCoSo="@Model.MaCoSo" asp-route-cccd="@Model.CCCD" asp-route-sdt="@Model.SDT" asp-route-maBN="@Model.MaBN" aria-label="Trang trước">&lsaquo;</a>
         }
         else
         {
@@ -17,8 +17,8 @@
 
         @if (Model.Page < Model.TotalPages)
         {
-            <a asp-route-page="@(Model.Page + 1)" asp-route-q="@Model.Query" asp-route-role="@Model.Role" asp-route-loaiCS="@Model.LoaiCS" asp-route-maCoSo="@Model.MaCoSo" aria-label="Trang sau">&rsaquo;</a>
-            <a asp-route-page="@Model.TotalPages" asp-route-q="@Model.Query" asp-route-role="@Model.Role" asp-route-loaiCS="@Model.LoaiCS" asp-route-maCoSo="@Model.MaCoSo" aria-label="Trang cuối">&raquo;</a>
+            <a asp-route-page="@(Model.Page + 1)" asp-route-q="@Model.Query" asp-route-role="@Model.Role" asp-route-loaiCS="@Model.LoaiCS" asp-route-maCoSo="@Model.MaCoSo" asp-route-cccd="@Model.CCCD" asp-route-sdt="@Model.SDT" asp-route-maBN="@Model.MaBN" aria-label="Trang sau">&rsaquo;</a>
+            <a asp-route-page="@Model.TotalPages" asp-route-q="@Model.Query" asp-route-role="@Model.Role" asp-route-loaiCS="@Model.LoaiCS" asp-route-maCoSo="@Model.MaCoSo" asp-route-cccd="@Model.CCCD" asp-route-sdt="@Model.SDT" asp-route-maBN="@Model.MaBN" aria-label="Trang cuối">&raquo;</a>
         }
         else
         {
