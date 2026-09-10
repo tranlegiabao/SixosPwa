@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using SixosPwa.Services;
 using SixosPwa.Services.Partner;
 
@@ -24,17 +25,65 @@ public class HoSoController : Controller
 {
     private readonly IHoSoBenhNhanService _hoSo;
     private readonly IHTConfigService _config;
+    private readonly IMemoryCache _cache;
     private readonly ILogger<HoSoController> _logger;
 
     public HoSoController(
         IHoSoBenhNhanService hoSo,
         IHTConfigService config,
+        IMemoryCache cache,
         ILogger<HoSoController> logger)
     {
         _hoSo = hoSo;
         _config = config;
+        _cache = cache;
         _logger = logger;
     }
+
+    // ── Chan do danh tinh ────────────────────────────────────────────────────
+    //
+    // 🔴 Hai action duoi day deu nhan HO TEN + NGAY SINH + GIOI TINH roi hoi HIS.
+    // Ba o do khong phai bi mat, nen khong chan toc do thi mot tai khoan co the
+    // ra soat ca danh sach benh nhan cua co so. Ben HIS da chan do Ma BN
+    // (SPWA_TraCuuTheoMaBN, 20 lan/15 phut) nhung KHONG ai chan do danh tinh.
+    //
+    // Dem theo CA tai khoan LAN dia chi IP: khoa theo tai khoan thi ke tan cong mo
+    // tai khoan moi, khoa theo IP thi ca phong kham chung mot IP bi va lay.
+    private const int SoPhutCuaSo   = 5;
+    private const int NguongTaiKhoan = 10;
+    private const int NguongIp       = 30;
+
+    /// <summary>Tang dem va tra <c>true</c> khi da vuot nguong trong cua so thoi gian.</summary>
+    private bool QuaNhanh(string viec, string dinhDanh, int nguong)
+    {
+        var khoa = $"RL_{viec}_{dinhDanh}";
+        var dem = _cache.TryGetValue(khoa, out int cu) ? cu + 1 : 1;
+
+        // Dat lai han moi lan ghi thi cua so truot theo — co y: ke dang do lien tuc
+        // se bi khoa cho toi khi no chiu im tron 5 phut.
+        _cache.Set(khoa, dem, TimeSpan.FromMinutes(SoPhutCuaSo));
+
+        return dem > nguong;
+    }
+
+    /// <summary>Chan do cho mot action: dem theo tai khoan va theo IP.</summary>
+    private bool BiChanDo(string viec, long? idTaiKhoan)
+    {
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "?";
+        var quaTaiKhoan = idTaiKhoan is not null && QuaNhanh(viec, $"tk{idTaiKhoan}", NguongTaiKhoan);
+        var quaIp = QuaNhanh(viec, $"ip{ip}", NguongIp);
+
+        if (quaTaiKhoan || quaIp)
+        {
+            _logger.LogWarning("Chan do {Viec}: tai khoan {IdTaiKhoan} / IP {Ip}", viec, idTaiKhoan, ip);
+            return true;
+        }
+
+        return false;
+    }
+
+    private const string LoiChanDo =
+        "Bạn thao tác hơi nhanh. Vui lòng chờ ít phút rồi thử lại.";
 
     [HttpGet("/benh-nhan/ho-so")]
     public async Task<IActionResult> Index(string? loi = null, string? xong = null)
@@ -103,6 +152,11 @@ public class HoSoController : Controller
         if (idTaiKhoan is null)
         {
             return RedirectToAction(nameof(Index), new { loi = "Không tìm thấy tài khoản." });
+        }
+
+        if (BiChanDo("them-ho-so", idTaiKhoan))
+        {
+            return RedirectToAction(nameof(Them), new { loi = LoiChanDo });
         }
 
         var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
@@ -242,6 +296,11 @@ public class HoSoController : Controller
         if (idTaiKhoan is null)
         {
             return RedirectToAction(nameof(Index), new { loi = "Không tìm thấy tài khoản." });
+        }
+
+        if (BiChanDo("xac-nhan-noi", idTaiKhoan))
+        {
+            return RedirectToAction(nameof(Sua), new { id, loi = LoiChanDo });
         }
 
         var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;

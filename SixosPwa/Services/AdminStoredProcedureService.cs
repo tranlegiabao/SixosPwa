@@ -241,15 +241,23 @@ public sealed class AdminStoredProcedureService
     /// man *Noi ho so* cua dot sau chinh la cho dung no. Xoa di roi viet lai la
     /// mat doan chan trung MaBN da chay dung.
     /// </summary>
+    /// <summary>
+    /// 🔴 <paramref name="moCuaTaiLieu"/> phai truyen TUONG MINH. Thu tuc de mac
+    /// dinh <c>@DaMoTaiLieu = 1</c>, nen bo trong la moi lan noi deu MO TOANG cua
+    /// tai lieu — dung cai cua ma ADR 0020 dung len de chan. Mac dinh <c>true</c> o
+    /// day giu nguyen hanh vi cu cho man Admin (do la duong cua bo phan ho tro).
+    /// </summary>
     public Task<(AdminStoredProcedureResult KetQua, long Id)> SaveBenhNhanCoSoAsync(
         long idBenhNhan,
         long idCoSo,
-        string maBN) =>
+        string maBN,
+        bool moCuaTaiLieu = true) =>
         ExecuteWithIdAsync("dbo.DM_BenhNhanCoSo_Save", "@IDBenhNhanCoSo", command =>
         {
             AddParameter(command, "@IDBenhNhan", DbType.Int64, idBenhNhan);
             AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
             AddParameter(command, "@MaBN", DbType.AnsiString, maBN, 20);
+            AddParameter(command, "@DaMoTaiLieu", DbType.Boolean, moCuaTaiLieu);
         });
 
     public Task<(AdminStoredProcedureResult KetQua, long Id)> SaveTaiLieuBenhNhanAsync(

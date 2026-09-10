@@ -395,6 +395,20 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
         if (daNoiMa)
             return new KetQuaLuuHoSo(true, "OK", idBenhNhan, KetCucNoi.KhongCoGi);
 
+        // 🔴 CHAN HAN duong noi cho ho so mang ma gia "khong co can cuoc" (chot user
+        // 10/09, ADR 0028). Thoat TRUOC khi hoi HIS, co y:
+        //   * khong hoi thi khong co danh sach ung vien nao de lo. Ke go ho ten +
+        //     ngay sinh + gioi tinh cua nguoi khac se khong thay gi het — ba o do in
+        //     tren moi toa thuoc nen chung KHONG phai bang chung danh tinh.
+        //   * do that tren PKDK_ThienNam: 11.533 ho so khong co can cuoc, trong do
+        //     2.717 nam trong 1.203 nhom trung ca ho ten + ngay sinh + gioi tinh.
+        //     Noi theo ba o do la giao benh an cho nguoi trung ten.
+        // Cai gia da biet va CHAP NHAN: nhom nay khong keo duoc benh an ve cong.
+        // Muon mo lai thi phai co duong "go dung Ma BN" (SPWA_TraCuuTheoMaBN ben HIS
+        // da san sang, co chan do 20 lan/15 phut) — chua lam.
+        if (LaMaGia(cccd))
+            return new KetQuaLuuHoSo(true, "OK", idBenhNhan, KetCucNoi.KhongCoGi);
+
         var traLoi = await _his.TraCuuHoSoAsync(idCoSo.Value, cccd, hoTen, ngaySinh.Value, gioiTinh);
 
         if (traLoi.TrangThai == His.TrangThaiHoiHis.ChuaNoi)
@@ -410,16 +424,20 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
         if (ungVien.Count == 0)
             return new KetQuaLuuHoSo(true, "OK", idBenhNhan, KetCucNoi.KhongCoGi);
 
-        // *Tang 1* — co so cap dung MOT ma.
-        // Binh thuong: CCCD trung khit (ungVien[0].CccdKhop).
-        // Truong hop khong co CCCD (11 hoac 12 so 1): ung vien da tra cuu theo Ho ten + Ngay sinh + Gioi tinh,
-        // neu duy nhat 1 nguoi thi du dieu kien gan im lang o Tang 1.
-        var cccdTrim = cccd?.Trim();
-        var laCccdKhongCo = cccdTrim is "11111111111" or "111111111111";
-
-        if (ungVien.Count == 1 && (ungVien[0].CccdKhop || laCccdKhongCo))
+        // *Tang 1* chi con DUNG MOT truong hop: co so cap dung MOT ma, CCCD trung
+        // khit, va ma do CHUA co ho so nao khac nhan. Ra tu HAI ma tro len la KHONG
+        // duoc tu quyet, du CCCD khop het.
+        // 🔴 Nhanh "ma gia cung duoc tu gan" (them 10/09) DA BI GO: ho so mang ma gia
+        // khong con di toi day nua — bi chan tu tren, truoc ca luc hoi HIS.
+        if (ungVien.Count == 1 && ungVien[0].CccdKhop)
         {
-            var so = await GanMotMaAsync(idBenhNhan, idCoSo.Value, ungVien[0].MaBN!);
+            // 🔴 CHI CCCD trung khit moi la yeu to xac thuc. Nhanh ma gia
+            // (11111111111 / 111111111111) noi duoc nho khop ba o danh tinh CONG KHAI,
+            // nen no KHONG duoc mo cua tai lieu: ai biet ho ten + ngay sinh + gioi tinh
+            // cua nguoi khac cung go ra duoc. Ho van xem duoc tom tat dot kham (tang 1
+            // cua ADR 0020), chi don thuoc + ket qua CLS la con dong.
+            var so = await GanMotMaAsync(idBenhNhan, idCoSo.Value, ungVien[0].MaBN!,
+                                         daXacThuc: ungVien[0].CccdKhop);
 
             // so = 0 nghia la ma da co chu. KHONG duoc bao "da noi" (man se in ra o
             // ma rong), cung KHONG duoc im lang: day xuong tang 2 de man khoa ma lai
@@ -447,6 +465,18 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
 
         if (ma.Length == 0) return (true, "OK", 0);
 
+        // 🔴 Cong chan thu hai cua luat "ma gia thi khong noi" (ADR 0028). NoiKhiLuuAsync
+        // da chan tu tren nen binh thuong khong ai toi day duoc voi ma gia — nhung
+        // action nay POST tran duoc: giu lai mot form cu, hoac doi CCCD ho so thanh ma
+        // gia sau khi danh sach ung vien da nam trong tay, la di vong duoc cong tren.
+        var cccdHoSo = await _db.BenhNhans.AsNoTracking()
+            .Where(x => x.Id == idBenhNhan)
+            .Select(x => x.CCCD)
+            .FirstOrDefaultAsync();
+
+        if (LaMaGia(cccdHoSo))
+            return (false, "Hồ sơ chưa có số căn cước nên không nối được bệnh án. Bạn vui lòng bổ sung số căn cước, hoặc liên hệ bộ phận hỗ trợ của cơ sở.", 0);
+
         // Cung cong chan voi NoiKhiLuuAsync: mot ho so DUNG MOT ma. Gui lai form
         // cu (nut Back, bam hai lan) khong duoc de doi ma dang noi.
         var daNoiMa = await _db.BenhNhanCoSos.AsNoTracking()
@@ -457,7 +487,10 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
         if (daNoiMa)
             return (false, "Hồ sơ này đã nối một mã rồi. Muốn đổi thì gỡ nối trước.", 0);
 
-        var so = await GanMotMaAsync(idBenhNhan, idCoSo.Value, ma);
+        // Tang 2 giu nguyen hanh vi cu (mo cua) — siet cho nay la doi ca luong,
+        // phai co duong "go dung Ma BN de mo" cua ADR 0020 truoc, khong thi khoa
+        // chet nguoi dung that. Xem ADR 0028 muc "Con thieu".
+        var so = await GanMotMaAsync(idBenhNhan, idCoSo.Value, ma, daXacThuc: true);
 
         // 🔴 Ma da co ho so khac nhan thi DUNG HAN o day — cong khong tu thao ra
         // duoc. Nhan lai la keo benh an dang thuoc ve nguoi khac sang minh; go nham
@@ -517,7 +550,25 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
     /// ma do dang thuoc ve ai.
     /// </para>
     /// </summary>
-    private async Task<int> GanMotMaAsync(long idBenhNhan, long idCoSo, string maBN)
+    /// <param name="daXacThuc">
+    /// Lan noi nay CO mot yeu to chi dung nguoi moi co hay khong (hien tai: CCCD
+    /// hop le va trung khit). Khop ho ten + ngay sinh + gioi tinh KHONG tinh — ba o
+    /// do in tren moi toa thuoc, ai cung go duoc. Co nay quyet dinh *Cua tai lieu*
+    /// (ADR 0020): khong co yeu to nao thi ho so van noi duoc va van xem duoc TOM TAT
+    /// dot kham, nhung don thuoc + ket qua CLS thi dong.
+    /// </param>
+    /// <summary>
+    /// Ma gia HIS dung de danh dau "khong co can cuoc". 🔴 Ho so mang ma nay
+    /// KHONG BAO GIO duoc noi (chot 10/09) — xem <see cref="MaGiaKhongCanCuoc"/>.
+    /// </summary>
+    private static readonly string[] MaGiaKhongCanCuoc = { "11111111111", "111111111111" };
+
+    /// <summary>Can cuoc nay that ra la dau "khong co can cuoc" chu khong phai so that.</summary>
+    private static bool LaMaGia(string? cccd) =>
+        MaGiaKhongCanCuoc.Contains((cccd ?? string.Empty).Trim(), StringComparer.Ordinal);
+
+    private async Task<int> GanMotMaAsync(long idBenhNhan, long idCoSo, string maBN,
+                                          bool daXacThuc)
     {
         var ma = (maBN ?? string.Empty).Trim();
 
@@ -528,7 +579,8 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
 
         if (daCoChu) return 0;
 
-        var (ketQua, _) = await _thuTuc.SaveBenhNhanCoSoAsync(idBenhNhan, idCoSo, ma);
+        var (ketQua, _) = await _thuTuc.SaveBenhNhanCoSoAsync(idBenhNhan, idCoSo, ma,
+                                                              moCuaTaiLieu: daXacThuc);
 
         if (ketQua.Succeeded) return 1;
 
