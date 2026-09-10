@@ -515,15 +515,19 @@
         border-color: #2563eb;
         box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.12);
     }
-    .modal-hs-o input:disabled, .modal-hs-o select:disabled {
+    .modal-hs-o input:disabled, .modal-hs-o input:read-only, .modal-hs-o select:disabled {
         background: #f8fafc;
         color: #64748b;
         cursor: not-allowed;
     }
     .modal-hs-goi-y {
-        font-size: 12px;
-        color: #64748b;
-        margin-top: 6px;
+        font-size: 13px;
+        color: #92400e;
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: 10px;
+        padding: 10px 12px;
+        margin-top: 10px;
         line-height: 1.45;
     }
     .modal-hs-btn-submit {
@@ -1111,6 +1115,51 @@
         }
     }
 
+    function capNhatTrangThaiKhoaModal(coMa, maBN) {
+        const inpMa = document.getElementById('modalSuaMaBN');
+        const btnGoNoi = document.getElementById('modalSuaBtnGoNoi');
+        const cccd = document.getElementById('modalSuaCCCD');
+        const ten = document.getElementById('modalSuaTen');
+        const sdt = document.getElementById('modalSuaSDT');
+        const gt = document.getElementById('modalSuaGioiTinh');
+        const ns = document.getElementById('modalSuaNgaySinh');
+        const btnSave = document.getElementById('modalSuaBtnSave');
+        const note = document.getElementById('modalSuaDaNoiNote');
+
+        if (coMa) {
+            if (inpMa) inpMa.readOnly = true;
+            if (btnGoNoi) {
+                btnGoNoi.disabled = false;
+                btnGoNoi.style.opacity = '1';
+                btnGoNoi.style.cursor = 'pointer';
+            }
+            if (cccd) cccd.readOnly = true;
+            if (ten) ten.readOnly = true;
+            if (sdt) sdt.readOnly = true;
+            if (gt) gt.disabled = true;
+            if (ns) ns.disabled = true;
+            if (btnSave) btnSave.style.display = 'none';
+            if (note) {
+                note.style.display = 'block';
+                note.innerHTML = 'Hồ sơ đang liên kết mã bệnh nhân <b>' + (maBN || '') + '</b> tại cơ sở. Vui lòng bấm <b>Gỡ nối</b> trước khi chỉnh sửa thông tin.';
+            }
+        } else {
+            if (inpMa) inpMa.readOnly = false;
+            if (btnGoNoi) {
+                btnGoNoi.disabled = true;
+                btnGoNoi.style.opacity = '0.45';
+                btnGoNoi.style.cursor = 'not-allowed';
+            }
+            if (cccd) cccd.readOnly = false;
+            if (ten) ten.readOnly = false;
+            if (sdt) sdt.readOnly = false;
+            if (gt) gt.disabled = false;
+            if (ns) ns.disabled = false;
+            if (btnSave) btnSave.style.display = 'block';
+            if (note) note.style.display = 'none';
+        }
+    }
+
     // ==================== MỞ MODAL SỬA HỒ SƠ THEO MẪU USER ====================
     function moModalSuaHoSo(id, accountId) {
         const tr = document.getElementById('hoso-row-' + id);
@@ -1133,19 +1182,15 @@
         document.getElementById('modalSuaTenSubtitle').innerText = tenBN;
 
         const inpMaBN = document.getElementById('modalSuaMaBN');
-        const daNoiNote = document.getElementById('modalSuaDaNoiNote');
-
         inpMaBN.value = maBN || '';
-        if (maBN && daNoiNote) {
-            daNoiNote.style.display = 'block';
-        } else if (daNoiNote) {
-            daNoiNote.style.display = 'none';
-        }
 
         document.getElementById('modalSuaCCCD').value = cccd;
         document.getElementById('modalSuaTen').value = tenBN;
         document.getElementById('modalSuaSDT').value = sdt;
         document.getElementById('modalSuaGioiTinh').value = gioiTinh;
+
+        // Cập nhật trạng thái khóa/mở khóa theo việc hồ sơ có mã hay không
+        capNhatTrangThaiKhoaModal(!!maBN, maBN);
 
         // Khởi tạo DateTimePicker cho Modal Sửa hồ sơ
         const $inpNgaySinh = $('#modalSuaNgaySinh');
@@ -1307,8 +1352,7 @@
             if (res.success) {
                 inpMa.value = '';
                 document.getElementById('modalSuaIdHoSoCoSo').value = '';
-                const daNoiNote = document.getElementById('modalSuaDaNoiNote');
-                if (daNoiNote) daNoiNote.style.display = 'none';
+                capNhatTrangThaiKhoaModal(false);
 
                 const id = document.getElementById('modalSuaId').value;
                 const tr = document.getElementById('hoso-row-' + id);

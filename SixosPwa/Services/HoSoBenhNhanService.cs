@@ -410,12 +410,14 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
         if (ungVien.Count == 0)
             return new KetQuaLuuHoSo(true, "OK", idBenhNhan, KetCucNoi.KhongCoGi);
 
-        // *Tang 1* nay chi con DUNG MOT truong hop: co so cap dung MOT ma, CCCD
-        // trung khit, va ma do CHUA co ho so nao khac nhan. Ra tu HAI ma tro len la
-        // KHONG duoc tu quyet, du CCCD khop het — chon ho mot ma la chon luon phan
-        // benh an ho nhin thay, va o Thien Nam cac ma trung nhau la do nhap lon nen
-        // may khong biet ma nao con dung.
-        if (ungVien.Count == 1 && ungVien[0].CccdKhop)
+        // *Tang 1* — co so cap dung MOT ma.
+        // Binh thuong: CCCD trung khit (ungVien[0].CccdKhop).
+        // Truong hop khong co CCCD (11 hoac 12 so 1): ung vien da tra cuu theo Ho ten + Ngay sinh + Gioi tinh,
+        // neu duy nhat 1 nguoi thi du dieu kien gan im lang o Tang 1.
+        var cccdTrim = cccd?.Trim();
+        var laCccdKhongCo = cccdTrim is "11111111111" or "111111111111";
+
+        if (ungVien.Count == 1 && (ungVien[0].CccdKhop || laCccdKhongCo))
         {
             var so = await GanMotMaAsync(idBenhNhan, idCoSo.Value, ungVien[0].MaBN!);
 

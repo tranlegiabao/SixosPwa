@@ -311,8 +311,47 @@ public sealed class TaiKhoanController : AdminControllerBase
         if (bn == null)
             return Json(new { success = false, message = "Không tìm thấy hồ sơ bệnh nhân." });
 
+        // 🔴 KIỂM TRA: Nếu hồ sơ đang có mã bệnh nhân tại cơ sở thì KHÔNG cho sửa thông tin. Phải gỡ nối trước!
+        var coSoRecord = await _db.BenhNhanCoSos.AsNoTracking()
+            .Where(x => x.IdBenhNhan == bn.Id)
+            .OrderByDescending(x => x.MaBN != null)
+            .FirstOrDefaultAsync();
+
+        if (!string.IsNullOrEmpty(coSoRecord?.MaBN))
+        {
+            return Json(new { success = false, message = "Hồ sơ đang liên kết mã bệnh nhân. Vui lòng bấm 'Gỡ nối' trước khi chỉnh sửa thông tin." });
+        }
+
+        var cccdMoi = (req.CCCD ?? "").Trim();
+        var laCccdKhongCo = cccdMoi is "11111111111" or "111111111111";
+
+        // Kiểm tra trùng lặp:
+        if (!string.IsNullOrEmpty(cccdMoi) && !laCccdKhongCo)
+        {
+            var trungCccd = await _db.BenhNhans.AsNoTracking()
+                .AnyAsync(x => x.CCCD == cccdMoi && x.Id != bn.Id);
+            if (trungCccd)
+            {
+                return Json(new { success = false, message = "Số căn cước này đã được một tài khoản khác khai trước." });
+            }
+        }
+        else if (laCccdKhongCo && req.NgaySinh.HasValue && !string.IsNullOrEmpty(req.GioiTinh))
+        {
+            var tenKd = ChuanHoaTen.BoDau(req.TenBN);
+            var trungNhanThan = await _db.BenhNhans.AsNoTracking()
+                .AnyAsync(x => x.HoTenKhongDau == tenKd
+                            && x.NgaySinh.HasValue && x.NgaySinh.Value.Date == req.NgaySinh.Value.Date
+                            && x.GioiTinh == req.GioiTinh
+                            && x.Id != bn.Id
+                            && x.IdTaiKhoan != null && x.IdTaiKhoan != bn.IdTaiKhoan);
+            if (trungNhanThan)
+            {
+                return Json(new { success = false, message = "Hồ sơ với thông tin này (Họ tên, ngày sinh, giới tính) đã được một tài khoản khác khai trước." });
+            }
+        }
+
         bn.TenBN = req.TenBN.Trim();
-        bn.CCCD = (req.CCCD ?? "").Trim();
+        bn.CCCD = cccdMoi;
         bn.SDT = string.IsNullOrWhiteSpace(req.SDT) ? null : req.SDT.Trim();
         bn.NgaySinh = req.NgaySinh;
         bn.GioiTinh = req.GioiTinh;
@@ -320,22 +359,7 @@ public sealed class TaiKhoanController : AdminControllerBase
         bn.HoTenKhongDau = ChuanHoaTen.BoDau(req.TenBN);
 
         // ───── Ma benh nhan tai co so (MaBN trong DM_BenhNhanCoSo) ─────
-        //
-        // 🔴 Duong nay KHONG duoc tu xoa dong, va cung khong duoc tu doan co so.
-        //   * Xoa dong = *Go noi*, ma *Go noi* la thao tac PHA HUY (keo theo tai lieu va
-        //     dot kham). No co cua rieng: `GoNoiHoSo` -> `dbo.DM_BenhNhanCoSo_GoNoi`, co
-        //     sao luu sang `bak.GoNoi_*_V001`. O day de trong o ma thi GIU NGUYEN ma cu.
-        //   * Gan ma thi di qua `dbo.DM_BenhNhanCoSo_Save` de con an theo khoa
-        //     (IDBenhNhan, IDCoSo) va cai chan "ma da co chu" — EF `Add` thang tay se dam
-        //     vao unique index tren (IDCoSo, MaBN), ra 500 chu khong ra loi tu te.
-        //
-        // Lam phan ma TRUOC `SaveChangesAsync` la co y: ma hong thi thoat luon, khong de
-        // lai canh nhan than da ghi ma man hinh thi bao that bai.
         var newMaBN = string.IsNullOrWhiteSpace(req.MaBN) ? null : req.MaBN.Trim();
-        var coSoRecord = await _db.BenhNhanCoSos.AsNoTracking()
-            .Where(x => x.IdBenhNhan == bn.Id)
-            .OrderByDescending(x => x.MaBN != null)
-            .FirstOrDefaultAsync();
 
         long? idCoSoHienThi = coSoRecord?.IdCoSo;
         var maBNSauKhiLuu = coSoRecord?.MaBN;
@@ -343,9 +367,6 @@ public sealed class TaiKhoanController : AdminControllerBase
 
         if (!string.IsNullOrEmpty(newMaBN))
         {
-            // Co so dich: uu tien co so cua chinh dong dang co, khong co thi lay tu man
-            // hinh gui len. Khong co ca hai thi TU CHOI — KHONG lay co so dau bang, vi
-            // doan la noi ma sang co so khac ma khong ai nhin ra.
             var idCoSoDich = coSoRecord?.IdCoSo ?? req.IdCoSo ?? 0;
             if (idCoSoDich <= 0)
             {
@@ -503,11 +524,37 @@ public sealed class TaiKhoanController : AdminControllerBase
         if (req == null || req.IdTaiKhoan <= 0 || string.IsNullOrWhiteSpace(req.TenBN))
             return Json(new { success = false, message = "Vui lòng nhập họ tên hồ sơ." });
 
+        var cccdMoi = (req.CCCD ?? "").Trim();
+        var laCccdKhongCo = cccdMoi is "11111111111" or "111111111111";
+
+        if (!string.IsNullOrEmpty(cccdMoi) && !laCccdKhongCo)
+        {
+            var trungCccd = await _db.BenhNhans.AsNoTracking()
+                .AnyAsync(x => x.CCCD == cccdMoi);
+            if (trungCccd)
+            {
+                return Json(new { success = false, message = "Số căn cước này đã được một tài khoản khác khai trước." });
+            }
+        }
+        else if (laCccdKhongCo && req.NgaySinh.HasValue && !string.IsNullOrEmpty(req.GioiTinh))
+        {
+            var tenKd = ChuanHoaTen.BoDau(req.TenBN);
+            var trungNhanThan = await _db.BenhNhans.AsNoTracking()
+                .AnyAsync(x => x.HoTenKhongDau == tenKd
+                            && x.NgaySinh.HasValue && x.NgaySinh.Value.Date == req.NgaySinh.Value.Date
+                            && x.GioiTinh == req.GioiTinh
+                            && x.IdTaiKhoan != null && x.IdTaiKhoan != req.IdTaiKhoan);
+            if (trungNhanThan)
+            {
+                return Json(new { success = false, message = "Hồ sơ với thông tin này (Họ tên, ngày sinh, giới tính) đã được một tài khoản khác khai trước." });
+            }
+        }
+
         var bn = new SixosPwa.Models.BenhNhan
         {
             IdTaiKhoan = req.IdTaiKhoan,
             TenBN = req.TenBN.Trim(),
-            CCCD = (req.CCCD ?? "").Trim(),
+            CCCD = cccdMoi,
             SDT = string.IsNullOrWhiteSpace(req.SDT) ? null : req.SDT.Trim(),
             NgaySinh = req.NgaySinh,
             GioiTinh = req.GioiTinh ?? "1",
