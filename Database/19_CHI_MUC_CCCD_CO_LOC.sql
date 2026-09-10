@@ -24,6 +24,21 @@
 --   🔴 Ho so mang ma gia VAN KHONG NOI DUOC benh an (chot 10/09, ADR 0028) - viec
 --   nay chi thoi khong cho chung dam vao nhau o tang chi muc.
 --
+-- 🔴 BAY DA DAP MOT LAN (10/09): `UK_DM_BenhNhan_CCCD` KHONG phai chi muc dung
+--    rieng, no la RANG BUOC UNIQUE (`sys.key_constraints`, type UNIQUE_CONSTRAINT).
+--    `DROP INDEX` len no bi tu choi:
+--        Msg 3723 - An explicit DROP INDEX is not allowed on index
+--        'dbo.DM_BenhNhan.UK_DM_BenhNhan_CCCD'. It is being used for UNIQUE KEY
+--        constraint enforcement.
+--    Phai `ALTER TABLE ... DROP CONSTRAINT`. Nhin `sys.indexes.is_unique` la
+--    KHONG DU - phai nhin `is_unique_constraint`.
+--    Va rang buoc UNIQUE thi KHONG mang duoc bo loc, nen ban thay the bat buoc la
+--    mot CHI MUC duy nhat co loc, khong phai rang buoc.
+--
+--    Da kiem truoc: hai khoa ngoai tro vao DM_BenhNhan (FK_DM_BenhNhanCoSo_BenhNhan,
+--    FK_HT_TaiKhoan_BenhNhan) deu tro vao cot ID chu khong phai CCCD, nen go rang
+--    buoc nay khong keo do cai gi.
+--
 -- Chay xong PHAI doc cong kiem o cuoi file.
 -- ============================================================================
 
@@ -32,8 +47,8 @@ SET XACT_ABORT ON;
 GO
 
 -- ── Cong chan: co can cuoc THAT nao dang trung khong ────────────────────────
--- Co thi DUNG LAI, khong drop chi muc cu. Drop xong moi phat hien trung thi
--- khong dung lai duoc nua - ma luc do bang dang KHONG co chi muc nao bao ve.
+-- Co thi DUNG LAI, khong go gi het. Go xong moi phat hien trung thi khong lui
+-- duoc nua - ma luc do bang dang KHONG co gi bao ve cot CCCD.
 IF EXISTS (
     SELECT 1 FROM dbo.DM_BenhNhan
      WHERE CCCD <> '11111111111' AND CCCD <> '111111111111'
@@ -43,18 +58,29 @@ BEGIN
 END;
 GO
 
--- ── Dung lai chi muc ────────────────────────────────────────────────────────
+-- ── Go ban cu (rang buoc HAY chi muc, tuy moi truong) ───────────────────────
 IF EXISTS (SELECT 1 FROM sys.indexes
             WHERE object_id = OBJECT_ID(N'dbo.DM_BenhNhan')
               AND name = N'UK_DM_BenhNhan_CCCD'
               AND has_filter = 0)
 BEGIN
-    PRINT '19: chi muc dang KHONG co loc -> dung lai.';
-    DROP INDEX UK_DM_BenhNhan_CCCD ON dbo.DM_BenhNhan;
+    IF EXISTS (SELECT 1 FROM sys.key_constraints
+                WHERE parent_object_id = OBJECT_ID(N'dbo.DM_BenhNhan')
+                  AND name = N'UK_DM_BenhNhan_CCCD'
+                  AND type = 'UQ')
+    BEGIN
+        PRINT '19: dang la RANG BUOC UNIQUE -> ALTER TABLE DROP CONSTRAINT.';
+        ALTER TABLE dbo.DM_BenhNhan DROP CONSTRAINT UK_DM_BenhNhan_CCCD;
+    END
+    ELSE
+    BEGIN
+        PRINT '19: dang la chi muc thuong -> DROP INDEX.';
+        DROP INDEX UK_DM_BenhNhan_CCCD ON dbo.DM_BenhNhan;
+    END
 END
 ELSE
 BEGIN
-    PRINT '19: chi muc da co loc san (hoac khong ton tai) -> bo qua buoc drop.';
+    PRINT '19: da co loc san (hoac khong ton tai) -> bo qua buoc go.';
 END;
 GO
 
@@ -68,19 +94,20 @@ BEGIN
         ON dbo.DM_BenhNhan (CCCD)
      WHERE CCCD <> '11111111111' AND CCCD <> '111111111111';
 
-    PRINT '19: da tao lai UK_DM_BenhNhan_CCCD CO LOC.';
+    PRINT '19: da tao lai UK_DM_BenhNhan_CCCD la CHI MUC duy nhat CO LOC.';
 END;
 GO
 
 -- ============================================================================
--- CONG KIEM
---   (1) Chi muc phai co loc  -> has_filter = 1
---   (2) Ma gia phai chua duoc nhieu dong -> thu dem, khong INSERT gi
+-- CONG KIEM - doc ky ba dong duoi day
+--   (1) CoLoc phai = 1, LaRangBuoc phai = 0 (no la chi muc, khong con la rang buoc)
+--   (2) Hai ma gia gio duoc phep co nhieu dong
 -- ============================================================================
-SELECT i.name        AS ChiMuc,
-       i.is_unique   AS Duynhat,
-       i.has_filter  AS CoLoc,
-       i.filter_definition AS BieuThucLoc
+SELECT i.name                 AS ChiMuc,
+       i.is_unique            AS Duynhat,
+       i.has_filter           AS CoLoc,
+       i.is_unique_constraint AS LaRangBuoc,
+       i.filter_definition    AS BieuThucLoc
   FROM sys.indexes i
  WHERE i.object_id = OBJECT_ID(N'dbo.DM_BenhNhan')
    AND i.name = N'UK_DM_BenhNhan_CCCD';
