@@ -47,3 +47,10 @@ public class BenhNhan
 
     public DateTime NgayTao { get; set; } = DateTime.Now;
 }
+
+public class DMGioiTinh
+{
+    public string MaGioiTinh { get; set; } = "";
+    public string TenGioiTinh { get; set; } = "";
+}
+

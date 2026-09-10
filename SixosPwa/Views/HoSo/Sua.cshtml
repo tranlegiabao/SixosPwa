@@ -1,6 +1,40 @@
 @model SixosPwa.Services.HoSoDeSua
+@using Microsoft.EntityFrameworkCore
+@inject SixosPwa.Data.ApplicationDbContext _db
 @{
     Layout = null;
+
+    // Lấy danh mục giới tính từ database DaotaoHIS (DM_GioiTinh) an toàn
+    var danhMucGioiTinh = new List<SixosPwa.Models.DMGioiTinh>();
+    try
+    {
+        var conn = _db.Database.GetDbConnection();
+        if (conn.State != System.Data.ConnectionState.Open) conn.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT MaGioiTinh, TenGioiTinh FROM DM_GioiTinh";
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
+        {
+            danhMucGioiTinh.Add(new SixosPwa.Models.DMGioiTinh
+            {
+                MaGioiTinh = reader[0]?.ToString() ?? "",
+                TenGioiTinh = reader[1]?.ToString() ?? ""
+            });
+        }
+    }
+    catch
+    {
+        // Bỏ qua lỗi và dùng fallback
+    }
+    if (danhMucGioiTinh.Count == 0)
+    {
+        danhMucGioiTinh = new List<SixosPwa.Models.DMGioiTinh>
+        {
+            new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "1", TenGioiTinh = "Nam" },
+            new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "2", TenGioiTinh = "Nữ" },
+            new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "3", TenGioiTinh = "Chưa xác định" }
+        };
+    }
 
     // Ung vien cua *Tang 2*: co thi man doi hinh — thay vi khoi *Ma benh nhan tai
     // co so* thi hien danh sach cho nguoi dung tu nhan.
@@ -20,6 +54,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Sửa hồ sơ</title>
     <link rel="stylesheet" href="/css/tai-lieu-benh-nhan.css?v=20260908_v8" />
+    @* 🔴 flatpickr NAP TU MAY CHU, khong tu CDN. Man nay la man BENH NHAN, chay
+       tren dien thoai qua tunnel va la PWA — mat mang ngoai la mat luon o chon ngay,
+       ma o do lai la `type="text"` nen nguoi dung con doi mat mot cai hop chu trong
+       hien "1990-05-15" trong khi cho ghi "dd/mm/yyyy". Ban CDN cu con khong ghim
+       phien ban (`npm/flatpickr` = ban moi nhat), tuc la ho nang cap la giao dien
+       nay doi theo ma khong ai bam nut nao. Ban da ghim: 4.6.13. *@
+    <link rel="stylesheet" href="~/dist/flatpickr/flatpickr.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/dist/flatpickr/themes/material_blue.css" asp-append-version="true" />
+    <script src="~/dist/flatpickr/flatpickr.min.js" asp-append-version="true"></script>
+    <script src="~/dist/flatpickr/l10n/vn.js" asp-append-version="true"></script>
     <style>
         .hs-form { padding:16px; }
         .hs-o { margin-bottom:14px; }
@@ -283,18 +327,24 @@
 
                     <div class="hs-o">
                         <label for="ngaySinh">Ngày sinh *</label>
-                        <input id="ngaySinh" name="ngaySinh" type="date" required
+                        <input id="ngaySinh" name="ngaySinh" type="text" class="datepicker-vn" required
                                value="@(Model.NgaySinh?.ToString("yyyy-MM-dd"))"
-                               @(Model.DaNoiHIS ? "readonly" : "") />
+                               placeholder="dd/mm/yyyy"
+                               @(Model.DaNoiHIS ? "disabled" : "") />
+                        @if (Model.DaNoiHIS)
+                        {
+                            <input type="hidden" name="ngaySinh" value="@(Model.NgaySinh?.ToString("yyyy-MM-dd"))" />
+                        }
                     </div>
 
                     <div class="hs-o">
                         <label for="gioiTinh">Giới tính *</label>
                         <select id="gioiTinh" name="gioiTinh" required @(Model.DaNoiHIS ? "disabled" : "")>
-                            <option value="">— Chọn —</option>
-                            <option value="1" selected="@(Model.GioiTinh == "1")">Nam</option>
-                            <option value="2" selected="@(Model.GioiTinh == "2")">Nữ</option>
-                            <option value="3" selected="@(Model.GioiTinh == "3")">Chưa xác định</option>
+                            <option value="">— Chọn giới tính —</option>
+                            @foreach (var gt in danhMucGioiTinh)
+                            {
+                                <option value="@gt.MaGioiTinh" selected="@(Model.GioiTinh == gt.MaGioiTinh)">@gt.TenGioiTinh</option>
+                            }
                         </select>
                         @* Truong disabled khong duoc gui len => gui kem ban an, khong thi
                            luu xong gioi tinh bi xoa trang. *@
@@ -349,5 +399,19 @@
             }
         </main>
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            if (!document.getElementById('ngaySinh')?.disabled) {
+                flatpickr(".datepicker-vn", {
+                    dateFormat: "Y-m-d",
+                    altInput: true,
+                    altFormat: "d/m/Y",
+                    allowInput: true,
+                    locale: "vn"
+                });
+            }
+        });
+    </script>
 </body>
 </html>

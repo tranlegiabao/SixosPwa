@@ -40,11 +40,86 @@ public sealed class DashboardContentEditViewModel
     public string? NoiDung { get; set; }
 }
 
+public sealed class HoSoBenhNhanItemViewModel
+{
+    public long Id { get; set; }
+    public long? IdTaiKhoan { get; set; }
+    public string TenBN { get; set; } = "";
+    public string CCCD { get; set; } = "";
+    public string? SDT { get; set; }
+    public string? Email { get; set; }
+    public string? DiaChi { get; set; }
+    public DateTime? NgaySinh { get; set; }
+    public string? GioiTinh { get; set; }
+    public string? MaBN { get; set; }
+    public string? TenCoSo { get; set; }
+
+    /// <summary>ID dong <c>DM_BenhNhanCoSo</c> — thu ma <c>DM_BenhNhanCoSo_GoNoi</c> nhan vao.</summary>
+    public long? IdHoSoCoSo { get; set; }
+
+    /// <summary>Co so cua chinh dong tren. Khong duoc suy ra tu danh sach co so.</summary>
+    public long? IdCoSo { get; set; }
+
+    public int SoCoSo { get; set; }
+}
+
+public sealed class CapNhatHoSoAdminRequest
+{
+    public long Id { get; set; }
+    public long? IdTaiKhoan { get; set; }
+    public string TenBN { get; set; } = "";
+    public string CCCD { get; set; } = "";
+    public string? SDT { get; set; }
+    public DateTime? NgaySinh { get; set; }
+    public string? GioiTinh { get; set; }
+    public string? DiaChi { get; set; }
+    public string? MaBN { get; set; }
+
+    /// <summary>
+    /// Co so de gan <see cref="MaBN"/> vao. 🔴 BAT BUOC khi ho so chua co dong
+    /// <c>DM_BenhNhanCoSo</c> nao: khong co so nay thi may chu KHONG duoc doan, vi
+    /// doan la noi ma vao nham co so ma khong ai thay.
+    /// </summary>
+    public long? IdCoSo { get; set; }
+}
+
+/// <summary>
+/// *Go noi* mot ma khoi mot ho so, do ADMIN bam (ADR 0024 ve 3 — cua benh nhan da dong).
+/// </summary>
+public sealed class GoNoiHoSoAdminRequest
+{
+    /// <summary>ID dong <c>DM_BenhNhanCoSo</c> can thao.</summary>
+    public long IdHoSoCoSo { get; set; }
+}
+
+public sealed class XoaHoSoAdminRequest
+{
+    public long Id { get; set; }
+    public long? IdTaiKhoan { get; set; }
+}
+
+public sealed class TaoHoSoAdminRequest
+{
+    public long IdTaiKhoan { get; set; }
+    public string TenBN { get; set; } = "";
+    public string CCCD { get; set; } = "";
+    public string? SDT { get; set; }
+    public DateTime? NgaySinh { get; set; }
+    public string? GioiTinh { get; set; }
+    public string? DiaChi { get; set; }
+}
+
 public sealed class TaiKhoanListViewModel
 {
     public IReadOnlyList<TaiKhoan> Items { get; init; } = Array.Empty<TaiKhoan>();
+    public IReadOnlyDictionary<long, List<HoSoBenhNhanItemViewModel>> HoSoTheoTaiKhoan { get; init; } = new Dictionary<long, List<HoSoBenhNhanItemViewModel>>();
+    public IReadOnlyList<DMCSKCB> DanhSachCoSo { get; init; } = Array.Empty<DMCSKCB>();
     public string? Query { get; init; }
     public string? Role { get; init; }
+    public string? LoaiCS { get; init; }
+    public string? CCCD { get; init; }
+    public string? SDT { get; init; }
+    public string? MaBN { get; init; }
     public int Page { get; init; }
     public int PageSize { get; init; }
     public int TotalItems { get; init; }
@@ -242,6 +317,9 @@ public sealed class PaginationViewModel
     public string? Role { get; init; }
     public string? LoaiCS { get; init; }
     public string? MaCoSo { get; init; }
+    public string? CCCD { get; init; }
+    public string? SDT { get; init; }
+    public string? MaBN { get; init; }
 }
 
 public sealed class FacilityGroupStat
