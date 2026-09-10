@@ -27,7 +27,7 @@
         .hs-o input, .hs-o select { width:100%; box-sizing:border-box; padding:11px 12px; font-size:15px;
                       border:1px solid #d1d5db; border-radius:10px; background:#fff; }
         .hs-o input:focus, .hs-o select:focus { outline:none; border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.12); }
-        .hs-o input:disabled { background:#f9fafb; color:#6b7280; }
+        .hs-o input:disabled, .hs-o input:read-only, .hs-o select:disabled { background:#f9fafb; color:#6b7280; cursor:not-allowed; }
         .hs-goi-y { font-size:12px; color:#6b7280; margin-top:5px; line-height:1.45; }
         .hs-gui { width:100%; padding:13px; border:none; border-radius:10px;
                   background:#2563eb; color:#fff; font-size:15px; font-weight:600; cursor:pointer; }
@@ -308,18 +308,27 @@
                         @* 🔴 BAT BUOC: so nay la thu dung de DANG NHAP vao cong. *@
                         <label for="sdt">Số điện thoại *</label>
                         <input id="sdt" name="sdt" type="tel" maxlength="20" required
-                               inputmode="tel" autocomplete="off" value="@Model.Sdt" placeholder="09xxxxxxxx" />
+                               inputmode="tel" autocomplete="off" value="@Model.Sdt" placeholder="09xxxxxxxx"
+                               @(Model.DaNoiHIS ? "readonly" : "") />
                     </div>
 
                     @if (Model.DaNoiHIS)
                     {
-                        <div class="hs-goi-y" style="margin-bottom:12px;">
-                            Hồ sơ này đã nối với bệnh án tại cơ sở nên họ tên, ngày sinh, căn cước và
-                            giới tính lấy theo cơ sở. Muốn sửa thì báo bộ phận hỗ trợ của cơ sở.
+                        <div class="hs-bao hs-bao-cho" style="margin-top:16px;">
+                            @if (ViewBag.ChoPhepGoNoi == true)
+                            {
+                                <text>Hồ sơ đang liên kết mã bệnh nhân. Vui lòng bấm <b>Gỡ nối</b> ở bên cạnh mã bệnh nhân phía trên trước khi chỉnh sửa thông tin.</text>
+                            }
+                            else
+                            {
+                                <text>Hồ sơ đang liên kết mã bệnh nhân. Vui lòng liên hệ <b>cơ sở y tế</b> để được hỗ trợ chỉnh sửa thông tin.</text>
+                            }
                         </div>
                     }
-
-                    <button type="submit" class="hs-gui">Lưu</button>
+                    else
+                    {
+                        <button type="submit" class="hs-gui">Lưu</button>
+                    }
                 </form>
 
                 @* Form xử lý Gỡ nối đặt ẩn ngoài form chính để tránh lồng form HTML *@

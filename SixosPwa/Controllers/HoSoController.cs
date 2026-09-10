@@ -194,6 +194,18 @@ public class HoSoController : Controller
 
         var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
 
+        // 🔴 Chặn bệnh nhân sửa thông tin khi hồ sơ đang có mã nối. Phải gỡ nối trước.
+        var hoSoHienTai = await _hoSo.LayDeSuaAsync(id, idTaiKhoan.Value, maCoSo);
+        if (hoSoHienTai is null)
+        {
+            return RedirectToAction(nameof(Index), new { loi = "Hồ sơ không hợp lệ hoặc không thuộc tài khoản của bạn." });
+        }
+
+        if (hoSoHienTai.DaNoiHIS)
+        {
+            return RedirectToAction(nameof(Sua), new { id, loi = "Hồ sơ đang liên kết mã bệnh nhân. Vui lòng bấm 'Gỡ nối' trước khi chỉnh sửa thông tin." });
+        }
+
         var ketQua = await _hoSo.SuaAsync(id, idTaiKhoan.Value, maCoSo, cccd, hoTen,
                                           ngaySinh, sdt, gioiTinh);
 
