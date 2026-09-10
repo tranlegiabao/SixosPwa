@@ -1,4 +1,4 @@
-/*
+﻿/*
     Xóa một cơ sở y tế cùng dữ liệu phụ thuộc trực tiếp.
     Việc gọi thủ tục chỉ được controller cho phép sau khi quản trị viên xác nhận
     thao tác xóa không thể hoàn tác trên giao diện.

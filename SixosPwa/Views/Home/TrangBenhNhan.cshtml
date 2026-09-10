@@ -923,8 +923,10 @@
             <!-- Hàng dưới: CCCD, Điện thoại, Họ và tên (Trái) & Trạng thái (Phải) -->
             <div class="bn-danhtinh-hang-duoi">
                 <div class="bn-danhtinh-thongtin-list">
-                    <div class="bn-dong-phu">CCCD: <strong>@(ViewBag.CccdCheBot ?? "0772******069")</strong></div>
-                    <div class="bn-dong-phu">Điện thoại: <strong>@(ViewBag.DienThoai ?? "0369 892 926")</strong></div>
+                    @* Hai chuoi mau cung cu ("0772******069" / "0369 892 926") da bo: khi
+                       ViewBag rong, benh nhan doc phai mot so trong y het can cuoc nguoi la. *@
+                    <div class="bn-dong-phu">CCCD: <strong>@(ViewBag.CccdCheBot ?? "—")</strong></div>
+                    <div class="bn-dong-phu">Điện thoại: <strong>@(ViewBag.DienThoai ?? "—")</strong></div>
                     @* Ten CHI de doc, khong con la lien ket. Doi ho so da co nut *Ho so
                        cua toi* ngay hang tren; de them mot duong nua vao dung cho la
                        hai loi vao cho cung mot man, ma cai nay thi khong nhin ra la

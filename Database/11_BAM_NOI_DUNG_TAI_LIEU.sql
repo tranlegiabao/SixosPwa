@@ -1,4 +1,4 @@
-/* =============================================================================
+﻿/* =============================================================================
    11_BAM_NOI_DUNG_TAI_LIEU.sql
    Day lai tai lieu CUNG NOI DUNG thi KHONG de phien ban moi nua.
    DB: HIS_CSKH. Chay lai duoc. datetime + GETDATE().

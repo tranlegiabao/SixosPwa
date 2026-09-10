@@ -1,4 +1,4 @@
-/* =============================================================================
+﻿/* =============================================================================
    17_SEED_HT_CONFIG_GONOI.sql -- Seed cau hinh GONOI trong bang HT_Config
    DB: HIS_CSKH. Chay lai duoc (Idempotent).
 

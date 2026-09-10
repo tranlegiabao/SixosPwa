@@ -1,4 +1,4 @@
-/* =============================================================================
+﻿/* =============================================================================
    10_SEED_COSO_HIS.sql -- Bat mot co so sang nhanh MAN CHUNG (KieuApi = 'HIS')
    DB: HIS_CSKH. Chay lai duoc. datetime + GETDATE().
 

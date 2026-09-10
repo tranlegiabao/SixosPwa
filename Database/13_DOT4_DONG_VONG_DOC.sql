@@ -1,4 +1,4 @@
--- ============================================================================
+﻿-- ============================================================================
 -- 13 — Dot 4: DONG VONG DOC (noi ho so khi luu + Lich kham cua toi)
 --
 -- CHAY TREN: HIS_CSKH (co so du lieu cua CONG). KHONG chay ben HIS.

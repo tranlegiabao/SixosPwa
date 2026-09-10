@@ -329,8 +329,13 @@ public class HomeController : Controller
                 .Select(n => n.MaNhom)
                 .FirstOrDefaultAsync())
             ?? "benhvien";
-        ViewBag.DienThoai = User.FindFirst(System.Security.Claims.ClaimTypes.MobilePhone)?.Value ?? benhNhan?.SDT;
-        ViewBag.CccdCheBot = CheBotCccd(cccd);
+        // 🔴 HAI o nay thuoc ve *Ho so dang chon*, khong phai chu tai khoan — dung
+        // mot khuon voi ViewBag.TenBenhNhan va ViewBag.MaBN ngay tren. Truoc day
+        // chung doc claim, nen tai khoan mo ho so nguoi than thi the hien TEN nguoi
+        // than nhung CCCD/dien thoai cua NGUOI CAM DIEN THOAI. Claim chi con la
+        // duong lui cho ho so chua khai du (xem CONTEXT.md muc *Ho so dang chon*).
+        ViewBag.DienThoai = benhNhan?.SDT ?? User.FindFirst(System.Security.Claims.ClaimTypes.MobilePhone)?.Value;
+        ViewBag.CccdCheBot = CheBotCccd(benhNhan?.CCCD ?? cccd);
         ViewBag.CoLoiKetNoi = loi == "khong-ket-noi-duoc";
 
         // Co so dung bo man cua doi tac: mat khau la CUA HO, benh nhan doi tren
@@ -522,10 +527,10 @@ public class HomeController : Controller
         return View();
     }
 
-    /// <summary>Che bot so CCCD khi hien tren man: 0772â€¢â€¢â€¢â€¢â€¢069.</summary>
+    /// <summary>Che bot so CCCD khi hien tren man: 0772•••••069.</summary>
     private static string CheBotCccd(string? cccd)
     {
-        if (string.IsNullOrWhiteSpace(cccd)) return "â€”";
+        if (string.IsNullOrWhiteSpace(cccd)) return "—";
         if (cccd.Length <= 7) return cccd;
 
         return $"{cccd[..4]}{new string('\u2022', cccd.Length - 7)}{cccd[^3..]}";
@@ -536,7 +541,7 @@ public class HomeController : Controller
 
     /// <summary>
     /// Do du lieu mot co so ra ViewData cho trang chi tiet. MaCoSo va Slug la hai
-    /// thu hai nut "Dang ky kham" / "Dang nhap" phai mang theo â€” thieu chung thi
+    /// thu hai nut "Dang ky kham" / "Dang nhap" phai mang theo — thieu chung thi
     /// man dang nhap khong biet benh nhan dang o co so nao.
     /// </summary>
     private async Task DoDuLieuCoSoAsync(DMCSKCB coSo)
@@ -939,7 +944,7 @@ public class HomeController : Controller
     }
 
     // -------------------------------------------------------------------------
-    // Gửi tin nhắn hàng loạt â€“ lưu DB + gửi Web Push tới từng thiết bị
+    // Gửi tin nhắn hàng loạt – lưu DB + gửi Web Push tới từng thiết bị
     // -------------------------------------------------------------------------
     [HttpPost]
     [Authorize(AuthenticationSchemes = AdminAuthentication.Scheme, Roles = "Admin")]

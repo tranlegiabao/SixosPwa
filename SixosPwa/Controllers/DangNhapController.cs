@@ -55,6 +55,13 @@ public class DangNhapController : Controller
             // them truy van. Xem ADR 0013.
             if (thongTin is not null && !thongTin.Active) return Redirect("/");
 
+            // 🔴 ?coSo= chi nhan SLUG. Go vao mot gia tri khong tra ra co so nao
+            // (hay gap nhat: go MA co so, vd 77121) truoc day tut lang le xuong che
+            // do khong-co-so: van cho go OTP, van cap cookie, roi tha vao /benh-nhan
+            // ma khong tao noi tai khoan. Da ve "/" giong het nhanh Active = 0 ngay
+            // tren — sai cua thi phai biet ngay, dung sau khi go xong OTP. ADR 0027.
+            if (thongTin is null) return Redirect("/");
+
             maCoSoTuUrl = thongTin?.MaCoSo;
             ViewBag.MaCoSo = thongTin?.MaCoSo;
             ViewBag.TenCoSo = thongTin?.TenCoSo;
@@ -291,6 +298,25 @@ public class DangNhapController : Controller
             });
         }
 
+        // 🔴 Bat bien (ADR 0027): dang nhap duoc thi phai co tai khoan. HT_TaiKhoan
+        // chi duoc tao trong BaoDamHoSoNoiBoAsync, ma ham do thoat ngay khi khong co
+        // co so => cap cookie o day la de ra mot phien KHONG CO TAI KHOAN, khong loi
+        // thoat, moi man phia sau chi biet noi "Khong tim thay tai khoan.".
+        // Ranh gioi la VA, khong phai HOAC: nguoi DA CO tai khoan van vao duoc tu
+        // /DangNhap/Login tran (LoginPath cua Program.cs day ve day), khong bi chan.
+        // (Ho van ha canh o /benh-nhan chu khong dung dau trang, vi ChonDichDenAsync
+        //  bo returnUrl khi thieu ma co so — hanh vi CO SAN, khong phai do cong chan
+        //  nay. Do that 10/09.) Re-auth Admin duoc mien tru.
+        if (!adminReauth && string.IsNullOrWhiteSpace(model.MaCoSo) && taiKhoan is null)
+        {
+            return Json(new
+            {
+                success = false,
+                message = "Chưa xác định được cơ sở khám chữa bệnh. Bạn hãy chọn cơ sở rồi đăng ký từ trang của cơ sở đó.",
+                dichDen = "/"
+            });
+        }
+
         string role = "BenhNhan";
 
             if (taiKhoan != null)
@@ -415,6 +441,19 @@ public class DangNhapController : Controller
             && !await _luong.CoSoDangHienThiAsync(model.MaCoSo))
         {
             return Json(new { success = false, message = "Cơ sở này đang tạm ngưng tiếp nhận đăng ký trực tuyến." });
+        }
+
+        // 🔴 Cong chan y het XacNhanOtp (ADR 0027). Bo sot cua nay la mo cua lach:
+        // chan mot ben roi de ben kia cap cookie thi bat bien "dang nhap duoc thi
+        // phai co tai khoan" khong con la bat bien nua.
+        if (!adminReauth && string.IsNullOrWhiteSpace(model.MaCoSo) && taiKhoan is null)
+        {
+            return Json(new
+            {
+                success = false,
+                message = "Chưa xác định được cơ sở khám chữa bệnh. Bạn hãy chọn cơ sở rồi đăng ký từ trang của cơ sở đó.",
+                dichDen = "/"
+            });
         }
 
         var claims = new List<Claim>

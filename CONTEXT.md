@@ -325,6 +325,9 @@ Một dòng `HT_TaiKhoan`, khoá bằng **số điện thoại** (`UK_HT_TaiKhoa
 biệt với *Con người*: tài khoản là chỗ đăng nhập, con người là người đi khám.
 🔴 Quan hệ nhiều-hồ-sơ này **chỉ áp cho nhánh màn chung**; cơ sở đi *nhánh bàn giao* (`KieuApi='UB'`)
 giữ nguyên một tài khoản một người. Hai mô hình danh tính song song là **cố ý**, không phải bỏ sót.
+🔴 Tài khoản là **điều kiện** để có phiên, không phải hệ quả của phiên: không có dòng
+`HT_TaiKhoan` thì không ai đăng nhập được — *đã đăng nhập mà không có tài khoản* là một trạng thái
+hệ thống không tự thoát ra được, và nó từng tồn tại thật cho tới 10/09/2026. Xem ADR 0027.
 _Tránh_: user, người dùng, tài khoản (trần — dễ lẫn với `HT_TaiKhoanDoiTac`)
 
 **Hồ sơ tự khai**:
