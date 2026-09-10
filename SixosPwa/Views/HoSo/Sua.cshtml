@@ -219,7 +219,13 @@
 
                         @if (Model.DanhSachMa.Count == 0)
                         {
-                            <input value="" disabled />
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <input value="" placeholder="Chưa có mã bệnh nhân" disabled style="flex:1;" />
+                                @if (ViewBag.ChoPhepGoNoi == true)
+                                {
+                                    <button type="button" class="ma-go" disabled style="opacity: 0.45; cursor: not-allowed;" title="Hồ sơ chưa có mã bệnh nhân để gỡ">Gỡ nối</button>
+                                }
+                            </div>
                             <div class="hs-goi-y">
                                 Mã do cơ sở cấp — bạn không sửa được. Nối xong sẽ hiện ở đây.
                             </div>
@@ -236,12 +242,21 @@
                                             <text>khám gần nhất @ma.LanKhamCuoi.Value.ToString("dd/MM/yyyy")</text>
                                         }
                                     </span>
+                                    @if (ViewBag.ChoPhepGoNoi == true)
+                                    {
+                                        <button type="submit"
+                                                form="formGoNoi_@ma.IdBenhNhanCoSo"
+                                                class="ma-go"
+                                                title="Gỡ nối mã @ma.MaBN">
+                                            Gỡ nối
+                                        </button>
+                                    }
                                 </div>
                             }
                             <div class="hs-goi-y">
                                 @if (ViewBag.ChoPhepGoNoi == true)
                                 {
-                                    <text>Mã nào không phải của bạn thì bấm <b>Gỡ nối</b> ở dưới — hồ sơ của bạn vẫn giữ nguyên.</text>
+                                    <text>Mã nào không phải của bạn thì bấm <b>Gỡ nối</b> ở bên cạnh — hồ sơ của bạn vẫn giữ nguyên.</text>
                                 }
                                 else
                                 {
@@ -307,25 +322,20 @@
                     <button type="submit" class="hs-gui">Lưu</button>
                 </form>
 
-                @* Nút Gỡ nối được điều khiển bởi cấu hình HT_Config (GONOI). Đặt ngoài form sửa để không lồng form. *@
+                @* Form xử lý Gỡ nối đặt ẩn ngoài form chính để tránh lồng form HTML *@
                 @if (ViewBag.ChoPhepGoNoi == true && Model.DanhSachMa.Count > 0)
                 {
-                    <div style="margin-top:16px;">
-                        @foreach (var ma in Model.DanhSachMa)
-                        {
-                            <form method="post" action="/benh-nhan/ho-so/go-noi"
-                                  onsubmit="return confirm('Gỡ nối mã @ma.MaBN? Tài liệu và lịch sử khám đi kèm mã này sẽ không còn hiện trong hồ sơ của bạn.');">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="id" value="@Model.IdBenhNhan" />
-                                <input type="hidden" name="idHoSoCoSo" value="@ma.IdBenhNhanCoSo" />
-                                <div class="ma-hang">
-                                    <span class="kq-ma">@ma.MaBN</span>
-                                    <span class="kq-phu" style="flex:1;">không phải mã của bạn?</span>
-                                    <button type="submit" class="ma-go">Gỡ nối</button>
-                                </div>
-                            </form>
-                        }
-                    </div>
+                    @foreach (var ma in Model.DanhSachMa)
+                    {
+                        <form id="formGoNoi_@ma.IdBenhNhanCoSo"
+                              method="post"
+                              action="/benh-nhan/ho-so/go-noi"
+                              onsubmit="return confirm('Gỡ nối mã @ma.MaBN? Tài liệu và lịch sử khám đi kèm mã này sẽ không còn hiện trong hồ sơ của bạn.');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.IdBenhNhan" />
+                            <input type="hidden" name="idHoSoCoSo" value="@ma.IdBenhNhanCoSo" />
+                        </form>
+                    }
                 }
             }
         </main>

@@ -32,4 +32,19 @@ public interface IHTConfigService
     /// Xóa cache bộ nhớ của một mã cấu hình.
     /// </summary>
     void XoaCache(string maChucNang);
+
+    /// <summary>
+    /// Lấy danh sách tất cả cấu hình với bộ lọc tìm kiếm và nhóm.
+    /// </summary>
+    Task<List<HTConfig>> LayDanhSachAsync(string? q = null, string? nhom = null);
+
+    /// <summary>
+    /// Lấy danh sách các nhóm cấu hình phân biệt (phục vụ bộ lọc).
+    /// </summary>
+    Task<List<string>> LayDanhSachNhomAsync();
+
+    /// <summary>
+    /// Bật hoặc tắt hiệu lực của cấu hình theo ID và xóa cache tức thì.
+    /// </summary>
+    Task<bool> CapNhatHieuLucAsync(long id, bool hieuLuc);
 }

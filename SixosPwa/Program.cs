@@ -8,7 +8,17 @@ using SixosPwa.Security;
 using SixosPwa.Services;
 using SixosPwa.Services.Partner;
 
-var builder = WebApplication.CreateBuilder(args);
+var contentRoot = Directory.GetCurrentDirectory();
+if (!Directory.Exists(Path.Combine(contentRoot, "Views")) && Directory.Exists(Path.Combine(contentRoot, "SixosPwa", "Views")))
+{
+    contentRoot = Path.Combine(contentRoot, "SixosPwa");
+}
+
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    ContentRootPath = contentRoot
+});
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddMemoryCache();
@@ -148,5 +158,4 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=ThongTinBenhNhan}/{id?}");
 
 app.Run();
-
-
+// Trigger restart for new CauHinhController: 2026-09-10

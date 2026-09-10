@@ -70,4 +70,50 @@ public class HTConfigService : IHTConfigService
             _logger.LogInformation("Da xoa cache HT_Config cho ma: {MaChucNang}", maChucNang);
         }
     }
+
+    public async Task<List<HTConfig>> LayDanhSachAsync(string? q = null, string? nhom = null)
+    {
+        var query = _db.HTConfigs.AsNoTracking().AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            var keyword = q.Trim().ToLower();
+            query = query.Where(x => (x.MaChucNang != null && x.MaChucNang.ToLower().Contains(keyword))
+                                  || (x.Ghichu != null && x.Ghichu.ToLower().Contains(keyword)));
+        }
+
+        if (!string.IsNullOrWhiteSpace(nhom))
+        {
+            var nhomTrim = nhom.Trim();
+            query = query.Where(x => x.Nhom == nhomTrim);
+        }
+
+        return await query.OrderBy(x => x.Nhom).ThenBy(x => x.MaChucNang).ToListAsync();
+    }
+
+    public async Task<List<string>> LayDanhSachNhomAsync()
+    {
+        return await _db.HTConfigs.AsNoTracking()
+            .Where(x => !string.IsNullOrWhiteSpace(x.Nhom))
+            .Select(x => x.Nhom!)
+            .Distinct()
+            .OrderBy(x => x)
+            .ToListAsync();
+    }
+
+    public async Task<bool> CapNhatHieuLucAsync(long id, bool hieuLuc)
+    {
+        var item = await _db.HTConfigs.FirstOrDefaultAsync(x => x.Id == id);
+        if (item is null) return false;
+
+        item.HieuLuc = hieuLuc;
+        await _db.SaveChangesAsync();
+
+        if (!string.IsNullOrWhiteSpace(item.MaChucNang))
+        {
+            XoaCache(item.MaChucNang);
+        }
+        _logger.LogInformation("Cap nhat HieuLuc={HieuLuc} cho HT_Config [ID={Id}, MaChucNang={Ma}]", hieuLuc, id, item.MaChucNang);
+        return true;
+    }
 }
