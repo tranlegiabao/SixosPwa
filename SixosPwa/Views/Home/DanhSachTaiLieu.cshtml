@@ -10,6 +10,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>@(ViewBag.TieuDeTrang ?? "Tài liệu y tế") - @ViewBag.TenCoSo</title>
     <link rel="stylesheet" href="/css/tai-lieu-benh-nhan.css?v=20260908_v8" />
+    <style>
+        .tl-btn-empty-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+            padding: 9px 18px;
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            color: #ffffff !important;
+            font-size: 13.5px;
+            font-weight: 600;
+            border-radius: 9999px;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+            transition: all 0.2s ease;
+        }
+        .tl-btn-empty-action:hover {
+            background: linear-gradient(135deg, #0369a1, #075985);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(2, 132, 199, 0.35);
+        }
+    </style>
 </head>
 <body class="tl-trang">
     <div class="tl-khung">
@@ -38,7 +60,7 @@
             </div>
             <div class="tl-bn-text-info">
                 <div class="tl-bn-name">@ViewBag.TenBenhNhan</div>
-                <div class="tl-bn-id">Mã BN: @(string.IsNullOrEmpty(ViewBag.MaBN) ? "Chưa đồng bộ" : ViewBag.MaBN)</div>
+                <div class="tl-bn-id">Mã BN: @(string.IsNullOrWhiteSpace(ViewBag.MaBN as string) ? "######" : ViewBag.MaBN)</div>
             </div>
             <div class="tl-bn-stats">
                 <span class="tl-stat-label">Kho lưu trữ số</span>
@@ -177,15 +199,37 @@
 
         <!-- Empty State -->
         <div id="tlEmptyState" class="tl-empty" style="@(countAll == 0 ? "display:flex;" : "display:none;")">
-            <div class="tl-empty-icon">
-                <svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                    <line x1="9" y1="15" x2="15" y2="15"></line>
-                </svg>
-            </div>
-            <div class="tl-empty-title">Chưa có tài liệu y tế</div>
-            <div class="tl-empty-desc">Khi cơ sở khám chữa bệnh cập nhật đơn thuốc hoặc kết quả khám, tài liệu sẽ tự động xuất hiện tại đây.</div>
+            @if (string.IsNullOrWhiteSpace(ViewBag.MaBN as string))
+            {
+                <div class="tl-empty-icon" style="color: #f59e0b;">
+                    <svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                </div>
+                <div class="tl-empty-title">Chưa liên kết mã bệnh nhân</div>
+                <div class="tl-empty-desc">Hồ sơ của bạn chưa được liên kết với mã bệnh nhân tại cơ sở khám chữa bệnh. Vui lòng cập nhật hồ sơ để tra cứu tài liệu.</div>
+                <a href="/benh-nhan/ho-so" class="tl-btn-empty-action">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>Liên kết ngay</span>
+                </a>
+            }
+            else
+            {
+                <div class="tl-empty-icon">
+                    <svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="9" y1="15" x2="15" y2="15"></line>
+                    </svg>
+                </div>
+                <div class="tl-empty-title">Chưa có tài liệu</div>
+                <div class="tl-empty-desc">Khi cơ sở khám chữa bệnh cập nhật đơn thuốc hoặc kết quả khám, tài liệu sẽ tự động xuất hiện tại đây.</div>
+            }
         </div>
 
     </div>

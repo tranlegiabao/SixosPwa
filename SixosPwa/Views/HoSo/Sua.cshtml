@@ -71,7 +71,7 @@
         .hs-o input, .hs-o select { width:100%; box-sizing:border-box; padding:11px 12px; font-size:15px;
                       border:1px solid #d1d5db; border-radius:10px; background:#fff; }
         .hs-o input:focus, .hs-o select:focus { outline:none; border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.12); }
-        .hs-o input:disabled { background:#f9fafb; color:#6b7280; }
+        .hs-o input:disabled, .hs-o input:read-only, .hs-o select:disabled { background:#f9fafb; color:#6b7280; cursor:not-allowed; }
         .hs-goi-y { font-size:12px; color:#6b7280; margin-top:5px; line-height:1.45; }
         .hs-gui { width:100%; padding:13px; border:none; border-radius:10px;
                   background:#2563eb; color:#fff; font-size:15px; font-weight:600; cursor:pointer; }
@@ -143,7 +143,9 @@
                         hay chưa — bạn thử lưu lại sau ít phút.
                     </div>
                     break;
-                @* "da-go" da bo: benh nhan khong con go noi duoc, viec do sang man Admin. *@
+                case "da-go":
+                    <div class="hs-bao hs-bao-xong">Đã gỡ nối. Hồ sơ của bạn vẫn giữ nguyên.</div>
+                    break;
                 case "khong-noi":
                     <div class="hs-bao hs-bao-xong">Đã lưu. Chưa nối mã nào.</div>
                     break;
@@ -261,7 +263,13 @@
 
                         @if (Model.DanhSachMa.Count == 0)
                         {
-                            <input value="" disabled />
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <input value="" placeholder="Chưa có mã bệnh nhân" disabled style="flex:1;" />
+                                @if (ViewBag.ChoPhepGoNoi == true)
+                                {
+                                    <button type="button" class="ma-go" disabled style="opacity: 0.45; cursor: not-allowed;" title="Hồ sơ chưa có mã bệnh nhân để gỡ">Gỡ nối</button>
+                                }
+                            </div>
                             <div class="hs-goi-y">
                                 Mã do cơ sở cấp — bạn không sửa được. Nối xong sẽ hiện ở đây.
                             </div>
@@ -278,11 +286,26 @@
                                             <text>khám gần nhất @ma.LanKhamCuoi.Value.ToString("dd/MM/yyyy")</text>
                                         }
                                     </span>
+                                    @if (ViewBag.ChoPhepGoNoi == true)
+                                    {
+                                        <button type="submit"
+                                                form="formGoNoi_@ma.IdBenhNhanCoSo"
+                                                class="ma-go"
+                                                title="Gỡ nối mã @ma.MaBN">
+                                            Gỡ nối
+                                        </button>
+                                    }
                                 </div>
                             }
                             <div class="hs-goi-y">
-                                Mã nào không phải của bạn thì báo <b>bộ phận hỗ trợ của cơ sở</b> để được
-                                gỡ — hồ sơ của bạn vẫn giữ nguyên.
+                                @if (ViewBag.ChoPhepGoNoi == true)
+                                {
+                                    <text>Mã nào không phải của bạn thì bấm <b>Gỡ nối</b> ở bên cạnh — hồ sơ của bạn vẫn giữ nguyên.</text>
+                                }
+                                else
+                                {
+                                    <text>Mã nào không phải của bạn thì báo <b>bộ phận hỗ trợ của cơ sở</b> để được gỡ — hồ sơ của bạn vẫn giữ nguyên.</text>
+                                }
                             </div>
                         }
                     </div>
@@ -335,30 +358,44 @@
                         @* 🔴 BAT BUOC: so nay la thu dung de DANG NHAP vao cong. *@
                         <label for="sdt">Số điện thoại *</label>
                         <input id="sdt" name="sdt" type="tel" maxlength="20" required
-                               inputmode="tel" autocomplete="off" value="@Model.Sdt" placeholder="09xxxxxxxx" />
+                               inputmode="tel" autocomplete="off" value="@Model.Sdt" placeholder="09xxxxxxxx"
+                               @(Model.DaNoiHIS ? "readonly" : "") />
                     </div>
 
                     @if (Model.DaNoiHIS)
                     {
-                        <div class="hs-goi-y" style="margin-bottom:12px;">
-                            Hồ sơ này đã nối với bệnh án tại cơ sở nên họ tên, ngày sinh, căn cước và
-                            giới tính lấy theo cơ sở. Muốn sửa thì báo bộ phận hỗ trợ của cơ sở.
+                        <div class="hs-bao hs-bao-cho" style="margin-top:16px;">
+                            @if (ViewBag.ChoPhepGoNoi == true)
+                            {
+                                <text>Hồ sơ đang liên kết mã bệnh nhân. Vui lòng bấm <b>Gỡ nối</b> ở bên cạnh mã bệnh nhân phía trên trước khi chỉnh sửa thông tin.</text>
+                            }
+                            else
+                            {
+                                <text>Hồ sơ đang liên kết mã bệnh nhân. Vui lòng liên hệ <b>cơ sở y tế</b> để được hỗ trợ chỉnh sửa thông tin.</text>
+                            }
                         </div>
                     }
-
-                    <button type="submit" class="hs-gui">Lưu</button>
+                    else
+                    {
+                        <button type="submit" class="hs-gui">Lưu</button>
+                    }
                 </form>
 
-                @* 🔴 NUT *GO NOI* DA GO KHOI MAN BENH NHAN (09/09).
-                   Go nối là thao tác PHA HUY: nó xoá tài liệu + đợt khám của mã đó và
-                   nhả mã ra cho người khác nhận. Để bệnh nhân tự bấm thì một lần bấm
-                   nhầm là mất bệnh án, mà chính họ cũng không dựng lại được.
-                   Việc này chuyển sang màn ADMIN — bộ phận hỗ trợ của cơ sở làm, có
-                   nhánh riêng của đồng nghiệp. Phần lõi GIỮ NGUYÊN cho màn đó dùng:
-                   thủ tục `DM_BenhNhanCoSo_GoNoi`, ba bảng sao lưu `bak.GoNoi_*_V001`,
-                   `AdminStoredProcedureService.GoNoiAsync` và `IHoSoBenhNhanService
-                   .GoNoiAsync`. Chỉ CỬA VÀO phía bệnh nhân là đóng — cả nút LẪN
-                   action `POST /benh-nhan/ho-so/go-noi` (xem HoSoController). *@
+                @* Form xử lý Gỡ nối đặt ẩn ngoài form chính để tránh lồng form HTML *@
+                @if (ViewBag.ChoPhepGoNoi == true && Model.DanhSachMa.Count > 0)
+                {
+                    @foreach (var ma in Model.DanhSachMa)
+                    {
+                        <form id="formGoNoi_@ma.IdBenhNhanCoSo"
+                              method="post"
+                              action="/benh-nhan/ho-so/go-noi"
+                              onsubmit="return confirm('Gỡ nối mã @ma.MaBN? Tài liệu và lịch sử khám đi kèm mã này sẽ không còn hiện trong hồ sơ của bạn.');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.IdBenhNhan" />
+                            <input type="hidden" name="idHoSoCoSo" value="@ma.IdBenhNhanCoSo" />
+                        </form>
+                    }
+                }
             }
         </main>
     </div>

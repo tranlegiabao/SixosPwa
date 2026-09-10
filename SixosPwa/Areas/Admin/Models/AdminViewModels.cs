@@ -350,3 +350,12 @@ public sealed class PatientAccountStat
     public string CCCD { get; set; } = "";
 }
 
+public sealed class CauHinhListViewModel
+{
+    public IReadOnlyList<HTConfig> Items { get; init; } = Array.Empty<HTConfig>();
+    public IReadOnlyList<string> DanhSachNhom { get; init; } = Array.Empty<string>();
+    public string? Query { get; init; }
+    public string? Nhom { get; init; }
+}
+
+

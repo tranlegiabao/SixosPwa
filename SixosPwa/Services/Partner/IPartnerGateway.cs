@@ -13,8 +13,8 @@ namespace SixosPwa.Services.Partner;
 /// </summary>
 public interface IPartnerGateway
 {
-    /// <summary>Kieu API ma ban cai nay phuc vu (khop <see cref="DoiTacApi.KieuApi"/>).</summary>
-    string KieuApi { get; }
+    /// <summary>Ten dinh danh cua cong/ban cai (vd: NoApi, Ub, His).</summary>
+    string TenCong { get; }
 
     /// <summary>Co so nay co ban giao phien sang he ngoai khong.</summary>
     bool CoBanGiao { get; }

@@ -1,0 +1,205 @@
+@model CauHinhListViewModel
+@{
+    ViewData["Title"] = "Cấu hình hệ thống";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="page-header-row">
+    <div>
+        <div class="page-kicker">THIẾT LẬP HỆ THỐNG</div>
+        <h1 class="page-heading">Cấu hình hệ thống</h1>
+        <p class="page-description">Bật / tắt và kiểm soát các tính năng linh hoạt của ứng dụng (bảng HT_Config).</p>
+    </div>
+</div>
+
+<div class="admin-panel">
+    <form method="get" class="filter-bar">
+        <div class="search-control">
+            <span>⌕</span>
+            <input type="search" name="q" value="@Model.Query" placeholder="Tìm theo mã chức năng hoặc ghi chú..." aria-label="Tìm cấu hình" />
+        </div>
+        <select name="nhom" class="form-select filter-select admin-filter-select" aria-label="Lọc theo nhóm">
+            <option value="">Tất cả nhóm</option>
+            @foreach (var nhom in Model.DanhSachNhom)
+            {
+                <option value="@nhom" selected="@(Model.Nhom == nhom ? "selected" : null)">@nhom</option>
+            }
+        </select>
+        <button class="btn admin-btn-secondary" type="submit">Lọc</button>
+        @if (!string.IsNullOrWhiteSpace(Model.Query) || !string.IsNullOrWhiteSpace(Model.Nhom))
+        {
+            <a asp-action="Index" class="clear-filter">Xóa lọc</a>
+        }
+    </form>
+
+    <div class="table-meta">
+        <span><strong>@Model.Items.Count.ToString("N0")</strong> cấu hình</span>
+        <span>Gạt công tắc để bật hoặc tắt tính năng ngay lập tức (áp dụng tức thì cho người dùng)</span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table admin-table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th style="min-width: 150px;">Mã chức năng</th>
+                    <th style="min-width: 110px;">Nhóm</th>
+                    <th style="min-width: 280px;">Ghi chú / Mục đích</th>
+                    <th style="min-width: 100px;">Thông số</th>
+                    <th class="text-end" style="min-width: 160px;">Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody>
+            @if (Model.Items.Count == 0)
+            {
+                <tr>
+                    <td colspan="5">
+                        <div class="table-empty">
+                            <div>⌕</div>
+                            <strong>Không tìm thấy cấu hình</strong>
+                            <span>Thử thay đổi từ khóa hoặc bộ lọc nhóm.</span>
+                        </div>
+                    </td>
+                </tr>
+            }
+            else
+            {
+                foreach (var item in Model.Items)
+                {
+                    <tr>
+                        <td>
+                            <span class="config-code-badge">@item.MaChucNang</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border px-2 py-1">@(string.IsNullOrWhiteSpace(item.Nhom) ? "Chung" : item.Nhom)</span>
+                        </td>
+                        <td>
+                            <div class="fw-medium text-dark">@(item.Ghichu ?? "Chưa có mô tả")</div>
+                            <small class="text-muted">ID: #@item.Id</small>
+                        </td>
+                        <td>
+                            <div class="small text-muted">
+                                @if (item.GiaTri.HasValue)
+                                {
+                                    <div>Giá trị: <strong class="text-dark">@item.GiaTri</strong></div>
+                                }
+                                @if (item.SoLuong.HasValue)
+                                {
+                                    <div>Số lượng: <strong class="text-dark">@item.SoLuong</strong></div>
+                                }
+                                @if (!item.GiaTri.HasValue && !item.SoLuong.HasValue)
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </div>
+                        </td>
+                        <td class="text-end">
+                            <div class="d-inline-flex align-items-center justify-content-end gap-2">
+                                <div class="form-check form-switch config-switch-container m-0">
+                                    <input class="form-check-input config-switch"
+                                           type="checkbox"
+                                           role="switch"
+                                           id="switch_@item.Id"
+                                           data-id="@item.Id"
+                                           data-ma="@item.MaChucNang"
+                                           @(item.HieuLuc == true ? "checked" : "")
+                                           onchange="xuLyDoiHieuLuc(this)" />
+                                </div>
+                                <span class="config-status-label fw-semibold @(item.HieuLuc == true ? "text-success" : "text-secondary")"
+                                      id="status_label_@item.Id"
+                                      style="min-width: 68px; text-align: left; font-size: 13px;">
+                                    @(item.HieuLuc == true ? "Đang bật" : "Đang tắt")
+                                </span>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .config-code-badge {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 13px;
+        font-weight: 700;
+        background: #f0fdf4;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+        padding: 4px 8px;
+        border-radius: 6px;
+        letter-spacing: 0.5px;
+    }
+    .config-switch-container {
+        padding-left: 2.5em;
+    }
+    .config-switch {
+        cursor: pointer;
+        width: 2.8em !important;
+        height: 1.5em !important;
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+    .config-switch:checked {
+        background-color: #10b981;
+        border-color: #10b981;
+    }
+    .config-switch:focus {
+        box-shadow: 0 0 0 0.25rem rgba(16, 185, 129, 0.25);
+    }
+</style>
+
+<script>
+    async function xuLyDoiHieuLuc(checkbox) {
+        const id = checkbox.getAttribute('data-id');
+        const ma = checkbox.getAttribute('data-ma');
+        const hieuLuc = checkbox.checked;
+        const labelEl = document.getElementById('status_label_' + id);
+
+        checkbox.disabled = true;
+
+        try {
+            const tokenEl = document.querySelector('input[name="__RequestVerificationToken"]');
+            const token = tokenEl ? tokenEl.value : '';
+
+            const formData = new URLSearchParams();
+            formData.append('id', id);
+            formData.append('hieuLuc', hieuLuc);
+            formData.append('__RequestVerificationToken', token);
+
+            const res = await fetch('/Admin/CauHinh/Toggle', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: formData.toString()
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                if (labelEl) {
+                    labelEl.textContent = hieuLuc ? 'Đang bật' : 'Đang tắt';
+                    labelEl.className = 'config-status-label fw-semibold ' + (hieuLuc ? 'text-success' : 'text-secondary');
+                }
+                if (window.showToast) {
+                    window.showToast(data.message || (hieuLuc ? 'Đã bật cấu hình ' + ma : 'Đã tắt cấu hình ' + ma), 'success');
+                }
+            } else {
+                // Phục hồi lại trạng thái công tắc nếu thất bại
+                checkbox.checked = !hieuLuc;
+                if (window.showToast) {
+                    window.showToast(data.message || 'Không thể cập nhật cấu hình!', 'error');
+                }
+            }
+        } catch (err) {
+            checkbox.checked = !hieuLuc;
+            if (window.showToast) {
+                window.showToast('Lỗi kết nối máy chủ khi cập nhật!', 'error');
+            }
+        } finally {
+            checkbox.disabled = false;
+        }
+    }
+</script>

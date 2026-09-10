@@ -483,8 +483,29 @@ public class HomeController : Controller
 
     /// <summary>Màn trống cho các thẻ chưa nối dữ liệu.</summary>
     [HttpGet("/benh-nhan/sap-co")]
-    public IActionResult SapCo(string? muc = null)
+    public async Task<IActionResult> SapCo(string? muc = null)
     {
+        // Ke hoach dieu tri chi danh cho co so nha khoa. Neu co so khac co tinh vao truc tiep thi chuyen ve /benh-nhan.
+        if (string.Equals(muc, "ke-hoach-dieu-tri", StringComparison.OrdinalIgnoreCase))
+        {
+            var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
+            var coSo = string.IsNullOrWhiteSpace(maCoSo)
+                ? null
+                : await _db.DMCSKCBs.AsNoTracking().FirstOrDefaultAsync(x => x.MaCoSo == maCoSo);
+
+            var maNhom = coSo?.IdNhomCS is null
+                ? null
+                : await _db.DMNhomCSs.AsNoTracking()
+                    .Where(n => n.ID == coSo.IdNhomCS.Value)
+                    .Select(n => n.MaNhom)
+                    .FirstOrDefaultAsync();
+
+            if (!string.Equals(maNhom, "nhakhoa", StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction(nameof(TrangBenhNhan));
+            }
+        }
+
         (ViewBag.TenMuc, ViewBag.BieuTuong) = muc switch
         {
             "lich-hen" => ("Lịch hẹn", "📅"),

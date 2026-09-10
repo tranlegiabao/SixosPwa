@@ -175,24 +175,23 @@ public sealed class HisDocService : IHisDocService
 
     /// <summary>
     /// Cau hinh de goi sang HIS cua mot co so, hoac <c>null</c> khi co so nay
-    /// khong di duong nay. Ba dieu kien deu la "chua noi", khong phai loi:
-    /// khong co dong <c>DM_DoiTacApi</c> · <c>KieuApi</c> khac <c>'HIS'</c> ·
-    /// <c>Active = 0</c>. Thieu <c>BaseUrl</c> hay <c>KhoaGoiHIS</c> cung the —
-    /// nhung cai do thi ghi canh bao vi gan nhu chac chan la seed thieu.
+    /// khong di duong nay. Cac dieu kien deu la "chua noi", khong phai loi:
+    /// khong co dong <c>DM_DoiTacApi</c> · <c>Active = 0</c> · khong cau hinh <c>BaseUrl</c>.
+    /// Thieu <c>BaseUrl</c> hay <c>KhoaGoiHIS</c> khi dang mo cong thi ghi canh bao vi
+    /// gan nhu chac chan la seed thieu.
     /// </summary>
     private async Task<CuaHis?> LayCuaAsync(long idCoSo, CancellationToken ct)
     {
         var cauHinh = await _db.DoiTacApis.AsNoTracking()
             .FirstOrDefaultAsync(x => x.IdCoSo == idCoSo, ct);
 
-        if (cauHinh is null) return null;
-        if (!string.Equals(cauHinh.KieuApi, KieuApiDoiTac.His, StringComparison.OrdinalIgnoreCase)) return null;
-        if (!cauHinh.Active) return null;
+        if (cauHinh is null || !cauHinh.Active) return null;
+        if (string.IsNullOrWhiteSpace(cauHinh.BaseUrl) && string.IsNullOrWhiteSpace(cauHinh.KhoaGoiHIS)) return null;
 
         if (string.IsNullOrWhiteSpace(cauHinh.BaseUrl) || string.IsNullOrWhiteSpace(cauHinh.KhoaGoiHIS))
         {
             _logger.LogWarning(
-                "Co so {IdCoSo} dat KieuApi='HIS' nhung thieu {Thieu} — duong doc sang HIS dang tat.",
+                "Co so {IdCoSo} mo cong ket noi HIS nhung thieu {Thieu} — duong doc sang HIS dang tat.",
                 idCoSo,
                 string.IsNullOrWhiteSpace(cauHinh.BaseUrl) ? "BaseUrl" : "KhoaGoiHIS");
             return null;

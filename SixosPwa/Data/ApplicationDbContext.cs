@@ -34,6 +34,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<TaiLieuBenhNhan> TaiLieuBenhNhans => Set<TaiLieuBenhNhan>();
     public DbSet<KhoaApiCoSo> KhoaApiCoSos => Set<KhoaApiCoSo>();
     public DbSet<DMGioiTinh> DMGioiTinhs => Set<DMGioiTinh>();
+    public DbSet<HTConfig> HTConfigs => Set<HTConfig>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -213,7 +214,6 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<DoiTacApi>().HasKey(e => e.Id);
         modelBuilder.Entity<DoiTacApi>().Property(e => e.Id).HasColumnName("ID");
         modelBuilder.Entity<DoiTacApi>().Property(e => e.IdCoSo).HasColumnName("IDCoSo").IsRequired();
-        modelBuilder.Entity<DoiTacApi>().Property(e => e.KieuApi).HasMaxLength(20).IsRequired();
         modelBuilder.Entity<DoiTacApi>().Property(e => e.BaseUrl).HasMaxLength(255);
         modelBuilder.Entity<DoiTacApi>().Property(e => e.TrangChu).HasMaxLength(255);
         modelBuilder.Entity<DoiTacApi>().Property(e => e.KhoaGoiHIS).HasMaxLength(500);
@@ -247,5 +247,14 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.LaBanMoiNhat).IsRequired();
         modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.NgayTao).IsRequired();
         modelBuilder.Entity<TaiLieuBenhNhan>().HasIndex(e => new { e.IdCoSo, e.MaBN });
+
+        // ------------------------------------------------------------ HT_Config
+        modelBuilder.Entity<HTConfig>().ToTable("HT_Config");
+        modelBuilder.Entity<HTConfig>().HasKey(e => e.Id);
+        modelBuilder.Entity<HTConfig>().Property(e => e.Id).HasColumnName("ID");
+        modelBuilder.Entity<HTConfig>().Property(e => e.MaChucNang).HasMaxLength(50);
+        modelBuilder.Entity<HTConfig>().Property(e => e.Ghichu).HasMaxLength(500);
+        modelBuilder.Entity<HTConfig>().Property(e => e.Ngay).HasColumnType("date");
+        modelBuilder.Entity<HTConfig>().Property(e => e.Nhom).HasMaxLength(20);
     }
 }

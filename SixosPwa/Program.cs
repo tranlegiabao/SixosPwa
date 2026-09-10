@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +8,17 @@ using SixosPwa.Security;
 using SixosPwa.Services;
 using SixosPwa.Services.Partner;
 
-var builder = WebApplication.CreateBuilder(args);
+var contentRoot = Directory.GetCurrentDirectory();
+if (!Directory.Exists(Path.Combine(contentRoot, "Views")) && Directory.Exists(Path.Combine(contentRoot, "SixosPwa", "Views")))
+{
+    contentRoot = Path.Combine(contentRoot, "SixosPwa");
+}
+
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    ContentRootPath = contentRoot
+});
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddMemoryCache();
@@ -19,6 +29,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 // Add Services
 builder.Services.AddScoped<ITaiKhoanService, DbTaiKhoanService>();
+builder.Services.AddScoped<IHTConfigService, HTConfigService>();
 builder.Services.AddScoped<AdminStoredProcedureService>();
 
 builder.Services.AddHttpClient();
@@ -38,7 +49,7 @@ builder.Services.AddScoped<IDotKhamService, DotKhamService>();
 builder.Services.AddScoped<IHoSoBenhNhanService, HoSoBenhNhanService>();
 
 // ── Dot 4: duong DOC cong -> HIS (tra cuu ho so + lich hen) ─────────────────
-// Cai van nam trong chinh service: co so khong phai KieuApi='HIS', hoac
+// Cai van nam trong chinh service: co so khong bat API, hoac
 // DM_DoiTacApi.Active = 0, hoac thieu BaseUrl/KhoaGoiHIS => tra ChuaNoi, khong
 // goi ra ngoai mot cuoc nao.
 builder.Services.AddScoped<SixosPwa.Services.His.IHisDocService, SixosPwa.Services.His.HisDocService>();
@@ -147,5 +158,4 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=ThongTinBenhNhan}/{id?}");
 
 app.Run();
-
-
+// Trigger restart for new CauHinhController: 2026-09-10

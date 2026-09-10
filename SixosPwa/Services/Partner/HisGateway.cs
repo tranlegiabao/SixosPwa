@@ -5,24 +5,15 @@ namespace SixosPwa.Services.Partner;
 /// <summary>
 /// Co so chay HisSoft va noi voi SixosPwa qua mach SPWA (Giai doan 2).
 ///
-/// 🔴 CO API NHUNG VAN DUNG MAN CUA SIXOSPWA — day la cho de hieu nham nhat cua
-/// ca truc <c>KieuApi</c>. Giai doan 1 hieu "co API" = *doi tac dung man rieng,
-/// ta ban giao phien sang cho ho* (do la <c>UB</c>). Kieu <c>HIS</c> thi nguoc
-/// lai: co API that, nhung benh nhan o LAI trang benh nhan noi bo cua SixosPwa.
-/// Vi the noi *nhanh ban giao* / *nhanh man chung*, cam noi "nhanh co API" tran.
+/// 🔴 CO API NHUNG VAN DUNG MAN CUA SIXOSPWA.
+/// Nhanh ban giao (Ub) chuyen phien sang man cua doi tac; con nhanh HIS: co API,
+/// nhung benh nhan o lai trang benh nhan noi bo cua SixosPwa.
 ///
-/// Nen ban cai nay cu xu y het <see cref="NoApiGateway"/> ve mat DANG NHAP:
+/// Ban cai nay xu ly giong <see cref="NoApiGateway"/> ve mat DANG NHAP:
 /// <c>CoBanGiao = false</c>, <c>DungManDoiTac = false</c>, khong goi ra ngoai
-/// mot cuoc nao trong luong dang nhap/dang ky/quen mat khau.
+/// trong luong dang nhap/dang ky/quen mat khau.
 ///
-/// Vay no ton tai de lam gi? Hai viec:
-///   1. <c>BaseUrl</c> tro sang HIS cua co so, va o kieu nay no CO NGUOI DOC
-///      (khac han <c>UB</c> — xem chu thich tren <see cref="DoiTacApi.BaseUrl"/>):
-///      duong DOC cua cong goi vao HIS di qua dia chi nay.
-///   2. Khong co ban cai nay thi <see cref="PartnerGatewayFactory"/> khong tim
-///      duoc cua cho <c>KieuApi='HIS'</c>, ghi canh bao roi rot ve noi bo — chay
-///      dung nhung mo mot dong log canh bao moi lan, va che mat loi that neu sau
-///      nay co ai cau hinh sai.
+/// <c>BaseUrl</c> tro sang HIS cua co so de phuc vu duong DOC tai lieu/lich hen.
 ///
 /// Chieu NGUOC (HIS day tai lieu len cong) KHONG di qua day: no vao thang khu
 /// <c>api/v1</c> voi <c>[KhoaCoSo]</c>.
@@ -31,7 +22,7 @@ public class HisGateway : IPartnerGateway
 {
     private const string DungManNoiBo = "Cơ sở này dùng màn hình của SixosPwa";
 
-    public string KieuApi => KieuApiDoiTac.His;
+    public string TenCong => "His";
 
     /// <summary>Khong ban giao — benh nhan o lai trang benh nhan cua SixosPwa.</summary>
     public bool CoBanGiao => false;
