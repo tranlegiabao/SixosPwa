@@ -319,46 +319,83 @@ public sealed class TaiKhoanController : AdminControllerBase
         bn.DiaChi = string.IsNullOrWhiteSpace(req.DiaChi) ? null : req.DiaChi.Trim();
         bn.HoTenKhongDau = ChuanHoaTen.BoDau(req.TenBN);
 
-        // Cập nhật Mã cơ sở (MaBN trong DM_BenhNhanCoSo)
+        // ───── Ma benh nhan tai co so (MaBN trong DM_BenhNhanCoSo) ─────
+        //
+        // 🔴 Duong nay KHONG duoc tu xoa dong, va cung khong duoc tu doan co so.
+        //   * Xoa dong = *Go noi*, ma *Go noi* la thao tac PHA HUY (keo theo tai lieu va
+        //     dot kham). No co cua rieng: `GoNoiHoSo` -> `dbo.DM_BenhNhanCoSo_GoNoi`, co
+        //     sao luu sang `bak.GoNoi_*_V001`. O day de trong o ma thi GIU NGUYEN ma cu.
+        //   * Gan ma thi di qua `dbo.DM_BenhNhanCoSo_Save` de con an theo khoa
+        //     (IDBenhNhan, IDCoSo) va cai chan "ma da co chu" — EF `Add` thang tay se dam
+        //     vao unique index tren (IDCoSo, MaBN), ra 500 chu khong ra loi tu te.
+        //
+        // Lam phan ma TRUOC `SaveChangesAsync` la co y: ma hong thi thoat luon, khong de
+        // lai canh nhan than da ghi ma man hinh thi bao that bai.
         var newMaBN = string.IsNullOrWhiteSpace(req.MaBN) ? null : req.MaBN.Trim();
-        var coSoRecord = await _db.BenhNhanCoSos.FirstOrDefaultAsync(x => x.IdBenhNhan == bn.Id);
-        string? tenCoSo = null;
+        var coSoRecord = await _db.BenhNhanCoSos.AsNoTracking()
+            .Where(x => x.IdBenhNhan == bn.Id)
+            .OrderByDescending(x => x.MaBN != null)
+            .FirstOrDefaultAsync();
 
-        if (coSoRecord != null)
+        long? idCoSoHienThi = coSoRecord?.IdCoSo;
+        var maBNSauKhiLuu = coSoRecord?.MaBN;
+        string? canhBao = null;
+
+        if (!string.IsNullOrEmpty(newMaBN))
         {
-            if (string.IsNullOrEmpty(newMaBN))
+            // Co so dich: uu tien co so cua chinh dong dang co, khong co thi lay tu man
+            // hinh gui len. Khong co ca hai thi TU CHOI — KHONG lay co so dau bang, vi
+            // doan la noi ma sang co so khac ma khong ai nhin ra.
+            var idCoSoDich = coSoRecord?.IdCoSo ?? req.IdCoSo ?? 0;
+            if (idCoSoDich <= 0)
             {
-                _db.BenhNhanCoSos.Remove(coSoRecord);
-            }
-            else
-            {
-                coSoRecord.MaBN = newMaBN;
-                var cs = await _db.DMCSKCBs.AsNoTracking().FirstOrDefaultAsync(x => x.Id == coSoRecord.IdCoSo);
-                tenCoSo = cs?.TenCoSo;
-            }
-        }
-        else if (!string.IsNullOrEmpty(newMaBN))
-        {
-            var defaultCoSo = await _db.DMCSKCBs.OrderBy(x => x.Id).FirstOrDefaultAsync();
-            if (defaultCoSo != null)
-            {
-                _db.BenhNhanCoSos.Add(new BenhNhanCoSo
+                return Json(new
                 {
-                    IdBenhNhan = bn.Id,
-                    IdCoSo = defaultCoSo.Id,
-                    MaBN = newMaBN,
-                    DaMoTaiLieu = false
+                    success = false,
+                    message = "Hồ sơ này chưa gắn với cơ sở nào. Hãy lọc theo đúng cơ sở rồi sửa lại, "
+                            + "để mã không bị nối nhầm sang cơ sở khác."
                 });
-                tenCoSo = defaultCoSo.TenCoSo;
             }
+
+            if (!string.Equals(coSoRecord?.MaBN, newMaBN, StringComparison.Ordinal))
+            {
+                var (ketQuaMa, _) = await _adminStoredProcedures.SaveBenhNhanCoSoAsync(
+                    bn.Id, idCoSoDich, newMaBN);
+
+                if (!ketQuaMa.Succeeded)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = ketQuaMa.Message ?? "Không nối được mã bệnh nhân tại cơ sở."
+                    });
+                }
+            }
+
+            idCoSoHienThi = idCoSoDich;
+            maBNSauKhiLuu = newMaBN;
+        }
+        else if (!string.IsNullOrEmpty(coSoRecord?.MaBN))
+        {
+            canhBao = "Mã bệnh nhân giữ nguyên — muốn thao mã thì bấm nút Gỡ nối, "
+                    + "để trống ô rồi Lưu không gỡ được.";
         }
 
         await _db.SaveChangesAsync();
 
+        var tenCoSo = idCoSoHienThi == null
+            ? null
+            : await _db.DMCSKCBs.AsNoTracking()
+                .Where(x => x.Id == idCoSoHienThi.Value)
+                .Select(x => x.TenCoSo)
+                .FirstOrDefaultAsync();
+
         return Json(new
         {
             success = true,
-            message = "Đã lưu thông tin hồ sơ thành công.",
+            message = canhBao == null
+                ? "Đã lưu thông tin hồ sơ thành công."
+                : "Đã lưu thông tin hồ sơ. " + canhBao,
             data = new
             {
                 id = bn.Id,
@@ -370,9 +407,69 @@ public sealed class TaiKhoanController : AdminControllerBase
                 gioiTinh = bn.GioiTinh ?? "1",
                 gioiTinhVn = bn.GioiTinh == "1" ? "Nam" : (bn.GioiTinh == "2" ? "Nữ" : "Khác"),
                 diaChi = bn.DiaChi ?? "",
-                maBN = newMaBN ?? "",
+                maBN = maBNSauKhiLuu ?? "",
                 tenCoSo = tenCoSo ?? ""
             }
+        });
+    }
+
+    /// <summary>
+    /// *Go noi* mot ma khoi mot ho so — cua duy nhat, va do ADMIN bam.
+    ///
+    /// <para>
+    /// 🔴 KHONG xoa dong bang EF. Thu tuc <c>dbo.DM_BenhNhanCoSo_GoNoi</c> con phai
+    /// sao luu tai lieu + dot kham sang <c>bak.GoNoi_*_V001</c> roi moi xoa, va phai de
+    /// lai mot dong TU KHAI de ho so "tut ve *Ho so tu khai*" chu khong bien mat khoi co
+    /// so. Xoa thang bang EF thi mat het ba viec do, ma khoa ngoai NO_ACTION cung chan
+    /// khong cho xoa khi con tai lieu — nen duong cu vua sai vua se gay 500.
+    /// </para>
+    ///
+    /// <para>
+    /// Thu tuc chan theo CHU SO HUU ho so (<c>@IDTaiKhoan</c>) chu khong theo nguoi dang
+    /// bam, nen o day truyen tai khoan cua chinh ho so. Quyen cua admin da duoc canh cua
+    /// Area Admin giu — khong noi hai lop chan vao lam mot.
+    /// </para>
+    /// </summary>
+    [HttpPost]
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> GoNoiHoSo([FromBody] GoNoiHoSoAdminRequest req)
+    {
+        if (req == null || req.IdHoSoCoSo <= 0)
+            return Json(new { success = false, message = "Không xác định được dòng hồ sơ tại cơ sở cần gỡ." });
+
+        var dong = await _db.BenhNhanCoSos.AsNoTracking()
+            .Where(x => x.Id == req.IdHoSoCoSo)
+            .Select(x => new { x.Id, x.IdBenhNhan, x.MaBN })
+            .FirstOrDefaultAsync();
+
+        if (dong == null)
+            return Json(new { success = false, message = "Không tìm thấy hồ sơ tại cơ sở." });
+
+        if (string.IsNullOrEmpty(dong.MaBN))
+            return Json(new { success = false, message = "Hồ sơ này chưa nối mã nào nên không có gì để gỡ." });
+
+        var chuSoHuu = await _db.BenhNhans.AsNoTracking()
+            .Where(b => b.Id == dong.IdBenhNhan)
+            .Select(b => b.IdTaiKhoan)
+            .FirstOrDefaultAsync();
+
+        if (chuSoHuu is null or <= 0)
+        {
+            return Json(new
+            {
+                success = false,
+                message = "Hồ sơ này chưa thuộc tài khoản nào nên chưa gỡ nối được."
+            });
+        }
+
+        var ketQua = await _adminStoredProcedures.GoNoiAsync(req.IdHoSoCoSo, chuSoHuu.Value);
+
+        return Json(new
+        {
+            success = ketQua.Succeeded,
+            message = ketQua.Succeeded
+                ? $"Đã gỡ mã {dong.MaBN}. Tài liệu và đợt khám đi kèm mã này đã được sao lưu rồi gỡ theo."
+                : (ketQua.Message ?? "Không gỡ nối được.")
         });
     }
 

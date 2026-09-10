@@ -54,10 +54,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Sửa hồ sơ</title>
     <link rel="stylesheet" href="/css/tai-lieu-benh-nhan.css?v=20260908_v8" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_blue.css" />
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
+    @* 🔴 flatpickr NAP TU MAY CHU, khong tu CDN. Man nay la man BENH NHAN, chay
+       tren dien thoai qua tunnel va la PWA — mat mang ngoai la mat luon o chon ngay,
+       ma o do lai la `type="text"` nen nguoi dung con doi mat mot cai hop chu trong
+       hien "1990-05-15" trong khi cho ghi "dd/mm/yyyy". Ban CDN cu con khong ghim
+       phien ban (`npm/flatpickr` = ban moi nhat), tuc la ho nang cap la giao dien
+       nay doi theo ma khong ai bam nut nao. Ban da ghim: 4.6.13. *@
+    <link rel="stylesheet" href="~/dist/flatpickr/flatpickr.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/dist/flatpickr/themes/material_blue.css" asp-append-version="true" />
+    <script src="~/dist/flatpickr/flatpickr.min.js" asp-append-version="true"></script>
+    <script src="~/dist/flatpickr/l10n/vn.js" asp-append-version="true"></script>
     <style>
         .hs-form { padding:16px; }
         .hs-o { margin-bottom:14px; }

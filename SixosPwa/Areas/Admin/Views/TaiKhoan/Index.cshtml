@@ -49,13 +49,14 @@
             cmd.CommandText = @"
                 SELECT b.ID, b.IDTaiKhoan, b.TenBN, b.CCCD, b.SDT, b.Email, b.DiaChi, b.NgaySinh, 
                        CAST(b.GioiTinh AS VARCHAR(10)) AS GioiTinhStr,
-                       cs.MaBN, kcb.TenCoSo
+                       cs.MaBN, kcb.TenCoSo,
+                       cs.ID AS IdHoSoCoSo, cs.IDCoSo
                 FROM DM_BenhNhan b
                 LEFT JOIN DM_BenhNhanCoSo cs ON b.ID = cs.IDBenhNhan
                 LEFT JOIN DM_CSKCB kcb ON cs.IDCoSo = kcb.ID
             ";
             using var reader = cmd.ExecuteReader();
-            var allLoaded = new List<(long Id, long? IdTaiKhoan, string TenBN, string CCCD, string SDT, string? Email, string? DiaChi, DateTime? NgaySinh, string? GioiTinh, string? MaBN, string? TenCoSo)>();
+            var allLoaded = new List<(long Id, long? IdTaiKhoan, string TenBN, string CCCD, string SDT, string? Email, string? DiaChi, DateTime? NgaySinh, string? GioiTinh, string? MaBN, string? TenCoSo, long? IdHoSoCoSo, long? IdCoSo)>();
             while (reader.Read())
             {
                 var id = Convert.ToInt64(reader["ID"]);
@@ -70,7 +71,10 @@
                 var maBN = reader["MaBN"] != DBNull.Value ? reader["MaBN"]?.ToString() : null;
                 var tenCoSo = reader["TenCoSo"] != DBNull.Value ? reader["TenCoSo"]?.ToString() : null;
 
-                allLoaded.Add((id, idTaiKhoan, tenBN, cccd, sdt, email, diaChi, ngaySinh, gioiTinh, maBN, tenCoSo));
+                var idHoSoCoSo = reader["IdHoSoCoSo"] != DBNull.Value ? (long?)Convert.ToInt64(reader["IdHoSoCoSo"]) : null;
+                var idCoSo = reader["IDCoSo"] != DBNull.Value ? (long?)Convert.ToInt64(reader["IDCoSo"]) : null;
+
+                allLoaded.Add((id, idTaiKhoan, tenBN, cccd, sdt, email, diaChi, ngaySinh, gioiTinh, maBN, tenCoSo, idHoSoCoSo, idCoSo));
             }
 
             foreach (var tk in Model.Items)
@@ -81,7 +85,11 @@
                 var grouped = matched.GroupBy(x => x.Id);
                 foreach (var g in grouped)
                 {
-                    var first = g.First();
+                    // Mot ho so co the co NHIEU dong `DM_BenhNhanCoSo` (mot dong tu khai +
+                    // mot dong da noi ma). Uu tien dong DA CO MA — do moi la dong ma nut
+                    // *Go noi* phai thao.
+                    var first = g.FirstOrDefault(x => !string.IsNullOrEmpty(x.MaBN));
+                    if (first.Id == 0) first = g.First();
                     list.Add(new HoSoBenhNhanItemViewModel
                     {
                         Id = first.Id,
@@ -95,6 +103,8 @@
                         GioiTinh = first.GioiTinh,
                         MaBN = first.MaBN,
                         TenCoSo = first.TenCoSo,
+                        IdHoSoCoSo = first.IdHoSoCoSo,
+                        IdCoSo = first.IdCoSo,
                         SoCoSo = g.Count(x => !string.IsNullOrEmpty(x.MaBN))
                     });
                 }
@@ -112,9 +122,6 @@
         hoSoTheoTaiKhoan = tempDict;
     }
 }
-
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_blue.css" />
 
 <style>
     .account-parent-row {
@@ -891,7 +898,8 @@
                                                         <tr id="hoso-row-@hs.Id" data-id="@hs.Id" data-account-id="@item.Id"
                                                             data-ten="@hs.TenBN" data-cccd="@hs.CCCD" data-sdt="@hs.SDT"
                                                             data-ngaysinh="@ngaySinhIso" data-gioitinh="@hs.GioiTinh"
-                                                            data-mabn="@hs.MaBN" data-tencoso="@hs.TenCoSo">
+                                                            data-mabn="@hs.MaBN" data-tencoso="@hs.TenCoSo"
+                                                            data-idhosocoso="@hs.IdHoSoCoSo" data-idcoso="@hs.IdCoSo">
                                                             <!-- HỌ TÊN -->
                                                             <td>
                                                                 <span class="val-ten fw-bold text-dark">@hs.TenBN</span>
@@ -967,6 +975,10 @@
         <div class="modal-sua-body">
             <input type="hidden" id="modalSuaId" value="" />
             <input type="hidden" id="modalSuaAccountId" value="" />
+            @* Dong DM_BenhNhanCoSo dang mo + co so cua no. *Go noi* thao theo ID DONG,
+               con luu ma moi thi can dung co so — khong de may chu doan. *@
+            <input type="hidden" id="modalSuaIdHoSoCoSo" value="" />
+            <input type="hidden" id="modalSuaIdCoSo" value="" />
 
             <!-- 1. Mã bệnh nhân tại cơ sở + Nút Gỡ nối bên cạnh -->
             <div class="modal-hs-o">
@@ -1111,9 +1123,13 @@
         const gioiTinh = tr.getAttribute('data-gioitinh') || '1';
         const maBN = tr.getAttribute('data-mabn') || '';
         const tenCoSo = tr.getAttribute('data-tencoso') || '';
+        const idHoSoCoSo = tr.getAttribute('data-idhosocoso') || '';
+        const idCoSo = tr.getAttribute('data-idcoso') || '';
 
         document.getElementById('modalSuaId').value = id;
         document.getElementById('modalSuaAccountId').value = accountId;
+        document.getElementById('modalSuaIdHoSoCoSo').value = idHoSoCoSo;
+        document.getElementById('modalSuaIdCoSo').value = idCoSo || locCoSoDangChon();
         document.getElementById('modalSuaTenSubtitle').innerText = tenBN;
 
         const inpMaBN = document.getElementById('modalSuaMaBN');
@@ -1206,7 +1222,8 @@
                     sdt: sdt,
                     ngaySinh: ngaySinhIso,
                     gioiTinh: gioiTinh,
-                    maBN: maBN || null
+                    maBN: maBN || null,
+                    idCoSo: parseInt(document.getElementById('modalSuaIdCoSo')?.value || '0') || null
                 })
             });
 
@@ -1250,17 +1267,69 @@
         }
     }
 
-    function goNoiModal() {
+    // Co so dang chon o bo loc, tra ve dang so. Dung lam co so DICH khi ho so chua
+    // gan voi co so nao — con hon de may chu doan.
+    function locCoSoDangChon() {
+        const v = document.getElementById('filterLoaiCS')?.value || '';
+        return v.startsWith('cs:') ? v.slice(3) : '';
+    }
+
+    // 🔴 *Go noi* THAT: goi `dbo.DM_BenhNhanCoSo_GoNoi` qua may chu.
+    // Ban cu chi xoa trang o input roi bao nguoi ta bam Luu — ma duong Luu do lai
+    // `Remove()` thang dong bang EF: BO QUA sao luu `bak.GoNoi_*_V001`, BO QUA viec de
+    // lai mot dong tu khai, va dam vao khoa ngoai NO_ACTION khi ho so con tai lieu.
+    async function goNoiModal() {
+        const idHoSoCoSo = document.getElementById('modalSuaIdHoSoCoSo')?.value;
         const inpMa = document.getElementById('modalSuaMaBN');
-        if (!inpMa.value) {
-            if (typeof showToast === 'function') showToast('Ô mã cơ sở đang trống.', 'info');
+        const maHienTai = inpMa?.value?.trim();
+
+        if (!idHoSoCoSo || !maHienTai) {
+            if (typeof showToast === 'function') showToast('Hồ sơ này chưa nối mã nào nên không có gì để gỡ.', 'info');
             return;
         }
-        if (confirm('Bạn có chắc muốn xóa mã cơ sở này? Nhấn Lưu sau khi gỡ để cập nhật.')) {
-            inpMa.value = '';
-            const daNoiNote = document.getElementById('modalSuaDaNoiNote');
-            if (daNoiNote) daNoiNote.style.display = 'none';
-            if (typeof showToast === 'function') showToast('Đã xóa mã cơ sở. Hãy nhấn nút "Lưu" để hoàn tất.', 'info');
+
+        const nhac = 'Gỡ mã ' + maHienTai + ' khỏi hồ sơ này?\n\n'
+            + 'Tài liệu và đợt khám đi kèm mã này sẽ bị gỡ theo (có sao lưu để khôi phục được). '
+            + 'Hồ sơ vẫn còn, chỉ trở về dạng tự khai.';
+        if (!confirm(nhac)) return;
+
+        const btn = document.getElementById('modalSuaBtnGoNoi');
+        if (btn) { btn.disabled = true; btn.innerText = 'Đang gỡ...'; }
+
+        try {
+            const resp = await fetch('/Admin/TaiKhoan/GoNoiHoSo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idHoSoCoSo: parseInt(idHoSoCoSo) })
+            });
+            const res = await resp.json();
+
+            if (res.success) {
+                inpMa.value = '';
+                document.getElementById('modalSuaIdHoSoCoSo').value = '';
+                const daNoiNote = document.getElementById('modalSuaDaNoiNote');
+                if (daNoiNote) daNoiNote.style.display = 'none';
+
+                const id = document.getElementById('modalSuaId').value;
+                const tr = document.getElementById('hoso-row-' + id);
+                if (tr) {
+                    tr.setAttribute('data-mabn', '');
+                    tr.setAttribute('data-idhosocoso', '');
+                    const badge = tr.querySelector('.val-mabn');
+                    if (badge) badge.innerText = tr.getAttribute('data-tencoso') || 'Chưa nối';
+                }
+
+                if (typeof showToast === 'function') showToast(res.message || 'Đã gỡ nối.', 'success');
+                else alert(res.message);
+            } else {
+                if (typeof showToast === 'function') showToast(res.message || 'Không gỡ nối được.', 'error');
+                else alert(res.message);
+            }
+        } catch (e) {
+            console.error(e);
+            if (typeof showToast === 'function') showToast('Lỗi kết nối máy chủ khi gỡ nối.', 'error');
+        } finally {
+            if (btn) { btn.disabled = false; btn.innerText = 'Gỡ nối'; }
         }
     }
 
