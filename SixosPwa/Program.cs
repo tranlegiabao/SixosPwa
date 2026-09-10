@@ -19,6 +19,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 // Add Services
 builder.Services.AddScoped<ITaiKhoanService, DbTaiKhoanService>();
+builder.Services.AddScoped<IHTConfigService, HTConfigService>();
 builder.Services.AddScoped<AdminStoredProcedureService>();
 
 builder.Services.AddHttpClient();
