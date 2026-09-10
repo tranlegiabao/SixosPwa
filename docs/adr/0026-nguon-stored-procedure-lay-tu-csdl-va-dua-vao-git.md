@@ -53,3 +53,8 @@ bỏ. Tiền lệ đã có sẵn: `13_DOT4_DONG_VONG_DOC.sql` vốn đang giữ 
 - Bất biến mới: **thân thủ tục trong CSDL phải khớp file trong git.** Lệch là có người triển khai tay.
   Đo bằng cách cắt khối `CREATE ... PROCEDURE` khỏi file rồi so với `OBJECT_DEFINITION(...)` sau khi
   chuẩn hoá khoảng trắng — **không** so bằng dòng `CREATE` (xem cảnh báo ở trên).
+- **Sau khi gộp `HIeu_10/09` (10/09, `35d15a8`): `13_` và `18_` cùng định nghĩa
+  `DM_BenhNhan_Save` + `_SuaHoSo`.** Hiếu đã commit nguồn `@laCccdKhongCo` vào `13_`, nên hai file trùng
+  vai. Đã đo: sau khi chuẩn hoá chú thích + khoảng trắng + cách nối chuỗi, **hai thân GIỐNG HỆT NHAU** ⇒
+  chạy file nào sau cũng cho cùng hành vi, không có mìn thứ tự. `18_` vẫn là file mang **BOM** và mang
+  **cổng kiểm**, nên nó là file phải chạy khi cần vá lại.
