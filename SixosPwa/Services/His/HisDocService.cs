@@ -141,10 +141,13 @@ public sealed class HisDocService : IHisDocService
                   + $"&ngaySinh={ngaySinh:yyyy-MM-dd}"
                   + $"&gioiTinh={Uri.EscapeDataString(gioiTinh)}";
 
-        // CCCD chi gui khi CO. HIS dung no de dat co cccdKhop tren tung dong, va
-        // co do la ranh gioi *Tang 1* / *Tang 2*.
-        if (!string.IsNullOrWhiteSpace(cccd))
-            duong += $"&cccd={Uri.EscapeDataString(cccd.Trim())}";
+        // CCCD chi gui khi CO va KHONG PHAI truong hop khong co CCCD (11 hoac 12 so 1).
+        // HIS dung no de dat co cccdKhop tren tung dong, va co do la ranh gioi *Tang 1* / *Tang 2*.
+        var cccdTrim = cccd?.Trim();
+        var laCccdKhongCo = cccdTrim is "11111111111" or "111111111111";
+
+        if (!string.IsNullOrWhiteSpace(cccdTrim) && !laCccdKhongCo)
+            duong += $"&cccd={Uri.EscapeDataString(cccdTrim)}";
 
         return GoiAsync<HoSoHis>(idCoSo, duong, "SPWA_TraCuuHoSo", ct);
     }

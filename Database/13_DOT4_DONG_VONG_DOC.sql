@@ -108,13 +108,37 @@ BEGIN
             RETURN;
         END;
 
+        DECLARE @laCccdKhongCo bit = CASE WHEN @cccdSach IN ('11111111111', '111111111111') THEN 1 ELSE 0 END;
+
         BEGIN TRANSACTION;
 
         DECLARE @chuSoHuuHienTai bigint;
 
-        SELECT @IDBenhNhan = ID, @chuSoHuuHienTai = IDTaiKhoan
-        FROM dbo.DM_BenhNhan WITH (UPDLOCK, HOLDLOCK)
-        WHERE CCCD = @cccdSach;
+        IF @laCccdKhongCo = 1
+        BEGIN
+            -- Tìm theo nhân thân (Họ tên không dấu + Ngày sinh + Giới tính)
+            SELECT TOP 1 @IDBenhNhan = ID, @chuSoHuuHienTai = IDTaiKhoan
+            FROM dbo.DM_BenhNhan WITH (UPDLOCK, HOLDLOCK)
+            WHERE HoTenKhongDau = @HoTenKhongDau
+              AND CAST(NgaySinh AS date) = CAST(@NgaySinh AS date)
+              AND GioiTinh = @GioiTinh
+              AND (@IDTaiKhoan IS NULL OR IDTaiKhoan = @IDTaiKhoan);
+
+            IF @IDBenhNhan IS NULL
+            BEGIN
+                SELECT TOP 1 @IDBenhNhan = ID, @chuSoHuuHienTai = IDTaiKhoan
+                FROM dbo.DM_BenhNhan WITH (UPDLOCK, HOLDLOCK)
+                WHERE HoTenKhongDau = @HoTenKhongDau
+                  AND CAST(NgaySinh AS date) = CAST(@NgaySinh AS date)
+                  AND GioiTinh = @GioiTinh;
+            END;
+        END
+        ELSE
+        BEGIN
+            SELECT @IDBenhNhan = ID, @chuSoHuuHienTai = IDTaiKhoan
+            FROM dbo.DM_BenhNhan WITH (UPDLOCK, HOLDLOCK)
+            WHERE CCCD = @cccdSach;
+        END;
 
         IF @IDBenhNhan IS NULL
         BEGIN
@@ -132,9 +156,10 @@ BEGIN
             BEGIN
                 SET @ResultCode = 3;
                 SET @ResultMessage =
-                    N'Số căn cước này đã được một tài khoản khác khai trước. ' +
-                    N'Nếu đó là người thân của bạn, hãy nhờ họ vào mục "Hồ sơ của tôi" và xoá hồ sơ đó để nhả căn cước ra; ' +
-                    N'nếu bạn cho rằng có nhầm lẫn, liên hệ cơ sở khám chữa bệnh để được xử lý.';
+                    CASE WHEN @laCccdKhongCo = 1
+                         THEN N'Hồ sơ với thông tin này (Họ tên, ngày sinh, giới tính) đã được một tài khoản khác khai trước. Nếu bạn cho rằng có nhầm lẫn, liên hệ cơ sở khám chữa bệnh để được xử lý.'
+                         ELSE N'Số căn cước này đã được một tài khoản khác khai trước. Nếu đó là người thân của bạn, hãy nhờ họ vào mục "Hồ sơ của tôi" và xoá hồ sơ đó để nhả căn cước ra; nếu bạn cho rằng có nhầm lẫn, liên hệ cơ sở khám chữa bệnh để được xử lý.'
+                    END;
                 ROLLBACK TRANSACTION;
                 RETURN;
             END;
@@ -248,8 +273,9 @@ BEGIN
         END;
 
         DECLARE @cccdSach varchar(20) = NULLIF(LTRIM(RTRIM(@CCCD)), '');
+        DECLARE @laCccdKhongCo bit = CASE WHEN @cccdSach IN ('11111111111', '111111111111') THEN 1 ELSE 0 END;
 
-        IF @cccdSach IS NOT NULL
+        IF @cccdSach IS NOT NULL AND @laCccdKhongCo = 0
            AND EXISTS (SELECT 1 FROM dbo.DM_BenhNhan
                         WHERE CCCD = @cccdSach AND ID <> @IDBenhNhan)
         BEGIN
@@ -258,6 +284,26 @@ BEGIN
                 N'Số căn cước này đã được một tài khoản khác khai trước. ' +
                 N'Nếu đó là người thân của bạn, hãy nhờ họ vào mục "Hồ sơ của tôi" và xoá hồ sơ đó để nhả căn cước ra; ' +
                 N'nếu bạn cho rằng có nhầm lẫn, liên hệ cơ sở khám chữa bệnh để được xử lý.';
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END;
+
+        -- Trường hợp không có CCCD (11111111111 hoặc 111111111111):
+        -- Chuyển sang kiểm tra trùng nhân thân (Họ tên không dấu + Ngày sinh + Giới tính)
+        IF @laCccdKhongCo = 1
+           AND @HoTenKhongDau IS NOT NULL AND @NgaySinh IS NOT NULL AND @GioiTinh IS NOT NULL
+           AND EXISTS (SELECT 1 FROM dbo.DM_BenhNhan
+                        WHERE HoTenKhongDau = @HoTenKhongDau
+                          AND CAST(NgaySinh AS date) = CAST(@NgaySinh AS date)
+                          AND GioiTinh = @GioiTinh
+                          AND ID <> @IDBenhNhan
+                          AND IDTaiKhoan IS NOT NULL
+                          AND IDTaiKhoan <> @IDTaiKhoan)
+        BEGIN
+            SET @ResultCode = 3;
+            SET @ResultMessage =
+                N'Hồ sơ với thông tin này (Họ tên, ngày sinh, giới tính) đã được một tài khoản khác khai trước. ' +
+                N'Vui lòng kiểm tra lại hoặc liên hệ cơ sở khám chữa bệnh để được hỗ trợ.';
             ROLLBACK TRANSACTION;
             RETURN;
         END;
