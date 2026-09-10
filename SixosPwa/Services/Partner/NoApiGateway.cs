@@ -11,7 +11,7 @@ public class NoApiGateway : IPartnerGateway
 {
     private const string KhongCoDoiTac = "Cơ sở này không liên kết với hệ thống bên ngoài";
 
-    public string KieuApi => KieuApiDoiTac.KhongCo;
+    public string TenCong => "NoApi";
 
     public bool CoBanGiao => false;
 

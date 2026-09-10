@@ -5,7 +5,7 @@ using SixosPwa.Models;
 namespace SixosPwa.Services.Partner;
 
 /// <summary>
-/// Tra cau hinh cua mot co so va chon dung ban cai IPartnerGateway theo KieuApi.
+/// Tra cau hinh cua mot co so va chon dung ban cai IPartnerGateway.
 /// Day la CHO DUY NHAT re nhanh "co API" / "khong co API" — man hinh khong duoc
 /// tu kiem tra MaCoSo. Giai doan 2: them ban cai moi vao DI la xong.
 /// </summary>
@@ -19,7 +19,7 @@ public interface IPartnerGatewayFactory
 }
 
 /// <summary>Cap cau hinh + ban cai da chon, di chung nhau khap luong.</summary>
-public record CuaCoSo(DoiTacApi CauHinh, IPartnerGateway Cua)
+public record CuaCoSo(DoiTacApi CauHinh, IPartnerGateway Cua, string? MaNhom = null)
 {
     public bool CoBanGiao => Cua.CoBanGiao;
 
@@ -48,39 +48,54 @@ public class PartnerGatewayFactory : IPartnerGatewayFactory
         if (string.IsNullOrWhiteSpace(maCoSo)) return null;
 
         // Dang ky API nay khoa theo IDCoSo (khoa ngoai), khong con theo chuoi MaCoSo.
-        var idCoSo = await _db.DMCSKCBs
+        var coSo = await _db.DMCSKCBs
             .AsNoTracking()
             .Where(x => x.MaCoSo == maCoSo)
-            .Select(x => (long?)x.Id)
+            .Select(x => new { x.Id, x.IdNhomCS })
             .FirstOrDefaultAsync(ct);
 
-        var cauHinh = idCoSo is null
-            ? null
-            : await _db.DoiTacApis
+        if (coSo is null) return null;
+
+        // Truy nguoc IDCoSo -> IDNhomCS -> MaNhom (benhvien, nhakhoa, pkdk, ...)
+        string? maNhom = null;
+        if (coSo.IdNhomCS.HasValue)
+        {
+            maNhom = await _db.DMNhomCSs
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.IdCoSo == idCoSo.Value, ct);
+                .Where(n => n.ID == coSo.IdNhomCS.Value)
+                .Select(n => n.MaNhom)
+                .FirstOrDefaultAsync(ct);
+        }
+
+        var cauHinh = await _db.DoiTacApis
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.IdCoSo == coSo.Id, ct);
 
         // Co so chua co dong nao trong DM_DoiTacApi: coi nhu khong co API rieng.
         // Dung mot ban ghi tam de luong phia sau khong phai kiem null khap noi.
         cauHinh ??= new DoiTacApi
         {
-            IdCoSo = idCoSo ?? 0,
-            KieuApi = KieuApiDoiTac.KhongCo,
-            Active = true
+            IdCoSo = coSo.Id,
+            Active = false
         };
 
-        // Tat mot co so bang UPDATE Active = 0 thi no rot ve nhanh noi bo,
-        // khong phai build lai app (tieu chi nghiem thu so 7).
-        var kieu = cauHinh.Active ? cauHinh.KieuApi : KieuApiDoiTac.KhongCo;
-
-        var cua = _cacCua.FirstOrDefault(x => string.Equals(x.KieuApi, kieu, StringComparison.OrdinalIgnoreCase));
+        // Chon Gateway dua tren cau hinh (TrangChu -> ban giao Ub, BaseUrl -> HIS, con lai -> NoApi noi bo)
+        IPartnerGateway? cua = null;
+        if (cauHinh.Active && !string.IsNullOrWhiteSpace(cauHinh.TrangChu))
+        {
+            cua = _cacCua.FirstOrDefault(x => string.Equals(x.TenCong, "Ub", StringComparison.OrdinalIgnoreCase));
+        }
+        else if (cauHinh.Active && !string.IsNullOrWhiteSpace(cauHinh.BaseUrl))
+        {
+            cua = _cacCua.FirstOrDefault(x => string.Equals(x.TenCong, "His", StringComparison.OrdinalIgnoreCase));
+        }
 
         if (cua is null)
         {
-            _logger.LogWarning("Khong co ban cai IPartnerGateway cho KieuApi={KieuApi}, rot ve noi bo", kieu);
-            cua = _cacCua.First(x => x.KieuApi == KieuApiDoiTac.KhongCo);
+            cua = _cacCua.FirstOrDefault(x => string.Equals(x.TenCong, "NoApi", StringComparison.OrdinalIgnoreCase))
+                ?? _cacCua.First();
         }
 
-        return new CuaCoSo(cauHinh, cua);
+        return new CuaCoSo(cauHinh, cua, maNhom);
     }
 }

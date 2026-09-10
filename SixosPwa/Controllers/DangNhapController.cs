@@ -108,7 +108,7 @@ public class DangNhapController : Controller
 
         // DIEM RE DUY NHAT. Co so da biet TRUOC khi vao man dang nhap (benh nhan
         // di DanhSachCoSo -> ChiTietCoSo -> /DangNhap/Login?coSo={slug}), nen chi
-        // can tra KieuApi o day. Co so dung bo man cua doi tac thi tra man clone;
+        // can tra cau hinh cua co so o day. Co so dung bo man cua doi tac thi tra man clone;
         // moi co so khac giu nguyen man OTP cua SixosPwa. ADR 0014.
         //
         // Dat SAU moi guard phia tren la co y: re nhanh khong duoc phep bo qua

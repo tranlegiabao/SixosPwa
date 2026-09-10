@@ -206,7 +206,6 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<DoiTacApi>().HasKey(e => e.Id);
         modelBuilder.Entity<DoiTacApi>().Property(e => e.Id).HasColumnName("ID");
         modelBuilder.Entity<DoiTacApi>().Property(e => e.IdCoSo).HasColumnName("IDCoSo").IsRequired();
-        modelBuilder.Entity<DoiTacApi>().Property(e => e.KieuApi).HasMaxLength(20).IsRequired();
         modelBuilder.Entity<DoiTacApi>().Property(e => e.BaseUrl).HasMaxLength(255);
         modelBuilder.Entity<DoiTacApi>().Property(e => e.TrangChu).HasMaxLength(255);
         modelBuilder.Entity<DoiTacApi>().Property(e => e.KhoaGoiHIS).HasMaxLength(500);

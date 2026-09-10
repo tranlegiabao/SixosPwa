@@ -7,7 +7,7 @@ using SixosPwa.Models;
 namespace SixosPwa.Areas.Admin.Controllers;
 
 /// <summary>
-/// Kiem tra suc khoe duong noi sang HIS cua mot co so <c>KieuApi='HIS'</c>.
+/// Kiem tra suc khoe duong noi sang HIS cua mot co so co cau hinh HIS.
 ///
 /// VI SAO CO MAN NAY: quyet dinh 2 Dot 0 doi "kiem tra suc khoe ngay luc luu
 /// cau hinh" — cho ma ADR 0014 tung sap vi <c>BaseUrl</c> tro vao IP NOI BO cua
@@ -20,8 +20,8 @@ namespace SixosPwa.Areas.Admin.Controllers;
 /// pham vi dot nay, dat dung mot cua kiem tra goi duoc NGAY SAU khi chay seed —
 /// bat dung ba thu hay sai nhat, theo thu tu tu re den dat:
 ///
-///   1. Cau hinh: co dong <c>DM_DoiTacApi</c> chua, <c>KieuApi</c> co dung 'HIS'
-///      khong, <c>BaseUrl</c> co rong khong.
+///   1. Cau hinh: co dong <c>DM_DoiTacApi</c> chua, <c>Active = 1</c> chua,
+///      <c>BaseUrl</c> co hop le khong.
 ///   2. Noi duoc toi HIS khong (day la cho ADR 0014 sap).
 ///   3. Khoa + ma co so co dung khong — goi <c>SPWA_TraCuuHoSo</c> KHONG kem
 ///      tham so: HIS tra 400 (qua duoc cua xac thuc, thieu tham so) = khoa DUNG;
@@ -68,12 +68,6 @@ public sealed class KiemTraHisController : AdminControllerBase
             return Json(new { dat = false, coSo = coSo.TenCoSo, ketQua });
         }
 
-        if (!string.Equals(cauHinh.KieuApi, KieuApiDoiTac.His, StringComparison.OrdinalIgnoreCase))
-        {
-            ketQua.Add(new KetQuaKiemTra(false, "Cau hinh", $"KieuApi dang la '{cauHinh.KieuApi}', can 'HIS'"));
-            return Json(new { dat = false, coSo = coSo.TenCoSo, ketQua });
-        }
-
         if (!cauHinh.Active)
             ketQua.Add(new KetQuaKiemTra(false, "Cau hinh", "DM_DoiTacApi.Active = 0 — cua dang tat"));
 
@@ -89,7 +83,7 @@ public sealed class KiemTraHisController : AdminControllerBase
             return Json(new { dat = false, coSo = coSo.TenCoSo, ketQua });
         }
 
-        ketQua.Add(new KetQuaKiemTra(true, "Cau hinh", $"KieuApi=HIS, BaseUrl={goc}"));
+        ketQua.Add(new KetQuaKiemTra(true, "Cau hinh", $"BaseUrl={goc}"));
 
         // Canh bao SOM cho dung cai bay cua ADR 0014: dia chi noi bo thi may chu
         // cong (chay tren internet) khong bao gio goi toi duoc.

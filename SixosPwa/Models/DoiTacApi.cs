@@ -13,11 +13,8 @@ public class DoiTacApi
     /// <summary>Khoa ngoai sang <see cref="DMCSKCB"/>. Moi co so nhieu nhat mot dong.</summary>
     public long IdCoSo { get; set; }
 
-    /// <summary>Chon ban cai cua IPartnerGateway. Xem <see cref="KieuApiDoiTac"/>.</summary>
-    public string KieuApi { get; set; } = KieuApiDoiTac.KhongCo;
-
     /// <summary>
-    /// Goc dia chi API rieng cua doi tac (vd SixOSDatKhamAPI). Rong voi kieu NONE.
+    /// Goc dia chi API rieng cua doi tac (vd SixOSDatKhamAPI). Rong voi co so khong co API.
     ///
     /// HIEN KHONG CON AI DOC — dung tim cach goi qua day. Voi Ung Buou, dia chi
     /// nay la IP NOI BO benh vien (10.85.9.34) nen SixosPwa chay tren internet
@@ -46,7 +43,7 @@ public class DoiTacApi
     /// <summary>
     /// Khoa CONG dung de goi NGUOC vao HIS — doi dau voi
     /// <c>ThongTinDoanhNghiep.SpwaKhoaNhanBam</c> ben HIS (ben do giu BAM, ben nay
-    /// giu THO). Chi co nghia voi <see cref="KieuApiDoiTac.His"/>.
+    /// giu THO).
     ///
     /// <para>
     /// 🔴 Luu THO, khong bam: phai gui nguyen van trong header <c>X-API-Key</c> thi
@@ -60,26 +57,4 @@ public class DoiTacApi
     public bool Active { get; set; } = true;
 
     public DateTime NgayTao { get; set; } = DateTime.Now;
-}
-
-/// <summary>Cac kieu API doi tac da biet.</summary>
-public static class KieuApiDoiTac
-{
-    /// <summary>Co so khong co API rieng — o lai trang benh nhan noi bo.</summary>
-    public const string KhongCo = "NONE";
-
-    /// <summary>Benh vien Ung Buou — SixOSDatKhamAPI + trang MVC kcg.bvungbuou.vn.</summary>
-    public const string UngBuou = "UB";
-
-    /// <summary>
-    /// Co so chay HisSoft, noi qua mach SPWA (Giai doan 2).
-    ///
-    /// 🔴 CO API nhung VAN DUNG MAN CUA SIXOSPWA — khac han <see cref="UngBuou"/>
-    /// (co API thi ban giao phien sang man cua ho). Noi *nhanh ban giao* /
-    /// *nhanh man chung*, cam noi "nhanh co API" tran. Xem <c>HisGateway</c>.
-    ///
-    /// Voi kieu nay <see cref="DoiTacApi.BaseUrl"/> CO NGUOI DOC — duong DOC cua
-    /// cong goi vao HIS di qua dia chi do.
-    /// </summary>
-    public const string His = "HIS";
 }

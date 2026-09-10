@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
@@ -38,7 +38,7 @@ builder.Services.AddScoped<IDotKhamService, DotKhamService>();
 builder.Services.AddScoped<IHoSoBenhNhanService, HoSoBenhNhanService>();
 
 // ── Dot 4: duong DOC cong -> HIS (tra cuu ho so + lich hen) ─────────────────
-// Cai van nam trong chinh service: co so khong phai KieuApi='HIS', hoac
+// Cai van nam trong chinh service: co so khong bat API, hoac
 // DM_DoiTacApi.Active = 0, hoac thieu BaseUrl/KhoaGoiHIS => tra ChuaNoi, khong
 // goi ra ngoai mot cuoc nao.
 builder.Services.AddScoped<SixosPwa.Services.His.IHisDocService, SixosPwa.Services.His.HisDocService>();

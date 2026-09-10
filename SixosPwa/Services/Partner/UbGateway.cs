@@ -83,7 +83,7 @@ public class UbGateway : IPartnerGateway
         _logger = logger;
     }
 
-    public string KieuApi => KieuApiDoiTac.UngBuou;
+    public string TenCong => "Ub";
 
     public bool CoBanGiao => true;
 
