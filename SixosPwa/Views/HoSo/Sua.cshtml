@@ -1,6 +1,40 @@
 @model SixosPwa.Services.HoSoDeSua
+@using Microsoft.EntityFrameworkCore
+@inject SixosPwa.Data.ApplicationDbContext _db
 @{
     Layout = null;
+
+    // Lấy danh mục giới tính từ database DaotaoHIS (DM_GioiTinh) an toàn
+    var danhMucGioiTinh = new List<SixosPwa.Models.DMGioiTinh>();
+    try
+    {
+        var conn = _db.Database.GetDbConnection();
+        if (conn.State != System.Data.ConnectionState.Open) conn.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT MaGioiTinh, TenGioiTinh FROM DM_GioiTinh";
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
+        {
+            danhMucGioiTinh.Add(new SixosPwa.Models.DMGioiTinh
+            {
+                MaGioiTinh = reader[0]?.ToString() ?? "",
+                TenGioiTinh = reader[1]?.ToString() ?? ""
+            });
+        }
+    }
+    catch
+    {
+        // Bỏ qua lỗi và dùng fallback
+    }
+    if (danhMucGioiTinh.Count == 0)
+    {
+        danhMucGioiTinh = new List<SixosPwa.Models.DMGioiTinh>
+        {
+            new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "1", TenGioiTinh = "Nam" },
+            new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "2", TenGioiTinh = "Nữ" },
+            new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "3", TenGioiTinh = "Chưa xác định" }
+        };
+    }
 
     // Ung vien cua *Tang 2*: co thi man doi hinh — thay vi khoi *Ma benh nhan tai
     // co so* thi hien danh sach cho nguoi dung tu nhan.
@@ -20,6 +54,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Sửa hồ sơ</title>
     <link rel="stylesheet" href="/css/tai-lieu-benh-nhan.css?v=20260908_v8" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_blue.css" />
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
     <style>
         .hs-form { padding:16px; }
         .hs-o { margin-bottom:14px; }
@@ -260,18 +298,24 @@
 
                     <div class="hs-o">
                         <label for="ngaySinh">Ngày sinh *</label>
-                        <input id="ngaySinh" name="ngaySinh" type="date" required
+                        <input id="ngaySinh" name="ngaySinh" type="text" class="datepicker-vn" required
                                value="@(Model.NgaySinh?.ToString("yyyy-MM-dd"))"
-                               @(Model.DaNoiHIS ? "readonly" : "") />
+                               placeholder="dd/mm/yyyy"
+                               @(Model.DaNoiHIS ? "disabled" : "") />
+                        @if (Model.DaNoiHIS)
+                        {
+                            <input type="hidden" name="ngaySinh" value="@(Model.NgaySinh?.ToString("yyyy-MM-dd"))" />
+                        }
                     </div>
 
                     <div class="hs-o">
                         <label for="gioiTinh">Giới tính *</label>
                         <select id="gioiTinh" name="gioiTinh" required @(Model.DaNoiHIS ? "disabled" : "")>
-                            <option value="">— Chọn —</option>
-                            <option value="1" selected="@(Model.GioiTinh == "1")">Nam</option>
-                            <option value="2" selected="@(Model.GioiTinh == "2")">Nữ</option>
-                            <option value="3" selected="@(Model.GioiTinh == "3")">Chưa xác định</option>
+                            <option value="">— Chọn giới tính —</option>
+                            @foreach (var gt in danhMucGioiTinh)
+                            {
+                                <option value="@gt.MaGioiTinh" selected="@(Model.GioiTinh == gt.MaGioiTinh)">@gt.TenGioiTinh</option>
+                            }
                         </select>
                         @* Truong disabled khong duoc gui len => gui kem ban an, khong thi
                            luu xong gioi tinh bi xoa trang. *@
@@ -312,5 +356,19 @@
             }
         </main>
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            if (!document.getElementById('ngaySinh')?.disabled) {
+                flatpickr(".datepicker-vn", {
+                    dateFormat: "Y-m-d",
+                    altInput: true,
+                    altFormat: "d/m/Y",
+                    allowInput: true,
+                    locale: "vn"
+                });
+            }
+        });
+    </script>
 </body>
 </html>

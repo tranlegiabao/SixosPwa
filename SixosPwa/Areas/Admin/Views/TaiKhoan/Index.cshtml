@@ -1,38 +1,1450 @@
 @model TaiKhoanListViewModel
+@using Microsoft.EntityFrameworkCore
+@inject SixosPwa.Data.ApplicationDbContext _db
 @{
     ViewData["Title"] = "Tài khoản";
+
+    // Lấy danh mục giới tính từ CSDL DaotaoHIS (DM_GioiTinh) an toàn
+    var danhMucGioiTinh = new List<SixosPwa.Models.DMGioiTinh>();
+    try
+    {
+        var conn = _db.Database.GetDbConnection();
+        if (conn.State != System.Data.ConnectionState.Open) conn.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT MaGioiTinh, TenGioiTinh FROM DM_GioiTinh";
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
+        {
+            danhMucGioiTinh.Add(new SixosPwa.Models.DMGioiTinh
+            {
+                MaGioiTinh = reader[0]?.ToString() ?? "",
+                TenGioiTinh = reader[1]?.ToString() ?? ""
+            });
+        }
+    }
+    catch
+    {
+        // Bỏ qua lỗi và dùng fallback
+    }
+    if (danhMucGioiTinh.Count == 0)
+    {
+        danhMucGioiTinh = new List<SixosPwa.Models.DMGioiTinh>
+        {
+            new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "1", TenGioiTinh = "Nam" },
+            new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "2", TenGioiTinh = "Nữ" },
+            new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "3", TenGioiTinh = "Chưa xác định" }
+        };
+    }
+
+    // Lấy dữ liệu hồ sơ nếu model chưa có (Đọc an toàn trực tiếp từ SQL để tránh xung đột kiểu dữ liệu)
+    var hoSoTheoTaiKhoan = Model.HoSoTheoTaiKhoan;
+    if (hoSoTheoTaiKhoan == null || hoSoTheoTaiKhoan.Count == 0)
+    {
+        var tempDict = new Dictionary<long, List<HoSoBenhNhanItemViewModel>>();
+        try
+        {
+            var conn = _db.Database.GetDbConnection();
+            if (conn.State != System.Data.ConnectionState.Open) conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = @"
+                SELECT b.ID, b.IDTaiKhoan, b.TenBN, b.CCCD, b.SDT, b.Email, b.DiaChi, b.NgaySinh, 
+                       CAST(b.GioiTinh AS VARCHAR(10)) AS GioiTinhStr,
+                       cs.MaBN, kcb.TenCoSo
+                FROM DM_BenhNhan b
+                LEFT JOIN DM_BenhNhanCoSo cs ON b.ID = cs.IDBenhNhan
+                LEFT JOIN DM_CSKCB kcb ON cs.IDCoSo = kcb.ID
+            ";
+            using var reader = cmd.ExecuteReader();
+            var allLoaded = new List<(long Id, long? IdTaiKhoan, string TenBN, string CCCD, string SDT, string? Email, string? DiaChi, DateTime? NgaySinh, string? GioiTinh, string? MaBN, string? TenCoSo)>();
+            while (reader.Read())
+            {
+                var id = Convert.ToInt64(reader["ID"]);
+                var idTaiKhoan = reader["IDTaiKhoan"] != DBNull.Value ? (long?)Convert.ToInt64(reader["IDTaiKhoan"]) : null;
+                var tenBN = reader["TenBN"]?.ToString() ?? "";
+                var cccd = reader["CCCD"]?.ToString() ?? "";
+                var sdt = reader["SDT"]?.ToString() ?? "";
+                var email = reader["Email"] != DBNull.Value ? reader["Email"]?.ToString() : null;
+                var diaChi = reader["DiaChi"] != DBNull.Value ? reader["DiaChi"]?.ToString() : null;
+                var ngaySinh = reader["NgaySinh"] != DBNull.Value ? (DateTime?)Convert.ToDateTime(reader["NgaySinh"]) : null;
+                var gioiTinh = reader["GioiTinhStr"] != DBNull.Value ? reader["GioiTinhStr"]?.ToString() : null;
+                var maBN = reader["MaBN"] != DBNull.Value ? reader["MaBN"]?.ToString() : null;
+                var tenCoSo = reader["TenCoSo"] != DBNull.Value ? reader["TenCoSo"]?.ToString() : null;
+
+                allLoaded.Add((id, idTaiKhoan, tenBN, cccd, sdt, email, diaChi, ngaySinh, gioiTinh, maBN, tenCoSo));
+            }
+
+            foreach (var tk in Model.Items)
+            {
+                var list = new List<HoSoBenhNhanItemViewModel>();
+                var matched = allLoaded.Where(p => p.IdTaiKhoan == tk.Id || (p.IdTaiKhoan == null && !string.IsNullOrEmpty(tk.SDT) && p.SDT == tk.SDT)).ToList();
+
+                var grouped = matched.GroupBy(x => x.Id);
+                foreach (var g in grouped)
+                {
+                    var first = g.First();
+                    list.Add(new HoSoBenhNhanItemViewModel
+                    {
+                        Id = first.Id,
+                        IdTaiKhoan = tk.Id,
+                        TenBN = first.TenBN,
+                        CCCD = first.CCCD,
+                        SDT = first.SDT,
+                        Email = first.Email,
+                        DiaChi = first.DiaChi,
+                        NgaySinh = first.NgaySinh,
+                        GioiTinh = first.GioiTinh,
+                        MaBN = first.MaBN,
+                        TenCoSo = first.TenCoSo,
+                        SoCoSo = g.Count(x => !string.IsNullOrEmpty(x.MaBN))
+                    });
+                }
+                tempDict[tk.Id] = list;
+            }
+        }
+        catch
+        {
+            // Bỏ qua lỗi kết nối và tạo danh sách rỗng
+            foreach (var tk in Model.Items)
+            {
+                tempDict[tk.Id] = new List<HoSoBenhNhanItemViewModel>();
+            }
+        }
+        hoSoTheoTaiKhoan = tempDict;
+    }
 }
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_blue.css" />
+
+<style>
+    .account-parent-row {
+        cursor: pointer;
+        transition: background-color .15s ease;
+    }
+    .account-parent-row:hover {
+        background-color: #f1f6fe !important;
+    }
+    .account-parent-row.is-open {
+        background-color: #eaf2fd !important;
+        border-bottom-color: transparent !important;
+    }
+    .badge-so-hoso-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 34px;
+        height: 28px;
+        padding: 0 8px;
+        border-radius: 6px;
+        font-size: 13.5px;
+        font-weight: 800;
+        background: #ffffff;
+        color: #2563eb;
+        border: 1.5px solid #cbd5e1;
+        user-select: none;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+    .btn-toggle-arrow {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        background: #ffffff;
+        color: #2563eb;
+        border: 1.5px solid #cbd5e1;
+        cursor: pointer;
+        transition: all .15s ease;
+        padding: 0;
+        font-size: 13px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+    .btn-toggle-arrow:hover {
+        background: #f8fafc;
+        border-color: #2563eb;
+        color: #1d4ed8;
+    }
+    .account-parent-row.is-open .btn-toggle-arrow {
+        background: #eff6ff;
+        border-color: #2563eb;
+        color: #2563eb;
+    }
+    .arrow-rot {
+        display: inline-block;
+        transition: transform .2s ease;
+        line-height: 1;
+    }
+    .account-parent-row.is-open .arrow-rot {
+        transform: rotate(180deg);
+    }
+    .account-drawer-row {
+        background-color: #f8fafc;
+    }
+    .account-drawer-box {
+        padding: 16px 20px 20px 38px;
+        background: linear-gradient(180deg, #edf4fe 0%, #f8fafc 45px, #f8fafc 100%);
+        border-left: 4px solid #3b82f6;
+        box-shadow: inset 0 2px 5px rgba(15, 23, 42, 0.03);
+    }
+    .nested-hoso-card {
+        background: #ffffff;
+        border-radius: 8px;
+        border: 1.5px solid #94a3b8;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+        overflow: hidden;
+    }
+    .nested-hoso-table {
+        margin-bottom: 0;
+        font-size: 13px;
+        border-collapse: collapse !important;
+        width: 100%;
+        border: 1.5px solid #94a3b8;
+    }
+    .nested-hoso-table thead th {
+        background: #e2e8f0;
+        color: #1e293b;
+        font-size: 11.5px;
+        font-weight: 750;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        padding: 10px 12px;
+        border: 1.5px solid #94a3b8 !important;
+        vertical-align: middle;
+        text-align: center !important;
+    }
+    .nested-hoso-table tbody td {
+        padding: 10px 12px;
+        vertical-align: middle;
+        border: 1.5px solid #94a3b8 !important;
+        background-color: #ffffff;
+    }
+    .nested-hoso-table tbody tr:hover td {
+        background-color: #f8fafc;
+    }
+    .hoso-action-group {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+    .btn-hoso-icon {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        background: transparent;
+        cursor: pointer;
+        transition: all .15s ease;
+        padding: 0;
+    }
+    .btn-hoso-icon svg {
+        width: 16px;
+        height: 16px;
+        stroke-width: 2;
+    }
+    .btn-hoso-edit {
+        color: #2563eb;
+        background: #eff6ff;
+        border-color: #dbeafe;
+    }
+    .btn-hoso-edit:hover {
+        background: #2563eb;
+        color: #ffffff;
+    }
+    .btn-hoso-save {
+        color: #16a34a;
+        background: #f0fdf4;
+        border-color: #dcfce7;
+    }
+    .btn-hoso-save:hover {
+        background: #16a34a;
+        color: #ffffff;
+    }
+    .btn-hoso-delete {
+        color: #dc2626;
+        background: #fef2f2;
+        border-color: #fee2e2;
+    }
+    .btn-hoso-delete:hover {
+        background: #dc2626;
+        color: #ffffff;
+    }
+    .btn-hoso-cancel {
+        color: #64748b;
+        background: #f1f5f9;
+        border-color: #e2e8f0;
+        font-size: 13px;
+        font-weight: 700;
+    }
+    .btn-hoso-cancel:hover {
+        background: #64748b;
+        color: #ffffff;
+    }
+    .hoso-inline-input {
+        font-size: 12px;
+        padding: 4px 8px;
+        border-radius: 6px;
+        border: 1.5px solid #93c5fd;
+    }
+    .form-them-panel {
+        background: #ffffff;
+        border: 1.5px dashed #93c5fd;
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin-bottom: 12px;
+    }
+
+    /* MODAL SỬA HỒ SƠ CHUẨN THEO ẢNH MẪU USER */
+    .modal-sua-hoso-backdrop {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(15, 23, 42, 0.45);
+        backdrop-filter: blur(4px);
+        z-index: 1050;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        animation: fadeInModal .18s ease-out;
+    }
+    @@keyframes fadeInModal {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    .modal-sua-hoso-card {
+        background: #ffffff;
+        border-radius: 16px;
+        width: 100%;
+        max-width: 680px;
+        max-height: 92vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
+        overflow: hidden;
+        animation: slideUpModal .22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @@keyframes slideUpModal {
+        from { transform: translateY(20px); opacity: 0.8; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    .modal-sua-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        background: #ffffff;
+    }
+    .modal-sua-btn-back {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #0f172a;
+        cursor: pointer;
+        transition: all .15s;
+    }
+    .modal-sua-btn-back:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+    }
+    .modal-sua-title {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.2;
+    }
+    .modal-sua-subtitle {
+        font-size: 13px;
+        color: #64748b;
+        font-weight: 600;
+        margin-top: 2px;
+        display: block;
+    }
+    .modal-sua-body {
+        padding: 20px 24px 24px;
+        overflow-y: auto;
+        flex: 1;
+    }
+    .modal-hs-o {
+        position: relative;
+        margin-bottom: 16px;
+    }
+    /* Tùy biến DateTimePicker chuẩn HisSoft cho Admin */
+    .bootstrap-datetimepicker-widget {
+        z-index: 1065 !important;
+        font-family: inherit;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
+        border: 1px solid #e2e8f0;
+        padding: 10px;
+    }
+    .bootstrap-datetimepicker-widget .datepicker {
+        position: static !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        width: 100% !important;
+        display: block !important;
+    }
+    .bootstrap-datetimepicker-widget table {
+        width: 100% !important;
+        table-layout: auto !important;
+        border-collapse: collapse !important;
+        border-spacing: 0 !important;
+        background-color: transparent !important;
+        margin: 0 !important;
+    }
+    .bootstrap-datetimepicker-widget table th,
+    .bootstrap-datetimepicker-widget table td {
+        border: none !important;
+        padding: 5px 3px !important;
+        font-size: 13px !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+        overflow: visible !important;
+    }
+    .bootstrap-datetimepicker-widget table th.picker-switch {
+        font-weight: 700;
+        color: #1e293b;
+        font-size: 14px;
+        cursor: pointer;
+    }
+    .bootstrap-datetimepicker-widget table th.picker-switch:hover {
+        background: #f1f5f9;
+        border-radius: 6px;
+    }
+    .bootstrap-datetimepicker-widget table th.prev:hover,
+    .bootstrap-datetimepicker-widget table th.next:hover {
+        background: #f1f5f9;
+        border-radius: 6px;
+    }
+    .bootstrap-datetimepicker-widget table td.day:hover {
+        background: #e2e8f0;
+        border-radius: 6px;
+    }
+    .bootstrap-datetimepicker-widget table td.active,
+    .bootstrap-datetimepicker-widget table td.active:hover {
+        background-color: #2563eb !important;
+        color: #ffffff !important;
+        font-weight: 700;
+        border-radius: 6px;
+    }
+    .bootstrap-datetimepicker-widget table td.today:before {
+        border-bottom-color: #2563eb !important;
+    }
+    .bootstrap-datetimepicker-widget .datepicker-months table,
+    .bootstrap-datetimepicker-widget .datepicker-years table,
+    .bootstrap-datetimepicker-widget .datepicker-decades table,
+    .bootstrap-datetimepicker-widget .datepicker-centuries table {
+        width: 100% !important;
+        table-layout: fixed !important;
+    }
+    .bootstrap-datetimepicker-widget .datepicker-months tbody td,
+    .bootstrap-datetimepicker-widget .datepicker-years tbody td,
+    .bootstrap-datetimepicker-widget .datepicker-decades tbody td,
+    .bootstrap-datetimepicker-widget .datepicker-centuries tbody td {
+        white-space: normal !important;
+        box-sizing: border-box !important;
+        width: auto !important;
+        height: auto !important;
+        line-height: normal !important;
+        padding: 2px !important;
+        text-align: center !important;
+    }
+    .bootstrap-datetimepicker-widget .datepicker-months tbody td span,
+    .bootstrap-datetimepicker-widget .datepicker-years tbody td span,
+    .bootstrap-datetimepicker-widget .datepicker-decades tbody td span,
+    .bootstrap-datetimepicker-widget .datepicker-centuries tbody td span {
+        display: inline-block !important;
+        box-sizing: border-box !important;
+        width: 25% !important;
+        height: 2.6em !important;
+        line-height: 2.6em !important;
+        margin: 0 !important;
+        white-space: nowrap !important;
+        vertical-align: middle !important;
+        border-radius: 6px;
+    }
+    .bootstrap-datetimepicker-widget .datepicker-months tbody td span.active,
+    .bootstrap-datetimepicker-widget .datepicker-years tbody td span.active,
+    .bootstrap-datetimepicker-widget .datepicker-decades tbody td span.active {
+        background-color: #2563eb !important;
+        color: #ffffff !important;
+        font-weight: 700;
+    }
+    .bootstrap-datetimepicker-widget .datepicker-decades tbody td span,
+    .bootstrap-datetimepicker-widget .datepicker-centuries tbody td span {
+        width: 50% !important;
+    }
+    .modal-hs-o label {
+        display: block;
+        font-size: 13px;
+        font-weight: 700;
+        color: #334155;
+        margin-bottom: 6px;
+    }
+    .modal-hs-o input, .modal-hs-o select {
+        width: 100%;
+        padding: 11px 14px;
+        border-radius: 10px;
+        border: 1px solid #cbd5e1;
+        font-size: 14.5px;
+        color: #0f172a;
+        box-sizing: border-box;
+        transition: all .15s ease;
+        background: #ffffff;
+    }
+    .modal-hs-o input:focus, .modal-hs-o select:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.12);
+    }
+    .modal-hs-o input:disabled, .modal-hs-o select:disabled {
+        background: #f8fafc;
+        color: #64748b;
+        cursor: not-allowed;
+    }
+    .modal-hs-goi-y {
+        font-size: 12px;
+        color: #64748b;
+        margin-top: 6px;
+        line-height: 1.45;
+    }
+    .modal-hs-btn-submit {
+        width: 100%;
+        padding: 13px;
+        border-radius: 10px;
+        border: none;
+        background: #2563eb;
+        color: #ffffff;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all .15s ease;
+        margin-top: 8px;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    }
+    .modal-hs-btn-submit:hover {
+        background: #1d4ed8;
+        transform: translateY(-1px);
+    }
+    .modal-hs-go-noi-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 14px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        margin-top: 16px;
+    }
+    .tai-khoan-filter-bar {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 14px 18px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .filter-row-top {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        width: 100%;
+        flex-wrap: wrap;
+    }
+    .filter-row-bottom {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+    }
+    .filter-item-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 1 1 180px;
+        min-width: 160px;
+    }
+    .filter-facility-expanded {
+        flex: 1.4 1 240px;
+        min-width: 220px;
+    }
+    .filter-role-group {
+        flex: 0 0 auto;
+        min-width: 200px;
+    }
+    .filter-label-blue {
+        color: #2563eb;
+        font-weight: 700;
+        font-size: 13.5px;
+        white-space: nowrap;
+        margin-bottom: 0;
+        user-select: none;
+        flex-shrink: 0;
+    }
+    .filter-select-square {
+        flex: 1;
+        width: 100%;
+        height: 38px;
+        border: 1.5px solid #cbd5e1 !important;
+        border-radius: 6px !important;
+        font-size: 13px;
+        font-weight: 600;
+        color: #1e293b;
+        background-color: #ffffff !important;
+        transition: all .15s ease;
+        padding: 0 28px 0 10px;
+    }
+    .filter-select-square:focus {
+        border-color: #2563eb !important;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+        outline: none;
+    }
+    .filter-input-square {
+        flex: 1;
+        width: 100%;
+        height: 38px;
+        border: 1.5px solid #cbd5e1 !important;
+        border-radius: 6px !important;
+        font-size: 13px;
+        color: #0f172a;
+        background-color: #ffffff !important;
+        padding: 0 10px;
+        transition: all .15s ease;
+    }
+    .filter-input-square::placeholder {
+        color: #94a3b8;
+        font-size: 13px;
+    }
+    .filter-input-square:focus {
+        border-color: #2563eb !important;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+        outline: none;
+        background-color: #ffffff !important;
+    }
+    .filter-role-select {
+        width: 150px;
+        min-width: 130px;
+        height: 38px;
+        border: 1.5px solid #cbd5e1 !important;
+        border-radius: 6px !important;
+        font-size: 13px;
+        font-weight: 600;
+        color: #475569;
+        background-color: #ffffff !important;
+    }
+    .filter-btn {
+        height: 38px;
+        padding: 0 20px;
+        border-radius: 6px !important;
+        font-weight: 700;
+        font-size: 13px;
+    }
+</style>
+
 <div class="page-header-row">
-    <div><div class="page-kicker">QUẢN LÝ TRUY CẬP</div><h1 class="page-heading">Tài khoản</h1><p class="page-description">Kiểm soát người dùng và vai trò truy cập vào ứng dụng.</p></div>
+    <div><div class="page-kicker">QUẢN LÝ TRUY CẬP</div><h1 class="page-heading">Tài khoản</h1><p class="page-description">Kiểm soát người dùng và vai trò truy cập vào ứng dụng. Bấm vào tài khoản để mở danh sách hồ sơ bệnh nhân.</p></div>
     <a asp-action="Create" class="btn admin-btn-primary"><span>+</span> Tạo tài khoản</a>
 </div>
 
 <div class="admin-panel">
-    <form method="get" class="filter-bar">
-        <div class="search-control"><span>⌕</span><input type="search" name="q" value="@Model.Query" placeholder="Tìm theo số điện thoại..." aria-label="Tìm tài khoản" /></div>
-        <select name="role" class="form-select filter-select admin-filter-select" aria-label="Lọc theo vai trò"><option value="">Tất cả vai trò</option><option value="Admin" selected="@(Model.Role == "Admin" ? "selected" : null)">Admin</option><option value="BenhNhan" selected="@(Model.Role == "BenhNhan" ? "selected" : null)">Bệnh nhân</option></select>
-        <button class="btn admin-btn-secondary" type="submit">Lọc</button>
-        @if (!string.IsNullOrWhiteSpace(Model.Query) || !string.IsNullOrWhiteSpace(Model.Role)) { <a asp-action="Index" class="clear-filter">Xóa lọc</a> }
+    <form method="get" class="filter-bar tai-khoan-filter-bar" id="taiKhoanFilterForm">
+        <!-- DÒNG 1: Cơ sở (ô to rộng rãi) + CCCD + Số điện thoại + Mã bệnh nhân -->
+        <div class="filter-row-top">
+            <!-- 1. Dropdown cơ sở -->
+            <div class="filter-item-group filter-facility-expanded">
+                <label class="filter-label-blue" for="filterLoaiCS">Cơ sở</label>
+                <select name="loaiCS" class="form-select filter-select-square" id="filterLoaiCS" aria-label="Chọn cơ sở">
+                    <option value="">Tất cả cơ sở</option>
+                    @if (Model.DanhSachCoSo != null && Model.DanhSachCoSo.Any())
+                    {
+                        @foreach (var cs in Model.DanhSachCoSo)
+                        {
+                            <option value="cs:@cs.Id" selected="@(Model.LoaiCS == $"cs:{cs.Id}" ? "selected" : null)">@cs.TenCoSo (@(cs.MaCoSo ?? "Chưa có mã"))</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <!-- 2. Ô nhập CCCD -->
+            <div class="filter-item-group">
+                <label class="filter-label-blue" for="filterCCCD">CCCD</label>
+                <input type="search" name="cccd" id="filterCCCD" class="form-control filter-input-square" value="@Model.CCCD" placeholder="Nhập CCCD..." autocomplete="off" />
+            </div>
+
+            <!-- 3. Ô nhập SĐT -->
+            <div class="filter-item-group">
+                <label class="filter-label-blue" for="filterSDT">SĐT</label>
+                <input type="search" name="sdt" id="filterSDT" class="form-control filter-input-square" value="@Model.SDT" placeholder="Nhập SĐT..." autocomplete="off" />
+            </div>
+
+            <!-- 4. Ô nhập Mã BN -->
+            <div class="filter-item-group">
+                <label class="filter-label-blue" for="filterMaBN">Mã BN</label>
+                <input type="search" name="maBN" id="filterMaBN" class="form-control filter-input-square" value="@Model.MaBN" placeholder="Nhập mã BN..." autocomplete="off" />
+            </div>
+
+            <!-- Nút Lọc trên hàng 1 -->
+            <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                <button class="btn admin-btn-secondary filter-btn" type="submit">Lọc</button>
+            </div>
+        </div>
+
+        <!-- DÒNG 2: Vai trò -->
+        <div class="filter-row-bottom">
+            <div class="filter-item-group filter-role-group">
+                <label class="filter-label-blue" for="filterRole">Vai trò</label>
+                <select name="role" class="form-select filter-select-square filter-role-select" id="filterRole" aria-label="Lọc theo vai trò">
+                    <option value="">Tất cả vai trò</option>
+                    <option value="Admin" selected="@(Model.Role == "Admin" ? "selected" : null)">Admin</option>
+                    <option value="BenhNhan" selected="@(Model.Role == "BenhNhan" ? "selected" : null)">Bệnh nhân</option>
+                </select>
+            </div>
+        </div>
     </form>
-    <div class="table-meta"><span><strong>@Model.TotalItems.ToString("N0")</strong> tài khoản</span><span>Chỉ Admin mới được thay đổi vai trò</span></div>
+    @{
+        var hasFilter = !string.IsNullOrWhiteSpace(Model.CCCD) ||
+                        !string.IsNullOrWhiteSpace(Model.SDT) ||
+                        !string.IsNullOrWhiteSpace(Model.MaBN) ||
+                        !string.IsNullOrWhiteSpace(Model.LoaiCS) ||
+                        !string.IsNullOrWhiteSpace(Model.Role) ||
+                        !string.IsNullOrWhiteSpace(Model.Query);
+    }
+    <div class="table-meta">
+        @if (hasFilter)
+        {
+            <span><strong>@Model.TotalItems.ToString("N0")</strong> tài khoản</span>
+            <span>Bấm vào từng dòng để mở/đóng danh sách hồ sơ</span>
+        }
+        else
+        {
+            <span class="text-muted">Vui lòng chọn cơ sở (hoặc nhập tiêu chí tìm kiếm) và bấm <strong>Lọc</strong> để xem danh sách tài khoản</span>
+            <span></span>
+        }
+    </div>
     <div class="table-responsive">
         <table class="table admin-table align-middle mb-0">
-            <thead><tr><th>Tài khoản</th><th>Vai trò</th><th>Mã định danh</th><th class="text-end">Thao tác</th></tr></thead>
+            <thead>
+                <tr>
+                    <th>Tài khoản</th>
+                    <th style="width: 140px;">Số lượng</th>
+                    <th>Vai trò</th>
+                    <th>Mã định danh</th>
+                </tr>
+            </thead>
             <tbody>
             @if (Model.Items.Count == 0)
             {
-                <tr><td colspan="4"><div class="table-empty"><div>⌕</div><strong>Không tìm thấy tài khoản</strong><span>Thử thay đổi từ khóa hoặc bộ lọc.</span></div></td></tr>
+                if (!hasFilter)
+                {
+                    <tr>
+                        <td colspan="4">
+                            <div class="table-empty py-5">
+                                <div style="font-size: 36px; margin-bottom: 8px;">🏥</div>
+                                <strong class="fs-6">Chưa chọn bộ lọc</strong>
+                                <span class="text-muted mt-1">Vui lòng chọn cơ sở hoặc nhập CCCD / SĐT / Mã BN rồi nhấn nút <strong>Lọc</strong> để hiển thị tài khoản.</span>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="4">
+                            <div class="table-empty">
+                                <div>⌕</div>
+                                <strong>Không tìm thấy tài khoản phù hợp</strong>
+                                <span>Thử thay đổi từ khóa hoặc bộ lọc cơ sở.</span>
+                            </div>
+                        </td>
+                    </tr>
+                }
             }
             else
             {
                 foreach (var item in Model.Items)
                 {
-                    <tr><td><div class="table-person"><span class="mini-avatar">@(item.SDT.FirstOrDefault().ToString())</span><div><strong>@item.SDT</strong><small>Đăng nhập bằng số điện thoại</small></div></div></td><td><span class="role-badge role-@item.Role.ToLowerInvariant()">@item.Role</span></td><td class="text-muted">#@item.Id</td><td class="text-end"><a asp-action="Edit" asp-route-id="@item.Id" class="table-action">Chỉnh sửa <span>→</span></a></td></tr>
+                    hoSoTheoTaiKhoan.TryGetValue(item.Id, out var danhSachHoSo);
+                    danhSachHoSo ??= new List<HoSoBenhNhanItemViewModel>();
+
+                    <tr class="account-parent-row" id="account-row-@item.Id" onclick="toggleAccountDrawer(@item.Id, event)">
+                        <td>
+                            <div class="table-person">
+                                <span class="mini-avatar">@(item.SDT.FirstOrDefault().ToString())</span>
+                                <div>
+                                    <strong>@item.SDT</strong>
+                                    <div><small class="text-muted">Đăng nhập bằng số điện thoại</small></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge-so-hoso-count" id="badge-count-@item.Id" title="Số lượng: @(danhSachHoSo.Count) hồ sơ">
+                                @(danhSachHoSo.Count)
+                            </span>
+                        </td>
+                        <td><span class="role-badge role-@item.Role.ToLowerInvariant()">@item.Role</span></td>
+                        <td class="text-muted">#@item.Id</td>
+                    </tr>
+
+                    <!-- HÀNG DRAWER SỔ RA CÁC HỒ SƠ -->
+                    <tr id="drawer-@item.Id" class="account-drawer-row" style="display: none;">
+                        <td colspan="4" class="p-0 border-0">
+                            <div class="account-drawer-box">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <div>
+                                        <h6 class="mb-0 fw-bold text-dark d-flex align-items-center gap-2">
+                                            <span>📂</span> Hồ sơ bệnh nhân thuộc tài khoản <strong>@item.SDT</strong>
+                                            <span class="badge bg-primary text-white" id="count-label-@item.Id">@(danhSachHoSo.Count) hồ sơ</span>
+                                        </h6>
+                                        <small class="text-muted">Quản lý, xem, sửa hoặc xóa hồ sơ của thành viên trong tài khoản này</small>
+                                    </div>
+                                    <button type="button" class="btn btn-sm admin-btn-primary py-1 px-3" onclick="toggleFormThem(@item.Id)">
+                                        <span>+</span> Thêm hồ sơ
+                                    </button>
+                                </div>
+
+                                <!-- FORM THÊM HỒ SƠ MỚI -->
+                                <div id="form-them-@item.Id" class="form-them-panel" style="display: none;">
+                                    <div class="fw-bold text-primary mb-2" style="font-size: 13px;">➕ Thêm hồ sơ mới cho tài khoản @item.SDT</div>
+                                    <div class="row g-2 align-items-end">
+                                        <div class="col-md-3">
+                                            <label class="form-label mb-1" style="font-size: 11px;">Họ và tên <span class="text-danger">*</span></label>
+                                            <input type="text" id="new-ten-@item.Id" class="form-control form-control-sm" placeholder="VD: Nguyễn Văn A" />
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label mb-1" style="font-size: 11px;">CCCD / Định danh</label>
+                                            <input type="text" id="new-cccd-@item.Id" class="form-control form-control-sm font-monospace" placeholder="12 số CCCD" />
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label mb-1" style="font-size: 11px;">Số điện thoại</label>
+                                            <input type="tel" id="new-sdt-@item.Id" class="form-control form-control-sm" placeholder="@item.SDT" value="@item.SDT" />
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label mb-1" style="font-size: 11px;">Ngày sinh</label>
+                                            <input type="text" id="new-ngaysinh-@item.Id" class="form-control form-control-sm datepicker-input" placeholder="dd/mm/yyyy" />
+                                        </div>
+                                        <div class="col-md-1">
+                                            <label class="form-label mb-1" style="font-size: 11px;">Giới tính</label>
+                                            <select id="new-gioitinh-@item.Id" class="form-select form-select-sm">
+                                                @foreach (var gt in danhMucGioiTinh)
+                                                {
+                                                    <option value="@gt.MaGioiTinh">@gt.TenGioiTinh</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2 d-flex gap-1 justify-content-end">
+                                            <button type="button" class="btn btn-sm btn-success px-3" onclick="taoHoSoMoi(@item.Id)">
+                                                💾 Lưu
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-light border px-2" onclick="toggleFormThem(@item.Id)">
+                                                ✕
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- BẢNG DANH SÁCH HỒ SƠ -->
+                                <div class="nested-hoso-card">
+                                    <div class="table-responsive">
+                                        <table class="table nested-hoso-table align-middle">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width: 22%;">Họ và tên</th>
+                                                    <th style="width: 17%;" class="text-center">CCCD / Định danh</th>
+                                                    <th style="width: 14%;" class="text-center">Số điện thoại</th>
+                                                    <th style="width: 12%;" class="text-center">Ngày sinh</th>
+                                                    <th style="width: 10%;" class="text-center">Giới tính</th>
+                                                    <th style="width: 12%;" class="text-center">Mã BN / Cơ sở</th>
+                                                    <th style="width: 13%;" class="text-center">Thao tác</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="tbody-hoso-@item.Id">
+                                                @if (danhSachHoSo.Count == 0)
+                                                {
+                                                    <tr class="empty-hoso-tr" id="empty-row-@item.Id">
+                                                        <td colspan="7" class="text-center py-4 text-muted">
+                                                            <div>📋</div>
+                                                            <div>Chưa có hồ sơ bệnh nhân nào liên kết với tài khoản này.</div>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                                else
+                                                {
+                                                    foreach (var hs in danhSachHoSo)
+                                                    {
+                                                        var ngaySinhStr = hs.NgaySinh?.ToString("dd/MM/yyyy") ?? "—";
+                                                        var ngaySinhIso = hs.NgaySinh?.ToString("yyyy-MM-dd") ?? "";
+                                                        var matchGt = danhMucGioiTinh.FirstOrDefault(x => x.MaGioiTinh == hs.GioiTinh);
+                                                        var gioiTinhStr = matchGt != null ? matchGt.TenGioiTinh : (hs.GioiTinh == "1" ? "Nam" : (hs.GioiTinh == "2" ? "Nữ" : "Chưa xác định"));
+                                                        var maBnStr = !string.IsNullOrEmpty(hs.MaBN) ? $"{hs.MaBN}" : (!string.IsNullOrEmpty(hs.TenCoSo) ? hs.TenCoSo : "Chưa nối");
+
+                                                        <tr id="hoso-row-@hs.Id" data-id="@hs.Id" data-account-id="@item.Id"
+                                                            data-ten="@hs.TenBN" data-cccd="@hs.CCCD" data-sdt="@hs.SDT"
+                                                            data-ngaysinh="@ngaySinhIso" data-gioitinh="@hs.GioiTinh"
+                                                            data-mabn="@hs.MaBN" data-tencoso="@hs.TenCoSo">
+                                                            <!-- HỌ TÊN -->
+                                                            <td>
+                                                                <span class="val-ten fw-bold text-dark">@hs.TenBN</span>
+                                                            </td>
+                                                            <!-- CCCD -->
+                                                            <td class="text-center">
+                                                                <span class="val-cccd font-monospace">@(string.IsNullOrEmpty(hs.CCCD) ? "—" : hs.CCCD)</span>
+                                                            </td>
+                                                            <!-- SĐT -->
+                                                            <td class="text-center">
+                                                                <span class="val-sdt">@(string.IsNullOrEmpty(hs.SDT) ? "—" : hs.SDT)</span>
+                                                            </td>
+                                                            <!-- NGÀY SINH -->
+                                                            <td class="text-center">
+                                                                <span class="val-ngaysinh">@ngaySinhStr</span>
+                                                            </td>
+                                                            <!-- GIỚI TÍNH -->
+                                                            <td class="text-center">
+                                                                <span class="val-gioitinh">@gioiTinhStr</span>
+                                                            </td>
+                                                            <!-- MÃ BN / CƠ SỞ -->
+                                                            <td class="text-center">
+                                                                <span class="val-mabn badge bg-light text-secondary border">@maBnStr</span>
+                                                            </td>
+                                                            <!-- THAO TÁC: SỬA - LƯU - XOÁ -->
+                                                            <td class="text-center">
+                                                                <div class="hoso-action-group">
+                                                                    <!-- NÚT SỬA (✏️) MỞ POPUP THEO MẪU -->
+                                                                    <button type="button" class="btn-hoso-icon btn-hoso-edit" onclick="moModalSuaHoSo(@hs.Id, @item.Id)" title="Sửa hồ sơ">
+                                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                                                    </button>
+
+                                                                    <!-- NÚT XOÁ (🗑️) -->
+                                                                    <button type="button" class="btn-hoso-icon btn-hoso-delete" onclick="xoaThongTinHoSo(@hs.Id, '@hs.TenBN', @item.Id)" title="Xóa hồ sơ">
+                                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
                 }
             }
             </tbody>
         </table>
     </div>
-    <partial name="_Pagination" model="new PaginationViewModel { Page = Model.Page, TotalPages = Model.TotalPages, Query = Model.Query, Role = Model.Role }" />
+    <partial name="_Pagination" model="new PaginationViewModel { Page = Model.Page, TotalPages = Model.TotalPages, Query = Model.Query, Role = Model.Role, LoaiCS = Model.LoaiCS, CCCD = Model.CCCD, SDT = Model.SDT, MaBN = Model.MaBN }" />
 </div>
+
+<!-- ==================== MODAL SỬA HỒ SƠ CHUẨN GIAO DIỆN THEO ẢNH USER ==================== -->
+<div id="modalSuaHoSoBackdrop" class="modal-sua-hoso-backdrop" style="display: none;" onclick="dongModalSuaHoSo(event)">
+    <div class="modal-sua-hoso-card" onclick="event.stopPropagation()">
+        <div class="modal-sua-header">
+            <button type="button" class="modal-sua-btn-back" onclick="dongModalSuaHoSo()" title="Đóng">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+            </button>
+            <div>
+                <h3 class="modal-sua-title">Sửa hồ sơ</h3>
+                <span class="modal-sua-subtitle" id="modalSuaTenSubtitle">LÊ VIỆT HƯNG</span>
+            </div>
+        </div>
+
+        <div class="modal-sua-body">
+            <input type="hidden" id="modalSuaId" value="" />
+            <input type="hidden" id="modalSuaAccountId" value="" />
+
+            <!-- 1. Mã bệnh nhân tại cơ sở + Nút Gỡ nối bên cạnh -->
+            <div class="modal-hs-o">
+                <label for="modalSuaMaBN">Mã bệnh nhân tại cơ sở</label>
+                <div style="display: flex; gap: 10px; align-items: stretch;">
+                    <input id="modalSuaMaBN" type="text" maxlength="30" placeholder="Nhập mã bệnh nhân tại cơ sở..." style="flex: 1 1 auto; min-width: 0;" />
+                    <button type="button" id="modalSuaBtnGoNoi" class="btn btn-outline-danger font-weight-bold" style="flex: 0 0 auto; width: 105px; height: 44px; border-radius: 10px; font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; justify-content: center;" onclick="goNoiModal()" title="Xóa trắng mã cơ sở">
+                        Gỡ nối
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. Số căn cước * -->
+            <div class="modal-hs-o">
+                <label for="modalSuaCCCD">Số căn cước *</label>
+                <input id="modalSuaCCCD" type="text" maxlength="20" placeholder="Số CCCD / Định danh" />
+            </div>
+
+            <!-- 3. Họ và tên * -->
+            <div class="modal-hs-o">
+                <label for="modalSuaTen">Họ và tên *</label>
+                <input id="modalSuaTen" type="text" maxlength="100" placeholder="Họ và tên bệnh nhân" />
+            </div>
+
+            <!-- 4. Ngày sinh * -->
+            <div class="modal-hs-o">
+                <label for="modalSuaNgaySinh">Ngày sinh *</label>
+                <input id="modalSuaNgaySinh" type="text" class="datepicker-input" placeholder="dd/mm/yyyy" />
+            </div>
+
+            <!-- 5. Giới tính * -->
+            <div class="modal-hs-o">
+                <label for="modalSuaGioiTinh">Giới tính *</label>
+                <select id="modalSuaGioiTinh">
+                    <option value="">— Chọn giới tính —</option>
+                    @foreach (var gt in danhMucGioiTinh)
+                    {
+                        <option value="@gt.MaGioiTinh">@gt.TenGioiTinh</option>
+                    }
+                </select>
+            </div>
+
+            <!-- 6. Số điện thoại (không bắt buộc) -->
+            <div class="modal-hs-o">
+                <label for="modalSuaSDT">Số điện thoại <span style="font-weight:400;color:#64748b;">(không bắt buộc)</span></label>
+                <input id="modalSuaSDT" type="tel" maxlength="20" placeholder="09xxxxxxxx" />
+            </div>
+
+            <!-- Gợi ý thông báo -->
+            <div class="modal-hs-goi-y mb-3" id="modalSuaDaNoiNote" style="display: none;">
+                Hồ sơ này đã nối với bệnh án tại cơ sở nên họ tên, ngày sinh, căn cước và giới tính lấy theo cơ sở. Muốn sửa thì báo cơ sở, hoặc gỡ nối trước.
+            </div>
+
+            <!-- Nút Lưu -->
+            <button type="button" class="modal-hs-btn-submit" id="modalSuaBtnSave" onclick="luuThongTinModal()">Lưu</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        khoiTaoDatePicker();
+    });
+
+    function khoiTaoDatePicker(scopeSelector) {
+        const $targets = scopeSelector ? $(scopeSelector) : $('.datepicker-input');
+        $targets.each(function() {
+            const $this = $(this);
+            if (!$this.data('DateTimePicker')) {
+                $this.datetimepicker({
+                    locale: "vi",
+                    format: "DD/MM/YYYY",
+                    useStrict: false,
+                    widgetPositioning: {
+                        horizontal: "auto",
+                        vertical: "bottom",
+                    },
+                    extraFormats: ["DD/MM/YYYY", "DD-MM-YYYY", "YYYY-MM-DD", "YYYY"],
+                    icons: {
+                        date: "ti ti-calendar",
+                        up: "ti ti-chevron-up",
+                        down: "ti ti-chevron-down",
+                        previous: "ti ti-chevron-left",
+                        next: "ti ti-chevron-right",
+                        time: "ti ti-alarm",
+                        close: 'ti ti-x'
+                    },
+                    keyBinds: {
+                        left: null,
+                        right: null,
+                    },
+                    showClose: true
+                });
+            }
+        });
+    }
+
+    // Bật/tắt mở rộng Drawer danh sách hồ sơ
+    function toggleAccountDrawer(accountId, evt) {
+        if (evt) {
+            const isToggleArrow = evt.target.closest('.btn-toggle-arrow');
+            if (!isToggleArrow && (evt.target.closest('a') || evt.target.closest('input') || evt.target.closest('select') || evt.target.closest('button'))) {
+                return;
+            }
+        }
+
+        const row = document.getElementById('account-row-' + accountId);
+        const drawer = document.getElementById('drawer-' + accountId);
+        if (!drawer || !row) return;
+
+        if (drawer.style.display === 'none' || drawer.style.display === '') {
+            drawer.style.display = 'table-row';
+            row.classList.add('is-open');
+            khoiTaoDatePicker('#drawer-' + accountId + ' .datepicker-input');
+        } else {
+            drawer.style.display = 'none';
+            row.classList.remove('is-open');
+        }
+    }
+
+    // Bật/tắt form thêm hồ sơ mới
+    function toggleFormThem(accountId) {
+        const f = document.getElementById('form-them-' + accountId);
+        if (!f) return;
+        const isShow = (f.style.display === 'none' || f.style.display === '');
+        f.style.display = isShow ? 'block' : 'none';
+        if (isShow) {
+            khoiTaoDatePicker('#form-them-' + accountId + ' .datepicker-input');
+        }
+    }
+
+    // ==================== MỞ MODAL SỬA HỒ SƠ THEO MẪU USER ====================
+    function moModalSuaHoSo(id, accountId) {
+        const tr = document.getElementById('hoso-row-' + id);
+        if (!tr) return;
+
+        const tenBN = tr.getAttribute('data-ten') || tr.querySelector('.val-ten')?.innerText?.trim();
+        const cccd = tr.getAttribute('data-cccd') || '';
+        const sdt = tr.getAttribute('data-sdt') || '';
+        const ngaySinhIso = tr.getAttribute('data-ngaysinh') || '';
+        const gioiTinh = tr.getAttribute('data-gioitinh') || '1';
+        const maBN = tr.getAttribute('data-mabn') || '';
+        const tenCoSo = tr.getAttribute('data-tencoso') || '';
+
+        document.getElementById('modalSuaId').value = id;
+        document.getElementById('modalSuaAccountId').value = accountId;
+        document.getElementById('modalSuaTenSubtitle').innerText = tenBN;
+
+        const inpMaBN = document.getElementById('modalSuaMaBN');
+        const daNoiNote = document.getElementById('modalSuaDaNoiNote');
+
+        inpMaBN.value = maBN || '';
+        if (maBN && daNoiNote) {
+            daNoiNote.style.display = 'block';
+        } else if (daNoiNote) {
+            daNoiNote.style.display = 'none';
+        }
+
+        document.getElementById('modalSuaCCCD').value = cccd;
+        document.getElementById('modalSuaTen').value = tenBN;
+        document.getElementById('modalSuaSDT').value = sdt;
+        document.getElementById('modalSuaGioiTinh').value = gioiTinh;
+
+        // Khởi tạo DateTimePicker cho Modal Sửa hồ sơ
+        const $inpNgaySinh = $('#modalSuaNgaySinh');
+        if ($inpNgaySinh.data('DateTimePicker')) {
+            $inpNgaySinh.data('DateTimePicker').destroy();
+        }
+
+        let ngaySinhDisplay = '';
+        if (ngaySinhIso) {
+            const m = moment(ngaySinhIso, ['YYYY-MM-DD', 'YYYY/MM/DD', 'DD/MM/YYYY']);
+            if (m.isValid()) {
+                ngaySinhDisplay = m.format('DD/MM/YYYY');
+            }
+        }
+        $inpNgaySinh.val(ngaySinhDisplay);
+        khoiTaoDatePicker('#modalSuaNgaySinh');
+        if (ngaySinhDisplay) {
+            $inpNgaySinh.data('DateTimePicker').date(moment(ngaySinhDisplay, 'DD/MM/YYYY'));
+        }
+
+        document.getElementById('modalSuaHoSoBackdrop').style.display = 'flex';
+    }
+
+    function dongModalSuaHoSo(evt) {
+        if (evt && evt.target !== document.getElementById('modalSuaHoSoBackdrop')) {
+            return;
+        }
+        document.getElementById('modalSuaHoSoBackdrop').style.display = 'none';
+    }
+
+    // Lưu thông tin từ Modal
+    async function luuThongTinModal() {
+        const id = document.getElementById('modalSuaId').value;
+        const accountId = document.getElementById('modalSuaAccountId').value;
+
+        const tenBN = document.getElementById('modalSuaTen')?.value?.trim();
+        const cccd = document.getElementById('modalSuaCCCD')?.value?.trim();
+        const sdt = document.getElementById('modalSuaSDT')?.value?.trim();
+        const ngaySinhRaw = document.getElementById('modalSuaNgaySinh')?.value?.trim();
+        const gioiTinh = document.getElementById('modalSuaGioiTinh')?.value;
+        const maBN = document.getElementById('modalSuaMaBN')?.value?.trim();
+
+        if (!tenBN) {
+            if (typeof showToast === 'function') showToast('Vui lòng nhập họ và tên bệnh nhân.', 'error');
+            else alert('Vui lòng nhập họ và tên bệnh nhân.');
+            return;
+        }
+
+        let ngaySinhIso = null;
+        if (ngaySinhRaw) {
+            const m = moment(ngaySinhRaw, ['DD/MM/YYYY', 'DD-MM-YYYY', 'YYYY-MM-DD']);
+            if (m.isValid()) {
+                ngaySinhIso = m.format('YYYY-MM-DD');
+            } else {
+                if (typeof showToast === 'function') showToast('Ngày sinh không hợp lệ (định dạng dd/mm/yyyy).', 'error');
+                else alert('Ngày sinh không hợp lệ.');
+                return;
+            }
+        }
+
+        const btnSave = document.getElementById('modalSuaBtnSave');
+        btnSave.disabled = true;
+        btnSave.innerText = 'Đang lưu...';
+
+        try {
+            const resp = await fetch('/Admin/TaiKhoan/CapNhatHoSo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: parseInt(id),
+                    idTaiKhoan: parseInt(accountId),
+                    tenBN: tenBN,
+                    cccd: cccd,
+                    sdt: sdt,
+                    ngaySinh: ngaySinhIso,
+                    gioiTinh: gioiTinh,
+                    maBN: maBN || null
+                })
+            });
+
+            const res = await resp.json();
+            if (res.success) {
+                const d = res.data;
+                const tr = document.getElementById('hoso-row-' + id);
+                if (tr) {
+                    tr.setAttribute('data-ten', d.tenBN);
+                    tr.setAttribute('data-cccd', d.cccd);
+                    tr.setAttribute('data-sdt', d.sdt);
+                    tr.setAttribute('data-ngaysinh', d.ngaySinh ? moment(d.ngaySinh).format('YYYY-MM-DD') : '');
+                    tr.setAttribute('data-gioitinh', d.gioiTinh);
+                    tr.setAttribute('data-mabn', d.maBN || '');
+                    tr.setAttribute('data-tencoso', d.tenCoSo || '');
+
+                    tr.querySelector('.val-ten').innerText = d.tenBN;
+                    tr.querySelector('.val-cccd').innerText = d.cccd || '—';
+                    tr.querySelector('.val-sdt').innerText = d.sdt || '—';
+                    tr.querySelector('.val-ngaysinh').innerText = d.ngaySinhVn || (d.ngaySinh ? moment(d.ngaySinh).format('DD/MM/YYYY') : '—');
+                    tr.querySelector('.val-gioitinh').innerText = d.gioiTinhVn || 'Khác';
+                    const badge = tr.querySelector('.val-mabn');
+                    if (badge) {
+                        badge.innerText = d.maBN ? d.maBN : 'Chưa nối';
+                    }
+                }
+
+                document.getElementById('modalSuaHoSoBackdrop').style.display = 'none';
+
+                if (typeof showToast === 'function') showToast(res.message || 'Đã lưu hồ sơ thành công.', 'success');
+            } else {
+                if (typeof showToast === 'function') showToast(res.message || 'Không thể lưu hồ sơ.', 'error');
+                else alert(res.message);
+            }
+        } catch (e) {
+            console.error(e);
+            if (typeof showToast === 'function') showToast('Lỗi kết nối máy chủ khi lưu hồ sơ.', 'error');
+        } finally {
+            btnSave.disabled = false;
+            btnSave.innerText = 'Lưu';
+        }
+    }
+
+    function goNoiModal() {
+        const inpMa = document.getElementById('modalSuaMaBN');
+        if (!inpMa.value) {
+            if (typeof showToast === 'function') showToast('Ô mã cơ sở đang trống.', 'info');
+            return;
+        }
+        if (confirm('Bạn có chắc muốn xóa mã cơ sở này? Nhấn Lưu sau khi gỡ để cập nhật.')) {
+            inpMa.value = '';
+            const daNoiNote = document.getElementById('modalSuaDaNoiNote');
+            if (daNoiNote) daNoiNote.style.display = 'none';
+            if (typeof showToast === 'function') showToast('Đã xóa mã cơ sở. Hãy nhấn nút "Lưu" để hoàn tất.', 'info');
+        }
+    }
+
+    // Xóa hồ sơ (AJAX)
+    async function xoaThongTinHoSo(id, tenBN, accountId) {
+        if (!confirm(`Bạn có chắc chắn muốn xóa hồ sơ "${tenBN}" này không?`)) {
+            return;
+        }
+
+        try {
+            const resp = await fetch('/Admin/TaiKhoan/XoaHoSo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id, idTaiKhoan: accountId })
+            });
+
+            const res = await resp.json();
+            if (res.success) {
+                const tr = document.getElementById('hoso-row-' + id);
+                if (tr) {
+                    tr.remove();
+                }
+
+                // Cập nhật số đếm hồ sơ trên badge
+                capNhatSoLuongHoSo(accountId);
+
+                if (typeof showToast === 'function') showToast(res.message || 'Đã xóa hồ sơ thành công.', 'success');
+            } else {
+                if (typeof showToast === 'function') showToast(res.message || 'Không thể xóa hồ sơ.', 'error');
+                else alert(res.message);
+            }
+        } catch (e) {
+            console.error(e);
+            if (typeof showToast === 'function') showToast('Lỗi kết nối khi xóa hồ sơ.', 'error');
+        }
+    }
+
+    // Tạo hồ sơ mới (AJAX)
+    async function taoHoSoMoi(accountId) {
+        const tenEl = document.getElementById('new-ten-' + accountId);
+        const cccdEl = document.getElementById('new-cccd-' + accountId);
+        const sdtEl = document.getElementById('new-sdt-' + accountId);
+        const nsEl = document.getElementById('new-ngaysinh-' + accountId);
+        const gtEl = document.getElementById('new-gioitinh-' + accountId);
+
+        const tenBN = tenEl?.value?.trim();
+        const cccd = cccdEl?.value?.trim();
+        const sdt = sdtEl?.value?.trim();
+        const ngaySinhRaw = nsEl?.value?.trim();
+        const gioiTinh = gtEl?.value;
+
+        if (!tenBN) {
+            if (typeof showToast === 'function') showToast('Vui lòng nhập họ và tên hồ sơ.', 'error');
+            else alert('Vui lòng nhập họ và tên hồ sơ.');
+            return;
+        }
+
+        let ngaySinhIso = null;
+        if (ngaySinhRaw) {
+            const m = moment(ngaySinhRaw, ['DD/MM/YYYY', 'DD-MM-YYYY', 'YYYY-MM-DD']);
+            if (m.isValid()) {
+                ngaySinhIso = m.format('YYYY-MM-DD');
+            } else {
+                if (typeof showToast === 'function') showToast('Ngày sinh không hợp lệ (định dạng dd/mm/yyyy).', 'error');
+                else alert('Ngày sinh không hợp lệ.');
+                return;
+            }
+        }
+
+        try {
+            const resp = await fetch('/Admin/TaiKhoan/TaoHoSo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    idTaiKhoan: accountId,
+                    tenBN: tenBN,
+                    cccd: cccd,
+                    sdt: sdt,
+                    ngaySinh: ngaySinhIso,
+                    gioiTinh: gioiTinh
+                })
+            });
+
+            const res = await resp.json();
+            if (res.success) {
+                const d = res.data;
+                const tbody = document.getElementById('tbody-hoso-' + accountId);
+                const emptyRow = document.getElementById('empty-row-' + accountId);
+                if (emptyRow) emptyRow.remove();
+
+                const newRow = document.createElement('tr');
+                newRow.id = 'hoso-row-' + d.id;
+                newRow.setAttribute('data-id', d.id);
+                newRow.setAttribute('data-account-id', accountId);
+                newRow.setAttribute('data-ten', d.tenBN);
+                newRow.setAttribute('data-cccd', d.cccd);
+                newRow.setAttribute('data-sdt', d.sdt);
+                newRow.setAttribute('data-ngaysinh', d.ngaySinh ? moment(d.ngaySinh).format('YYYY-MM-DD') : '');
+                newRow.setAttribute('data-gioitinh', d.gioiTinh);
+
+                const ngaySinhHienThi = d.ngaySinhVn || (d.ngaySinh ? moment(d.ngaySinh).format('DD/MM/YYYY') : '—');
+
+                newRow.innerHTML = `
+                    <td>
+                        <span class="val-ten fw-bold text-dark">${d.tenBN}</span>
+                    </td>
+                    <td class="text-center">
+                        <span class="val-cccd font-monospace">${d.cccd || '—'}</span>
+                    </td>
+                    <td class="text-center">
+                        <span class="val-sdt">${d.sdt || '—'}</span>
+                    </td>
+                    <td class="text-center">
+                        <span class="val-ngaysinh">${ngaySinhHienThi}</span>
+                    </td>
+                    <td class="text-center">
+                        <span class="val-gioitinh">${d.gioiTinhVn || 'Khác'}</span>
+                    </td>
+                    <td class="text-center">
+                        <span class="badge bg-light text-secondary border">Chưa nối</span>
+                    </td>
+                    <td class="text-center">
+                        <div class="hoso-action-group">
+                            <button type="button" class="btn-hoso-icon btn-hoso-edit" onclick="moModalSuaHoSo(${d.id}, ${accountId})" title="Sửa hồ sơ">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                            </button>
+                            <button type="button" class="btn-hoso-icon btn-hoso-delete" onclick="xoaThongTinHoSo(${d.id}, '${d.tenBN.replace(/'/g, "\\'")}', ${accountId})" title="Xóa hồ sơ">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                            </button>
+                        </div>
+                    </td>
+                `;
+
+                tbody.appendChild(newRow);
+
+                // Reset form
+                if (tenEl) tenEl.value = '';
+                if (cccdEl) cccdEl.value = '';
+                if (nsEl) {
+                    nsEl.value = '';
+                    if ($(nsEl).data('DateTimePicker')) {
+                        $(nsEl).data('DateTimePicker').clear();
+                    }
+                }
+                toggleFormThem(accountId);
+
+                capNhatSoLuongHoSo(accountId);
+
+                if (typeof showToast === 'function') showToast(res.message || 'Đã tạo hồ sơ mới thành công.', 'success');
+            } else {
+                if (typeof showToast === 'function') showToast(res.message || 'Không thể tạo hồ sơ.', 'error');
+                else alert(res.message);
+            }
+        } catch (e) {
+            console.error(e);
+            if (typeof showToast === 'function') showToast('Lỗi kết nối khi tạo hồ sơ.', 'error');
+        }
+    }
+
+    function capNhatSoLuongHoSo(accountId) {
+        const tbody = document.getElementById('tbody-hoso-' + accountId);
+        const rows = tbody ? tbody.querySelectorAll('tr[data-id]') : [];
+        const count = rows.length;
+
+        const countSpan = document.getElementById('badge-count-' + accountId);
+        if (countSpan) {
+            countSpan.innerText = count;
+        }
+
+        const countLabel = document.getElementById('count-label-' + accountId);
+        if (countLabel) {
+            countLabel.innerText = `${count} hồ sơ`;
+        }
+
+        if (count === 0 && tbody) {
+            tbody.innerHTML = `
+                <tr class="empty-hoso-tr" id="empty-row-${accountId}">
+                    <td colspan="7" class="text-center py-4 text-muted">
+                        <div>📋</div>
+                        <div>Chưa có hồ sơ bệnh nhân nào liên kết với tài khoản này.</div>
+                    </td>
+                </tr>
+            `;
+        }
+    }
+</script>
+}
