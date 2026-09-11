@@ -26,6 +26,294 @@
         .step-2 {
             display: none;
         }
+
+        /* VCB Digibank QR Button */
+        .btn-bank-qr {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border: 1.5px dashed #16a34a;
+            color: #15803d;
+            font-weight: 600;
+            border-radius: 12px;
+            padding: 10px 16px;
+            transition: all 0.2s ease;
+        }
+        .btn-bank-qr:hover, .btn-bank-qr:active {
+            background: #dcfce7;
+            border-color: #15803d;
+            color: #14532d;
+            transform: translateY(-1px);
+        }
+
+        /* VCB Digibank Scanner Modal */
+        .vcb-qr-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #0b0f14;
+            z-index: 99999;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #ffffff;
+        }
+        .vcb-qr-modal.active {
+            display: flex;
+        }
+
+        /* Top bar */
+        .vcb-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: calc(env(safe-area-inset-top, 12px) + 12px) 16px 10px;
+            z-index: 20;
+        }
+        .vcb-topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .vcb-btn-back {
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            padding: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .vcb-topbar-title {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #ffffff;
+            letter-spacing: -0.2px;
+        }
+        .vcb-topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .vcb-topbar-icon-btn {
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            padding: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .vcb-topbar-icon-btn.active {
+            color: #fde047;
+        }
+
+        /* Brand & Description */
+        .vcb-brand-area {
+            text-align: center;
+            padding: 10px 24px 14px;
+            z-index: 10;
+        }
+        .vcb-brand-name {
+            font-size: 1.55rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: #ffffff;
+            margin-bottom: 6px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+        .vcb-brand-name span {
+            color: #4ade80;
+        }
+        .vcb-brand-desc {
+            font-size: 0.86rem;
+            color: rgba(255, 255, 255, 0.85);
+            line-height: 1.35;
+            max-width: 320px;
+            margin: 0 auto;
+        }
+
+        /* Camera & Viewfinder */
+        .vcb-camera-box {
+            position: relative;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: #000000;
+        }
+        #bankQrReader {
+            width: 100% !important;
+            height: 100% !important;
+            border: none !important;
+        }
+        #bankQrReader video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+        }
+        .vcb-viewfinder-wrap {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 5;
+        }
+        .vcb-target-frame {
+            position: relative;
+            width: min(74vw, 280px);
+            height: min(74vw, 280px);
+            border: 3.5px solid rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.58);
+            overflow: hidden;
+        }
+        .vcb-laser-line {
+            position: absolute;
+            top: 10%;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent 0%, #84cc16 20%, #bef264 50%, #84cc16 80%, transparent 100%);
+            box-shadow: 0 0 16px 3px rgba(163, 230, 53, 0.9);
+            animation: vcbLaserScan 2.4s ease-in-out infinite alternate;
+        }
+        @@keyframes vcbLaserScan {
+            0% { top: 6%; opacity: 0.4; }
+            50% { opacity: 1; }
+            100% { top: 92%; opacity: 0.4; }
+        }
+
+        /* Middle Badges & Pills */
+        .vcb-middle-controls {
+            padding: 12px 16px 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            z-index: 10;
+        }
+        .vcb-partner-logos {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.76rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+        .vcb-partner-logos .divider {
+            opacity: 0.3;
+        }
+        .vcb-quick-pills {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            max-width: 360px;
+        }
+        .vcb-pill-country {
+            background: rgba(40, 45, 55, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 6px 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: #ffffff;
+            cursor: pointer;
+        }
+        .vcb-pill-circle-btn {
+            background: rgba(40, 45, 55, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+        }
+        .vcb-pill-circle-btn .dot-badge {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 7px;
+            height: 7px;
+            background: #ef4444;
+            border-radius: 50%;
+        }
+
+        /* Bottom 3-Tab Bar */
+        .vcb-bottom-tabs {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 10px 16px calc(12px + env(safe-area-inset-bottom, 10px));
+            background: rgba(18, 22, 28, 0.96);
+            backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            z-index: 20;
+        }
+        .vcb-tab-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.75);
+            font-size: 0.74rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-align: center;
+            position: relative;
+            padding: 4px 0;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .vcb-tab-item:hover, .vcb-tab-item:active {
+            color: #ffffff;
+        }
+        .vcb-tab-item.active {
+            color: #ffffff;
+        }
+        .vcb-tab-icon {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .vcb-badge-new {
+            position: absolute;
+            top: -5px;
+            right: -10px;
+            background: #ef4444;
+            color: #ffffff;
+            font-size: 0.6rem;
+            font-weight: 700;
+            padding: 1px 5px;
+            border-radius: 8px;
+            line-height: 1.2;
+        }
     </style>
 </head>
 <body class="page-center">
@@ -70,6 +358,25 @@
                     <button type="submit" id="btnGuiOtp" class="btn btn-primary w-100 py-2 fw-bold">
                         Tiếp tục
                     </button>
+
+                    <div class="d-flex align-items-center my-3">
+                        <hr class="flex-grow-1 my-0 text-muted opacity-25" />
+                        <span class="px-2 text-muted small fw-medium">HOẶC</span>
+                        <hr class="flex-grow-1 my-0 text-muted opacity-25" />
+                    </div>
+
+                    <!-- Nút Đăng nhập bằng mã QR chuẩn Ngân hàng -->
+                    <button type="button" class="btn btn-bank-qr w-100 d-flex align-items-center justify-content-center gap-2" onclick="moModalQuetQr()">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 7V5a2 2 0 0 1 2-2h2"/>
+                            <path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+                            <path d="M21 17v2a2 2 0 0 1-2 2h-2"/>
+                            <path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
+                            <rect x="7" y="7" width="10" height="10" rx="1"/>
+                            <line x1="7" y1="12" x2="17" y2="12" stroke-dasharray="2 2"/>
+                        </svg>
+                        <span>Đăng nhập bằng mã QR</span>
+                    </button>
                 </form>
 
                 <!-- BƯỚC 2: NHẬP MẬT KHẨU -->
@@ -98,12 +405,94 @@
                 <partial name="_PwaInstall" />
             </div>
         </div>
-
-        <p class="auth__foot">
-            🔒 Chỉ cần đăng nhập 1 lần duy nhất &mdash; lần sau tự động vào thẳng!
-        </p>
     </main>
 
+    <!-- Modal Quét QR Chuẩn VCB Digibank (Full-screen mobile) -->
+    <div id="bankQrModal" class="vcb-qr-modal" role="dialog" aria-modal="true" aria-label="Quét mã QR">
+        <!-- Top Bar -->
+        <div class="vcb-topbar">
+            <div class="vcb-topbar-left">
+                <button type="button" class="vcb-btn-back" onclick="dongModalQuetQr()" title="Quay lại">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m15 18-6-6 6-6"/>
+                    </svg>
+                </button>
+                <div class="vcb-topbar-title">Quét mã QR</div>
+            </div>
+            <div class="vcb-topbar-right">
+                <button type="button" class="vcb-topbar-icon-btn" id="btnTorch" onclick="toggleDenFlash()" title="Bật/Tắt đèn Flash">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                </button>
+                <button type="button" class="vcb-topbar-icon-btn" onclick="doiCamera()" title="Đổi camera">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Brand & Slogan -->
+        <div class="vcb-brand-area">
+            <div class="vcb-brand-desc">
+                Quét mã QR để đăng nhập, tra cứu hồ sơ và kết quả khám bệnh
+            </div>
+        </div>
+
+        <!-- Camera Viewfinder -->
+        <div class="vcb-camera-box">
+            <div id="bankQrReader"></div>
+            <div class="vcb-viewfinder-wrap">
+                <div class="vcb-target-frame">
+                    <div class="vcb-laser-line"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom 3-Tab Bar -->
+        <div class="vcb-bottom-tabs">
+            <label class="vcb-tab-item active mb-0" for="qrImageInput" title="Chọn ảnh từ thư viện">
+                <div class="vcb-tab-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                        <path d="M12 9v6m-3-3l3-3 3 3" stroke-width="2"/>
+                    </svg>
+                </div>
+                <span>Chọn ảnh<br/>mã QR</span>
+                <input type="file" id="qrImageInput" accept="image/*" style="display:none" onchange="xuLyAnhQrTuThuVien(event)" />
+            </label>
+
+            <button type="button" class="vcb-tab-item" onclick="doiCamera()" title="Đổi camera">
+                <div class="vcb-tab-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7" rx="1"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1"/>
+                        <path d="M17 14v6m-3-3h6"/>
+                    </svg>
+                </div>
+                <span>Đổi Camera<br/>máy ảnh</span>
+            </button>
+
+            <button type="button" class="vcb-tab-item" onclick="dongModalQuetQr()" title="Đăng nhập">
+                <div class="vcb-tab-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="3"/>
+                        <path d="M7 7h3v3H7zM14 7h3v3h-3zM7 14h3v3H7z"/>
+                        <circle cx="15.5" cy="15.5" r="1.5"/>
+                    </svg>
+                    <span class="vcb-badge-new">Mới</span>
+                </div>
+                <span>Mã QR<br/>đăng nhập</span>
+            </button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
@@ -133,6 +522,190 @@
         const adminReturnUrl = new URLSearchParams(window.location.search).get('returnUrl');
         const maCoSoHienTai = '@(ViewBag.MaCoSo as string ?? "")';
         let currentCccd = '';
+
+        /* ================= QUÉT MÃ QR CCCD (CHUẨN NGÂN HÀNG) ================= */
+        let html5QrScanner = null;
+        let isFlashlightOn = false;
+        let currentFacingMode = "environment"; // camera sau
+
+        function phatAmThanhTing() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.setValueAtTime(880, ctx.currentTime); // 880Hz
+                gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.18);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.18);
+            } catch (e) { }
+        }
+
+        async function moModalQuetQr() {
+            const modal = document.getElementById('bankQrModal');
+            if (!modal) return;
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+
+            if (typeof Html5Qrcode === 'undefined') {
+                showAlert('Đang tải mô-đun quét mã, vui lòng thử lại sau giây lát...', 'info');
+                return;
+            }
+
+            try {
+                if (!html5QrScanner) {
+                    html5QrScanner = new Html5Qrcode("bankQrReader");
+                }
+
+                const config = {
+                    fps: 15,
+                    qrbox: function(viewfinderWidth, viewfinderHeight) {
+                        const edgeSize = Math.min(viewfinderWidth, viewfinderHeight) * 0.72;
+                        return { width: edgeSize, height: edgeSize };
+                    },
+                    aspectRatio: 1.0
+                };
+
+                await html5QrScanner.start(
+                    { facingMode: currentFacingMode },
+                    config,
+                    onQrCodeSuccess,
+                    (errorMessage) => { /* bỏ qua lỗi từng frame */ }
+                );
+            } catch (err) {
+                console.error("Lỗi khởi tạo camera:", err);
+                showAlert('Không thể mở Camera. Vui lòng cấp quyền truy cập máy ảnh hoặc tải ảnh QR từ thư viện.', 'danger');
+            }
+        }
+
+        async function dongModalQuetQr() {
+            const modal = document.getElementById('bankQrModal');
+            if (modal) modal.classList.remove('active');
+            document.body.style.overflow = '';
+            isFlashlightOn = false;
+
+            if (html5QrScanner) {
+                try {
+                    await html5QrScanner.stop();
+                } catch (e) {
+                    console.warn("Lỗi dừng scanner:", e);
+                }
+            }
+        }
+
+        function onQrCodeSuccess(decodedText, decodedResult) {
+            phatAmThanhTing();
+            if (navigator.vibrate) navigator.vibrate([60, 40, 60]);
+
+            dongModalQuetQr();
+            const text = (decodedText || '').trim();
+
+            // 1. Trường hợp mã QR là đường link đăng nhập (URL)
+            if (text.startsWith('http://') || text.startsWith('https://')) {
+                showAlert('Đang chuyển hướng đăng nhập...', 'info');
+                setTimeout(() => {
+                    window.location.href = text;
+                }, 400);
+                return;
+            }
+
+            // 2. Trường hợp mã QR chứa JSON đăng nhập
+            try {
+                if (text.startsWith('{') && text.endsWith('}')) {
+                    const data = JSON.parse(text);
+                    if (data.sdt || data.phone) {
+                        document.getElementById('soDienThoai').value = data.sdt || data.phone;
+                    }
+                    if (data.cccd) {
+                        document.getElementById('cccd').value = data.cccd;
+                    }
+                    showAlert('✅ Đã nhận diện thông tin đăng nhập từ mã QR!', 'success');
+                    if (data.otp || data.password) {
+                        // Tự động tiếp tục nếu có đầy đủ
+                        guiOtp();
+                    }
+                    return;
+                }
+            } catch (e) { }
+
+            // 3. Trường hợp mã QR chứa CCCD hoặc mã định danh bệnh nhân
+            let soCccd = '';
+            if (text.includes('|')) {
+                const parts = text.split('|');
+                soCccd = parts[0].trim();
+            } else {
+                soCccd = text;
+            }
+
+            const cccdInput = document.getElementById('cccd');
+            if (cccdInput && soCccd) {
+                cccdInput.value = soCccd;
+                cccdInput.dispatchEvent(new Event('input', { bubbles: true }));
+                showAlert(`✅ Đã quét mã QR: <strong>${soCccd}</strong>`, 'success');
+
+                const sdtInput = document.getElementById('soDienThoai');
+                if (sdtInput && !sdtInput.value) {
+                    sdtInput.focus();
+                }
+            }
+        }
+
+        async function toggleDenFlash() {
+            if (!html5QrScanner) return;
+            try {
+                isFlashlightOn = !isFlashlightOn;
+                await html5QrScanner.applyVideoConstraints({
+                    advanced: [{ torch: isFlashlightOn }]
+                });
+                const btnTorch = document.getElementById('btnTorch');
+                if (btnTorch) {
+                    btnTorch.style.background = isFlashlightOn ? 'rgba(255, 215, 0, 0.4)' : '';
+                    btnTorch.style.color = isFlashlightOn ? '#fde047' : '#fff';
+                }
+            } catch (e) {
+                showAlert('Thiết bị hoặc camera này không hỗ trợ bật đèn flash.', 'info');
+            }
+        }
+
+        async function doiCamera() {
+            if (!html5QrScanner) return;
+            try {
+                await html5QrScanner.stop();
+                currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
+                const config = {
+                    fps: 15,
+                    qrbox: function(w, h) {
+                        const edgeSize = Math.min(w, h) * 0.72;
+                        return { width: edgeSize, height: edgeSize };
+                    },
+                    aspectRatio: 1.0
+                };
+                await html5QrScanner.start({ facingMode: currentFacingMode }, config, onQrCodeSuccess, () => {});
+            } catch (e) {
+                console.error("Lỗi đổi camera:", e);
+                showAlert('Không thể chuyển đổi camera.', 'warning');
+            }
+        }
+
+        async function xuLyAnhQrTuThuVien(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+
+            try {
+                if (!html5QrScanner) {
+                    html5QrScanner = new Html5Qrcode("bankQrReader");
+                }
+                const decodedText = await html5QrScanner.scanFile(file, true);
+                onQrCodeSuccess(decodedText);
+            } catch (err) {
+                console.error("Không tìm thấy mã QR trong ảnh:", err);
+                showAlert('Không nhận diện được mã QR trong ảnh vừa chọn. Bạn vui lòng chụp rõ hơn nhé.', 'danger');
+            } finally {
+                event.target.value = '';
+            }
+        }
 
         function showAlert(msg, type = 'info') {
             const plainMessage = String(msg ?? '').replace(/<[^>]*>/g, '');
@@ -318,6 +891,7 @@
             const ua = navigator.userAgent;
             let os = "Unknown OS";
             let browser = "Unknown Browser";
+            let isStandalone = false;
 
             if (ua.indexOf("Win") !== -1) os = "Windows";
             else if (ua.indexOf("Mac") !== -1) os = "macOS";
@@ -332,7 +906,9 @@
             else if (ua.indexOf("MSIE") !== -1 || !!document.documentMode === true) browser = "IE";
             else if (ua.indexOf("Edge") !== -1) browser = "Edge";
 
-            const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+            try {
+                isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+            } catch (e) { }
             const mode = isStandalone ? " (PWA)" : "";
 
             return `${os} - ${browser}${mode}`;
