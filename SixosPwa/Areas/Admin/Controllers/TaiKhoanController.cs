@@ -30,7 +30,7 @@ public sealed class TaiKhoanController : AdminControllerBase
         int page = 1)
     {
         page = SafePage(page);
-        var query = _db.TaiKhoans.AsNoTracking().AsQueryable();
+        const int pageSize = 20;
 
         // Đồng bộ ô tìm kiếm số điện thoại
         if (string.IsNullOrWhiteSpace(sdt) && !string.IsNullOrWhiteSpace(q))
@@ -38,163 +38,8 @@ public sealed class TaiKhoanController : AdminControllerBase
             sdt = q;
         }
 
-        // 1. Lọc theo Số điện thoại
-        if (!string.IsNullOrWhiteSpace(sdt))
-        {
-            sdt = sdt.Trim();
-            var phonesMatching = await _db.BenhNhans.AsNoTracking()
-                .Where(b => b.SDT != null && b.SDT.Contains(sdt))
-                .Select(b => b.IdTaiKhoan)
-                .Where(id => id.HasValue)
-                .Select(id => id!.Value)
-                .Distinct()
-                .ToListAsync();
-
-            query = query.Where(x => x.SDT.Contains(sdt) || phonesMatching.Contains(x.Id));
-        }
-
-        // 2. Lọc theo CCCD
-        if (!string.IsNullOrWhiteSpace(cccd))
-        {
-            cccd = cccd.Trim();
-            var patientMatchingCccd = _db.BenhNhans.AsNoTracking().Where(b => b.CCCD.Contains(cccd));
-            var accountIdsFromCccd = await patientMatchingCccd
-                .Where(b => b.IdTaiKhoan != null)
-                .Select(b => b.IdTaiKhoan!.Value)
-                .Distinct()
-                .ToListAsync();
-            var phonesFromCccd = await patientMatchingCccd
-                .Where(b => !string.IsNullOrEmpty(b.SDT))
-                .Select(b => b.SDT!)
-                .Distinct()
-                .ToListAsync();
-            var legacyIdsFromCccd = await patientMatchingCccd
-                .Select(b => (long?)b.Id)
-                .Distinct()
-                .ToListAsync();
-
-            query = query.Where(x =>
-                accountIdsFromCccd.Contains(x.Id) ||
-                (x.IdBenhNhan != null && legacyIdsFromCccd.Contains(x.IdBenhNhan)) ||
-                (!string.IsNullOrEmpty(x.SDT) && phonesFromCccd.Contains(x.SDT)));
-        }
-
-        // 3. Lọc theo Mã bệnh nhân tại cơ sở
-        if (!string.IsNullOrWhiteSpace(maBN))
-        {
-            maBN = maBN.Trim();
-            var patientIdsFromMaBN = _db.BenhNhans.AsNoTracking()
-                .Where(b => _db.BenhNhanCoSos.AsNoTracking()
-                    .Where(cs => cs.MaBN != null && cs.MaBN.Contains(maBN))
-                    .Select(cs => cs.IdBenhNhan)
-                    .Contains(b.Id));
-
-            var accountIdsFromMaBN = await patientIdsFromMaBN
-                .Where(b => b.IdTaiKhoan != null)
-                .Select(b => b.IdTaiKhoan!.Value)
-                .Distinct()
-                .ToListAsync();
-            var phonesFromMaBN = await patientIdsFromMaBN
-                .Where(b => !string.IsNullOrEmpty(b.SDT))
-                .Select(b => b.SDT!)
-                .Distinct()
-                .ToListAsync();
-            var legacyIdsFromMaBN = await patientIdsFromMaBN
-                .Select(b => (long?)b.Id)
-                .Distinct()
-                .ToListAsync();
-
-            query = query.Where(x =>
-                accountIdsFromMaBN.Contains(x.Id) ||
-                (x.IdBenhNhan != null && legacyIdsFromMaBN.Contains(x.IdBenhNhan)) ||
-                (!string.IsNullOrEmpty(x.SDT) && phonesFromMaBN.Contains(x.SDT)));
-        }
-
-        // 4. Lọc theo Loại cơ sở (Phòng khám, Bệnh viện, Nha khoa, Nhà thuốc) hoặc từng cơ sở
-        if (!string.IsNullOrWhiteSpace(loaiCS))
-        {
-            loaiCS = loaiCS.Trim();
-            List<long> facilityIds = new();
-            if (loaiCS.StartsWith("cs:", StringComparison.OrdinalIgnoreCase) && long.TryParse(loaiCS[3..], out var specificCsId))
-            {
-                facilityIds.Add(specificCsId);
-            }
-            else
-            {
-                var nhomIds = await _db.DMNhomCSs.AsNoTracking()
-                    .Where(n => n.MaNhom.ToLower() == loaiCS.ToLower())
-                    .Select(n => (long?)n.ID)
-                    .ToListAsync();
-
-                facilityIds = await _db.DMCSKCBs.AsNoTracking()
-                    .Where(cs => nhomIds.Contains(cs.IdNhomCS))
-                    .Select(cs => cs.Id)
-                    .ToListAsync();
-            }
-
-            if (facilityIds.Count > 0)
-            {
-                var accountIdsInDoiTac = await _db.TaiKhoanDoiTacs.AsNoTracking()
-                    .Where(td => facilityIds.Contains(td.IdCoSo))
-                    .Select(td => td.IdTaiKhoan)
-                    .Distinct()
-                    .ToListAsync();
-
-                var patientIdsInCoSo = _db.BenhNhanCoSos.AsNoTracking()
-                    .Where(cs => facilityIds.Contains(cs.IdCoSo))
-                    .Select(cs => cs.IdBenhNhan);
-
-                var patientsInCoSo = _db.BenhNhans.AsNoTracking()
-                    .Where(bn => patientIdsInCoSo.Contains(bn.Id));
-
-                var accountIdsFromCoSo = await patientsInCoSo
-                    .Where(bn => bn.IdTaiKhoan != null)
-                    .Select(bn => bn.IdTaiKhoan!.Value)
-                    .Distinct()
-                    .ToListAsync();
-
-                var phonesFromCoSo = await patientsInCoSo
-                    .Where(bn => !string.IsNullOrEmpty(bn.SDT))
-                    .Select(bn => bn.SDT!)
-                    .Distinct()
-                    .ToListAsync();
-
-                var legacyIdsFromCoSo = await patientsInCoSo
-                    .Select(bn => (long?)bn.Id)
-                    .Distinct()
-                    .ToListAsync();
-
-                query = query.Where(x =>
-                    accountIdsInDoiTac.Contains(x.Id) ||
-                    accountIdsFromCoSo.Contains(x.Id) ||
-                    (x.IdBenhNhan != null && legacyIdsFromCoSo.Contains(x.IdBenhNhan)) ||
-                    (!string.IsNullOrEmpty(x.SDT) && phonesFromCoSo.Contains(x.SDT)));
-            }
-        }
-
-        // 5. Lọc theo Vai trò
-        if (string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
-            query = query.Where(x => x.Role == "Admin");
-        else if (string.Equals(role, "BenhNhan", StringComparison.OrdinalIgnoreCase))
-            query = query.Where(x => x.Role != "Admin");
-
-        bool hasFilter = !string.IsNullOrWhiteSpace(loaiCS) ||
-                         !string.IsNullOrWhiteSpace(cccd) ||
-                         !string.IsNullOrWhiteSpace(sdt) ||
-                         !string.IsNullOrWhiteSpace(maBN) ||
-                         !string.IsNullOrWhiteSpace(role);
-
-        int total = 0;
-        List<TaiKhoan> items = new();
-
-        if (hasFilter)
-        {
-            total = await query.CountAsync();
-            items = await query.OrderByDescending(x => x.Id)
-                .Skip((page - 1) * DefaultPageSize)
-                .Take(DefaultPageSize)
-                .ToListAsync();
-        }
+        var (items, hoSoTheoTaiKhoan, total) = await _adminStoredProcedures.LocTaiKhoanAsync(
+            page, pageSize, sdt, cccd, maBN, role, loaiCS);
 
         var danhSachCoSo = await _db.DMCSKCBs.AsNoTracking().OrderBy(x => x.TenCoSo).ToListAsync();
 
@@ -205,6 +50,7 @@ public sealed class TaiKhoanController : AdminControllerBase
                 x.Role = NormalizeRole(x.Role);
                 return x;
             }).ToList(),
+            HoSoTheoTaiKhoan = hoSoTheoTaiKhoan,
             DanhSachCoSo = danhSachCoSo,
             Query = q,
             Role = role,
@@ -213,9 +59,51 @@ public sealed class TaiKhoanController : AdminControllerBase
             SDT = sdt,
             MaBN = maBN,
             Page = page,
-            PageSize = DefaultPageSize,
+            PageSize = pageSize,
             TotalItems = total
         });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> TaiThem(
+        string? loaiCS,
+        string? cccd,
+        string? sdt,
+        string? maBN,
+        string? q,
+        string? role,
+        int page = 2)
+    {
+        page = Math.Max(1, page);
+        const int pageSize = 20;
+
+        if (string.IsNullOrWhiteSpace(sdt) && !string.IsNullOrWhiteSpace(q))
+        {
+            sdt = q;
+        }
+
+        var (items, hoSoTheoTaiKhoan, total) = await _adminStoredProcedures.LocTaiKhoanAsync(
+            page, pageSize, sdt, cccd, maBN, role, loaiCS);
+
+        foreach (var item in items)
+        {
+            item.Role = NormalizeRole(item.Role);
+        }
+
+        var danhMucGioiTinh = new List<DMGioiTinh>
+        {
+            new DMGioiTinh { MaGioiTinh = "1", TenGioiTinh = "Nam" },
+            new DMGioiTinh { MaGioiTinh = "2", TenGioiTinh = "Nữ" },
+            new DMGioiTinh { MaGioiTinh = "3", TenGioiTinh = "Chưa xác định" }
+        };
+
+        var totalPages = Math.Max(1, (int)Math.Ceiling(total / (double)pageSize));
+        Response.Headers["X-Total-Pages"] = totalPages.ToString();
+        Response.Headers["X-Current-Page"] = page.ToString();
+        Response.Headers["X-Total-Items"] = total.ToString();
+        Response.Headers["X-Loaded-Count"] = items.Count.ToString();
+
+        return PartialView("_TaiKhoanRows", (items, hoSoTheoTaiKhoan, danhMucGioiTinh));
     }
 
     [HttpGet]
