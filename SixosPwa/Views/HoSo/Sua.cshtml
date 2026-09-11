@@ -88,8 +88,8 @@
         .kq-phu { font-size:12px; color:#6b7280; }
         .ma-go { flex:0 0 auto; border:none; border-radius:8px; padding:7px 12px;
                  font-size:13px; cursor:pointer; background:#fef2f2; color:#b91c1c; }
-        .btn-go-noi-ngoai { flex: 0 0 auto; width: 105px; height: 44px; border: 1px solid #fecaca; border-radius: 10px;
-                           background: #fff5f5; color: #dc2626; font-size: 14px; font-weight: 700;
+        .btn-go-noi-ngoai { flex: 0 0 auto; min-width: 110px; padding: 0 12px; height: 44px; border: 1px solid #fecaca; border-radius: 10px;
+                           background: #fff5f5; color: #dc2626; font-size: 14px; font-weight: 700; white-space: nowrap;
                            display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
                            box-sizing: border-box; transition: all 0.15s ease-in-out; }
         .btn-go-noi-ngoai:hover:not(:disabled) { background: #fee2e2; border-color: #fca5a5; }
@@ -149,7 +149,7 @@
                     </div>
                     break;
                 case "da-go":
-                    <div class="hs-bao hs-bao-xong">Đã gỡ nối. Hồ sơ của bạn vẫn giữ nguyên.</div>
+                    <div class="hs-bao hs-bao-xong">Đã gỡ đồng bộ. Hồ sơ của bạn vẫn giữ nguyên.</div>
                     break;
                 case "khong-noi":
                     <div class="hs-bao hs-bao-xong">Đã lưu. Chưa nối mã nào.</div>
@@ -270,10 +270,6 @@
                         {
                             <div style="display: flex; gap: 10px; align-items: stretch; margin-bottom: 6px;">
                                 <input value="" placeholder="Chưa có mã bệnh nhân" disabled style="flex: 1 1 auto; min-width: 0; margin: 0;" />
-                                @if (ViewBag.ChoPhepGoNoi == true)
-                                {
-                                    <button type="button" class="btn-go-noi-ngoai" disabled style="opacity: 0.45; cursor: not-allowed;" title="Hồ sơ chưa có mã bệnh nhân để gỡ">Gỡ nối</button>
-                                }
                             </div>
                             <div class="hs-goi-y">
                                 Mã do cơ sở cấp — bạn không sửa được. Nối xong sẽ hiện ở đây.
@@ -290,8 +286,8 @@
                                         <button type="submit"
                                                 form="formGoNoi_@ma.IdBenhNhanCoSo"
                                                 class="btn-go-noi-ngoai"
-                                                title="Gỡ nối mã @ma.MaBN">
-                                            Gỡ nối
+                                                title="Gỡ đồng bộ mã @ma.MaBN">
+                                            Gỡ đồng bộ
                                         </button>
                                     }
                                 </div>
@@ -305,7 +301,7 @@
                             <div class="hs-goi-y">
                                 @if (ViewBag.ChoPhepGoNoi == true)
                                 {
-                                    <text>Mã nào không phải của bạn thì bấm <b>Gỡ nối</b> ở bên cạnh — hồ sơ của bạn vẫn giữ nguyên.</text>
+                                    <text>Mã nào không phải của bạn thì bấm <b>Gỡ đồng bộ</b> ở bên cạnh — hồ sơ của bạn vẫn giữ nguyên.</text>
                                 }
                                 else
                                 {
@@ -372,7 +368,7 @@
                         <div class="hs-bao hs-bao-cho" style="margin-top:16px;">
                             @if (ViewBag.ChoPhepGoNoi == true)
                             {
-                                <text>Hồ sơ đang liên kết mã bệnh nhân. Vui lòng bấm <b>Gỡ nối</b> ở bên cạnh mã bệnh nhân phía trên trước khi chỉnh sửa thông tin.</text>
+                                <text>Hồ sơ đang liên kết mã bệnh nhân. Vui lòng bấm <b>Gỡ đồng bộ</b> ở bên cạnh mã bệnh nhân phía trên trước khi chỉnh sửa thông tin.</text>
                             }
                             else
                             {
@@ -394,7 +390,7 @@
                         <form id="formGoNoi_@ma.IdBenhNhanCoSo"
                               method="post"
                               action="/benh-nhan/ho-so/go-noi"
-                              onsubmit="return confirm('Gỡ nối mã @ma.MaBN? Tài liệu và lịch sử khám đi kèm mã này sẽ không còn hiện trong hồ sơ của bạn.');">
+                              onsubmit="return confirm('Gỡ đồng bộ mã @ma.MaBN? Tài liệu và lịch sử khám đi kèm mã này sẽ không còn hiện trong hồ sơ của bạn.');">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@Model.IdBenhNhan" />
                             <input type="hidden" name="idHoSoCoSo" value="@ma.IdBenhNhanCoSo" />
