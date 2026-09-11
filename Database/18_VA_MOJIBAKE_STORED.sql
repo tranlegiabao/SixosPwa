@@ -1,4 +1,4 @@
-﻿-- ============================================================================
+-- ============================================================================
 -- 18 - VA MOJIBAKE trong than 5 stored procedure
 --
 -- CHAY TREN: HIS_CSKH (co so du lieu cua CONG). KHONG chay ben HIS.
@@ -67,6 +67,14 @@ BEGIN
         END;
 
         DECLARE @laCccdKhongCo bit = CASE WHEN @cccdSach IN ('11111111111', '111111111111') THEN 1 ELSE 0 END;
+
+        -- 🔴 Chặn ngày sinh 01/01/1900 hoặc để trống khi CCCD là mã giả
+        IF @laCccdKhongCo = 1 AND (@NgaySinh IS NULL OR CAST(@NgaySinh AS date) = '1900-01-01')
+        BEGIN
+            SET @ResultCode = 3;
+            SET @ResultMessage = N'Ngày sinh không hợp lệ. Vui lòng nhập ngày sinh chính xác của bệnh nhân.';
+            RETURN;
+        END;
 
         BEGIN TRANSACTION;
 
@@ -222,6 +230,15 @@ BEGIN
 
         DECLARE @cccdSach varchar(20) = NULLIF(LTRIM(RTRIM(@CCCD)), '');
         DECLARE @laCccdKhongCo bit = CASE WHEN @cccdSach IN ('11111111111', '111111111111') THEN 1 ELSE 0 END;
+
+        -- 🔴 Chặn ngày sinh 01/01/1900 hoặc để trống khi CCCD là mã giả
+        IF @laCccdKhongCo = 1 AND (@NgaySinh IS NULL OR CAST(@NgaySinh AS date) = '1900-01-01')
+        BEGIN
+            SET @ResultCode = 3;
+            SET @ResultMessage = N'Ngày sinh không hợp lệ. Vui lòng nhập ngày sinh chính xác của bệnh nhân.';
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END;
 
         IF @cccdSach IS NOT NULL AND @laCccdKhongCo = 0
            AND EXISTS (SELECT 1 FROM dbo.DM_BenhNhan

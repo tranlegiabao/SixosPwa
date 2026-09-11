@@ -833,7 +833,7 @@
                                             <input type="text" id="new-ten-@item.Id" class="form-control form-control-sm" placeholder="VD: Nguyễn Văn A" />
                                         </div>
                                         <div class="col-md-2">
-                                            <label class="form-label mb-1" style="font-size: 11px;">CCCD / Định danh</label>
+                                            <label class="form-label mb-1" style="font-size: 11px;">CCCD / Định danh <span class="text-danger">*</span></label>
                                             <input type="text" id="new-cccd-@item.Id" class="form-control form-control-sm font-monospace" placeholder="12 số CCCD" />
                                         </div>
                                         <div class="col-md-2">
@@ -982,6 +982,7 @@
             @* Dong DM_BenhNhanCoSo dang mo + co so cua no. *Go noi* thao theo ID DONG,
                con luu ma moi thi can dung co so — khong de may chu doan. *@
             <input type="hidden" id="modalSuaIdHoSoCoSo" value="" />
+
             <input type="hidden" id="modalSuaIdCoSo" value="" />
 
             <!-- 1. Mã bệnh nhân tại cơ sở + Nút Gỡ đồng bộ bên cạnh -->
@@ -1180,7 +1181,12 @@
         document.getElementById('modalSuaId').value = id;
         document.getElementById('modalSuaAccountId').value = accountId;
         document.getElementById('modalSuaIdHoSoCoSo').value = idHoSoCoSo;
-        document.getElementById('modalSuaIdCoSo').value = idCoSo || locCoSoDangChon();
+        
+        const inpCoSo = document.getElementById('modalSuaIdCoSo');
+        if (inpCoSo) {
+            inpCoSo.value = idCoSo || locCoSoDangChon() || '';
+        }
+
         document.getElementById('modalSuaTenSubtitle').innerText = tenBN;
 
         const inpMaBN = document.getElementById('modalSuaMaBN');
@@ -1234,6 +1240,13 @@
         const ngaySinhRaw = document.getElementById('modalSuaNgaySinh')?.value?.trim();
         const gioiTinh = document.getElementById('modalSuaGioiTinh')?.value;
         const maBN = document.getElementById('modalSuaMaBN')?.value?.trim();
+        const idCoSo = parseInt(document.getElementById('modalSuaIdCoSo')?.value || '0') || null;
+
+        if (maBN && !idCoSo) {
+            if (typeof showToast === 'function') showToast('Vui lòng chọn cơ sở ở bộ lọc đầu trang trước khi gán mã bệnh nhân.', 'warning');
+            else alert('Vui lòng chọn cơ sở ở bộ lọc đầu trang trước khi gán mã bệnh nhân.');
+            return;
+        }
 
         if (!tenBN) {
             if (typeof showToast === 'function') showToast('Vui lòng nhập họ và tên bệnh nhân.', 'error');
@@ -1241,10 +1254,21 @@
             return;
         }
 
+        if (!cccd) {
+            if (typeof showToast === 'function') showToast('Vui lòng nhập số căn cước công dân.', 'error');
+            else alert('Vui lòng nhập số căn cước công dân.');
+            return;
+        }
+
         let ngaySinhIso = null;
         if (ngaySinhRaw) {
             const m = moment(ngaySinhRaw, ['DD/MM/YYYY', 'DD-MM-YYYY', 'YYYY-MM-DD']);
             if (m.isValid()) {
+                if (m.isAfter(moment(), 'day')) {
+                    if (typeof showToast === 'function') showToast('Ngày sinh không được lớn hơn ngày hiện tại.', 'error');
+                    else alert('Ngày sinh không được lớn hơn ngày hiện tại.');
+                    return;
+                }
                 ngaySinhIso = m.format('YYYY-MM-DD');
             } else {
                 if (typeof showToast === 'function') showToast('Ngày sinh không hợp lệ (định dạng dd/mm/yyyy).', 'error');
@@ -1270,7 +1294,7 @@
                     ngaySinh: ngaySinhIso,
                     gioiTinh: gioiTinh,
                     maBN: maBN || null,
-                    idCoSo: parseInt(document.getElementById('modalSuaIdCoSo')?.value || '0') || null
+                    idCoSo: idCoSo
                 })
             });
 
@@ -1285,6 +1309,8 @@
                     tr.setAttribute('data-ngaysinh', d.ngaySinh ? moment(d.ngaySinh).format('YYYY-MM-DD') : '');
                     tr.setAttribute('data-gioitinh', d.gioiTinh);
                     tr.setAttribute('data-mabn', d.maBN || '');
+                    tr.setAttribute('data-idhosocoso', d.idHoSoCoSo || '');
+                    tr.setAttribute('data-idcoso', d.idCoSo || '');
                     tr.setAttribute('data-tencoso', d.tenCoSo || '');
 
                     tr.querySelector('.val-ten').innerText = d.tenBN;
@@ -1294,7 +1320,16 @@
                     tr.querySelector('.val-gioitinh').innerText = d.gioiTinhVn || 'Khác';
                     const badge = tr.querySelector('.val-mabn');
                     if (badge) {
-                        badge.innerText = d.maBN ? d.maBN : 'Chưa nối';
+                        badge.innerText = d.maBN ? d.maBN : (d.tenCoSo ? d.tenCoSo : 'Chưa nối');
+                    }
+                }
+
+                // Cập nhật thông tin dòng cha nếu là hồ sơ chính
+                if (d.isPrimary && d.idTaiKhoan) {
+                    const parentRow = document.getElementById('account-row-' + d.idTaiKhoan);
+                    if (parentRow) {
+                        const phoneStrong = parentRow.querySelector('.table-person strong');
+                        if (phoneStrong && d.sdt) phoneStrong.innerText = d.sdt;
                     }
                 }
 
@@ -1423,6 +1458,7 @@
 
         const tenBN = tenEl?.value?.trim();
         const cccd = cccdEl?.value?.trim();
+        const idCoSo = parseInt(locCoSoDangChon() || '0') || null;
         const sdt = sdtEl?.value?.trim();
         const ngaySinhRaw = nsEl?.value?.trim();
         const gioiTinh = gtEl?.value;
@@ -1433,10 +1469,21 @@
             return;
         }
 
+        if (!cccd) {
+            if (typeof showToast === 'function') showToast('Vui lòng nhập số căn cước công dân.', 'error');
+            else alert('Vui lòng nhập số căn cước công dân.');
+            return;
+        }
+
         let ngaySinhIso = null;
         if (ngaySinhRaw) {
             const m = moment(ngaySinhRaw, ['DD/MM/YYYY', 'DD-MM-YYYY', 'YYYY-MM-DD']);
             if (m.isValid()) {
+                if (m.isAfter(moment(), 'day')) {
+                    if (typeof showToast === 'function') showToast('Ngày sinh không được lớn hơn ngày hiện tại.', 'error');
+                    else alert('Ngày sinh không được lớn hơn ngày hiện tại.');
+                    return;
+                }
                 ngaySinhIso = m.format('YYYY-MM-DD');
             } else {
                 if (typeof showToast === 'function') showToast('Ngày sinh không hợp lệ (định dạng dd/mm/yyyy).', 'error');
@@ -1453,6 +1500,7 @@
                     idTaiKhoan: accountId,
                     tenBN: tenBN,
                     cccd: cccd,
+                    idCoSo: idCoSo,
                     sdt: sdt,
                     ngaySinh: ngaySinhIso,
                     gioiTinh: gioiTinh
@@ -1475,8 +1523,13 @@
                 newRow.setAttribute('data-sdt', d.sdt);
                 newRow.setAttribute('data-ngaysinh', d.ngaySinh ? moment(d.ngaySinh).format('YYYY-MM-DD') : '');
                 newRow.setAttribute('data-gioitinh', d.gioiTinh);
+                newRow.setAttribute('data-mabn', '');
+                newRow.setAttribute('data-idhosocoso', d.idHoSoCoSo || '');
+                newRow.setAttribute('data-idcoso', d.idCoSo || '');
+                newRow.setAttribute('data-tencoso', d.tenCoSo || '');
 
                 const ngaySinhHienThi = d.ngaySinhVn || (d.ngaySinh ? moment(d.ngaySinh).format('DD/MM/YYYY') : '—');
+                const badgeCoSoText = d.tenCoSo ? d.tenCoSo : 'Chưa nối';
 
                 newRow.innerHTML = `
                     <td>
@@ -1495,7 +1548,7 @@
                         <span class="val-gioitinh">${d.gioiTinhVn || 'Khác'}</span>
                     </td>
                     <td class="text-center">
-                        <span class="badge bg-light text-secondary border">Chưa nối</span>
+                        <span class="val-mabn badge bg-light text-secondary border">${badgeCoSoText}</span>
                     </td>
                     <td class="text-center">
                         <div class="hoso-action-group">

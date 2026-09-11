@@ -107,6 +107,7 @@ public sealed class TaoHoSoAdminRequest
     public DateTime? NgaySinh { get; set; }
     public string? GioiTinh { get; set; }
     public string? DiaChi { get; set; }
+    public long? IdCoSo { get; set; }
 }
 
 public sealed class TaiKhoanListViewModel
