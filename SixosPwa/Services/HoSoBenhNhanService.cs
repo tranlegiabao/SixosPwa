@@ -239,6 +239,9 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
         if (string.IsNullOrWhiteSpace(sdt))
             return new KetQuaLuuHoSo(false, "Chưa nhập số điện thoại.", 0);
 
+        if (LaMaGia(cccd) && (!ngaySinh.HasValue || ngaySinh.Value.Date == new DateTime(1900, 1, 1)))
+            return new KetQuaLuuHoSo(false, "Ngày sinh không hợp lệ. Vui lòng nhập ngày sinh chính xác của bệnh nhân.", 0);
+
         var (luu, idBenhNhan) = await _thuTuc.SaveBenhNhanAsync(
             cccd: cccd,
             tenBN: hoTen,
@@ -324,6 +327,9 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
         // dat `required` tren o input — thuoc tinh do go bang DevTools la xong.
         if (string.IsNullOrWhiteSpace(sdt))
             return new KetQuaLuuHoSo(false, "Chưa nhập số điện thoại.", idBenhNhan);
+
+        if (LaMaGia(cccd) && (!ngaySinh.HasValue || ngaySinh.Value.Date == new DateTime(1900, 1, 1)))
+            return new KetQuaLuuHoSo(false, "Ngày sinh không hợp lệ. Vui lòng nhập ngày sinh chính xác của bệnh nhân.", idBenhNhan);
 
         var ketQua = await _thuTuc.SuaHoSoAsync(
             idBenhNhan: idBenhNhan,

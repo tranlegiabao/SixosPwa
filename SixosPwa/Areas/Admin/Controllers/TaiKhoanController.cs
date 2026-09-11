@@ -307,12 +307,19 @@ public sealed class TaiKhoanController : AdminControllerBase
         if (req == null || req.Id <= 0 || string.IsNullOrWhiteSpace(req.TenBN))
             return Json(new { success = false, message = "Vui lòng nhập đầy đủ họ tên hồ sơ." });
 
+        var cccdMoi = (req.CCCD ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(cccdMoi))
+            return Json(new { success = false, message = "Vui lòng nhập số căn cước công dân." });
+
+        if (req.NgaySinh.HasValue && req.NgaySinh.Value.Date > DateTime.Today)
+            return Json(new { success = false, message = "Ngày sinh không được lớn hơn ngày hiện tại." });
+
         var bn = await _db.BenhNhans.FirstOrDefaultAsync(x => x.Id == req.Id);
         if (bn == null)
             return Json(new { success = false, message = "Không tìm thấy hồ sơ bệnh nhân." });
 
         // 🔴 KIỂM TRA: Nếu hồ sơ đang có mã bệnh nhân tại cơ sở thì KHÔNG cho sửa thông tin. Phải gỡ nối trước!
-        var coSoRecord = await _db.BenhNhanCoSos.AsNoTracking()
+        var coSoRecord = await _db.BenhNhanCoSos
             .Where(x => x.IdBenhNhan == bn.Id)
             .OrderByDescending(x => x.MaBN != null)
             .FirstOrDefaultAsync();
@@ -322,11 +329,15 @@ public sealed class TaiKhoanController : AdminControllerBase
             return Json(new { success = false, message = "Hồ sơ đang liên kết mã bệnh nhân. Vui lòng bấm 'Gỡ nối' trước khi chỉnh sửa thông tin." });
         }
 
-        var cccdMoi = (req.CCCD ?? "").Trim();
         var laCccdKhongCo = cccdMoi is "11111111111" or "111111111111";
 
+        if (laCccdKhongCo && (!req.NgaySinh.HasValue || req.NgaySinh.Value.Date == new DateTime(1900, 1, 1)))
+        {
+            return Json(new { success = false, message = "Ngày sinh không hợp lệ. Vui lòng nhập ngày sinh chính xác của bệnh nhân." });
+        }
+
         // Kiểm tra trùng lặp:
-        if (!string.IsNullOrEmpty(cccdMoi) && !laCccdKhongCo)
+        if (!laCccdKhongCo)
         {
             var trungCccd = await _db.BenhNhans.AsNoTracking()
                 .AnyAsync(x => x.CCCD == cccdMoi && x.Id != bn.Id);
@@ -358,48 +369,75 @@ public sealed class TaiKhoanController : AdminControllerBase
         bn.DiaChi = string.IsNullOrWhiteSpace(req.DiaChi) ? null : req.DiaChi.Trim();
         bn.HoTenKhongDau = ChuanHoaTen.BoDau(req.TenBN);
 
-        // ───── Ma benh nhan tai co so (MaBN trong DM_BenhNhanCoSo) ─────
+        // ───── Cơ sở khám chữa bệnh & Mã bệnh nhân (DM_BenhNhanCoSo) ─────
         var newMaBN = string.IsNullOrWhiteSpace(req.MaBN) ? null : req.MaBN.Trim();
-
-        long? idCoSoHienThi = coSoRecord?.IdCoSo;
+        var idCoSoDich = req.IdCoSo ?? coSoRecord?.IdCoSo ?? 0;
+        long? idCoSoHienThi = idCoSoDich > 0 ? idCoSoDich : coSoRecord?.IdCoSo;
         var maBNSauKhiLuu = coSoRecord?.MaBN;
-        string? canhBao = null;
+        long? idHoSoCoSoResult = coSoRecord?.Id;
 
+        // Nếu có chọn cơ sở đích mà hồ sơ chưa có dòng cơ sở nào với cơ sở này:
+        // Gọi tạo dòng tự khai trước
+        if (idCoSoDich > 0)
+        {
+            var dongHienTai = await _db.BenhNhanCoSos
+                .FirstOrDefaultAsync(x => x.IdBenhNhan == bn.Id && x.IdCoSo == idCoSoDich);
+
+            if (dongHienTai == null)
+            {
+                var (kqTuKhai, idMoi) = await _adminStoredProcedures.TaoHoSoTuKhaiAsync(bn.Id, idCoSoDich);
+                if (kqTuKhai.Succeeded)
+                {
+                    idHoSoCoSoResult = idMoi;
+                }
+            }
+            else
+            {
+                idHoSoCoSoResult = dongHienTai.Id;
+            }
+        }
+
+        // Nếu có nhập mã bệnh nhân mới:
         if (!string.IsNullOrEmpty(newMaBN))
         {
-            var idCoSoDich = coSoRecord?.IdCoSo ?? req.IdCoSo ?? 0;
             if (idCoSoDich <= 0)
             {
                 return Json(new
                 {
                     success = false,
-                    message = "Hồ sơ này chưa gắn với cơ sở nào. Hãy lọc theo đúng cơ sở rồi sửa lại, "
-                            + "để mã không bị nối nhầm sang cơ sở khác."
+                    message = "Vui lòng chọn cơ sở khám chữa bệnh để gán mã bệnh nhân."
                 });
             }
 
-            if (!string.Equals(coSoRecord?.MaBN, newMaBN, StringComparison.Ordinal))
-            {
-                var (ketQuaMa, _) = await _adminStoredProcedures.SaveBenhNhanCoSoAsync(
-                    bn.Id, idCoSoDich, newMaBN);
+            var (ketQuaMa, idCoSoMoi) = await _adminStoredProcedures.SaveBenhNhanCoSoAsync(
+                bn.Id, idCoSoDich, newMaBN, moCuaTaiLieu: true);
 
-                if (!ketQuaMa.Succeeded)
+            if (!ketQuaMa.Succeeded)
+            {
+                return Json(new
                 {
-                    return Json(new
-                    {
-                        success = false,
-                        message = ketQuaMa.Message ?? "Không nối được mã bệnh nhân tại cơ sở."
-                    });
-                }
+                    success = false,
+                    message = ketQuaMa.Message ?? "Không nối được mã bệnh nhân tại cơ sở."
+                });
             }
 
-            idCoSoHienThi = idCoSoDich;
+            idHoSoCoSoResult = idCoSoMoi > 0 ? idCoSoMoi : idHoSoCoSoResult;
             maBNSauKhiLuu = newMaBN;
-        }
-        else if (!string.IsNullOrEmpty(coSoRecord?.MaBN))
-        {
-            canhBao = "Mã bệnh nhân giữ nguyên — muốn thao mã thì bấm nút Gỡ nối, "
-                    + "để trống ô rồi Lưu không gỡ được.";
+            idCoSoHienThi = idCoSoDich;
+
+            // Đồng bộ tài liệu và đợt khám của mã này tại cơ sở nếu có dòng chưa gắn IDBenhNhanCoSo
+            if (idHoSoCoSoResult.HasValue && idHoSoCoSoResult.Value > 0)
+            {
+                var taiLieus = await _db.TaiLieuBenhNhans
+                    .Where(t => t.IdCoSo == idCoSoDich && t.MaBN == newMaBN && t.IdBenhNhanCoSo == null)
+                    .ToListAsync();
+                foreach (var tl in taiLieus) tl.IdBenhNhanCoSo = idHoSoCoSoResult.Value;
+
+                var dotKhams = await _db.DotKhams
+                    .Where(d => d.IdCoSo == idCoSoDich && d.MaBN == newMaBN && d.IdBenhNhanCoSo == null)
+                    .ToListAsync();
+                foreach (var dk in dotKhams) dk.IdBenhNhanCoSo = idHoSoCoSoResult.Value;
+            }
         }
 
         await _db.SaveChangesAsync();
@@ -411,15 +449,29 @@ public sealed class TaiKhoanController : AdminControllerBase
                 .Select(x => x.TenCoSo)
                 .FirstOrDefaultAsync();
 
+        // Kiểm tra xem hồ sơ này có phải hồ sơ chính của tài khoản không
+        bool isPrimary = false;
+        if (bn.IdTaiKhoan.HasValue)
+        {
+            var tk = await _db.TaiKhoans.AsNoTracking().FirstOrDefaultAsync(t => t.Id == bn.IdTaiKhoan.Value);
+            if (tk != null)
+            {
+                var countHoSo = await _db.BenhNhans.CountAsync(x => x.IdTaiKhoan == tk.Id);
+                if (tk.IdBenhNhan == bn.Id || countHoSo == 1)
+                {
+                    isPrimary = true;
+                }
+            }
+        }
+
         return Json(new
         {
             success = true,
-            message = canhBao == null
-                ? "Đã lưu thông tin hồ sơ thành công."
-                : "Đã lưu thông tin hồ sơ. " + canhBao,
+            message = "Đã lưu thông tin hồ sơ thành công.",
             data = new
             {
                 id = bn.Id,
+                idTaiKhoan = bn.IdTaiKhoan,
                 tenBN = bn.TenBN,
                 cccd = bn.CCCD,
                 sdt = bn.SDT ?? "",
@@ -429,7 +481,10 @@ public sealed class TaiKhoanController : AdminControllerBase
                 gioiTinhVn = bn.GioiTinh == "1" ? "Nam" : (bn.GioiTinh == "2" ? "Nữ" : "Khác"),
                 diaChi = bn.DiaChi ?? "",
                 maBN = maBNSauKhiLuu ?? "",
-                tenCoSo = tenCoSo ?? ""
+                idCoSo = idCoSoHienThi,
+                idHoSoCoSo = idHoSoCoSoResult,
+                tenCoSo = tenCoSo ?? "",
+                isPrimary = isPrimary
             }
         });
     }
@@ -525,9 +580,20 @@ public sealed class TaiKhoanController : AdminControllerBase
             return Json(new { success = false, message = "Vui lòng nhập họ tên hồ sơ." });
 
         var cccdMoi = (req.CCCD ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(cccdMoi))
+            return Json(new { success = false, message = "Vui lòng nhập số căn cước công dân." });
+
+        if (req.NgaySinh.HasValue && req.NgaySinh.Value.Date > DateTime.Today)
+            return Json(new { success = false, message = "Ngày sinh không được lớn hơn ngày hiện tại." });
+
         var laCccdKhongCo = cccdMoi is "11111111111" or "111111111111";
 
-        if (!string.IsNullOrEmpty(cccdMoi) && !laCccdKhongCo)
+        if (laCccdKhongCo && (!req.NgaySinh.HasValue || req.NgaySinh.Value.Date == new DateTime(1900, 1, 1)))
+        {
+            return Json(new { success = false, message = "Ngày sinh không hợp lệ. Vui lòng nhập ngày sinh chính xác của bệnh nhân." });
+        }
+
+        if (!laCccdKhongCo)
         {
             var trungCccd = await _db.BenhNhans.AsNoTracking()
                 .AnyAsync(x => x.CCCD == cccdMoi);
@@ -566,6 +632,23 @@ public sealed class TaiKhoanController : AdminControllerBase
         _db.BenhNhans.Add(bn);
         await _db.SaveChangesAsync();
 
+        long? idHoSoCoSoMoi = null;
+        string? tenCoSoMoi = null;
+
+        if (req.IdCoSo.HasValue && req.IdCoSo.Value > 0)
+        {
+            var (kqTuKhai, idMoi) = await _adminStoredProcedures.TaoHoSoTuKhaiAsync(bn.Id, req.IdCoSo.Value);
+            if (kqTuKhai.Succeeded)
+            {
+                idHoSoCoSoMoi = idMoi;
+            }
+
+            tenCoSoMoi = await _db.DMCSKCBs.AsNoTracking()
+                .Where(x => x.Id == req.IdCoSo.Value)
+                .Select(x => x.TenCoSo)
+                .FirstOrDefaultAsync();
+        }
+
         return Json(new
         {
             success = true,
@@ -581,7 +664,10 @@ public sealed class TaiKhoanController : AdminControllerBase
                 ngaySinhVn = bn.NgaySinh?.ToString("dd/MM/yyyy") ?? "—",
                 gioiTinh = bn.GioiTinh ?? "1",
                 gioiTinhVn = bn.GioiTinh == "1" ? "Nam" : (bn.GioiTinh == "2" ? "Nữ" : "Khác"),
-                diaChi = bn.DiaChi ?? ""
+                diaChi = bn.DiaChi ?? "",
+                idCoSo = req.IdCoSo,
+                idHoSoCoSo = idHoSoCoSoMoi,
+                tenCoSo = tenCoSoMoi ?? ""
             }
         });
     }
