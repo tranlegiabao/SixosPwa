@@ -305,14 +305,14 @@ public sealed class TaiKhoanController : AdminControllerBase
     public async Task<IActionResult> CapNhatHoSo([FromBody] CapNhatHoSoAdminRequest req)
     {
         if (req == null || req.Id <= 0 || string.IsNullOrWhiteSpace(req.TenBN))
-            return Json(new { success = false, message = "Vui lòng nhập đầy đủ họ tên hồ sơ." });
+            return Json(new { success = false, isWarning = true, message = "Vui lòng nhập đầy đủ họ tên hồ sơ." });
 
         var cccdMoi = (req.CCCD ?? "").Trim();
         if (string.IsNullOrWhiteSpace(cccdMoi))
-            return Json(new { success = false, message = "Vui lòng nhập số căn cước công dân." });
+            return Json(new { success = false, isWarning = true, message = "Vui lòng nhập số căn cước công dân." });
 
         if (req.NgaySinh.HasValue && req.NgaySinh.Value.Date > DateTime.Today)
-            return Json(new { success = false, message = "Ngày sinh không được lớn hơn ngày hiện tại." });
+            return Json(new { success = false, isWarning = true, message = "Ngày sinh không được lớn hơn ngày hiện tại." });
 
         var bn = await _db.BenhNhans.FirstOrDefaultAsync(x => x.Id == req.Id);
         if (bn == null)
@@ -326,14 +326,14 @@ public sealed class TaiKhoanController : AdminControllerBase
 
         if (!string.IsNullOrEmpty(coSoRecord?.MaBN))
         {
-            return Json(new { success = false, message = "Hồ sơ đang liên kết mã bệnh nhân. Vui lòng bấm 'Gỡ đồng bộ' trước khi chỉnh sửa thông tin." });
+            return Json(new { success = false, isWarning = true, message = "Hồ sơ đang liên kết mã bệnh nhân. Vui lòng bấm 'Gỡ đồng bộ' trước khi chỉnh sửa thông tin." });
         }
 
         var laCccdKhongCo = cccdMoi is "11111111111" or "111111111111";
 
         if (laCccdKhongCo && (!req.NgaySinh.HasValue || req.NgaySinh.Value.Date == new DateTime(1900, 1, 1)))
         {
-            return Json(new { success = false, message = "Ngày sinh không hợp lệ. Vui lòng nhập ngày sinh chính xác của bệnh nhân." });
+            return Json(new { success = false, isWarning = true, message = "Ngày sinh không hợp lệ. Vui lòng nhập ngày sinh chính xác của bệnh nhân." });
         }
 
         // Kiểm tra trùng lặp:
@@ -343,7 +343,7 @@ public sealed class TaiKhoanController : AdminControllerBase
                 .AnyAsync(x => x.CCCD == cccdMoi && x.Id != bn.Id);
             if (trungCccd)
             {
-                return Json(new { success = false, message = "Số căn cước này đã được một tài khoản khác khai trước." });
+                return Json(new { success = false, isWarning = true, message = "Số căn cước này đã được một tài khoản khác khai trước." });
             }
         }
         else if (laCccdKhongCo && req.NgaySinh.HasValue && !string.IsNullOrEmpty(req.GioiTinh))
@@ -357,7 +357,7 @@ public sealed class TaiKhoanController : AdminControllerBase
                             && x.IdTaiKhoan != null && x.IdTaiKhoan != bn.IdTaiKhoan);
             if (trungNhanThan)
             {
-                return Json(new { success = false, message = "Hồ sơ với thông tin này (Họ tên, ngày sinh, giới tính) đã được một tài khoản khác khai trước." });
+                return Json(new { success = false, isWarning = true, message = "Hồ sơ với thông tin này (Họ tên, ngày sinh, giới tính) đã được một tài khoản khác khai trước." });
             }
         }
 
@@ -375,6 +375,7 @@ public sealed class TaiKhoanController : AdminControllerBase
         long? idCoSoHienThi = idCoSoDich > 0 ? idCoSoDich : coSoRecord?.IdCoSo;
         var maBNSauKhiLuu = coSoRecord?.MaBN;
         long? idHoSoCoSoResult = coSoRecord?.Id;
+        string? canhBao = null;
 
         // Nếu có chọn cơ sở đích mà hồ sơ chưa có dòng cơ sở nào với cơ sở này:
         // Gọi tạo dòng tự khai trước
@@ -405,6 +406,7 @@ public sealed class TaiKhoanController : AdminControllerBase
                 return Json(new
                 {
                     success = false,
+                    isWarning = true,
                     message = "Vui lòng chọn cơ sở khám chữa bệnh để gán mã bệnh nhân."
                 });
             }
@@ -423,6 +425,21 @@ public sealed class TaiKhoanController : AdminControllerBase
 
             idHoSoCoSoResult = idCoSoMoi > 0 ? idCoSoMoi : idHoSoCoSoResult;
             maBNSauKhiLuu = newMaBN;
+            idCoSoHienThi = idCoSoDich;
+
+            // Đồng bộ tài liệu và đợt khám của mã này tại cơ sở nếu có dòng chưa gắn IDBenhNhanCoSo
+            if (idHoSoCoSoResult.HasValue && idHoSoCoSoResult.Value > 0)
+            {
+                var taiLieus = await _db.TaiLieuBenhNhans
+                    .Where(t => t.IdCoSo == idCoSoDich && t.MaBN == newMaBN && t.IdBenhNhanCoSo == null)
+                    .ToListAsync();
+                foreach (var tl in taiLieus) tl.IdBenhNhanCoSo = idHoSoCoSoResult.Value;
+
+                var dotKhams = await _db.DotKhams
+                    .Where(d => d.IdCoSo == idCoSoDich && d.MaBN == newMaBN && d.IdBenhNhanCoSo <= 0)
+                    .ToListAsync();
+                foreach (var dk in dotKhams) dk.IdBenhNhanCoSo = idHoSoCoSoResult.Value;
+            }
         }
         else if (!string.IsNullOrEmpty(coSoRecord?.MaBN))
         {
@@ -457,7 +474,9 @@ public sealed class TaiKhoanController : AdminControllerBase
         return Json(new
         {
             success = true,
-            message = "Đã lưu thông tin hồ sơ thành công.",
+            message = canhBao == null
+                ? "Đã lưu thông tin hồ sơ thành công."
+                : "Đã lưu thông tin hồ sơ. " + canhBao,
             data = new
             {
                 id = bn.Id,
@@ -568,20 +587,20 @@ public sealed class TaiKhoanController : AdminControllerBase
     public async Task<IActionResult> TaoHoSo([FromBody] TaoHoSoAdminRequest req)
     {
         if (req == null || req.IdTaiKhoan <= 0 || string.IsNullOrWhiteSpace(req.TenBN))
-            return Json(new { success = false, message = "Vui lòng nhập họ tên hồ sơ." });
+            return Json(new { success = false, isWarning = true, message = "Vui lòng nhập họ tên hồ sơ." });
 
         var cccdMoi = (req.CCCD ?? "").Trim();
         if (string.IsNullOrWhiteSpace(cccdMoi))
-            return Json(new { success = false, message = "Vui lòng nhập số căn cước công dân." });
+            return Json(new { success = false, isWarning = true, message = "Vui lòng nhập số căn cước công dân." });
 
         if (req.NgaySinh.HasValue && req.NgaySinh.Value.Date > DateTime.Today)
-            return Json(new { success = false, message = "Ngày sinh không được lớn hơn ngày hiện tại." });
+            return Json(new { success = false, isWarning = true, message = "Ngày sinh không được lớn hơn ngày hiện tại." });
 
         var laCccdKhongCo = cccdMoi is "11111111111" or "111111111111";
 
         if (laCccdKhongCo && (!req.NgaySinh.HasValue || req.NgaySinh.Value.Date == new DateTime(1900, 1, 1)))
         {
-            return Json(new { success = false, message = "Ngày sinh không hợp lệ. Vui lòng nhập ngày sinh chính xác của bệnh nhân." });
+            return Json(new { success = false, isWarning = true, message = "Ngày sinh không hợp lệ. Vui lòng nhập ngày sinh chính xác của bệnh nhân." });
         }
 
         if (!laCccdKhongCo)
@@ -590,7 +609,7 @@ public sealed class TaiKhoanController : AdminControllerBase
                 .AnyAsync(x => x.CCCD == cccdMoi);
             if (trungCccd)
             {
-                return Json(new { success = false, message = "Số căn cước này đã được một tài khoản khác khai trước." });
+                return Json(new { success = false, isWarning = true, message = "Số căn cước này đã được một tài khoản khác khai trước." });
             }
         }
         else if (laCccdKhongCo && req.NgaySinh.HasValue && !string.IsNullOrEmpty(req.GioiTinh))
@@ -603,7 +622,7 @@ public sealed class TaiKhoanController : AdminControllerBase
                             && x.IdTaiKhoan != null && x.IdTaiKhoan != req.IdTaiKhoan);
             if (trungNhanThan)
             {
-                return Json(new { success = false, message = "Hồ sơ với thông tin này (Họ tên, ngày sinh, giới tính) đã được một tài khoản khác khai trước." });
+                return Json(new { success = false, isWarning = true, message = "Hồ sơ với thông tin này (Họ tên, ngày sinh, giới tính) đã được một tài khoản khác khai trước." });
             }
         }
 

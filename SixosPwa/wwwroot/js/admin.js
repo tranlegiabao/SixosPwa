@@ -61,6 +61,56 @@
         });
     }
 
+    /**
+     * Hop canh bao (modal alert) trong app: hien thong bao canh bao dang modal dep mat.
+     */
+    window.showModal = function (noiDung, tieuDe = 'Cảnh báo') {
+        return new Promise((resolve) => {
+            const old = document.querySelector('.ytv-nen-mo-canh-bao');
+            if (old) old.remove();
+
+            const nen = document.createElement('div');
+            nen.className = 'ytv-nen-mo ytv-nen-mo-canh-bao';
+            nen.style.zIndex = '1100'; // Noi tren cac modal khac
+            nen.innerHTML = `
+                <div class="ytv-hop-xac-nhan" role="alertdialog" aria-modal="true" style="max-width: 440px;">
+                    <div class="ytv-hop-dau">
+                        <span class="ytv-hop-bieu-tuong" style="color: #d97706; background: #fef3c7;">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12 9v4"></path><path d="M12 17h.01"></path>
+                                <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"></path>
+                            </svg>
+                        </span>
+                        <h2 class="ytv-hop-tieu-de" id="ytvCanhBaoTieuDe"></h2>
+                    </div>
+                    <p class="ytv-hop-noi-dung" id="ytvCanhBaoNoiDung" style="white-space: pre-line; word-break: break-word; font-size: 13.5px;"></p>
+                    <div class="ytv-hop-nut">
+                        <button type="button" class="btn btn-warning text-white fw-bold px-4" style="background: #f59e0b; border-color: #f59e0b;" data-ytv-dong>Đồng ý</button>
+                    </div>
+                </div>`;
+
+            nen.querySelector('#ytvCanhBaoTieuDe').textContent = tieuDe || 'Cảnh báo';
+            nen.querySelector('#ytvCanhBaoNoiDung').textContent = noiDung || '';
+
+            const dong = () => {
+                document.removeEventListener('keydown', khiGoPhim);
+                nen.remove();
+                document.body.classList.remove('ytv-khoa-cuon');
+                resolve();
+            };
+            const khiGoPhim = (e) => { if (e.key === 'Escape' || e.key === 'Enter') dong(); };
+
+            nen.querySelector('[data-ytv-dong]').addEventListener('click', dong);
+            nen.addEventListener('click', (e) => { if (e.target === nen) dong(); });
+            document.addEventListener('keydown', khiGoPhim);
+
+            document.body.classList.add('ytv-khoa-cuon');
+            document.body.appendChild(nen);
+            requestAnimationFrame(() => nen.classList.add('hien'));
+            nen.querySelector('[data-ytv-dong]').focus();
+        });
+    };
+
     function noiHopXacNhan(form, noiDung, tieuDe, nutXacNhan, truocKhiGui) {
         if (!noiDung) return;
 
