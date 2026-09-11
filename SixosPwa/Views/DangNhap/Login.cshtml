@@ -493,6 +493,7 @@
     </div>
 
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
@@ -527,6 +528,16 @@
         let html5QrScanner = null;
         let isFlashlightOn = false;
         let currentFacingMode = "environment"; // camera sau
+        let customScanAnimId = null;
+        let nativeBarcodeDetector = null;
+
+        if (typeof window.BarcodeDetector !== 'undefined') {
+            try {
+                nativeBarcodeDetector = new window.BarcodeDetector({ formats: ['qr_code'] });
+            } catch (e) {
+                console.warn("BarcodeDetector init:", e);
+            }
+        }
 
         function phatAmThanhTing() {
             try {
@@ -543,6 +554,53 @@
             } catch (e) { }
         }
 
+        // Vòng lặp quét song song bằng phần cứng Native BarcodeDetector + jsQR siêu nhạy cho CCCD
+        function batDauVongLapQuetSieuNhanh() {
+            if (customScanAnimId) cancelAnimationFrame(customScanAnimId);
+
+            const checkAndScan = async () => {
+                const video = document.querySelector('#bankQrReader video');
+                if (video && video.readyState >= 2 && !video.paused) {
+                    // 1. Quét bằng Native Hardware BarcodeDetector (Google Play Services / iOS)
+                    if (nativeBarcodeDetector) {
+                        try {
+                            const barcodes = await nativeBarcodeDetector.detect(video);
+                            if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
+                                onQrCodeSuccess(barcodes[0].rawValue);
+                                return;
+                            }
+                        } catch (e) { }
+                    }
+
+                    // 2. Quét dự phòng bằng jsQR tốc độ cao
+                    if (typeof jsQR !== 'undefined') {
+                        try {
+                            if (!window._scanCanvas) {
+                                window._scanCanvas = document.createElement('canvas');
+                                window._scanCtx = window._scanCanvas.getContext('2d', { willReadFrequently: true });
+                            }
+                            const vw = video.videoWidth || 640;
+                            const vh = video.videoHeight || 480;
+                            if (window._scanCanvas.width !== vw || window._scanCanvas.height !== vh) {
+                                window._scanCanvas.width = vw;
+                                window._scanCanvas.height = vh;
+                            }
+                            window._scanCtx.drawImage(video, 0, 0, vw, vh);
+                            const imgData = window._scanCtx.getImageData(0, 0, vw, vh);
+                            const code = jsQR(imgData.data, vw, vh, { inversionAttempts: 'dontInvert' });
+                            if (code && code.data) {
+                                onQrCodeSuccess(code.data);
+                                return;
+                            }
+                        } catch (e) { }
+                    }
+                }
+                customScanAnimId = requestAnimationFrame(checkAndScan);
+            };
+
+            customScanAnimId = requestAnimationFrame(checkAndScan);
+        }
+
         async function moModalQuetQr() {
             const modal = document.getElementById('bankQrModal');
             if (!modal) return;
@@ -556,31 +614,58 @@
 
             try {
                 if (!html5QrScanner) {
-                    html5QrScanner = new Html5Qrcode("bankQrReader");
+                    html5QrScanner = new Html5Qrcode("bankQrReader", {
+                        experimentalFeatures: {
+                            useBarCodeDetectorIfSupported: true
+                        },
+                        verbose: false
+                    });
                 }
 
-                const config = {
-                    fps: 15,
-                    qrbox: function(viewfinderWidth, viewfinderHeight) {
-                        const edgeSize = Math.min(viewfinderWidth, viewfinderHeight) * 0.72;
-                        return { width: edgeSize, height: edgeSize };
-                    },
-                    aspectRatio: 1.0
+                // Cấu hình Camera độ phân giải tối ưu và quét toàn khung hình (Full frame)
+                const cameraConfig = {
+                    facingMode: currentFacingMode,
+                    width: { min: 640, ideal: 1920 },
+                    height: { min: 480, ideal: 1080 }
+                };
+
+                const scanConfig = {
+                    fps: 25,
+                    aspectRatio: 1.0,
+                    showTorchButtonIfSupported: true
                 };
 
                 await html5QrScanner.start(
-                    { facingMode: currentFacingMode },
-                    config,
+                    cameraConfig,
+                    scanConfig,
                     onQrCodeSuccess,
-                    (errorMessage) => { /* bỏ qua lỗi từng frame */ }
+                    () => { /* bỏ qua lỗi từng frame */ }
                 );
+
+                // Khởi động thêm công cụ quét song song phần cứng
+                batDauVongLapQuetSieuNhanh();
             } catch (err) {
                 console.error("Lỗi khởi tạo camera:", err);
-                showAlert('Không thể mở Camera. Vui lòng cấp quyền truy cập máy ảnh hoặc tải ảnh QR từ thư viện.', 'danger');
+                try {
+                    await html5QrScanner.start(
+                        { facingMode: currentFacingMode },
+                        { fps: 20 },
+                        onQrCodeSuccess,
+                        () => {}
+                    );
+                    batDauVongLapQuetSieuNhanh();
+                } catch (fallbackErr) {
+                    showAlert('Không thể mở Camera. Bạn có thể dùng nút "Chọn ảnh mã QR" từ thư viện nhé.', 'danger');
+                }
             }
         }
 
         async function dongModalQuetQr() {
+            if (customScanAnimId) {
+                cancelAnimationFrame(customScanAnimId);
+                customScanAnimId = null;
+            }
+
             const modal = document.getElementById('bankQrModal');
             if (modal) modal.classList.remove('active');
             document.body.style.overflow = '';
@@ -623,18 +708,20 @@
                     }
                     showAlert('✅ Đã nhận diện thông tin đăng nhập từ mã QR!', 'success');
                     if (data.otp || data.password) {
-                        // Tự động tiếp tục nếu có đầy đủ
                         guiOtp();
                     }
                     return;
                 }
             } catch (e) { }
 
-            // 3. Trường hợp mã QR chứa CCCD hoặc mã định danh bệnh nhân
+            // 3. Trường hợp mã QR CCCD gắn chip (Định dạng: 12soCCCD|CMNDCu|HoVaTen|NgaySinh|GioiTinh|DiaChi|NgayCap)
             let soCccd = '';
+            let hoTen = '';
+
             if (text.includes('|')) {
                 const parts = text.split('|');
-                soCccd = parts[0].trim();
+                soCccd = (parts[0] || '').trim();
+                hoTen = (parts[2] || '').trim();
             } else {
                 soCccd = text;
             }
@@ -643,7 +730,12 @@
             if (cccdInput && soCccd) {
                 cccdInput.value = soCccd;
                 cccdInput.dispatchEvent(new Event('input', { bubbles: true }));
-                showAlert(`✅ Đã quét mã QR: <strong>${soCccd}</strong>`, 'success');
+                
+                if (hoTen) {
+                    showAlert(`✅ Đã quét CCCD thành công: <strong>${hoTen}</strong> (${soCccd})`, 'success');
+                } else {
+                    showAlert(`✅ Đã quét mã thành công: <strong>${soCccd}</strong>`, 'success');
+                }
 
                 const sdtInput = document.getElementById('soDienThoai');
                 if (sdtInput && !sdtInput.value) {
@@ -693,15 +785,58 @@
             const file = event.target.files && event.target.files[0];
             if (!file) return;
 
+            showAlert('Đang xử lý ảnh QR...', 'info');
+
             try {
-                if (!html5QrScanner) {
-                    html5QrScanner = new Html5Qrcode("bankQrReader");
+                // 1. Thử giải mã bằng Native BarcodeDetector (Phần cứng Android/iOS cực nhạy)
+                if (nativeBarcodeDetector && typeof createImageBitmap !== 'undefined') {
+                    try {
+                        const bitmap = await createImageBitmap(file);
+                        const barcodes = await nativeBarcodeDetector.detect(bitmap);
+                        if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
+                            onQrCodeSuccess(barcodes[0].rawValue);
+                            return;
+                        }
+                    } catch (e) {
+                        console.warn("Native file scan failed, trying fallback...", e);
+                    }
                 }
-                const decodedText = await html5QrScanner.scanFile(file, true);
-                onQrCodeSuccess(decodedText);
+
+                // 2. Thử giải mã bằng Html5Qrcode
+                try {
+                    if (!html5QrScanner) {
+                        html5QrScanner = new Html5Qrcode("bankQrReader");
+                    }
+                    const decodedText = await html5QrScanner.scanFile(file, true);
+                    if (decodedText) {
+                        onQrCodeSuccess(decodedText);
+                        return;
+                    }
+                } catch (e) { }
+
+                // 3. Thử giải mã bằng jsQR qua Canvas
+                if (typeof jsQR !== 'undefined') {
+                    const img = new Image();
+                    img.src = URL.createObjectURL(file);
+                    await new Promise(res => { img.onload = res; img.onerror = res; });
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    const imgData = ctx.getImageData(0, 0, img.width, img.height);
+                    const code = jsQR(imgData.data, img.width, img.height, { inversionAttempts: 'both' });
+                    URL.revokeObjectURL(img.src);
+                    if (code && code.data) {
+                        onQrCodeSuccess(code.data);
+                        return;
+                    }
+                }
+
+                showAlert('Không nhận diện được mã QR trong ảnh. Vui lòng chụp rõ và gần mã QR hơn nhé.', 'danger');
             } catch (err) {
-                console.error("Không tìm thấy mã QR trong ảnh:", err);
-                showAlert('Không nhận diện được mã QR trong ảnh vừa chọn. Bạn vui lòng chụp rõ hơn nhé.', 'danger');
+                console.error("Lỗi xử lý ảnh:", err);
+                showAlert('Không nhận diện được mã QR trong ảnh.', 'danger');
             } finally {
                 event.target.value = '';
             }
