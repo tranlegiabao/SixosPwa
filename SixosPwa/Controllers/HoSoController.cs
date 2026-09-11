@@ -257,7 +257,7 @@ public class HoSoController : Controller
 
         if (hoSoHienTai.DaNoiHIS)
         {
-            return RedirectToAction(nameof(Sua), new { id, loi = "Hồ sơ đang liên kết mã bệnh nhân. Vui lòng bấm 'Gỡ nối' trước khi chỉnh sửa thông tin." });
+            return RedirectToAction(nameof(Sua), new { id, loi = "Hồ sơ đang liên kết mã bệnh nhân. Vui lòng bấm 'Gỡ đồng bộ' trước khi chỉnh sửa thông tin." });
         }
 
         var ketQua = await _hoSo.SuaAsync(id, idTaiKhoan.Value, maCoSo, cccd, hoTen,
@@ -329,7 +329,7 @@ public class HoSoController : Controller
         var choPhep = await _config.KiemTraHieuLucAsync("GONOI");
         if (!choPhep)
         {
-            return RedirectToAction(nameof(Sua), new { id, loi = "Chức năng gỡ nối hiện đang tạm khóa." });
+            return RedirectToAction(nameof(Sua), new { id, loi = "Chức năng gỡ đồng bộ hiện đang tạm khóa." });
         }
 
         var idTaiKhoan = await LayIdTaiKhoanAsync();

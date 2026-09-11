@@ -319,7 +319,7 @@ public sealed class TaiKhoanController : AdminControllerBase
 
         if (!string.IsNullOrEmpty(coSoRecord?.MaBN))
         {
-            return Json(new { success = false, message = "Hồ sơ đang liên kết mã bệnh nhân. Vui lòng bấm 'Gỡ nối' trước khi chỉnh sửa thông tin." });
+            return Json(new { success = false, message = "Hồ sơ đang liên kết mã bệnh nhân. Vui lòng bấm 'Gỡ đồng bộ' trước khi chỉnh sửa thông tin." });
         }
 
         var cccdMoi = (req.CCCD ?? "").Trim();
@@ -398,7 +398,7 @@ public sealed class TaiKhoanController : AdminControllerBase
         }
         else if (!string.IsNullOrEmpty(coSoRecord?.MaBN))
         {
-            canhBao = "Mã bệnh nhân giữ nguyên — muốn thao mã thì bấm nút Gỡ nối, "
+            canhBao = "Mã bệnh nhân giữ nguyên — muốn thao mã thì bấm nút Gỡ đồng bộ, "
                     + "để trống ô rồi Lưu không gỡ được.";
         }
 
@@ -479,7 +479,7 @@ public sealed class TaiKhoanController : AdminControllerBase
             return Json(new
             {
                 success = false,
-                message = "Hồ sơ này chưa thuộc tài khoản nào nên chưa gỡ nối được."
+                message = "Hồ sơ này chưa thuộc tài khoản nào nên chưa gỡ đồng bộ được."
             });
         }
 
@@ -490,7 +490,7 @@ public sealed class TaiKhoanController : AdminControllerBase
             success = ketQua.Succeeded,
             message = ketQua.Succeeded
                 ? $"Đã gỡ mã {dong.MaBN}. Tài liệu và đợt khám đi kèm mã này đã được sao lưu rồi gỡ theo."
-                : (ketQua.Message ?? "Không gỡ nối được.")
+                : (ketQua.Message ?? "Không gỡ đồng bộ được.")
         });
     }
 

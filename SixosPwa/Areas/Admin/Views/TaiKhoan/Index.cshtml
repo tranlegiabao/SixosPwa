@@ -984,13 +984,13 @@
             <input type="hidden" id="modalSuaIdHoSoCoSo" value="" />
             <input type="hidden" id="modalSuaIdCoSo" value="" />
 
-            <!-- 1. Mã bệnh nhân tại cơ sở + Nút Gỡ nối bên cạnh -->
+            <!-- 1. Mã bệnh nhân tại cơ sở + Nút Gỡ đồng bộ bên cạnh -->
             <div class="modal-hs-o">
                 <label for="modalSuaMaBN">Mã bệnh nhân tại cơ sở</label>
                 <div style="display: flex; gap: 10px; align-items: stretch;">
                     <input id="modalSuaMaBN" type="text" maxlength="30" placeholder="Nhập mã bệnh nhân tại cơ sở..." style="flex: 1 1 auto; min-width: 0;" />
-                    <button type="button" id="modalSuaBtnGoNoi" class="btn btn-outline-danger font-weight-bold" style="flex: 0 0 auto; width: 105px; height: 44px; border-radius: 10px; font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; justify-content: center;" onclick="goNoiModal()" title="Xóa trắng mã cơ sở">
-                        Gỡ nối
+                    <button type="button" id="modalSuaBtnGoNoi" class="btn btn-outline-danger font-weight-bold" style="display: none; flex: 0 0 auto; min-width: 110px; padding: 0 10px; height: 44px; border-radius: 10px; font-weight: 700; font-size: 14px; align-items: center; justify-content: center; white-space: nowrap;" onclick="goNoiModal()" title="Gỡ đồng bộ mã cơ sở">
+                        Gỡ đồng bộ
                     </button>
                 </div>
             </div>
@@ -1033,7 +1033,7 @@
 
             <!-- Gợi ý thông báo -->
             <div class="modal-hs-goi-y mb-3" id="modalSuaDaNoiNote" style="display: none;">
-                Hồ sơ này đã nối với bệnh án tại cơ sở nên họ tên, ngày sinh, căn cước và giới tính lấy theo cơ sở. Muốn sửa thì báo cơ sở, hoặc gỡ nối trước.
+                Hồ sơ này đã nối với bệnh án tại cơ sở nên họ tên, ngày sinh, căn cước và giới tính lấy theo cơ sở. Muốn sửa thì báo cơ sở, hoặc gỡ đồng bộ trước.
             </div>
 
             <!-- Nút Lưu -->
@@ -1129,6 +1129,7 @@
         if (coMa) {
             if (inpMa) inpMa.readOnly = true;
             if (btnGoNoi) {
+                btnGoNoi.style.display = 'inline-flex';
                 btnGoNoi.disabled = false;
                 btnGoNoi.style.opacity = '1';
                 btnGoNoi.style.cursor = 'pointer';
@@ -1141,11 +1142,12 @@
             if (btnSave) btnSave.style.display = 'none';
             if (note) {
                 note.style.display = 'block';
-                note.innerHTML = 'Hồ sơ đang liên kết mã bệnh nhân <b>' + (maBN || '') + '</b> tại cơ sở. Vui lòng bấm <b>Gỡ nối</b> trước khi chỉnh sửa thông tin.';
+                note.innerHTML = 'Hồ sơ đang liên kết mã bệnh nhân <b>' + (maBN || '') + '</b> tại cơ sở. Vui lòng bấm <b>Gỡ đồng bộ</b> trước khi chỉnh sửa thông tin.';
             }
         } else {
             if (inpMa) inpMa.readOnly = false;
             if (btnGoNoi) {
+                btnGoNoi.style.display = 'none';
                 btnGoNoi.disabled = true;
                 btnGoNoi.style.opacity = '0.45';
                 btnGoNoi.style.cursor = 'not-allowed';
@@ -1363,17 +1365,17 @@
                     if (badge) badge.innerText = tr.getAttribute('data-tencoso') || 'Chưa nối';
                 }
 
-                if (typeof showToast === 'function') showToast(res.message || 'Đã gỡ nối.', 'success');
+                if (typeof showToast === 'function') showToast(res.message || 'Đã gỡ đồng bộ.', 'success');
                 else alert(res.message);
             } else {
-                if (typeof showToast === 'function') showToast(res.message || 'Không gỡ nối được.', 'error');
+                if (typeof showToast === 'function') showToast(res.message || 'Không gỡ đồng bộ được.', 'error');
                 else alert(res.message);
             }
         } catch (e) {
             console.error(e);
-            if (typeof showToast === 'function') showToast('Lỗi kết nối máy chủ khi gỡ nối.', 'error');
+            if (typeof showToast === 'function') showToast('Lỗi kết nối máy chủ khi gỡ đồng bộ.', 'error');
         } finally {
-            if (btn) { btn.disabled = false; btn.innerText = 'Gỡ nối'; }
+            if (btn) { btn.disabled = false; btn.innerText = 'Gỡ đồng bộ'; }
         }
     }
 
