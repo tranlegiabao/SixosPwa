@@ -564,6 +564,7 @@ public sealed class TaiKhoanController : AdminControllerBase
         if (cosos.Any())
         {
             _db.BenhNhanCoSos.RemoveRange(cosos);
+            await _db.SaveChangesAsync();
         }
 
         _db.BenhNhans.Remove(bn);
