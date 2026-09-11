@@ -11,12 +11,44 @@
     <title>@(ViewBag.TieuDeTrang ?? "Tài liệu y tế") - @ViewBag.TenCoSo</title>
     <link rel="stylesheet" href="/css/tai-lieu-benh-nhan.css?v=20260908_v8" />
     <style>
+        .tl-empty {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 24px 60px;
+            text-align: center;
+            color: var(--tl-chu-phu);
+            gap: 14px;
+            min-height: calc(100vh - 180px);
+            min-height: calc(100dvh - 180px);
+            box-sizing: border-box;
+            margin: auto 0;
+        }
+        .tl-empty-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 2px;
+        }
+        .tl-empty-title {
+            font-size: 16.5px;
+            font-weight: 700;
+            color: var(--tl-chu-dam);
+        }
+        .tl-empty-desc {
+            font-size: 13.5px;
+            max-width: 360px;
+            line-height: 1.55;
+            color: #64748b;
+        }
         .tl-btn-empty-action {
             display: inline-flex;
             align-items: center;
             gap: 8px;
             margin-top: 8px;
-            padding: 9px 18px;
+            padding: 9px 20px;
             background: linear-gradient(135deg, #0284c7, #0369a1);
             color: #ffffff !important;
             font-size: 13.5px;
@@ -69,7 +101,7 @@
         </div>
 
         <!-- Danh sach tai lieu dang Grid Cards (Phong cach Google Drive) -->
-        <main class="tl-grid-container" id="tlGridList">
+        <main class="tl-grid-container" id="tlGridList" style="@(countAll == 0 ? "display:none;" : "")">
             @if (Model != null && Model.Count > 0)
             {
                 int idx = 0;
