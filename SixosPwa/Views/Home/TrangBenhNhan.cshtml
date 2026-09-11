@@ -1,6 +1,20 @@
 @{
     Layout = null;
     ViewData["Title"] = "Trang bệnh nhân";
+    var rawTen = (ViewBag.TenBenhNhan as string)?.Trim() ?? "";
+    var tenChao = rawTen;
+    if (!string.IsNullOrWhiteSpace(rawTen))
+    {
+        var parts = rawTen.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length > 0)
+        {
+            var lastWord = parts[parts.Length - 1];
+            if (!long.TryParse(lastWord, out _))
+            {
+                tenChao = lastWord.ToUpper();
+            }
+        }
+    }
 }
 
 <!doctype html>
@@ -449,25 +463,6 @@
         .bn-dong-phu strong {
             color: #0f172a;
             font-weight: 700;
-        }
-
-        .bn-badge-dangky {
-            background: #dcfce7;
-            color: #15803d;
-            font-size: 11px;
-            font-weight: 700;
-            padding: 5px 11px;
-            border-radius: 20px;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            box-shadow: 0 1px 3px rgba(22, 101, 52, 0.08);
-            white-space: nowrap;
-            flex-shrink: 0;
-        }
-
-        .bn-badge-dangky svg {
-            color: #16a34a;
         }
 
         /* Callout Box "Hoàn thiện hồ sơ" (Orange Theme) */
@@ -986,7 +981,7 @@
                     </a>
                     <div class="bn-dau-chu">
                         <span class="bn-coso">@ViewBag.TenCoSo</span>
-                        <span class="bn-chao">Xin chào @ViewBag.TenBenhNhan 👋</span>
+                        <span class="bn-chao">Xin chào @tenChao 👋</span>
                         <span class="bn-slogan">Sức khỏe của bạn là ưu tiên của chúng tôi</span>
                     </div>
                 </div>
@@ -1090,13 +1085,6 @@
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
                             <span>Họ và tên: <strong>@ViewBag.TenBenhNhan</strong></span>
                         </div>
-                    </div>
-
-                    <div class="bn-badge-dangky">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        <span>Đã đăng ký khám</span>
                     </div>
                 </div>
             </section>
