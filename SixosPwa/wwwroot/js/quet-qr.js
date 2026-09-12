@@ -262,6 +262,118 @@ async function dongModalQuetQr() {
     dangChayCamera = false;
 }
 
+function chuanHoaKhoa(k) {
+    if (!k) return '';
+    return k.toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]/g, '');
+}
+
+function chuanHoaGioiTinh(gt) {
+    if (!gt) return '';
+    const s = gt.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    if (['nam', 'male', '1', 'm'].includes(s)) return 'Nam';
+    if (['nu', 'female', '2', 'f'].includes(s)) return 'Nữ';
+    return gt;
+}
+
+/** Phân tích thông minh mọi định dạng mã QR: Key-Value, JSON, Pipe |, v.v. */
+function phanTichMaQr(rawText, loaiGoiY) {
+    const text = (rawText || '').trim();
+    if (!text) return null;
+
+    let dt = {
+        nguon: loaiGoiY || 'cccd',
+        cccd: '',
+        maBN: '',
+        hoTen: '',
+        dienThoai: '',
+        ngaySinh: '',
+        gioiTinh: '',
+        diaChi: ''
+    };
+
+    // 1. Thử giải mã định dạng JSON
+    if ((text.startsWith('{') && text.endsWith('}')) || (text.startsWith('[') && text.endsWith(']'))) {
+        try {
+            const obj = JSON.parse(text);
+            const target = Array.isArray(obj) ? obj[0] : obj;
+            if (target && typeof target === 'object') {
+                for (const [key, val] of Object.entries(target)) {
+                    const k = chuanHoaKhoa(key);
+                    const v = String(val == null ? '' : val).trim();
+                    if (!v) continue;
+                    if (['mabn', 'mabenhnhan', 'pid', 'patientid', 'idbenhnhan'].includes(k)) dt.maBN = v;
+                    else if (['socccd', 'cccd', 'cmnd', 'socmnd', 'sodinhdanh', 'citizenid', 'idcard'].includes(k)) dt.cccd = v;
+                    else if (['tenbn', 'hoten', 'tenbenhnhan', 'hovaten', 'fullname', 'name'].includes(k)) dt.hoTen = v;
+                    else if (['dienthoai', 'sdt', 'sodienthoai', 'phone', 'phonenumber', 'mobile'].includes(k)) dt.dienThoai = v;
+                    else if (['diachi', 'address', 'fulladdress'].includes(k)) dt.diaChi = v;
+                    else if (['ngaysinh', 'dob', 'dateofbirth', 'birthdate', 'namsinh'].includes(k)) dt.ngaySinh = v;
+                    else if (['gioitinh', 'gender', 'sex'].includes(k)) dt.gioiTinh = v;
+                }
+                if (dt.maBN) dt.nguon = 'his';
+                if (dt.hoTen || dt.cccd || dt.maBN || dt.dienThoai) return dt;
+            }
+        } catch (e) { }
+    }
+
+    // 2. Thử định dạng Key-Value (Dòng chứa MaBN: ..., SoCCCD: ..., TenBN: ..., v.v.)
+    const dongLines = text.split(/\r?\n|(?<=[^\s])(?=(?:MaBN|SoCCCD|TenBN|DienThoai|DiaChi|NgaySinh|GioiTinh|CCCD|Mã BN|Họ tên|SĐT|Địa chỉ|Ngày sinh|Giới tính)\s*[:=])/i);
+    let coKeyVal = false;
+    for (const rawLine of dongLines) {
+        const line = rawLine.trim();
+        if (!line) continue;
+        const match = line.match(/^([^:=]+)[:=]\s*(.+)$/);
+        if (match) {
+            const k = chuanHoaKhoa(match[1]);
+            const v = match[2].trim();
+            if (['mabn', 'mabenhnhan', 'pid', 'patientid', 'idbenhnhan'].includes(k)) { dt.maBN = v; coKeyVal = true; }
+            else if (['socccd', 'cccd', 'cmnd', 'socmnd', 'sodinhdanh', 'citizenid'].includes(k)) { dt.cccd = v; coKeyVal = true; }
+            else if (['tenbn', 'hoten', 'tenbenhnhan', 'hovaten', 'name', 'fullname'].includes(k)) { dt.hoTen = v; coKeyVal = true; }
+            else if (['dienthoai', 'sdt', 'sodienthoai', 'phone', 'phonenumber', 'mobile'].includes(k)) { dt.dienThoai = v; coKeyVal = true; }
+            else if (['diachi', 'address'].includes(k)) { dt.diaChi = v; coKeyVal = true; }
+            else if (['ngaysinh', 'dob', 'dateofbirth', 'birthdate', 'namsinh'].includes(k)) { dt.ngaySinh = v; coKeyVal = true; }
+            else if (['gioitinh', 'gender', 'sex'].includes(k)) { dt.gioiTinh = v; coKeyVal = true; }
+        }
+    }
+    if (coKeyVal && (dt.hoTen || dt.cccd || dt.maBN || dt.dienThoai)) {
+        if (dt.maBN) dt.nguon = 'his';
+        return dt;
+    }
+
+    // 3. Định dạng chuẩn phân cách bằng dấu gạch đứng '|' (CCCD gắn chip / HIS)
+    const parts = text.split('|');
+    if (parts.length >= 4) {
+        const oThuHai = (parts[1] || '').trim();
+        const laCmndCu = /^[0-9]{9}$/.test(oThuHai);
+
+        dt.cccd = (parts[0] || '').trim();
+        dt.maBN = (loaiGoiY === 'his' || (!laCmndCu && oThuHai !== '')) ? oThuHai : '';
+        dt.hoTen = (parts[2] || '').trim();
+        dt.ngaySinh = (parts[3] || '').trim();
+        dt.gioiTinh = (parts[4] || '').trim();
+        dt.diaChi = (parts[5] || '').trim();
+        if (parts[6] && /^(0[35789]\d{8}|\+84\d{9})$/.test(parts[6].trim())) {
+            dt.dienThoai = parts[6].trim();
+        }
+
+        if (dt.maBN) dt.nguon = 'his';
+        if (dt.hoTen || dt.cccd || dt.maBN) return dt;
+    }
+
+    // 4. Nếu chỉ có chuỗi 12 số CCCD hoặc SĐT
+    if (/^\d{12}$/.test(text)) {
+        dt.cccd = text;
+        return dt;
+    }
+    if (/^(0[35789]\d{8}|\+84\d{9})$/.test(text)) {
+        dt.dienThoai = text;
+        return dt;
+    }
+
+    return null;
+}
+
 function onQrCodeSuccess(decodedText, decodedResult) {
     phatAmThanhTing();
     if (navigator.vibrate) navigator.vibrate([60, 40, 60]);
@@ -273,9 +385,7 @@ function onQrCodeSuccess(decodedText, decodedResult) {
         return;
     }
 
-    // 1. Ma chua duong dan. 🔴 CHI nhan duong dan cua chinh cong nay: truoc day nhanh
-    //    nay lai thang toi BAT KY dia chi nao doc duoc, nen chi can dan mot ma QR gia
-    //    o ghe cho la benh nhan quet bang chinh app roi ha canh o trang dang nhap gia.
+    // 1. Mã chứa đường dẫn URL
     if (/^https?:\/\//i.test(text)) {
         let cungNha = false;
         try { cungNha = new URL(text).origin === window.location.origin; } catch (e) { }
@@ -288,60 +398,50 @@ function onQrCodeSuccess(decodedText, decodedResult) {
         return;
     }
 
-    // 2. Ca hai khuon that deu la 7 manh ngan bang '|'.
-    const parts = text.split('|');
-    if (parts.length < 7) {
-        showAlert('Mã này không phải mã trên phiếu khám hay CCCD gắn chip.', 'danger');
-        return;
-    }
-
-    const oThuHai = (parts[1] || '').trim();
-
-    // Bam nham nut thi noi thang, dung doan bua. Hai phep duoi deu chac chan:
-    //   - ma cua HIS LUON co MaBN o o thu hai;
-    //   - CCCD gan chip o do la so CMND cu: rong hoac dung 9 chu so.
-    // Dung 9 chu so thuan = so CMND cu cua CCCD gan chip. Do that tren Dev_Master3
-    // (54.672 ho so) va DaoTaoHis (1.498): KHONG co mot MaBN nao dai dung 9 chu so thuan
-    // — Dev_Master3 dai 0-8, DaoTaoHis 3-14 va cai dai la co chu. Nen dau hieu nay chac.
-    const laCmndCu = /^[0-9]{9}$/.test(oThuHai);
-
-    if (loaiQrDangCho === 'his' && (oThuHai === '' || laCmndCu)) {
-        showAlert('Mã này không có Mã bệnh nhân. Nếu là thẻ căn cước, bạn bấm "Quét CCCD gắn chip" nhé.', 'warning');
-        return;
-    }
-    if (loaiQrDangCho === 'cccd' && oThuHai !== '' && !laCmndCu) {
-        showAlert('Đây có vẻ là mã trên phiếu khám. Bạn bấm "Quét mã trên phiếu khám" nhé.', 'warning');
-        return;
-    }
-
-    const dt = {
-        nguon:    loaiQrDangCho,
-        cccd:     (parts[0] || '').trim(),
-        maBN:     loaiQrDangCho === 'his' ? oThuHai : '',
-        hoTen:    (parts[2] || '').trim(),
-        ngaySinh: (parts[3] || '').trim(),   // ddMMyyyy
-        gioiTinh: (parts[4] || '').trim(),
-        diaChi:   (parts[5] || '').trim()
-    };
-
-    if (!dt.hoTen && !dt.cccd) {
-        showAlert('Mã đọc được nhưng không có thông tin nào dùng được.', 'danger');
+    // 2. Phân tích mã QR
+    const dt = phanTichMaQr(text, loaiQrDangCho);
+    if (!dt || (!dt.hoTen && !dt.cccd && !dt.maBN && !dt.dienThoai)) {
+        showAlert('Không nhận diện được định dạng thông tin trong mã QR này.', 'danger');
         return;
     }
 
     window.danhTinhQuet = dt;
     veTheQuet(dt);
+
+    // Tự động chuyển thẳng vào màn nhập OTP khi quét thành công
+    if (typeof guiOtp === 'function') {
+        guiOtp();
+    }
 }
 
-/** ddMMyyyy -> dd/MM/yyyy. Tra chuoi rong neu khong phai ngay that.
- *  🔴 01/01/1900 la ngay sinh GIA cua HIS (chi biet nam) — khong hien ra man. */
+/** ddMMyyyy / yyyy-MM-dd / ISO -> dd/MM/yyyy */
 function doiNgayQr(s) {
-    if (!/^[0-9]{8}$/.test(s || '')) return '';
-    if (s === '01011900') return '';
-    return s.slice(0, 2) + '/' + s.slice(2, 4) + '/' + s.slice(4);
+    if (!s) return '';
+    s = String(s).trim();
+    if (s === '01011900' || s.startsWith('1900-01-01')) return '';
+    if (/^[0-9]{8}$/.test(s)) {
+        return s.slice(0, 2) + '/' + s.slice(2, 4) + '/' + s.slice(4);
+    }
+    const isoMatch = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+    if (isoMatch) {
+        const y = isoMatch[1];
+        const m = isoMatch[2].padStart(2, '0');
+        const d = isoMatch[3].padStart(2, '0');
+        if (y === '1900' && m === '01' && d === '01') return '';
+        return `${d}/${m}/${y}`;
+    }
+    const dmyMatch = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+    if (dmyMatch) {
+        const d = dmyMatch[1].padStart(2, '0');
+        const m = dmyMatch[2].padStart(2, '0');
+        const y = dmyMatch[3];
+        if (y === '1900' && m === '01' && d === '01') return '';
+        return `${d}/${m}/${y}`;
+    }
+    return s;
 }
 
-/** Che bot Ma BN: chi giu 3 ky tu dau. Du de nhan ra, khong du de doc trom qua vai. */
+/** Che bớt Mã BN nếu cần */
 function cheBotMa(ma) {
     if (!ma) return '';
     return ma.length <= 3 ? ma : ma.slice(0, 3) + '\u2022\u2022\u2022';
@@ -353,36 +453,46 @@ function thoatHtml(s) {
     });
 }
 
-/** Do the ket qua len man va khoa o Can cuoc. Dung lai tren man chu KHONG phai toast:
- *  toast bay mat sau vai giay, ma day la cho duy nhat benh nhan phat hien minh vua
- *  quet nham ma cua nguoi khac. */
+/** Hiển thị thẻ kết quả lên màn hình */
 function veTheQuet(dt) {
     const khung = document.getElementById('khungTheQuet');
     const oCccd = document.getElementById('cccd');
+    const oSdt  = document.getElementById('soDienThoai');
     const ghiO  = document.getElementById('ghiOCccd');
     if (!khung) return;
 
+    if (dt.gioiTinh) dt.gioiTinh = chuanHoaGioiTinh(dt.gioiTinh);
+
     const ngay  = doiNgayQr(dt.ngaySinh);
-    const dong2 = [dt.gioiTinh, ngay].filter(Boolean).join(' \u00b7 ');
-    const dong3 = dt.nguon === 'his'
-        ? 'M\u00e3 BN <span class="the-quet__ma">' + thoatHtml(cheBotMa(dt.maBN)) + '</span>'
-        : thoatHtml(dt.diaChi);
+    const cacMucDong2 = [];
+    if (dt.gioiTinh) cacMucDong2.push(dt.gioiTinh);
+    if (ngay) cacMucDong2.push(ngay);
+    if (dt.dienThoai) cacMucDong2.push('SĐT: ' + dt.dienThoai);
+    const dong2 = cacMucDong2.join(' · ');
+
+    const cacMucDong3 = [];
+    if (dt.maBN) cacMucDong3.push('Mã BN: <span class="the-quet__ma">' + thoatHtml(dt.maBN) + '</span>');
+    if (dt.diaChi) cacMucDong3.push(thoatHtml(dt.diaChi));
+    const dong3 = cacMucDong3.join(' · ');
+
+    const tieuDeDau = dt.nguon === 'his' || dt.maBN 
+        ? 'Đã quét thông tin bệnh nhân' 
+        : 'Đã quét CCCD gắn chip';
 
     khung.innerHTML =
         '<div class="the-quet">' +
           '<div class="the-quet__dau">' +
             '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
-            '<span>' + (dt.nguon === 'his' ? '\u0110\u00e3 qu\u00e9t m\u00e3 tr\u00ean phi\u1ebfu kh\u00e1m' : '\u0110\u00e3 qu\u00e9t CCCD g\u1eafn chip') + '</span>' +
-            '<button type="button" class="the-quet__quetlai" onclick="xoaTheQuet()">Qu\u00e9t l\u1ea1i</button>' +
+            '<span>' + tieuDeDau + '</span>' +
+            '<button type="button" class="the-quet__quetlai" onclick="xoaTheQuet()">Quét lại</button>' +
           '</div>' +
-          '<div class="the-quet__ten">' + thoatHtml(dt.hoTen) + '</div>' +
-          (dong2 ? '<div class="the-quet__phu">' + thoatHtml(dong2) + '</div>' : '') +
+          '<div class="the-quet__ten">' + thoatHtml(dt.hoTen || (dt.cccd ? ('CCCD: ' + dt.cccd) : (dt.maBN ? ('Mã BN: ' + dt.maBN) : 'Đã quét mã'))) + '</div>' +
+          (dong2 ? '<div class="the-quet__phu">' + dong2 + '</div>' : '') +
           (dong3 ? '<div class="the-quet__phu">' + dong3 + '</div>' : '') +
         '</div>';
     khung.classList.remove('d-none');
 
-    // O Can cuoc: dien va khoa, de khong lech voi ma vua quet. Ma KHONG co can cuoc
-    // (HIS de trong — do that 17% ho so) thi de trong cho benh nhan tu go.
+    // Tự động điền ô Căn cước công dân
     if (oCccd) {
         if (dt.cccd) {
             oCccd.value = dt.cccd;
@@ -393,22 +503,34 @@ function veTheQuet(dt) {
             oCccd.readOnly = false;
             oCccd.classList.remove('o-tu-qr');
             if (ghiO) ghiO.classList.add('d-none');
-            showAlert('Mã này chưa có số căn cước. Bạn nhập giúp số căn cước nhé.', 'warning');
         }
     }
 
-    const oSdt = document.getElementById('soDienThoai');
-    if (oSdt && !oSdt.value) oSdt.focus();
+    // Tự động điền ô Số điện thoại
+    if (oSdt) {
+        if (dt.dienThoai) {
+            oSdt.value = dt.dienThoai;
+        } else if (!oSdt.value && dt.cccd) {
+            oSdt.value = dt.cccd;
+        } else if (!oSdt.value && dt.maBN) {
+            oSdt.value = dt.maBN;
+        }
+    }
 }
 
 function xoaTheQuet() {
     window.danhTinhQuet = null;
     const khung = document.getElementById('khungTheQuet');
     const oCccd = document.getElementById('cccd');
+    const oSdt  = document.getElementById('soDienThoai');
     const ghiO  = document.getElementById('ghiOCccd');
     if (khung) { khung.innerHTML = ''; khung.classList.add('d-none'); }
     if (oCccd) { oCccd.value = ''; oCccd.readOnly = false; oCccd.classList.remove('o-tu-qr'); }
+    if (oSdt)  { oSdt.value = ''; }
     if (ghiO)  ghiO.classList.add('d-none');
+    if (typeof quayLaiStep1 === 'function') {
+        quayLaiStep1();
+    }
 }
 
 async function toggleDenFlash() {
