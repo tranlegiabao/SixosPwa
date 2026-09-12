@@ -205,6 +205,15 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
             // UB ai cung nhieu ho so nen ho luon qua man do; ben nay phan lon tai
             // khoan chi co dung mot ho so, bat ho bam them mot lan la phien vo ich
             // — mot ho so thi khong co gi de chon.
+            // Nếu người bệnh quét mã trên phiếu khám HIS, ta đã tự động chọn đúng hồ sơ đó,
+            // nên đưa thẳng vào trang chủ /benh-nhan thay vì bắt quay về màn danh sách hồ sơ /benh-nhan/ho-so.
+            if (quet != null && (quet.LaNguonHis || !string.IsNullOrWhiteSpace(quet.MaBN)))
+            {
+                return (!string.IsNullOrWhiteSpace(returnUrl) && returnUrl != "/" && returnUrl != "/Home" && !returnUrl.StartsWith("/DangNhap"))
+                    ? returnUrl
+                    : "/benh-nhan";
+            }
+
             var soHoSo = await DemHoSoTaiCoSoAsync(maCoSo, dinhDanh, ct);
             return soHoSo > 1 ? "/benh-nhan/ho-so" : "/benh-nhan";
         }
@@ -887,7 +896,7 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
     /// <summary>Ma gia "khong co can cuoc" — cung bo voi <c>HoSoBenhNhanService</c>.</summary>
     private static readonly string[] MaGiaKhongCanCuoc = { "11111111111", "111111111111" };
 
-    private static bool LaMaGia(string? cccd) =>
+    public static bool LaMaGia(string? cccd) =>
         !string.IsNullOrWhiteSpace(cccd) && MaGiaKhongCanCuoc.Contains(cccd.Trim());
 
     /// <summary>Gan y dinh (returnUrl) vao duong dan Ban giao neu co.</summary>

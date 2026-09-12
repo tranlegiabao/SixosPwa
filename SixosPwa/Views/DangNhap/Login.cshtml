@@ -607,7 +607,8 @@
         let confirmationResultObj = null;
         let recaptchaVerifier = null;
         let currentSdt = '';
-        const adminReturnUrl = new URLSearchParams(window.location.search).get('returnUrl');
+        const rawReturnUrl = new URLSearchParams(window.location.search).get('returnUrl');
+        const adminReturnUrl = (rawReturnUrl && rawReturnUrl !== '/' && rawReturnUrl !== '/Home') ? rawReturnUrl : null;
         const maCoSoHienTai = '@(ViewBag.MaCoSo as string ?? "")';
         let currentCccd = '';
 
@@ -669,7 +670,7 @@
                     return;
                 }
             } else {
-                if (sdtInput.length < 9) {
+                if (!laQrHis && sdtInput.length < 9) {
                     showAlert('Số điện thoại hoặc Căn cước công dân không hợp lệ!', 'danger');
                     return;
                 }
@@ -891,7 +892,11 @@
                     const data = await response.json();
                     if (data.success) {
                         showAlert('🎉 Đăng nhập thành công! Đang chuyển hướng...', 'success');
-                        window.location.href = data.redirectUrl;
+                        let targetUrl = data.redirectUrl;
+                        if (window.danhTinhQuet && (window.danhTinhQuet.nguon === 'his' || window.danhTinhQuet.maBN)) {
+                            if (!targetUrl || targetUrl === '/' || targetUrl === '/Home') targetUrl = '/benh-nhan';
+                        }
+                        window.location.href = targetUrl || '/benh-nhan';
                     } else {
                         baoLoiVaDiTiep(data);
                     }
@@ -923,7 +928,11 @@
                     const data = await response.json();
                     if (data.success) {
                         showAlert('Đăng nhập thành công! Đang chuyển hướng...', 'success');
-                        window.location.href = data.redirectUrl;
+                        let targetUrl = data.redirectUrl;
+                        if (window.danhTinhQuet && (window.danhTinhQuet.nguon === 'his' || window.danhTinhQuet.maBN)) {
+                            if (!targetUrl || targetUrl === '/' || targetUrl === '/Home') targetUrl = '/benh-nhan';
+                        }
+                        window.location.href = targetUrl || '/benh-nhan';
                     } else {
                         baoLoiVaDiTiep(data);
                     }
