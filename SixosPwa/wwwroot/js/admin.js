@@ -178,40 +178,50 @@
     });
 
     /**
-     * Page Loader theo chuẩn HisSoft / loadingpage
+     * Page Loader theo chuan HisSoft
      */
     function showPageloader() {
-        const el = document.getElementById('page-loader-body');
-        if (!el) return;
-        el.style.display = 'flex';
-        el.style.zIndex = '99999';
-        requestAnimationFrame(() => {
+        if (typeof window.showPageLoader === 'function' && window.showPageLoader !== showPageloader) {
+            window.showPageLoader();
+            return;
+        }
+        var el = document.getElementById('page-loader-body');
+        if (el) {
             el.classList.add('show');
-        });
+            el.style.zIndex = '1056';
+        }
+        if (window.jQuery) {
+            window.jQuery('#page-loader-body').addClass('show').css('z-index', '1056');
+        }
     }
 
     function hidePageloader() {
-        const el = document.getElementById('page-loader-body');
-        if (!el) return;
-        el.classList.remove('show');
-        setTimeout(() => {
-            if (!el.classList.contains('show')) {
-                el.style.display = 'none';
-                el.style.zIndex = '-1';
-            }
-        }, 180);
+        if (typeof window.hidePageLoader === 'function' && window.hidePageLoader !== hidePageloader) {
+            window.hidePageLoader();
+            return;
+        }
+        var el = document.getElementById('page-loader-body');
+        if (el) {
+            el.classList.remove('show');
+            el.style.zIndex = '-1';
+        }
+        if (window.jQuery) {
+            window.jQuery('#page-loader-body').removeClass('show').css('z-index', '-1');
+        }
     }
 
-    window.showPageloader = window.showPageLoader = showPageloader;
-    window.hidePageloader = window.hidePageLoader = hidePageloader;
-    window.loadingpage = function (show = true) {
-        if (show === false || show === 'hide' || show === 0) {
-            hidePageloader();
-        } else {
-            showPageloader();
-        }
-    };
-    window.loadingPage = window.loadingpage;
-    window.showLoadingPage = showPageloader;
-    window.hideLoadingPage = hidePageloader;
+    if (!window.showPageloader) window.showPageloader = window.showPageLoader = showPageloader;
+    if (!window.hidePageloader) window.hidePageloader = window.hidePageLoader = hidePageloader;
+    if (!window.loadingpage) {
+        window.loadingpage = function (show = true) {
+            if (show === false || show === 'hide' || show === 0) {
+                (window.hidePageloader || hidePageloader)();
+            } else {
+                (window.showPageloader || showPageloader)();
+            }
+        };
+        window.loadingPage = window.loadingpage;
+        window.showLoadingPage = window.showPageloader || showPageloader;
+        window.hideLoadingPage = window.hidePageloader || hidePageloader;
+    }
 })();

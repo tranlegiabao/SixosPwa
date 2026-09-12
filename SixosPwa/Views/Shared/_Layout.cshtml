@@ -84,6 +84,7 @@
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/page-loader.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/chan-trang-cong.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/show-toast.css" asp-append-version="true" />
     <script src="~/js/show-toast.js" asp-append-version="true"></script>
@@ -621,7 +622,27 @@
 
 
 
+    <!-- Page Loader chuan HisSoft -->
+    <div class="d-flex position-fixed top-0 bottom-0 modal-blur fade" id="page-loader-body" tabindex="-1" role="dialog" aria-hidden="true" style="z-index: -1; left: 0; right: 0;">
+        <div class="modal-dialog modal-sm modal-dialog-centered w-20" role="document">
+            <div class="modal-content">
+                <div class="container container-slim py-4">
+                    <div class="text-center">
+                        <div class="mb-3">
+                            <span class="navbar-brand navbar-brand-autodark"><img src="/static/logo12.svg" height="36" alt=""></span>
+                        </div>
+                        <div class="text-dark mb-3 fw-bolder fs-2">Đang tải...</div>
+                        <div class="progress progress-sm">
+                            <div class="progress-bar progress-bar-indeterminate"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/page-loader.js" asp-append-version="true"></script>
     <script src="~/js/pwa-install.js" asp-append-version="true"></script>
 
     @if (User.Identity?.IsAuthenticated == true)

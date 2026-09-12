@@ -1,0 +1,112 @@
+/* --- HisSoft Page Loader Styles (Hoan toan khong co khung nen trang, dung chuan HisSoft) --- */
+#page-loader-body {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: -1;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .15s linear;
+}
+
+#page-loader-body.show {
+    opacity: 1;
+    pointer-events: auto;
+    background: rgba(255, 255, 255, 0.15);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+}
+
+.modal-blur {
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+}
+
+#page-loader-body .modal-dialog {
+    margin: auto;
+    max-width: 280px;
+    width: 100%;
+}
+
+#page-loader-body .modal-content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    color: #1e293b;
+    pointer-events: auto;
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: 0;
+}
+
+#page-loader-body .container-slim {
+    max-width: 16rem;
+    margin-right: auto;
+    margin-left: auto;
+    padding: 0;
+}
+
+#page-loader-body .text-dark {
+    color: #182433 !important;
+    font-size: 1.25rem !important;
+    font-weight: 700 !important;
+    margin-top: 12px;
+    margin-bottom: 12px;
+}
+
+#page-loader-body .progress-sm {
+    height: 4px;
+}
+
+#page-loader-body .progress {
+    position: relative;
+    width: 100%;
+    height: 4px;
+    background-color: #8c8c8c !important;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+@keyframes progress-indeterminate {
+    0% {
+        right: 100%;
+        left: -35%;
+    }
+    100%, 60% {
+        right: -90%;
+        left: 100%;
+    }
+}
+
+#page-loader-body .progress-bar-indeterminate {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background-color: #206bc4;
+}
+
+#page-loader-body .progress-bar-indeterminate:after,
+#page-loader-body .progress-bar-indeterminate:before {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    content: "";
+    background-color: inherit;
+    will-change: left, right;
+}
+
+#page-loader-body .progress-bar-indeterminate:before {
+    animation: progress-indeterminate 1.5s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite;
+}

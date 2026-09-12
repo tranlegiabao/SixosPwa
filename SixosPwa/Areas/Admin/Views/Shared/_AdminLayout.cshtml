@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="~/dist/webfont/tabler-icons.min.css" />
     <link rel="stylesheet" href="~/dist/datetimepicker/bootstrap-datetimepicker.min.css" />
     <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/page-loader.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/show-toast.css" asp-append-version="true" />
     <script src="~/js/show-toast.js" asp-append-version="true"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.bootstrap5.min.css" />
@@ -108,18 +109,18 @@
         </main>
     </div>
 
-    <!-- Page Loader (HisSoft / Sixos style) -->
-    <div class="position-fixed top-0 bottom-0 modal-blur fade" id="page-loader-body" tabindex="-1" role="dialog" aria-hidden="true" style="z-index: -1; left: 0; right: 0; display: none; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(4px); align-items: center; justify-content: center;">
-        <div class="modal-dialog modal-sm modal-dialog-centered w-20" role="document" style="max-width: 280px; margin: auto;">
-            <div class="modal-content shadow-lg border-0" style="border-radius: 12px; background: #ffffff;">
-                <div class="container container-slim py-4" style="padding: 24px 20px;">
+    <!-- Page Loader chuan HisSoft -->
+    <div class="d-flex position-fixed top-0 bottom-0 modal-blur fade" id="page-loader-body" tabindex="-1" role="dialog" aria-hidden="true" style="z-index: -1; left: 0; right: 0;">
+        <div class="modal-dialog modal-sm modal-dialog-centered w-20" role="document">
+            <div class="modal-content">
+                <div class="container container-slim py-4">
                     <div class="text-center">
                         <div class="mb-3">
-                            <span class="navbar-brand navbar-brand-autodark"><img src="~/static/logo12.svg" height="36" alt="HisSoft"></span>
+                            <span class="navbar-brand navbar-brand-autodark"><img src="/static/logo12.svg" height="36" alt=""></span>
                         </div>
-                        <div class="text-dark mb-3 fw-bolder fs-2" style="font-size: 1.25rem !important; font-weight: 700;">Đang tải...</div>
-                        <div class="progress progress-sm" style="height: 4px; background: #f1f5f9; border-radius: 2px; position: relative; overflow: hidden;">
-                            <div class="progress-bar progress-bar-indeterminate" style="background-color: #206bc4;"></div>
+                        <div class="text-dark mb-3 fw-bolder fs-2">Đang tải...</div>
+                        <div class="progress progress-sm">
+                            <div class="progress-bar progress-bar-indeterminate"></div>
                         </div>
                     </div>
                 </div>
@@ -133,6 +134,7 @@
     <script src="~/dist/datetimepicker/moment-with-locales.min.js"></script>
     <script src="~/dist/datetimepicker/bootstrap-datetimepicker.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
+    <script src="~/js/page-loader.js" asp-append-version="true"></script>
     <script src="~/js/admin.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
