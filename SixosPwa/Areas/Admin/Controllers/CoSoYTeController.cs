@@ -20,6 +20,8 @@ public sealed class CoSoYTeController : AdminControllerBase
     private readonly AdminStoredProcedureService _adminStoredProcedures;
     private readonly IFtpService _ftp;
     private readonly IDonAnhService _donAnh;
+    /// <summary>Chi de bam nut "Thu ket noi kho". Lop nay CHI DOC (ADR 0030).</summary>
+    private readonly IKhoCoSoService _khoCoSo;
 
     /// <summary>
     /// Canh bao KHONG chan viec Luu — vd FTP hong dung luc tai anh. Noi vao cuoi
@@ -32,12 +34,14 @@ public sealed class CoSoYTeController : AdminControllerBase
         ApplicationDbContext db,
         AdminStoredProcedureService adminStoredProcedures,
         IFtpService ftp,
-        IDonAnhService donAnh)
+        IDonAnhService donAnh,
+        IKhoCoSoService khoCoSo)
     {
         _db = db;
         _adminStoredProcedures = adminStoredProcedures;
         _ftp = ftp;
         _donAnh = donAnh;
+        _khoCoSo = khoCoSo;
     }
 
     private string KemCanhBao(string thongBao) =>
@@ -245,6 +249,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         // loai co so. Da dinh o Dot 3.
         var model = await ToViewModelAsync(entity);
         model.ActiveSection = section;
+        await NapKhoFtpAsync(model, entity.Id);
         var advertising = await GetAdvertisingAsync(entity.Id);
         model.NoiDungQuangCao = advertising?.NoiDung;
         model.QuangCaoImg = advertising?.Img;
@@ -318,6 +323,11 @@ public sealed class CoSoYTeController : AdminControllerBase
             await PopulateContentEditorAsync(model, model.TopicId > 0 ? model.TopicId : null, loadSelectedContent: false);
             return View(model);
         }
+
+        // Kho phieu co so: chay SAU khi co so luu xong (stored kiem FK toi DM_CSKCB).
+        // Loi o day KHONG lam hong viec luu co so — nhet vao _canhBao nhu duong anh.
+        var loiKho = await LuuKhoFtpAsync(model);
+        if (loiKho != null) _canhBao.Add(loiKho);
 
         var loiGioLamViec = await LuuGioLamViecAsync(model.Id, model);
         if (loiGioLamViec != null)
@@ -902,6 +912,95 @@ public sealed class CoSoYTeController : AdminControllerBase
                 return cum;
 
         return OperatingHours.Default.Days;   // khong khop cum nao: lay ca tuan
+    }
+
+    // ====================== Kho phieu co so (ADR 0030) ======================
+
+    /// <summary>Nap cau hinh kho cua co so vao man Sua. Khong co kho thi de trong.</summary>
+    private async Task NapKhoFtpAsync(CoSoYTeEditViewModel model, long idCoSo)
+    {
+        var kho = await _db.KhoFtpCoSos.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.IdCoSo == idCoSo);
+        if (kho == null) return;
+
+        model.KhoHost = kho.Host;
+        model.KhoTaiKhoan = kho.TaiKhoan;
+        model.KhoMatKhau = kho.MatKhau;
+        model.KhoThuMucGoc = kho.ThuMucGoc;
+        model.KhoActive = kho.Active;
+        model.KhoNgayThuDat = kho.NgayThuDat;
+    }
+
+    /// <summary>
+    /// Ghi cau hinh kho. Tra ve thong diep loi, null neu dat hoac khong co gi de ghi.
+    ///
+    /// 🔴 Luat "chua Thu ket noi dat thi khong bat duoc" nam o STORED, khong chep len
+    /// day (ADR 0008: moi duong ghi di qua stored). Bat @ResultCode = 6 roi noi lai.
+    /// </summary>
+    private async Task<string?> LuuKhoFtpAsync(CoSoYTeEditViewModel model)
+    {
+        var coNhap = !string.IsNullOrWhiteSpace(model.KhoHost)
+                     || !string.IsNullOrWhiteSpace(model.KhoTaiKhoan)
+                     || !string.IsNullOrWhiteSpace(model.KhoMatKhau);
+
+        // Khong nhap gi = co so nay khong dung che do Tro duong. Khong tu xoa cau
+        // hinh dang co: o mat khau hien kieu password, trinh duyet co the khong tra
+        // ve, va xoa lang le mot kho dang chay la loi im lang.
+        if (!coNhap) return null;
+
+        if (string.IsNullOrWhiteSpace(model.KhoHost)
+            || string.IsNullOrWhiteSpace(model.KhoTaiKhoan)
+            || string.IsNullOrWhiteSpace(model.KhoMatKhau))
+            return "Kho phiếu cơ sở chưa lưu: phải nhập đủ Máy chủ, Tài khoản và Mật khẩu.";
+
+        var khoHienCo = await _db.KhoFtpCoSos.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.IdCoSo == model.Id);
+
+        var ketQua = await _adminStoredProcedures.SaveKhoFtpCoSoAsync(
+            khoHienCo?.Id ?? 0,
+            model.Id,
+            model.KhoHost!.Trim(),
+            model.KhoTaiKhoan!.Trim(),
+            model.KhoMatKhau!,
+            model.KhoThuMucGoc?.Trim(),
+            model.KhoActive);
+
+        return ketQua.KetQua.Succeeded
+            ? null
+            : (ketQua.KetQua.Message ?? "Không thể lưu kho phiếu cơ sở.");
+    }
+
+    /// <summary>
+    /// Nut <i>Thu ket noi kho</i>. Day la cho DUY NHAT kiem duoc cau hinh truoc khi
+    /// benh nhan bam mo: che do Tro duong khong co "luc nhan" nao ben cong ca —
+    /// stored ben HIS ghi THANG vao HIS_CSKH, khong goi HTTP toi cong (chot 41).
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ThuKetNoiKho(long id)
+    {
+        if (!await _db.KhoFtpCoSos.AnyAsync(x => x.IdCoSo == id))
+            return Json(new { success = false, message = "Hãy lưu cấu hình kho trước khi thử kết nối." });
+
+        bool dat;
+        try
+        {
+            dat = await _khoCoSo.ThuKetNoiAsync(id);
+        }
+        catch (Exception)
+        {
+            // ThuKetNoiAsync da nuot loi ket noi, con lai la "kho dang tat" /
+            // "chua khai bao" — noi thang chu khong de 500 roi ra man trang.
+            dat = false;
+        }
+
+        if (!dat)
+            return Json(new { success = false, message = "Chưa kết nối được tới kho của cơ sở. Kiểm tra lại máy chủ, tài khoản, mật khẩu." });
+
+        var ghi = await _adminStoredProcedures.GhiNhanThuDatKhoFtpAsync(id);
+        return ghi.Succeeded
+            ? Json(new { success = true, message = "Kết nối kho đạt. Giờ có thể bật kho." })
+            : Json(new { success = false, message = ghi.Message ?? "Kết nối đạt nhưng không ghi nhận được." });
     }
 
     /// <summary>

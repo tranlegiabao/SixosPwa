@@ -222,6 +222,14 @@ lên SixosPwa (tài liệu, đợt khám). *Gọi thẳng* = SixosPwa chủ đ�
 (lịch trống, đặt/huỷ lịch). Lịch hẹn **không** có bản sao ở SixosPwa. Xem ADR 0017.
 _Tránh_: đồng bộ (chung chung — không nói được ai gọi ai), push/pull
 
+**Trỏ đường** *(chốt 2026-09-12)*:
+Chế độ thứ hai để tài liệu tới cổng, đối lại *Chế độ API*. HIS **chỉ ghi ĐƯỜNG** tới phiếu đã ký số —
+không gửi byte nào — còn bản thân tệp nằm nguyên trên FTP của phòng khám; cổng giữ đường đó và **tự
+kéo** lúc bệnh nhân bấm mở. 🔴 **Không** gọi là *đẩy thẳng*: chữ *Đẩy* đã có nghĩa riêng ở trên (HIS
+chủ động gửi dữ liệu lên), mà ở đây chiều đi của byte là **ngược lại**. Chỉ phủ tài liệu **đã ký số**
+— phiếu chưa ký không có tệp nào tồn tại để trỏ tới. Xem ADR 0030.
+_Tránh_: đẩy thẳng, ghi thẳng, linked server, chế độ mới
+
 **Hàng đợi gửi**:
 Bảng nằm **bên HIS**, không phải bên SixosPwa: mỗi dòng là một tài liệu chờ đẩy, mang trạng thái và
 số lần thử. Nó tồn tại vì cò đẩy là **người bấm**, nên phải có chỗ ghi nhớ cái gì đã gửi, cái gì còn
@@ -416,6 +424,13 @@ Máy chủ FTP dùng chung với HisSoft, nơi đặt mọi ảnh của phần m
 đĩa máy chạy chỉ là chỗ tạm, mất khi dựng lại.
 _Tránh_: thư mục ảnh, wwwroot, ổ đĩa
 
+**Kho phiếu cơ sở** *(chốt 2026-09-12)*:
+Máy chủ FTP **của chính phòng khám**, nơi HIS của họ ghi công văn đã ký số. Khác hẳn *Kho ảnh*: kho ảnh
+là của cổng và cổng ghi vào đó, còn kho phiếu cơ sở là của khách và cổng **chỉ đọc**, không bao giờ
+ghi. Một tài liệu bên cổng nằm ở đúng một trong hai kho, và dòng dữ liệu tự nói ra nó ở kho nào. Cổng
+không giữ bản sao của thứ nằm trong kho này. Xem ADR 0030.
+_Tránh_: kho ảnh, FTP (trần), kho tài liệu
+
 **Đường đọc ảnh**:
 Địa chỉ mà trình duyệt dùng để xin một tấm ảnh trong *kho ảnh*. Đây là địa chỉ được lưu trong cơ sở dữ
 liệu, không phải vị trí thật của tệp.
@@ -448,3 +463,7 @@ _Tránh_: ảnh thừa, ảnh rác, file cũ
 - [0021](docs/adr/0021-tu-choi-tai-lieu-mo-coi.md) — vì sao tài liệu đẩy lên cho mã BN chưa có hồ sơ bị từ chối thay vì giữ lại.
 - [0022](docs/adr/0022-khoa-api-bang-rieng-khong-dung-co-active.md) — vì sao khoá API nằm ở bảng riêng, không dùng chung cờ `Active` của cơ sở.
 - [0023](docs/adr/0023-o-lich-hen-len-trunk-voi-du-lieu-mau.md) — vì sao ô *Lịch hẹn* lên trunk khi còn chạy dữ liệu mẫu, và điều kiện đóng nợ.
+- [0030](docs/adr/0030-tai-lieu-nam-o-hai-kho.md) — vì sao tài liệu nằm ở hai kho và cổng giữ đường chứ không giữ byte.
+
+> Danh sách trên đang **thiếu 0024–0029** (viết sau mà chưa cập nhật vào đây). Xem thẳng
+> [`docs/adr/`](docs/adr/) cho đủ.

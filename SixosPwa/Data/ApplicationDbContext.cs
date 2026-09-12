@@ -33,6 +33,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<TaiKhoanDoiTac> TaiKhoanDoiTacs => Set<TaiKhoanDoiTac>();
     public DbSet<TaiLieuBenhNhan> TaiLieuBenhNhans => Set<TaiLieuBenhNhan>();
     public DbSet<KhoaApiCoSo> KhoaApiCoSos => Set<KhoaApiCoSo>();
+    public DbSet<KhoFtpCoSo> KhoFtpCoSos => Set<KhoFtpCoSo>();
     public DbSet<DMGioiTinh> DMGioiTinhs => Set<DMGioiTinh>();
     public DbSet<HTConfig> HTConfigs => Set<HTConfig>();
 
@@ -158,6 +159,23 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<KhoaApiCoSo>().Property(e => e.NgayDungCuoi);
         modelBuilder.Entity<KhoaApiCoSo>().HasIndex(e => e.KhoaBam).IsUnique();
 
+        // --------------------------------------------------------- HT_KhoFtpCoSo
+        // Kho FTP CUA PHONG KHAM ma cong chi DOC ("Kho phieu co so", ADR 0030).
+        modelBuilder.Entity<KhoFtpCoSo>().ToTable("HT_KhoFtpCoSo");
+        modelBuilder.Entity<KhoFtpCoSo>().HasKey(e => e.Id);
+        modelBuilder.Entity<KhoFtpCoSo>().Property(e => e.Id).HasColumnName("ID");
+        modelBuilder.Entity<KhoFtpCoSo>().Property(e => e.IdCoSo).HasColumnName("IDCoSo").IsRequired();
+        modelBuilder.Entity<KhoFtpCoSo>().Property(e => e.Host).HasMaxLength(200).IsRequired();
+        modelBuilder.Entity<KhoFtpCoSo>().Property(e => e.TaiKhoan).HasMaxLength(100).IsRequired();
+        modelBuilder.Entity<KhoFtpCoSo>().Property(e => e.MatKhau).HasMaxLength(200).IsRequired();
+        modelBuilder.Entity<KhoFtpCoSo>().Property(e => e.ThuMucGoc).HasMaxLength(200).IsRequired();
+        modelBuilder.Entity<KhoFtpCoSo>().Property(e => e.Active).IsRequired();
+        modelBuilder.Entity<KhoFtpCoSo>().Property(e => e.NgayThuDat);
+        modelBuilder.Entity<KhoFtpCoSo>().Property(e => e.NgayTao).IsRequired();
+        modelBuilder.Entity<KhoFtpCoSo>().Property(e => e.NgaySua);
+        // 🔴 1-1 voi co so. KhoaApiCoSo co y 1-nhieu (xoay khoa) — dung chep sang day.
+        modelBuilder.Entity<KhoFtpCoSo>().HasIndex(e => e.IdCoSo).IsUnique();
+
         // --------------------------------------------------------------- DM_CSKCB
         modelBuilder.Entity<DMCSKCB>().ToTable("DM_CSKCB");
         modelBuilder.Entity<DMCSKCB>().HasKey(e => e.Id);
@@ -238,7 +256,12 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.MaBN).HasMaxLength(50).IsRequired();
         modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.LoaiTaiLieu).HasMaxLength(50).IsRequired();
         modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.TenTaiLieu).HasMaxLength(255).IsRequired();
+        // 🔴 Ba so DANG LECH, co y giu nguyen 500: cot khai nvarchar(1000) trong DB
+        // nhung tham so stored ben HIS chan o 500, va day cung 500. Chua can vi
+        // duong dai nhat do duoc la 95 ky tu (135/135 duong URLKySo tren
+        // Dev_Master3, 12/09). Noi len 1000 la phai dung ca tham so stored ben HIS.
         modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.DuongDanFtp).HasMaxLength(500).IsRequired();
+        modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.NguonKho).HasMaxLength(20).IsRequired();
         modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.DungLuongByte).IsRequired();
         modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.NgayKham);
         modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.GhiChu).HasColumnType("nvarchar(max)");

@@ -23,8 +23,19 @@ public class TaiLieuBenhNhan
     /// <summary>Tên hiển thị / tiêu đề của tài liệu.</summary>
     public string TenTaiLieu { get; set; } = "";
 
-    /// <summary>Đường dẫn lưu file trên FTP.</summary>
+    /// <summary>Đường dẫn lưu file trên FTP. Kho nào thì xem <see cref="NguonKho"/>.</summary>
     public string DuongDanFtp { get; set; } = "";
+
+    /// <summary>
+    /// Tài liệu này nằm ở KHO NÀO: <c>CONG</c> = kho FTP của chính cổng
+    /// (<c>sixospwa/...</c>, cổng tự ghi) · <c>COSO</c> = "Kho phiếu cơ sở" —
+    /// FTP của phòng khám, cổng CHỈ ĐỌC (chế độ Trỏ đường, ADR 0030).
+    ///
+    /// 🔴 Cố ý là một CỘT, không suy từ tiền tố <c>sixospwa/</c> trong chuỗi: hai kho
+    /// cùng tồn tại cho cùng một cơ sở, và luật ngầm nằm trong chuỗi thì đọc nhầm kho
+    /// mà không báo gì (chốt 35). Dùng hằng <see cref="Services.NguonKhoTaiLieu"/>.
+    /// </summary>
+    public string NguonKho { get; set; } = "CONG";
 
     /// <summary>Dung lượng file (byte).</summary>
     public long DungLuongByte { get; set; }

@@ -166,7 +166,12 @@
                 if (fallbackEl) fallbackEl.style.display = "none";
                 canvas.style.display = "block";
             }).catch(function (err) {
-                console.warn(`Không thể tạo thumbnail trang 1 cho tài liệu ${idx}:`, err);
+                // 🔴 Đây là chỗ gọi getDocument THỨ HAI (ngoài taiVaRenderPdf). Ở đây
+                // CỐ Ý không dựng màn lỗi PA-1: hỏng thumbnail thì thẻ rơi về khung
+                // giấy + icon loại tài liệu, không nói dối điều gì. Người dùng bấm mở
+                // mới là lúc phải nói thật — và lúc đó hienManLoiTaiLieu() lo (chốt 38).
+                console.warn(`Không thể tạo thumbnail trang 1 cho tài liệu ${idx}:`, err,
+                    err && err.status ? `(HTTP ${err.status})` : "");
                 if (loadingEl) loadingEl.style.display = "none";
             });
         });
@@ -341,10 +346,79 @@
             khoiTaoDanhSachTrangCuonDoc(pdfDoc);
         }).catch(function (error) {
             console.error("Lỗi đọc PDF:", error);
-            if (loaderEl) {
-                loaderEl.innerHTML = '<span style="color:#ef4444;">Lỗi đọc tài liệu hoặc tệp không tồn tại.</span>';
-            }
+            hienManLoiTaiLieu(error);
         });
+    }
+
+    /**
+     * Màn lỗi khi không mở được tài liệu.
+     *
+     * 🔴 Cố ý TÁCH ba ca. Câu cũ gộp chung "Lỗi đọc tài liệu hoặc tệp không tồn tại"
+     * làm bệnh nhân tưởng tài liệu của mình đã mất, trong khi ở ca 502 nó vẫn còn
+     * nguyên bên phòng khám — chỉ là cổng chưa hỏi tới được (chốt 38, ADR 0030).
+     *
+     * pdf.js ném UnexpectedResponseException có mang `status`, nên rẽ nhánh được
+     * ngay tại đây, không cần thêm một lượt fetch nào.
+     */
+    function hienManLoiTaiLieu(error) {
+        if (!loaderEl) return;
+
+        const status = (error && typeof error.status === "number") ? error.status : 0;
+
+        let tieuDe;
+        let moTa;
+        if (status === 404) {
+            tieuDe = "Không tìm thấy tệp tài liệu";
+            moTa = "Phòng khám có thể đã dời hoặc đổi tên tệp. Vui lòng báo lại phòng khám.";
+        } else if (status === 502) {
+            tieuDe = "Chưa lấy được tài liệu từ phòng khám — tài liệu vẫn còn nguyên.";
+            moTa = "Kho tài liệu của phòng khám đang không phản hồi. Bạn thử lại sau ít phút.";
+        } else {
+            tieuDe = "Lỗi đọc tài liệu hoặc tệp không tồn tại.";
+            moTa = "";
+        }
+
+        loaderEl.innerHTML = "";
+
+        const hop = document.createElement("div");
+        hop.className = "tl-viewer-error";
+        hop.style.textAlign = "center";
+        hop.style.padding = "16px";
+
+        const dongTieuDe = document.createElement("div");
+        dongTieuDe.style.color = "#ef4444";
+        dongTieuDe.style.fontWeight = "600";
+        dongTieuDe.textContent = tieuDe;
+        hop.appendChild(dongTieuDe);
+
+        if (moTa) {
+            const dongMoTa = document.createElement("div");
+            dongMoTa.style.marginTop = "6px";
+            dongMoTa.style.fontSize = "13px";
+            dongMoTa.textContent = moTa;
+            hop.appendChild(dongMoTa);
+        }
+
+        // Nút Thử lại: chỉ có nghĩa khi lỗi là TẠM THỜI. Tệp không tồn tại thì
+        // bấm bao nhiêu lần cũng vậy — bày nút ra là mời người ta bấm vô ích.
+        if (status !== 404) {
+            const nut = document.createElement("button");
+            nut.type = "button";
+            nut.className = "tl-btn-thu-lai";
+            nut.textContent = "Thử lại";
+            nut.style.marginTop = "12px";
+            nut.style.padding = "8px 20px";
+            nut.style.border = "1px solid #cbd5e1";
+            nut.style.borderRadius = "8px";
+            nut.style.background = "#fff";
+            nut.style.cursor = "pointer";
+            nut.addEventListener("click", function () {
+                if (currentPdfUrl) taiVaRenderPdf(currentPdfUrl);
+            });
+            hop.appendChild(nut);
+        }
+
+        loaderEl.appendChild(hop);
     }
 
     /**

@@ -61,6 +61,45 @@
             @await Html.PartialAsync("_CoSoYTeDashboardContentFields", Model)
         </div>
 
+        @* Kho phieu co so — FTP CUA PHONG KHAM, cong CHI DOC (che do Tro duong, ADR 0030).
+           🔴 Dung goi che do nay la "day thang": chu Day nghia la HIS chu dong gui byte
+           len, ma o day byte di NGUOC chieu — cong tu keo ve khi benh nhan mo. *@
+        <div class="form-section-title">Kho phiếu cơ sở</div>
+        <div class="row g-3">
+            <div class="col-12">
+                <div class="form-text">
+                    Kho FTP <strong>của chính phòng khám</strong>, nơi phiếu đã ký số nằm sẵn. Cổng
+                    <strong>chỉ đọc</strong> kho này — không ghi, không xoá, không giữ bản sao.
+                </div>
+            </div>
+            <div class="col-md-6"><label asp-for="KhoHost" class="form-label">Máy chủ kho (FTP)</label><input asp-for="KhoHost" class="form-control" autocomplete="off" placeholder="118.69.34.247" /><span asp-validation-for="KhoHost" class="text-danger field-error"></span></div>
+            <div class="col-md-6"><label asp-for="KhoThuMucGoc" class="form-label">Thư mục gốc</label><input asp-for="KhoThuMucGoc" class="form-control" autocomplete="off" placeholder="(để trống nếu đường dẫn tính từ gốc FTP)" /><span asp-validation-for="KhoThuMucGoc" class="text-danger field-error"></span></div>
+            <div class="col-md-6"><label asp-for="KhoTaiKhoan" class="form-label">Tài khoản</label><input asp-for="KhoTaiKhoan" class="form-control" autocomplete="off" /><span asp-validation-for="KhoTaiKhoan" class="text-danger field-error"></span></div>
+            <div class="col-md-6"><label asp-for="KhoMatKhau" class="form-label">Mật khẩu</label><input asp-for="KhoMatKhau" type="password" class="form-control" autocomplete="new-password" /><span asp-validation-for="KhoMatKhau" class="text-danger field-error"></span></div>
+            <div class="col-12">
+                <button type="button" class="btn admin-btn-secondary" id="btnThuKetNoiKho" data-co-so-id="@Model.Id">Thử kết nối kho</button>
+                <span id="ketQuaThuKho" class="ms-2"></span>
+            </div>
+            <div class="col-12">
+                @* Chot 41: chua thu dat thi KHOA o bat. Khoa o ca hai tang — disabled o
+                   day cho nguoi dung thay ngay, con stored moi la cho chan that su. *@
+                <div class="form-check form-switch">
+                    <input asp-for="KhoActive" class="form-check-input" id="khoActiveSwitch" disabled="@(Model.KhoNgayThuDat == null)" />
+                    <label asp-for="KhoActive" class="form-check-label">Bật đọc kho phiếu của cơ sở này</label>
+                </div>
+                <div class="form-text" id="khoTrangThaiThu">
+                    @if (Model.KhoNgayThuDat == null)
+                    {
+                        <text>Chưa thử kết nối đạt lần nào — bấm <strong>Thử kết nối kho</strong> trước khi bật.</text>
+                    }
+                    else
+                    {
+                        <text>Thử kết nối đạt lúc @Model.KhoNgayThuDat.Value.ToString("dd/MM/yyyy HH:mm"). Đổi máy chủ / tài khoản / mật khẩu thì phải thử lại.</text>
+                    }
+                </div>
+            </div>
+        </div>
+
         <div class="form-check form-switch mt-4 mb-4"><input asp-for="Active" class="form-check-input" /><label asp-for="Active" class="form-check-label">Cho phép hiển thị công khai</label></div>
 
         <div class="form-actions"><a asp-action="Index" class="btn admin-btn-secondary">Hủy</a><button type="submit" class="btn admin-btn-primary">Lưu thay đổi</button></div>
@@ -102,6 +141,44 @@
                 // Run initial check
                 updateVisibility();
             }
+        });
+
+        // ---- Kho phieu co so: nut Thu ket noi (ADR 0030, chot 41) ----------------
+        document.addEventListener('DOMContentLoaded', function () {
+            var nut = document.getElementById('btnThuKetNoiKho');
+            var oKetQua = document.getElementById('ketQuaThuKho');
+            var oBat = document.getElementById('khoActiveSwitch');
+            if (!nut) return;
+
+            nut.addEventListener('click', function () {
+                var id = nut.getAttribute('data-co-so-id');
+                var token = document.querySelector('input[name="__RequestVerificationToken"]');
+
+                nut.disabled = true;
+                if (oKetQua) { oKetQua.textContent = 'Đang thử...'; oKetQua.style.color = ''; }
+
+                var duLieu = new FormData();
+                duLieu.append('id', id);
+                if (token) duLieu.append('__RequestVerificationToken', token.value);
+
+                fetch('/Admin/CoSoYTe/ThuKetNoiKho', { method: 'POST', body: duLieu })
+                    .then(function (r) { return r.json(); })
+                    .then(function (kq) {
+                        if (oKetQua) {
+                            oKetQua.textContent = kq.message || '';
+                            oKetQua.style.color = kq.success ? '#16a34a' : '#ef4444';
+                        }
+                        // Thu dat thi mo khoa o bat NGAY, khoi phai tai lai trang.
+                        if (kq.success && oBat) oBat.disabled = false;
+                    })
+                    .catch(function () {
+                        if (oKetQua) {
+                            oKetQua.textContent = 'Không gọi được máy chủ để thử kết nối.';
+                            oKetQua.style.color = '#ef4444';
+                        }
+                    })
+                    .finally(function () { nut.disabled = false; });
+            });
         });
     </script>
 }

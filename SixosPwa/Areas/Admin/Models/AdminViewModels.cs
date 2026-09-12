@@ -235,6 +235,27 @@ public sealed class CoSoYTeEditViewModel
 
     public bool Active { get; set; }
 
+    // ---- Kho phiếu cơ sở: FTP của phòng khám, cổng CHỈ ĐỌC (ADR 0030) ----------
+    // Mỗi cơ sở đúng một kho ⇒ nằm thẳng trong màn Sửa cơ sở, không phải bảng con.
+
+    [StringLength(200, ErrorMessage = "Máy chủ kho tối đa 200 ký tự.")]
+    public string? KhoHost { get; set; }
+
+    [StringLength(100, ErrorMessage = "Tài khoản kho tối đa 100 ký tự.")]
+    public string? KhoTaiKhoan { get; set; }
+
+    /// <summary>🔴 Lưu THÔ theo chốt 36 (tiền lệ ADR 0005) — FTP cần đăng nhập.</summary>
+    [StringLength(200, ErrorMessage = "Mật khẩu kho tối đa 200 ký tự.")]
+    public string? KhoMatKhau { get; set; }
+
+    [StringLength(200, ErrorMessage = "Thư mục gốc tối đa 200 ký tự.")]
+    public string? KhoThuMucGoc { get; set; }
+
+    public bool KhoActive { get; set; }
+
+    /// <summary>Chỉ để hiện trạng thái — chưa có mốc thì ô bật bị khóa (chốt 41).</summary>
+    public DateTime? KhoNgayThuDat { get; set; }
+
     [StringLength(20)]
     public string? SDT { get; set; }
 

@@ -9,6 +9,32 @@
 --     Doan duoi chi tra lai COT rong.
 -- ============================================================================
 
+-- --- Nguoc 21 (cot NguonKho — che do Tro duong, ADR 0030) -------------------
+-- 🔴 Chay cai nay LA MAT dau vet tai lieu nao nam o kho co so. Sau khi bo cot,
+-- moi dong deu bi doc nhu o kho cong => 404 im lang. Chi chay khi that su go
+-- han che do Tro duong.
+IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_QL_TaiLieuBenhNhan_NguonKho')
+    ALTER TABLE dbo.QL_TaiLieuBenhNhan DROP CONSTRAINT CK_QL_TaiLieuBenhNhan_NguonKho;
+GO
+IF EXISTS (SELECT 1 FROM sys.default_constraints WHERE name = 'DF_QL_TaiLieuBenhNhan_NguonKho')
+    ALTER TABLE dbo.QL_TaiLieuBenhNhan DROP CONSTRAINT DF_QL_TaiLieuBenhNhan_NguonKho;
+GO
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.QL_TaiLieuBenhNhan') AND name = 'NguonKho')
+    ALTER TABLE dbo.QL_TaiLieuBenhNhan DROP COLUMN NguonKho;
+GO
+
+-- --- Nguoc 20 (HT_KhoFtpCoSo) -----------------------------------------------
+-- Mat khau FTP luu tho nam trong bang nay, xoa la mat — phai hoi lai tung co so.
+IF EXISTS (SELECT 1 FROM sys.objects WHERE name = 'HT_KhoFtpCoSo_GhiNhanThuDat' AND type = 'P')
+    DROP PROCEDURE dbo.HT_KhoFtpCoSo_GhiNhanThuDat;
+GO
+IF EXISTS (SELECT 1 FROM sys.objects WHERE name = 'HT_KhoFtpCoSo_Save' AND type = 'P')
+    DROP PROCEDURE dbo.HT_KhoFtpCoSo_Save;
+GO
+IF EXISTS (SELECT 1 FROM sys.tables WHERE name = 'HT_KhoFtpCoSo')
+    DROP TABLE dbo.HT_KhoFtpCoSo;
+GO
+
 -- --- Nguoc 14 (Seed 20 tai khoan test / benh nhan that Dev_Master3) --------
 -- Xoa sach cac tai khoan test trich xuat tu Dev_Master3 kem ho so con nguoi
 -- va ho so tai co so tuong ung.

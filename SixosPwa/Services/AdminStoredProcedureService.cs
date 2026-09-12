@@ -48,6 +48,40 @@ public sealed class AdminStoredProcedureService
             AddParameter(command, "@IDBenhNhan", DbType.Int64, idBenhNhan);
         });
 
+    /// <summary>
+    /// Lưu cấu hình "Kho phiếu cơ sở" (FTP của phòng khám, cổng chỉ đọc — ADR 0030).
+    ///
+    /// 🔴 Stored TỪ CHỐI <paramref name="active"/> = true khi chưa Thử kết nối đạt
+    /// (<c>@ResultCode = 6</c>), và tự xóa mốc thử cũ nếu Host/TàiKhoản/MậtKhẩu/ThưMụcGốc
+    /// đổi — lần thử trước hết hiệu lực (chốt 41). Đừng chép luật đó lên tầng C#: một
+    /// bản luật là đủ, và bản ở stored là bản chặn được mọi đường ghi (ADR 0008).
+    /// </summary>
+    public Task<(AdminStoredProcedureResult KetQua, long Id)> SaveKhoFtpCoSoAsync(
+        long id,
+        long idCoSo,
+        string host,
+        string taiKhoan,
+        string matKhau,
+        string? thuMucGoc,
+        bool active) =>
+        ExecuteWithIdAsync("dbo.HT_KhoFtpCoSo_Save", "@IDKho", command =>
+        {
+            AddParameter(command, "@ID", DbType.Int64, id);
+            AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
+            AddParameter(command, "@Host", DbType.String, host, 200);
+            AddParameter(command, "@TaiKhoan", DbType.String, taiKhoan, 100);
+            AddParameter(command, "@MatKhau", DbType.String, matKhau, 200);
+            AddParameter(command, "@ThuMucGoc", DbType.String, thuMucGoc ?? "", 200);
+            AddParameter(command, "@Active", DbType.Boolean, active);
+        });
+
+    /// <summary>Nút <i>Thử kết nối kho</i> bấm ĐẠT thì ghi mốc. Tách khỏi Save có chủ ý.</summary>
+    public Task<AdminStoredProcedureResult> GhiNhanThuDatKhoFtpAsync(long idCoSo) =>
+        ExecuteAsync("dbo.HT_KhoFtpCoSo_GhiNhanThuDat", command =>
+        {
+            AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
+        });
+
     public Task<AdminStoredProcedureResult> SaveDoiTacAsync(
         DoiTacEditViewModel model,
         bool updatePassword) =>

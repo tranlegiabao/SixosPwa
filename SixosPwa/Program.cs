@@ -44,6 +44,9 @@ builder.Services.Configure<FtpSettings>(builder.Configuration.GetSection("FtpSer
 builder.Services.AddScoped<IFtpService, FtpService>();
 builder.Services.AddScoped<IDonAnhService, DonAnhService>();
 builder.Services.AddScoped<ITaiLieuService, TaiLieuService>();
+// Kho FTP cua PHONG KHAM, cong chi DOC (che do Tro duong, ADR 0030). Tach han
+// khoi IFtpService — lop nay khong co Upload/Delete/Move, co y.
+builder.Services.AddScoped<IKhoCoSoService, KhoCoSoService>();
 builder.Services.AddScoped<INhatKyApi, NhatKyApiService>();
 builder.Services.AddScoped<IDotKhamService, DotKhamService>();
 builder.Services.AddScoped<IHoSoBenhNhanService, HoSoBenhNhanService>();

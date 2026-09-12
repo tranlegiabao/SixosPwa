@@ -20,17 +20,21 @@ public class TaiLieuApiController : ControllerBase
 {
     private readonly ApplicationDbContext _db;
     private readonly ITaiLieuService _taiLieuService;
+    /// <summary>Duong doc "Kho phieu co so" — FTP cua phong kham, CHI DOC (ADR 0030).</summary>
+    private readonly IKhoCoSoService _khoCoSo;
     private readonly INhatKyApi _nhatKy;
     private readonly ILogger<TaiLieuApiController> _logger;
 
     public TaiLieuApiController(
         ApplicationDbContext db,
         ITaiLieuService taiLieuService,
+        IKhoCoSoService khoCoSo,
         INhatKyApi nhatKy,
         ILogger<TaiLieuApiController> logger)
     {
         _db = db;
         _taiLieuService = taiLieuService;
+        _khoCoSo = khoCoSo;
         _nhatKy = nhatKy;
         _logger = logger;
     }
@@ -200,11 +204,34 @@ public class TaiLieuApiController : ControllerBase
 
         try
         {
-            var stream = await _taiLieuService.TaiStreamPdfAsync(taiLieu.DuongDanFtp);
+            // Hai kho, hai duong doc. Re theo COT NguonKho chu khong doan bang tien to
+            // "sixospwa/" trong chuoi — chot 35, ADR 0030.
+            var stream = taiLieu.NguonKho == NguonKhoTaiLieu.CoSo
+                ? await _khoCoSo.TaiVeAsync(taiLieu.IdCoSo, taiLieu.DuongDanFtp)
+                : await _taiLieuService.TaiStreamPdfAsync(taiLieu.DuongDanFtp);
+
             var safeFileName = $"{taiLieu.MaBN}_{taiLieu.LoaiTaiLieu}_{taiLieu.Id}.pdf";
-            
+
             Response.Headers["Content-Disposition"] = $"inline; filename=\"{safeFileName}\"";
+            // 🔴 KHONG dat [ResponseCache] kieu AnhController (Duration = 86400): anh logo
+            // la cua cong cong, phieu benh nhan thi khong. Va chot 37 da chot khong dem o
+            // bat ky dau — do that PDF 232KB chi mat 110–241 ms.
+            Response.Headers["Cache-Control"] = "no-store";
             return File(stream, "application/pdf", enableRangeProcessing: true);
+        }
+        // 🔴 Chot 38: TACH hai ca ra. Gop lai chinh la loi im lang ma thuat ngu
+        // *Chua hoi duoc co so* (CONTEXT.md) sinh ra de dep — benh nhan tuong tai lieu
+        // cua minh bi mat, trong khi no van con nguyen ben phong kham.
+        catch (KhoCoSoKhongCoTepException ex)
+        {
+            _logger.LogWarning(ex, "Kho co so khong co tep cho tai lieu {Id}: {Path}", id, taiLieu.DuongDanFtp);
+            return NotFound("Không tìm thấy tệp tài liệu trên kho của cơ sở.");
+        }
+        catch (KhoCoSoKhongNoiDuocException ex)
+        {
+            _logger.LogError(ex, "Khong noi duoc kho co so cho tai lieu {Id}: {Path}", id, taiLieu.DuongDanFtp);
+            return StatusCode(StatusCodes.Status502BadGateway,
+                "Chưa lấy được tài liệu từ phòng khám — tài liệu vẫn còn nguyên.");
         }
         catch (Exception ex)
         {
