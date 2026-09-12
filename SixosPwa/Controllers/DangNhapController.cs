@@ -201,8 +201,11 @@ public class DangNhapController : Controller
             taiKhoan = _dbContext.TaiKhoans.AsNoTracking().FirstOrDefault(tk => tk.SDT == term);
         }
 
+        bool laQrHis = model.DanhTinhQuet != null && (model.DanhTinhQuet.LaNguonHis || !string.IsNullOrWhiteSpace(model.DanhTinhQuet.MaBN));
+
         // Khóa luồng tự đăng ký tài khoản: chỉ cho phép tài khoản đã có sẵn từ HIS
-        if (taiKhoan == null)
+        // NGOẠI LỆ: Bệnh nhân đã khám quét QR phiếu khám HIS (nguồn HIS hoặc có MaBN)
+        if (taiKhoan == null && !laQrHis)
         {
             return Json(new {
                 success = false,
@@ -316,15 +319,48 @@ public class DangNhapController : Controller
         // (Ho van ha canh o /benh-nhan chu khong dung dau trang, vi ChonDichDenAsync
         //  bo returnUrl khi thieu ma co so — hanh vi CO SAN, khong phai do cong chan
         //  nay. Do that 10/09.) Re-auth Admin duoc mien tru.
+        bool laQrHis = model.DanhTinhQuet != null && (model.DanhTinhQuet.LaNguonHis || !string.IsNullOrWhiteSpace(model.DanhTinhQuet.MaBN));
+
         // Khóa luồng tự đăng ký tài khoản: chỉ cho phép tài khoản đã có sẵn từ HIS
+        // NGOẠI LỆ: Bệnh nhân đã khám quét QR phiếu khám HIS -> tự động tạo tài khoản và hồ sơ
         if (!adminReauth && taiKhoan is null)
         {
-            return Json(new
+            if (!laQrHis)
             {
-                success = false,
-                message = "Số điện thoại chưa có hồ sơ tại cơ sở y tế. Vui lòng liên hệ phòng khám/bệnh viện để được đăng ký.",
-                dichDen = "/"
-            });
+                return Json(new
+                {
+                    success = false,
+                    message = "Số điện thoại chưa có hồ sơ tại cơ sở y tế. Vui lòng liên hệ phòng khám/bệnh viện để được đăng ký.",
+                    dichDen = "/"
+                });
+            }
+
+            taiKhoan = await TaoTaiKhoanVaHoSoTuQrAsync(input, model.MaCoSo, model.Cccd, model.DanhTinhQuet!);
+        }
+
+        if (string.IsNullOrWhiteSpace(model.MaCoSo))
+        {
+            if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet?.MaBN))
+            {
+                model.MaCoSo = await (from cs in _dbContext.BenhNhanCoSos
+                                       join kcb in _dbContext.DMCSKCBs on cs.IdCoSo equals kcb.Id
+                                       where cs.MaBN == model.DanhTinhQuet.MaBN
+                                       select kcb.MaCoSo).FirstOrDefaultAsync();
+            }
+            if (string.IsNullOrWhiteSpace(model.MaCoSo))
+            {
+                model.MaCoSo = await _dbContext.DMCSKCBs
+                    .AsNoTracking()
+                    .Where(x => x.Active)
+                    .OrderBy(x => x.Id)
+                    .Select(x => x.MaCoSo)
+                    .FirstOrDefaultAsync();
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(model.Cccd) && !string.IsNullOrWhiteSpace(model.DanhTinhQuet?.Cccd))
+        {
+            model.Cccd = model.DanhTinhQuet.Cccd.Trim();
         }
 
         string role = "BenhNhan";
@@ -453,15 +489,48 @@ public class DangNhapController : Controller
             return Json(new { success = false, message = "Cơ sở này đang tạm ngưng tiếp nhận đăng ký trực tuyến." });
         }
 
+        bool laQrHis = model.DanhTinhQuet != null && (model.DanhTinhQuet.LaNguonHis || !string.IsNullOrWhiteSpace(model.DanhTinhQuet.MaBN));
+
         // Khóa luồng tự đăng ký tài khoản: chỉ cho phép tài khoản đã có sẵn từ HIS
+        // NGOẠI LỆ: Bệnh nhân đã khám quét QR phiếu khám HIS -> tự động tạo tài khoản và hồ sơ
         if (!adminReauth && taiKhoan is null)
         {
-            return Json(new
+            if (!laQrHis)
             {
-                success = false,
-                message = "Số điện thoại chưa có hồ sơ tại cơ sở y tế. Vui lòng liên hệ phòng khám/bệnh viện để được đăng ký.",
-                dichDen = "/"
-            });
+                return Json(new
+                {
+                    success = false,
+                    message = "Số điện thoại chưa có hồ sơ tại cơ sở y tế. Vui lòng liên hệ phòng khám/bệnh viện để được đăng ký.",
+                    dichDen = "/"
+                });
+            }
+
+            taiKhoan = await TaoTaiKhoanVaHoSoTuQrAsync(sdt, model.MaCoSo, model.Cccd, model.DanhTinhQuet!);
+        }
+
+        if (string.IsNullOrWhiteSpace(model.MaCoSo))
+        {
+            if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet?.MaBN))
+            {
+                model.MaCoSo = await (from cs in _dbContext.BenhNhanCoSos
+                                       join kcb in _dbContext.DMCSKCBs on cs.IdCoSo equals kcb.Id
+                                       where cs.MaBN == model.DanhTinhQuet.MaBN
+                                       select kcb.MaCoSo).FirstOrDefaultAsync();
+            }
+            if (string.IsNullOrWhiteSpace(model.MaCoSo))
+            {
+                model.MaCoSo = await _dbContext.DMCSKCBs
+                    .AsNoTracking()
+                    .Where(x => x.Active)
+                    .OrderBy(x => x.Id)
+                    .Select(x => x.MaCoSo)
+                    .FirstOrDefaultAsync();
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(model.Cccd) && !string.IsNullOrWhiteSpace(model.DanhTinhQuet?.Cccd))
+        {
+            model.Cccd = model.DanhTinhQuet.Cccd.Trim();
         }
 
         var claims = new List<Claim>
@@ -1002,6 +1071,81 @@ public class DangNhapController : Controller
         // nhan nua. Co so noi bo thi van de ho tu dat.
         var cua = await _luong.LayCuaAsync(maCoSo);
         ViewBag.CoBanGiao = cua?.CoBanGiao == true;
+    }
+
+    private async Task<TaiKhoan> TaoTaiKhoanVaHoSoTuQrAsync(string sdt, string? maCoSo, string? cccdInput, DanhTinhQuet quet)
+    {
+        var cccd = !string.IsNullOrWhiteSpace(quet.Cccd) ? quet.Cccd.Trim() : (cccdInput?.Trim() ?? string.Empty);
+        var hoTen = !string.IsNullOrWhiteSpace(quet.HoTen) ? quet.HoTen.Trim() : sdt;
+        var ngaySinh = quet.DoiNgay();
+        var gioiTinh = quet.DoiGioiTinh();
+        var diaChi = string.IsNullOrWhiteSpace(quet.DiaChi) ? null : quet.DiaChi.Trim();
+        var slug = Services.ChuanHoaTen.BoDau(hoTen);
+
+        // 1. Xác định cơ sở y tế
+        long? idCoSo = null;
+        if (!string.IsNullOrWhiteSpace(maCoSo))
+        {
+            idCoSo = await _dbContext.DMCSKCBs
+                .AsNoTracking()
+                .Where(x => x.MaCoSo == maCoSo)
+                .Select(x => (long?)x.Id)
+                .FirstOrDefaultAsync();
+        }
+        if (idCoSo == null && !string.IsNullOrWhiteSpace(quet.MaBN))
+        {
+            idCoSo = await (from cs in _dbContext.BenhNhanCoSos
+                             where cs.MaBN == quet.MaBN
+                             select (long?)cs.IdCoSo).FirstOrDefaultAsync();
+        }
+        if (idCoSo == null)
+        {
+            idCoSo = await _dbContext.DMCSKCBs
+                .AsNoTracking()
+                .Where(x => x.Active)
+                .OrderBy(x => x.Id)
+                .Select(x => (long?)x.Id)
+                .FirstOrDefaultAsync();
+        }
+
+        // 2. Lưu thông tin người bệnh vào DM_BenhNhan
+        var luuNguoi = await _thuTuc.SaveBenhNhanAsync(
+            cccd,
+            hoTen,
+            sdt,
+            null,
+            diaChi,
+            idTaiKhoan: null,
+            ngaySinh: ngaySinh,
+            hoTenKhongDau: slug,
+            gioiTinh: gioiTinh);
+
+        if (idCoSo != null && luuNguoi.Id > 0)
+        {
+            await _thuTuc.TaoHoSoTuKhaiAsync(luuNguoi.Id, idCoSo.Value);
+        }
+
+        // 3. Tạo tài khoản HT_TaiKhoan
+        var luuTaiKhoan = await _thuTuc.SaveTaiKhoanAsync(
+            0,
+            sdt,
+            null,
+            "BenhNhan",
+            null,
+            luuNguoi.Id > 0 ? luuNguoi.Id : null);
+
+        var idTaiKhoan = luuTaiKhoan.Id;
+
+        // 4. Gán quyền sở hữu hồ sơ cho tài khoản
+        if (luuNguoi.Id > 0 && idTaiKhoan > 0)
+        {
+            await _thuTuc.NhanChuSoHuuAsync(luuNguoi.Id, idTaiKhoan);
+        }
+
+        var taiKhoan = await _dbContext.TaiKhoans.FirstOrDefaultAsync(x => x.Id == idTaiKhoan)
+                       ?? new TaiKhoan { Id = idTaiKhoan, SDT = sdt, Role = "BenhNhan", IdBenhNhan = luuNguoi.Id > 0 ? luuNguoi.Id : null };
+
+        return taiKhoan;
     }
 
     /// <summary>

@@ -706,7 +706,12 @@
                     const response = await fetch('/DangNhap/GuiOtp', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ soDienThoai: sdtInput, maCoSo: maCoSoHienTai, cccd: currentCccd })
+                        body: JSON.stringify({ 
+                            soDienThoai: sdtInput, 
+                            maCoSo: maCoSoHienTai, 
+                            cccd: currentCccd,
+                            danhTinhQuet: window.danhTinhQuet
+                        })
                     });
 
                     const data = await response.json();
