@@ -14,7 +14,8 @@ namespace SixosPwa.Services.Partner;
 public interface ILuongCongBenhNhan
 {
     /// <summary>Cho ha canh sau khi OTP dung.</summary>
-    Task<string> ChonDichDenAsync(string maCoSo, string cccd, string dinhDanh, string? returnUrl, CancellationToken ct = default);
+    Task<string> ChonDichDenAsync(string maCoSo, string cccd, string dinhDanh, string? returnUrl,
+                                  DanhTinhQuet? quet = null, CancellationToken ct = default);
 
     /// <summary>Cua cua mot co so — de man hinh biet co so do co ban giao hay khong.</summary>
     Task<CuaCoSo?> LayCuaAsync(string? maCoSo, CancellationToken ct = default);
@@ -179,7 +180,8 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
     //  Cay quyet dinh sau OTP
     // ------------------------------------------------------------------
 
-    public async Task<string> ChonDichDenAsync(string maCoSo, string cccd, string dinhDanh, string? returnUrl, CancellationToken ct = default)
+    public async Task<string> ChonDichDenAsync(string maCoSo, string cccd, string dinhDanh, string? returnUrl,
+                                               DanhTinhQuet? quet = null, CancellationToken ct = default)
     {
         var thamSo = $"?coSo={Uri.EscapeDataString(maCoSo)}";
         if (!string.IsNullOrWhiteSpace(returnUrl))
@@ -192,7 +194,7 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
         // Co so khong co API rieng: o lai trang benh nhan noi bo.
         if (coSo is null || !coSo.CoBanGiao)
         {
-            await BaoDamHoSoNoiBoAsync(maCoSo, cccd, dinhDanh, ct);
+            await BaoDamHoSoNoiBoAsync(maCoSo, cccd, dinhDanh, quet, ct);
 
             // Mot tai khoan quan nhieu ho so (ADR 0019) => phai biet dang xem AI
             // truoc khi vao trang benh nhan. Bam khuon DangKyOnlineUB: dang nhap
@@ -260,7 +262,7 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
             return new KetQuaBuoc(false, "Cơ sở này đăng ký tài khoản tại trang của cơ sở", null);
         }
 
-        var taiKhoan = await TaoHoSoNoiBoAsync(maCoSo, cccd, dinhDanh, hoTen, ct);
+        var taiKhoan = await TaoHoSoNoiBoAsync(maCoSo, cccd, dinhDanh, hoTen, ct: ct);
 
         // Co so noi bo: xong o day, khong goi ra ngoai.
         if (coSo is null || !coSo.CoBanGiao)
@@ -421,7 +423,7 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
         // Cat mat khau NGAY o buoc nay, truoc khi benh nhan go ma. Nho vay buoc 2
         // khong phai bat client gui lai mat khau qua mang lan nua. Ho so noi bo
         // luc nay giong ben doi tac: da tao nhung chua xac thuc.
-        var taiKhoan = await TaoHoSoNoiBoAsync(maCoSo, cccd, string.IsNullOrWhiteSpace(email) ? dienThoai : email, string.Empty, ct);
+        var taiKhoan = await TaoHoSoNoiBoAsync(maCoSo, cccd, string.IsNullOrWhiteSpace(email) ? dienThoai : email, string.Empty, ct: ct);
         await LuuLienKetAsync(taiKhoan.Id, maCoSo, matKhau, null, ct);
 
         return ketQua;
@@ -489,7 +491,7 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
 
         // Lan dau vao tu co so nay: chua co ho so noi bo nao. Dinh danh de trong
         // vi ta chi biet CCCD — doi tac giu ten/dien thoai that cua benh nhan.
-        taiKhoan ??= await TaoHoSoNoiBoAsync(maCoSo, cccd, string.Empty, string.Empty, ct);
+        taiKhoan ??= await TaoHoSoNoiBoAsync(maCoSo, cccd, string.Empty, string.Empty, ct: ct);
 
         // maXacNhan = null: ban giao di duong dang nhap thuan bang mat khau that
         // cua benh nhan, khong con dung ma xac nhan cua doi tac nua (ADR 0014).
@@ -672,7 +674,8 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
             select h.Id).CountAsync(ct);
     }
 
-    private async Task<TaiKhoan> TaoHoSoNoiBoAsync(string maCoSo, string cccd, string dinhDanh, string hoTen, CancellationToken ct)
+    private async Task<TaiKhoan> TaoHoSoNoiBoAsync(string maCoSo, string cccd, string dinhDanh, string hoTen,
+                                                   DanhTinhQuet? quet = null, CancellationToken ct = default)
     {
         var laEmail = dinhDanh.Contains('@');
         var sdt = laEmail ? string.Empty : dinhDanh;
@@ -681,21 +684,24 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
         var idCoSo = await LayIdCoSoAsync(maCoSo, ct);
 
         // Con nguoi truoc (khoa CCCD), roi moi den ho so tai co so.
-        var tenDayDu = string.IsNullOrWhiteSpace(hoTen) ? dinhDanh : hoTen;
+        // Ten/ngay sinh/gioi tinh/dia chi tinh o mot cho duy nhat, de luat "chi dien o
+        // trong" khong bi viet lai hai kieu o hai duong.
+        var o = await TinhOCanDienAsync(cccd, dinhDanh, hoTen, quet, ct);
 
         var luuNguoi = await _thuTuc.SaveBenhNhanAsync(
             cccd,
-            tenDayDu,
+            o.Ten,
             sdt,
             email,
-            null,
+            o.DiaChi,
             // Chu so huu chua biet o buoc nay — tai khoan duoc tao SAU. Nhan chu
             // o cuoi ham bang DM_BenhNhan_NhanChuSoHuu.
             idTaiKhoan: null,
-            ngaySinh: null,
+            ngaySinh: o.Ngay,
             // O thu ba cua luat gop (ADR 0018). Chuan hoa MOT BAN DUY NHAT qua
             // ChuanHoaTen — dung tu bo dau kieu khac o cho khac.
-            hoTenKhongDau: ChuanHoaTen.BoDau(tenDayDu));
+            hoTenKhongDau: o.Slug,
+            gioiTinh: o.GioiTinh);
 
         // 🔴 KHONG con bia ma benh nhan (chot 12 dot 1). Ho so vua tao la *tu
         // khai*: co so chua cap ma nao cho nguoi nay, nen MaBN de RONG. Truoc day
@@ -748,7 +754,8 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
     /// Benh nhan vao thang nhanh noi bo thi chua qua man Dang ky nen chua co ten.
     /// Tao ho so toi thieu de trang benh nhan co cai ma chao.
     /// </summary>
-    private async Task BaoDamHoSoNoiBoAsync(string maCoSo, string cccd, string dinhDanh, CancellationToken ct)
+    private async Task BaoDamHoSoNoiBoAsync(string maCoSo, string cccd, string dinhDanh,
+                                            DanhTinhQuet? quet, CancellationToken ct)
     {
         // Khong duoc dung o "da co tai khoan": tai khoan la mot, nhung ho so thi
         // MOI CO SO MOT CAI. Benh nhan tung dung co so A sang co so B ma chi kiem
@@ -762,10 +769,89 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
             where (p.SDT == dinhDanh || p.Email == dinhDanh) && h.IdCoSo == idCoSo.Value
             select p.Id).AnyAsync(ct);
 
-        if (daCoHoSo) return;
+        if (daCoHoSo)
+        {
+            // Da co ho so roi thi khong phai dung them. NHUNG neu benh nhan vua quet ma
+            // thi day la co hoi dien nhung o con trong (chot 11/09) — nhat la nhom ho so
+            // dang mang ten la SO DIEN THOAI, do dang ky bang OTP tu de ra.
+            if (quet is not null) await DienOTrongTuMaAsync(cccd, dinhDanh, quet, ct);
+            return;
+        }
 
-        await TaoHoSoNoiBoAsync(maCoSo, cccd, dinhDanh, string.Empty, ct);
+        await TaoHoSoNoiBoAsync(maCoSo, cccd, dinhDanh, string.Empty, quet, ct);
     }
+
+    /// <summary>
+    /// Dien du lieu tu ma QR vao ho so DA CO — chi nhung o dang TRONG, cong voi o ten khi
+    /// ten cu la RAC (bang dung dinh danh). Khong dung toi ma benh nhan: viec noi benh an
+    /// di duong rieng, co cong chan rieng.
+    /// </summary>
+    private async Task DienOTrongTuMaAsync(string cccd, string dinhDanh, DanhTinhQuet quet, CancellationToken ct)
+    {
+        var o = await TinhOCanDienAsync(cccd, dinhDanh, string.Empty, quet, ct);
+
+        // Khong con gi de dien thi dung goi thu tuc — khoi ghi mot luot vo ich.
+        if (string.IsNullOrEmpty(o.Ten) && o.Ngay is null
+            && string.IsNullOrWhiteSpace(o.GioiTinh) && string.IsNullOrWhiteSpace(o.DiaChi))
+            return;
+
+        await _thuTuc.SaveBenhNhanAsync(
+            cccd, o.Ten, null, null, o.DiaChi,
+            idTaiKhoan: null,
+            ngaySinh: o.Ngay,
+            hoTenKhongDau: o.Slug,
+            gioiTinh: o.GioiTinh);
+    }
+
+    /// <summary>
+    /// 🔴 Thi hanh chot 11/09: <b>du lieu tu ma QR chi duoc dien vao o TRONG hoac o RAC</b>,
+    /// khong dam len ban benh nhan da tu sua tay.
+    ///
+    /// Cach thi hanh dua han vao <c>DM_BenhNhan_Save</c>: moi cot deu la
+    /// <c>ISNULL(NULLIF(@X,''), X)</c> nen <b>gui NULL (hay chuoi rong cho ten) la giu
+    /// nguyen ban cu</b> — khoi phai sua thu tuc. Chi can o day quyet dinh gui gi.
+    ///
+    /// Hai cho phai can than:
+    ///  · Ho so CHUA co thi nhanh INSERT lay THANG <c>@TenBN</c>, nen luc do buoc phai gui
+    ///    ten that chu khong duoc gui rong.
+    ///  · CCCD la <b>ma gia</b> thi tra cuu theo CCCD vo nghia (nhieu ho so chung mot ma,
+    ///    tu sau chi muc co loc <c>19_</c>) — bo qua, cu xu nhu ho so moi.
+    /// </summary>
+    private async Task<(string Ten, DateTime? Ngay, string? GioiTinh, string? DiaChi, string? Slug)>
+        TinhOCanDienAsync(string cccd, string dinhDanh, string hoTen, DanhTinhQuet? quet, CancellationToken ct)
+    {
+        var cu = (!string.IsNullOrWhiteSpace(cccd) && !LaMaGia(cccd))
+            ? await _db.BenhNhans.AsNoTracking().FirstOrDefaultAsync(x => x.CCCD == cccd, ct)
+            : null;
+
+        var tenMuon = !string.IsNullOrWhiteSpace(hoTen) ? hoTen.Trim()
+                    : !string.IsNullOrWhiteSpace(quet?.HoTen) ? quet!.HoTen!.Trim()
+                    : dinhDanh;
+
+        // Ten cu la RAC khi no bang dung dinh danh: do la ho so tu de ra luc dang ky bang
+        // OTP, chua bao gio di qua man *Them ho so*.
+        var tenCuLaRac = cu is null
+                         || string.IsNullOrWhiteSpace(cu.TenBN)
+                         || string.Equals(cu.TenBN.Trim(), dinhDanh, StringComparison.OrdinalIgnoreCase);
+
+        var ten  = tenCuLaRac ? tenMuon : string.Empty;
+        var slug = string.IsNullOrEmpty(ten) ? cu?.HoTenKhongDau : ChuanHoaTen.BoDau(ten);
+
+        return (
+            Ten:      ten,
+            Ngay:     cu?.NgaySinh is null                    ? quet?.DoiNgay()       : null,
+            GioiTinh: string.IsNullOrWhiteSpace(cu?.GioiTinh) ? quet?.DoiGioiTinh()   : null,
+            DiaChi:   string.IsNullOrWhiteSpace(cu?.DiaChi)   ? Rong(quet?.DiaChi)    : null,
+            Slug:     slug);
+    }
+
+    private static string? Rong(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
+
+    /// <summary>Ma gia "khong co can cuoc" — cung bo voi <c>HoSoBenhNhanService</c>.</summary>
+    private static readonly string[] MaGiaKhongCanCuoc = { "11111111111", "111111111111" };
+
+    private static bool LaMaGia(string? cccd) =>
+        !string.IsNullOrWhiteSpace(cccd) && MaGiaKhongCanCuoc.Contains(cccd.Trim());
 
     /// <summary>Gan y dinh (returnUrl) vao duong dan Ban giao neu co.</summary>
     private static string ThemDichCuoi(string duongDan, string? returnUrl)

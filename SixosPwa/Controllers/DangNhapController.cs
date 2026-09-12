@@ -411,7 +411,7 @@ public class DangNhapController : Controller
             // ILuongCongBenhNhan. Man hinh khong duoc tu kiem tra MaCoSo.
             var redirectUrl = adminReauth
                 ? model.ReturnUrl
-                : await ChonDichDenAsync(model.MaCoSo, model.Cccd, input, model.ReturnUrl);
+                : await ChonDichDenAsync(model.MaCoSo, model.Cccd, input, model.ReturnUrl, model.DanhTinhQuet);
 
             return Json(new { success = true, redirectUrl });
     }
@@ -501,7 +501,7 @@ public class DangNhapController : Controller
 
         var dichDen = adminReauth
             ? model.ReturnUrl
-            : await ChonDichDenAsync(model.MaCoSo, model.Cccd, sdt, model.ReturnUrl);
+            : await ChonDichDenAsync(model.MaCoSo, model.Cccd, sdt, model.ReturnUrl, model.DanhTinhQuet);
 
         return Json(new { success = true, redirectUrl = dichDen });
     }
@@ -985,14 +985,15 @@ public class DangNhapController : Controller
     /// co so) thi khong biet benh nhan o co so nao, nen chi ve duoc trang benh
     /// nhan dang toi gian — muon di tiep phai vao lai qua /DangKyOnline/{slug}.
     /// </summary>
-    private async Task<string?> ChonDichDenAsync(string? maCoSo, string? cccd, string dinhDanh, string? returnUrl)
+    private async Task<string?> ChonDichDenAsync(string? maCoSo, string? cccd, string dinhDanh,
+                                                 string? returnUrl, DanhTinhQuet? quet = null)
     {
         if (string.IsNullOrWhiteSpace(maCoSo) || string.IsNullOrWhiteSpace(cccd))
         {
             return "/benh-nhan";
         }
 
-        return await _luong.ChonDichDenAsync(maCoSo, cccd.Trim(), dinhDanh, returnUrl);
+        return await _luong.ChonDichDenAsync(maCoSo, cccd.Trim(), dinhDanh, returnUrl, quet);
     }
 
     private async Task LuuThietBiDangNhapAsync(string soDienThoai, string? deviceId, string? deviceName)
@@ -1073,6 +1074,12 @@ public class GuiOtpRequest
     public string? DeviceId { get; set; }
     public string? DeviceName { get; set; }
     public string? ReturnUrl { get; set; }
+    /// <summary>
+    /// Danh tinh doc duoc tu ma QR o man Dang nhap, neu benh nhan di duong do.
+    /// 🔴 Du lieu tho tu may khach — xem canh bao trong <see cref="DanhTinhQuet"/>.
+    /// </summary>
+    public DanhTinhQuet? DanhTinhQuet { get; set; }
+
 }
 
 public class XacNhanOtpRequest
@@ -1089,6 +1096,12 @@ public class XacNhanOtpRequest
     public string? DeviceId { get; set; }
     public string? DeviceName { get; set; }
     public string? ReturnUrl { get; set; }
+    /// <summary>
+    /// Danh tinh doc duoc tu ma QR o man Dang nhap, neu benh nhan di duong do.
+    /// 🔴 Du lieu tho tu may khach — xem canh bao trong <see cref="DanhTinhQuet"/>.
+    /// </summary>
+    public DanhTinhQuet? DanhTinhQuet { get; set; }
+
 }
 
 public class TaoTaiKhoanRequest

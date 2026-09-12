@@ -314,6 +314,70 @@
             border-radius: 8px;
             line-height: 1.2;
         }
+
+        /* The ket qua quet — dung lai tren man thay vi toast bay mat, de benh nhan
+           thay ngay neu tro quet nham ma cua nguoi khac. */
+        .the-quet {
+            border: 1px solid #bae6fd;
+            background: #f0f9ff;
+            border-radius: .65rem;
+            padding: .7rem .8rem;
+        }
+        .the-quet__dau {
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+            font-size: .78rem;
+            font-weight: 700;
+            color: #0369a1;
+            margin-bottom: .35rem;
+        }
+        .the-quet__quetlai {
+            margin-left: auto;
+            font-weight: 600;
+            font-size: .75rem;
+            color: #0284c7;
+            text-decoration: underline;
+            background: none;
+            border: 0;
+            padding: 0;
+        }
+        .the-quet__ten { font-size: 1rem; font-weight: 700; color: #0f172a; line-height: 1.25; }
+        .the-quet__phu { font-size: .8rem; color: #475569; margin-top: .1rem; }
+        .the-quet__ma  { font-variant-numeric: tabular-nums; font-weight: 600; color: #0f172a; }
+        /* Bang bao loi camera — nam de trong khung den, khong bay mat nhu toast. */
+        .loi-camera {
+            position: absolute;
+            inset: 1.25rem;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: .5rem;
+            text-align: center;
+            color: #f8fafc;
+            background: rgba(15, 23, 42, .92);
+            border: 1px solid rgba(248, 250, 252, .18);
+            border-radius: .9rem;
+            padding: 1.25rem 1rem;
+        }
+        .loi-camera__tieude { font-size: 1rem; font-weight: 700; }
+        .loi-camera__ly-do  { font-size: .85rem; color: #fca5a5; word-break: break-word; }
+        .loi-camera__goi-y  { font-size: .82rem; color: #cbd5e1; line-height: 1.5; }
+        .loi-camera__nut {
+            margin-top: .35rem;
+            border: 1px solid rgba(248, 250, 252, .5);
+            background: transparent;
+            color: #f8fafc;
+            border-radius: .5rem;
+            padding: .4rem 1.1rem;
+            font-size: .85rem;
+            font-weight: 600;
+        }
+
+        .o-tu-qr       { background: #f1f5f9 !important; }
+        .ghi-o-qr      { font-size: .75rem; color: #64748b; margin-top: .25rem; display: block; }
     </style>
 </head>
 <body class="page-center">
@@ -332,16 +396,14 @@
 
                 <!-- BƯỚC 1: NHẬP SỐ ĐIỆN THOẠI HOẶC EMAIL -->
                 <form id="formStep1" class="step-1" onsubmit="event.preventDefault(); guiOtp();">
-                    @if (!string.IsNullOrWhiteSpace(ViewBag.TenCoSo as string))
-                    {
-                        @* Ma co so den tu trang co so (?coSo=slug). Chi de xem —
-                           benh nhan khong duoc doi, vi no quyet dinh toan bo luong phia sau. *@
-                        <div class="mb-3">
-                            <label class="form-label" for="maCoSo">Mã CSKCB</label>
-                            <input type="text" class="form-control form-control-lg" id="maCoSo" readonly
-                                   value="@ViewBag.MaCoSo — @ViewBag.TenCoSo" />
-                        </div>
-                    }
+                    @* O "Ma CSKCB" da BO (11/09): no chi de xem, khong ai sua duoc, va ten co so
+                       thi da dung ngay tren dau man o .auth__brand. Giu lai chi ton mot hang tren
+                       man dien thoai, day khoi *Cai dat ung dung vao may* xuong duoi mep. Ma co so
+                       van di theo duong cu — bien maCoSoHienTai doc thang tu ViewBag, KHONG doc o
+                       input nay (da kiem: khong mot dong JS nao cham toi #maCoSo). *@
+
+                    @* Khung nay rong cho toi khi quet xong; quet-qr.js do noi dung vao. *@
+                    <div class="mb-3 d-none" id="khungTheQuet"></div>
 
                     <div class="mb-3">
                         <label class="form-label" for="soDienThoai">Số điện thoại hoặc Email</label>
@@ -353,6 +415,7 @@
                         <label class="form-label" for="cccd">Số Căn cước công dân</label>
                         <input type="text" class="form-control form-control-lg" id="cccd" inputmode="numeric"
                                placeholder="12 số trên thẻ căn cước" autocomplete="off" maxlength="20" required />
+                        <span class="ghi-o-qr d-none" id="ghiOCccd">Lấy từ mã QR — không sửa được</span>
                     </div>
 
                     <button type="submit" id="btnGuiOtp" class="btn btn-primary w-100 py-2 fw-bold">
@@ -361,12 +424,14 @@
 
                     <div class="d-flex align-items-center my-3">
                         <hr class="flex-grow-1 my-0 text-muted opacity-25" />
-                        <span class="px-2 text-muted small fw-medium">HOẶC</span>
+                        <span class="px-2 text-muted small fw-medium">HOẶC QUÉT MÃ</span>
                         <hr class="flex-grow-1 my-0 text-muted opacity-25" />
                     </div>
 
-                    <!-- Nút Đăng nhập bằng mã QR chuẩn Ngân hàng -->
-                    <button type="button" class="btn btn-bank-qr w-100 d-flex align-items-center justify-content-center gap-2" onclick="moModalQuetQr()">
+                    @* Hai nut rieng cho hai loai ma: MaBN la nvarchar(50) nen khong the
+                       doan loai QR theo hinh dang o thu hai. Nguoi benh tu khai, may chu van
+                       xac minh lai. *@
+                    <button type="button" class="btn btn-bank-qr w-100 d-flex align-items-center justify-content-center gap-2 mb-2" onclick="moModalQuetQr('his')">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M3 7V5a2 2 0 0 1 2-2h2"/>
                             <path d="M17 3h2a2 2 0 0 1 2 2v2"/>
@@ -375,7 +440,18 @@
                             <rect x="7" y="7" width="10" height="10" rx="1"/>
                             <line x1="7" y1="12" x2="17" y2="12" stroke-dasharray="2 2"/>
                         </svg>
-                        <span>Đăng nhập bằng mã QR</span>
+                        <span>Quét mã trên phiếu khám</span>
+                    </button>
+
+                    <button type="button" class="btn btn-bank-qr w-100 d-flex align-items-center justify-content-center gap-2" onclick="moModalQuetQr('cccd')">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="5" width="20" height="14" rx="2"/>
+                            <circle cx="8.5" cy="11" r="2"/>
+                            <path d="M5 16c.7-1.6 2-2.4 3.5-2.4S11.3 14.4 12 16"/>
+                            <line x1="14" y1="10" x2="19" y2="10"/>
+                            <line x1="14" y1="14" x2="19" y2="14"/>
+                        </svg>
+                        <span>Quét CCCD gắn chip</span>
                     </button>
                 </form>
 
@@ -417,7 +493,7 @@
                         <path d="m15 18-6-6 6-6"/>
                     </svg>
                 </button>
-                <div class="vcb-topbar-title">Quét mã QR</div>
+                <div class="vcb-topbar-title" id="tieuDeQuet">Quét mã QR</div>
             </div>
             <div class="vcb-topbar-right">
                 <button type="button" class="vcb-topbar-icon-btn" id="btnTorch" onclick="toggleDenFlash()" title="Bật/Tắt đèn Flash">
@@ -436,7 +512,7 @@
 
         <!-- Brand & Slogan -->
         <div class="vcb-brand-area">
-            <div class="vcb-brand-desc">
+            <div class="vcb-brand-desc" id="moTaQuet">
                 Quét mã QR để đăng nhập, tra cứu hồ sơ và kết quả khám bệnh
             </div>
         </div>
@@ -448,6 +524,16 @@
                 <div class="vcb-target-frame">
                     <div class="vcb-laser-line"></div>
                 </div>
+            </div>
+
+            @* Bang bao loi NAM LAI trong khung den. Truoc day loi camera chi di qua toast —
+               toast bay mat sau vai giay, nen tren dien thoai chi con thay mot o den im lim,
+               khong biet la mat quyen, hong camera hay may khong ho tro. *@
+            <div id="loiCamera" class="loi-camera d-none">
+                <div class="loi-camera__tieude">Không mở được camera</div>
+                <div class="loi-camera__ly-do" id="loiCameraLyDo"></div>
+                <div class="loi-camera__goi-y" id="loiCameraGoiY"></div>
+                <button type="button" class="loi-camera__nut" onclick="moLaiCamera()">Thử lại</button>
             </div>
         </div>
 
@@ -492,8 +578,10 @@
         </div>
     </div>
 
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    @* Tu host: PWA nay khong cache (ADR 0002) nen mang yeu o quay la khong quet duoc. *@
+    <script src="~/lib/html5-qrcode/html5-qrcode.min.js" asp-append-version="true"></script>
+    <script src="~/lib/jsqr/jsQR.min.js" asp-append-version="true"></script>
+    <script src="~/js/quet-qr.js" asp-append-version="true"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
@@ -524,323 +612,6 @@
         const maCoSoHienTai = '@(ViewBag.MaCoSo as string ?? "")';
         let currentCccd = '';
 
-        /* ================= QUÉT MÃ QR CCCD (CHUẨN NGÂN HÀNG) ================= */
-        let html5QrScanner = null;
-        let isFlashlightOn = false;
-        let currentFacingMode = "environment"; // camera sau
-        let customScanAnimId = null;
-        let nativeBarcodeDetector = null;
-
-        if (typeof window.BarcodeDetector !== 'undefined') {
-            try {
-                nativeBarcodeDetector = new window.BarcodeDetector({ formats: ['qr_code'] });
-            } catch (e) {
-                console.warn("BarcodeDetector init:", e);
-            }
-        }
-
-        function phatAmThanhTing() {
-            try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.frequency.setValueAtTime(880, ctx.currentTime); // 880Hz
-                gain.gain.setValueAtTime(0.2, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.18);
-                osc.start(ctx.currentTime);
-                osc.stop(ctx.currentTime + 0.18);
-            } catch (e) { }
-        }
-
-        // Vòng lặp quét song song bằng phần cứng Native BarcodeDetector + jsQR siêu nhạy cho CCCD
-        function batDauVongLapQuetSieuNhanh() {
-            if (customScanAnimId) cancelAnimationFrame(customScanAnimId);
-
-            const checkAndScan = async () => {
-                const video = document.querySelector('#bankQrReader video');
-                if (video && video.readyState >= 2 && !video.paused) {
-                    // 1. Quét bằng Native Hardware BarcodeDetector (Google Play Services / iOS)
-                    if (nativeBarcodeDetector) {
-                        try {
-                            const barcodes = await nativeBarcodeDetector.detect(video);
-                            if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
-                                onQrCodeSuccess(barcodes[0].rawValue);
-                                return;
-                            }
-                        } catch (e) { }
-                    }
-
-                    // 2. Quét dự phòng bằng jsQR tốc độ cao
-                    if (typeof jsQR !== 'undefined') {
-                        try {
-                            if (!window._scanCanvas) {
-                                window._scanCanvas = document.createElement('canvas');
-                                window._scanCtx = window._scanCanvas.getContext('2d', { willReadFrequently: true });
-                            }
-                            const vw = video.videoWidth || 640;
-                            const vh = video.videoHeight || 480;
-                            if (window._scanCanvas.width !== vw || window._scanCanvas.height !== vh) {
-                                window._scanCanvas.width = vw;
-                                window._scanCanvas.height = vh;
-                            }
-                            window._scanCtx.drawImage(video, 0, 0, vw, vh);
-                            const imgData = window._scanCtx.getImageData(0, 0, vw, vh);
-                            const code = jsQR(imgData.data, vw, vh, { inversionAttempts: 'dontInvert' });
-                            if (code && code.data) {
-                                onQrCodeSuccess(code.data);
-                                return;
-                            }
-                        } catch (e) { }
-                    }
-                }
-                customScanAnimId = requestAnimationFrame(checkAndScan);
-            };
-
-            customScanAnimId = requestAnimationFrame(checkAndScan);
-        }
-
-        async function moModalQuetQr() {
-            const modal = document.getElementById('bankQrModal');
-            if (!modal) return;
-            modal.classList.add('active');
-            document.body.style.overflow = 'hidden';
-
-            if (typeof Html5Qrcode === 'undefined') {
-                showAlert('Đang tải mô-đun quét mã, vui lòng thử lại sau giây lát...', 'info');
-                return;
-            }
-
-            try {
-                if (!html5QrScanner) {
-                    html5QrScanner = new Html5Qrcode("bankQrReader", {
-                        experimentalFeatures: {
-                            useBarCodeDetectorIfSupported: true
-                        },
-                        verbose: false
-                    });
-                }
-
-                // Cấu hình Camera độ phân giải tối ưu và quét toàn khung hình (Full frame)
-                const cameraConfig = {
-                    facingMode: currentFacingMode,
-                    width: { min: 640, ideal: 1920 },
-                    height: { min: 480, ideal: 1080 }
-                };
-
-                const scanConfig = {
-                    fps: 25,
-                    aspectRatio: 1.0,
-                    showTorchButtonIfSupported: true
-                };
-
-                await html5QrScanner.start(
-                    cameraConfig,
-                    scanConfig,
-                    onQrCodeSuccess,
-                    () => { /* bỏ qua lỗi từng frame */ }
-                );
-
-                // Khởi động thêm công cụ quét song song phần cứng
-                batDauVongLapQuetSieuNhanh();
-            } catch (err) {
-                console.error("Lỗi khởi tạo camera:", err);
-                try {
-                    await html5QrScanner.start(
-                        { facingMode: currentFacingMode },
-                        { fps: 20 },
-                        onQrCodeSuccess,
-                        () => {}
-                    );
-                    batDauVongLapQuetSieuNhanh();
-                } catch (fallbackErr) {
-                    showAlert('Không thể mở Camera. Bạn có thể dùng nút "Chọn ảnh mã QR" từ thư viện nhé.', 'danger');
-                }
-            }
-        }
-
-        async function dongModalQuetQr() {
-            if (customScanAnimId) {
-                cancelAnimationFrame(customScanAnimId);
-                customScanAnimId = null;
-            }
-
-            const modal = document.getElementById('bankQrModal');
-            if (modal) modal.classList.remove('active');
-            document.body.style.overflow = '';
-            isFlashlightOn = false;
-
-            if (html5QrScanner) {
-                try {
-                    await html5QrScanner.stop();
-                } catch (e) {
-                    console.warn("Lỗi dừng scanner:", e);
-                }
-            }
-        }
-
-        function onQrCodeSuccess(decodedText, decodedResult) {
-            phatAmThanhTing();
-            if (navigator.vibrate) navigator.vibrate([60, 40, 60]);
-
-            dongModalQuetQr();
-            const text = (decodedText || '').trim();
-
-            // 1. Trường hợp mã QR là đường link đăng nhập (URL)
-            if (text.startsWith('http://') || text.startsWith('https://')) {
-                showAlert('Đang chuyển hướng đăng nhập...', 'info');
-                setTimeout(() => {
-                    window.location.href = text;
-                }, 400);
-                return;
-            }
-
-            // 2. Trường hợp mã QR chứa JSON đăng nhập
-            try {
-                if (text.startsWith('{') && text.endsWith('}')) {
-                    const data = JSON.parse(text);
-                    if (data.sdt || data.phone) {
-                        document.getElementById('soDienThoai').value = data.sdt || data.phone;
-                    }
-                    if (data.cccd) {
-                        document.getElementById('cccd').value = data.cccd;
-                    }
-                    showAlert('✅ Đã nhận diện thông tin đăng nhập từ mã QR!', 'success');
-                    if (data.otp || data.password) {
-                        guiOtp();
-                    }
-                    return;
-                }
-            } catch (e) { }
-
-            // 3. Trường hợp mã QR CCCD gắn chip (Định dạng: 12soCCCD|CMNDCu|HoVaTen|NgaySinh|GioiTinh|DiaChi|NgayCap)
-            let soCccd = '';
-            let hoTen = '';
-
-            if (text.includes('|')) {
-                const parts = text.split('|');
-                soCccd = (parts[0] || '').trim();
-                hoTen = (parts[2] || '').trim();
-            } else {
-                soCccd = text;
-            }
-
-            const cccdInput = document.getElementById('cccd');
-            if (cccdInput && soCccd) {
-                cccdInput.value = soCccd;
-                cccdInput.dispatchEvent(new Event('input', { bubbles: true }));
-                
-                if (hoTen) {
-                    showAlert(`✅ Đã quét CCCD thành công: <strong>${hoTen}</strong> (${soCccd})`, 'success');
-                } else {
-                    showAlert(`✅ Đã quét mã thành công: <strong>${soCccd}</strong>`, 'success');
-                }
-
-                const sdtInput = document.getElementById('soDienThoai');
-                if (sdtInput && !sdtInput.value) {
-                    sdtInput.focus();
-                }
-            }
-        }
-
-        async function toggleDenFlash() {
-            if (!html5QrScanner) return;
-            try {
-                isFlashlightOn = !isFlashlightOn;
-                await html5QrScanner.applyVideoConstraints({
-                    advanced: [{ torch: isFlashlightOn }]
-                });
-                const btnTorch = document.getElementById('btnTorch');
-                if (btnTorch) {
-                    btnTorch.style.background = isFlashlightOn ? 'rgba(255, 215, 0, 0.4)' : '';
-                    btnTorch.style.color = isFlashlightOn ? '#fde047' : '#fff';
-                }
-            } catch (e) {
-                showAlert('Thiết bị hoặc camera này không hỗ trợ bật đèn flash.', 'info');
-            }
-        }
-
-        async function doiCamera() {
-            if (!html5QrScanner) return;
-            try {
-                await html5QrScanner.stop();
-                currentFacingMode = (currentFacingMode === "environment") ? "user" : "environment";
-                const config = {
-                    fps: 15,
-                    qrbox: function(w, h) {
-                        const edgeSize = Math.min(w, h) * 0.72;
-                        return { width: edgeSize, height: edgeSize };
-                    },
-                    aspectRatio: 1.0
-                };
-                await html5QrScanner.start({ facingMode: currentFacingMode }, config, onQrCodeSuccess, () => {});
-            } catch (e) {
-                console.error("Lỗi đổi camera:", e);
-                showAlert('Không thể chuyển đổi camera.', 'warning');
-            }
-        }
-
-        async function xuLyAnhQrTuThuVien(event) {
-            const file = event.target.files && event.target.files[0];
-            if (!file) return;
-
-            showAlert('Đang xử lý ảnh QR...', 'info');
-
-            try {
-                // 1. Thử giải mã bằng Native BarcodeDetector (Phần cứng Android/iOS cực nhạy)
-                if (nativeBarcodeDetector && typeof createImageBitmap !== 'undefined') {
-                    try {
-                        const bitmap = await createImageBitmap(file);
-                        const barcodes = await nativeBarcodeDetector.detect(bitmap);
-                        if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
-                            onQrCodeSuccess(barcodes[0].rawValue);
-                            return;
-                        }
-                    } catch (e) {
-                        console.warn("Native file scan failed, trying fallback...", e);
-                    }
-                }
-
-                // 2. Thử giải mã bằng Html5Qrcode
-                try {
-                    if (!html5QrScanner) {
-                        html5QrScanner = new Html5Qrcode("bankQrReader");
-                    }
-                    const decodedText = await html5QrScanner.scanFile(file, true);
-                    if (decodedText) {
-                        onQrCodeSuccess(decodedText);
-                        return;
-                    }
-                } catch (e) { }
-
-                // 3. Thử giải mã bằng jsQR qua Canvas
-                if (typeof jsQR !== 'undefined') {
-                    const img = new Image();
-                    img.src = URL.createObjectURL(file);
-                    await new Promise(res => { img.onload = res; img.onerror = res; });
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
-                    const imgData = ctx.getImageData(0, 0, img.width, img.height);
-                    const code = jsQR(imgData.data, img.width, img.height, { inversionAttempts: 'both' });
-                    URL.revokeObjectURL(img.src);
-                    if (code && code.data) {
-                        onQrCodeSuccess(code.data);
-                        return;
-                    }
-                }
-
-                showAlert('Không nhận diện được mã QR trong ảnh. Vui lòng chụp rõ và gần mã QR hơn nhé.', 'danger');
-            } catch (err) {
-                console.error("Lỗi xử lý ảnh:", err);
-                showAlert('Không nhận diện được mã QR trong ảnh.', 'danger');
-            } finally {
-                event.target.value = '';
-            }
-        }
 
         function showAlert(msg, type = 'info') {
             const plainMessage = String(msg ?? '').replace(/<[^>]*>/g, '');
@@ -1084,6 +855,7 @@
                             soDienThoai: userPhone,
                             maCoSo: maCoSoHienTai,
                             cccd: currentCccd,
+                            danhTinhQuet: window.danhTinhQuet,
                             deviceId: getDeviceId(),
                             deviceName: getDeviceName(),
                             returnUrl: adminReturnUrl
@@ -1115,6 +887,7 @@
                             otp: otpInput,
                             maCoSo: maCoSoHienTai,
                             cccd: currentCccd,
+                            danhTinhQuet: window.danhTinhQuet,
                             deviceId: getDeviceId(),
                             deviceName: getDeviceName(),
                             returnUrl: adminReturnUrl
