@@ -27,6 +27,7 @@ public sealed class TaiKhoanController : AdminControllerBase
         string? maBN,
         string? q,
         string? role,
+        string? loc,
         int page = 1)
     {
         page = SafePage(page);
@@ -38,10 +39,38 @@ public sealed class TaiKhoanController : AdminControllerBase
             sdt = q;
         }
 
+        var danhSachCoSo = await _db.DMCSKCBs.AsNoTracking().OrderBy(x => x.TenCoSo).ToListAsync();
+
+        var daLoc = !string.IsNullOrWhiteSpace(loc) ||
+                    !string.IsNullOrWhiteSpace(loaiCS) ||
+                    !string.IsNullOrWhiteSpace(cccd) ||
+                    !string.IsNullOrWhiteSpace(sdt) ||
+                    !string.IsNullOrWhiteSpace(maBN) ||
+                    !string.IsNullOrWhiteSpace(role) ||
+                    !string.IsNullOrWhiteSpace(q);
+
+        if (!daLoc)
+        {
+            return View(new TaiKhoanListViewModel
+            {
+                Items = Array.Empty<TaiKhoan>(),
+                HoSoTheoTaiKhoan = new Dictionary<long, List<HoSoBenhNhanItemViewModel>>(),
+                DanhSachCoSo = danhSachCoSo,
+                Query = q,
+                Role = role,
+                LoaiCS = loaiCS,
+                CCCD = cccd,
+                SDT = sdt,
+                MaBN = maBN,
+                Page = 1,
+                PageSize = pageSize,
+                TotalItems = 0,
+                DaLoc = false
+            });
+        }
+
         var (items, hoSoTheoTaiKhoan, total) = await _adminStoredProcedures.LocTaiKhoanAsync(
             page, pageSize, sdt, cccd, maBN, role, loaiCS);
-
-        var danhSachCoSo = await _db.DMCSKCBs.AsNoTracking().OrderBy(x => x.TenCoSo).ToListAsync();
 
         return View(new TaiKhoanListViewModel
         {
@@ -60,7 +89,8 @@ public sealed class TaiKhoanController : AdminControllerBase
             MaBN = maBN,
             Page = page,
             PageSize = pageSize,
-            TotalItems = total
+            TotalItems = total,
+            DaLoc = true
         });
     }
 
@@ -72,8 +102,26 @@ public sealed class TaiKhoanController : AdminControllerBase
         string? maBN,
         string? q,
         string? role,
+        string? loc,
         int page = 2)
     {
+        var daLoc = !string.IsNullOrWhiteSpace(loc) ||
+                    !string.IsNullOrWhiteSpace(loaiCS) ||
+                    !string.IsNullOrWhiteSpace(cccd) ||
+                    !string.IsNullOrWhiteSpace(sdt) ||
+                    !string.IsNullOrWhiteSpace(maBN) ||
+                    !string.IsNullOrWhiteSpace(role) ||
+                    !string.IsNullOrWhiteSpace(q);
+
+        if (!daLoc)
+        {
+            Response.Headers["X-Total-Pages"] = "0";
+            Response.Headers["X-Current-Page"] = page.ToString();
+            Response.Headers["X-Total-Items"] = "0";
+            Response.Headers["X-Loaded-Count"] = "0";
+            return NoContent();
+        }
+
         page = Math.Max(1, page);
         const int pageSize = 20;
 

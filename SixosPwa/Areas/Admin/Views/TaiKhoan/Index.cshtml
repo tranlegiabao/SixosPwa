@@ -587,6 +587,7 @@
 
 <div class="admin-panel">
     <form method="get" class="filter-bar tai-khoan-filter-bar" id="taiKhoanFilterForm">
+        <input type="hidden" name="loc" value="1" />
         <!-- DÒNG 1: Cơ sở (ô to rộng rãi) + CCCD + Số điện thoại + Mã bệnh nhân -->
         <div class="filter-row-top">
             <!-- 1. Dropdown cơ sở -->
@@ -641,12 +642,7 @@
         </div>
     </form>
     @{
-        var hasFilter = !string.IsNullOrWhiteSpace(Model.CCCD) ||
-                        !string.IsNullOrWhiteSpace(Model.SDT) ||
-                        !string.IsNullOrWhiteSpace(Model.MaBN) ||
-                        !string.IsNullOrWhiteSpace(Model.LoaiCS) ||
-                        !string.IsNullOrWhiteSpace(Model.Role) ||
-                        !string.IsNullOrWhiteSpace(Model.Query);
+        var hasFilter = Model.DaLoc;
     }
     <div class="table-meta">
         @if (hasFilter)
@@ -709,7 +705,7 @@
         <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
         <span class="text-muted fw-semibold" style="font-size: 13.5px;">Đang tải thêm tài khoản...</span>
     </div>
-    <div id="infiniteScrollEnd" class="py-3 text-center text-muted fw-semibold" style="@(Model.TotalPages <= 1 && Model.Items.Count > 0 ? "display: block;" : "display: none;") font-size: 13px; border-top: 1px dashed #e2e8f0;">
+    <div id="infiniteScrollEnd" class="py-3 text-center text-muted fw-semibold" style="@(Model.DaLoc && Model.TotalPages <= 1 && Model.Items.Count > 0 ? "display: block;" : "display: none;") font-size: 13px; border-top: 1px dashed #e2e8f0;">
         ✓ Đã tải hết danh sách tài khoản (@Model.TotalItems.ToString("N0") tài khoản)
     </div>
 </div>
@@ -1474,7 +1470,7 @@
     let trangHienTai = @Model.Page;
     const tongSoTrang = @Model.TotalPages;
     let dangTaiThem = false;
-    let hetDuLieu = @(Model.Page >= Model.TotalPages ? "true" : "false");
+    let hetDuLieu = @(!Model.DaLoc || Model.Page >= Model.TotalPages ? "true" : "false");
 
     async function taiThemTaiKhoan() {
         if (dangTaiThem || hetDuLieu) return;
