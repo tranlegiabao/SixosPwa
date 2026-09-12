@@ -638,31 +638,24 @@
             const oCccd = document.getElementById('cccd');
             const cccdInput = oCccd ? oCccd.value.trim() : '';
 
-            // Nếu người dùng quét QR CCCD hoặc phiếu khám mà chưa điền SĐT, tự động lấy SĐT / CCCD / Mã BN từ QR
+            // Chi duoc lay thay so dien thoai trong HAI truong hop: ma QR that su mang
+            // so dien thoai, hoac la QR PHIEU KHAM HIS (tai khoan lay theo MaBN).
+            // KHONG lay so CCCD lam ten tai khoan — luong CCCD phai de benh nhan tu
+            // nhap so dien thoai that cua ho.
+            const laQrHis = !!(window.danhTinhQuet && (window.danhTinhQuet.nguon === 'his' || window.danhTinhQuet.maBN));
             if (!sdtInput && window.danhTinhQuet && window.danhTinhQuet.dienThoai) {
                 sdtInput = window.danhTinhQuet.dienThoai;
                 if (document.getElementById('soDienThoai')) {
                     document.getElementById('soDienThoai').value = window.danhTinhQuet.dienThoai;
                 }
-            } else if (!sdtInput && cccdInput) {
-                sdtInput = cccdInput;
-                if (document.getElementById('soDienThoai')) {
-                    document.getElementById('soDienThoai').value = cccdInput;
-                }
-            } else if (!sdtInput && window.danhTinhQuet && window.danhTinhQuet.cccd) {
-                sdtInput = window.danhTinhQuet.cccd;
-                if (document.getElementById('soDienThoai')) {
-                    document.getElementById('soDienThoai').value = window.danhTinhQuet.cccd;
-                }
-            } else if (!sdtInput && window.danhTinhQuet && window.danhTinhQuet.maBN) {
+            } else if (!sdtInput && laQrHis && window.danhTinhQuet.maBN) {
                 sdtInput = window.danhTinhQuet.maBN;
-                if (document.getElementById('soDienThoai')) {
-                    document.getElementById('soDienThoai').value = window.danhTinhQuet.maBN;
-                }
             }
 
-            if (!sdtInput && !cccdInput) {
-                showAlert('Vui lòng nhập số điện thoại hoặc quét mã QR!', 'danger');
+            if (!sdtInput) {
+                showAlert('Bạn nhập <strong>số điện thoại</strong> rồi bấm Tiếp tục nhé.', 'danger');
+                const oSdtTrong = document.getElementById('soDienThoai');
+                if (oSdtTrong) oSdtTrong.focus();
                 return;
             }
 

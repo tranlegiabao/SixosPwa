@@ -405,12 +405,42 @@ function onQrCodeSuccess(decodedText, decodedResult) {
         return;
     }
 
+    // 3. Bam nham nut thi noi thang, dung doan bua. Phep nay phai xet SAU khi phan
+    //    tich, tren chinh MaBN doc duoc: khuon that KHONG phai luc nao cung du 7 manh
+    //    '|' (phanTichMaQr nhan tu 4 manh tro len, lai con khuon JSON va key=value),
+    //    nen dem so manh la lot — ma phieu kham it manh se chui qua cua CCCD.
+    const maBnQuet = (dt.maBN || '').trim();
+    // CCCD gan chip de so CMND CU o dung o cua MaBN: rong hoac dung 9 chu so. Do that
+    // tren Dev_Master3 (54.672 ho so) va DaoTaoHis (1.498): KHONG mot MaBN nao dai
+    // dung 9 chu so thuan, nen dau hieu nay chac.
+    const laCmndCu = /^[0-9]{9}$/.test(maBnQuet);
+    if (loaiQrDangCho === 'his' && (maBnQuet === '' || laCmndCu)) {
+        showAlert('Mã này không có Mã bệnh nhân. Nếu là thẻ căn cước, bạn bấm "Quét CCCD gắn chip" nhé.', 'warning');
+        return;
+    }
+    if (loaiQrDangCho === 'cccd' && maBnQuet !== '' && !laCmndCu) {
+        showAlert('Đây có vẻ là mã trên phiếu khám. Bạn bấm "Quét mã trên phiếu khám" nhé.', 'warning');
+        return;
+    }
+
     window.danhTinhQuet = dt;
     veTheQuet(dt);
 
-    // Tự động chuyển thẳng vào màn nhập OTP khi quét thành công
-    if (typeof guiOtp === 'function') {
-        guiOtp();
+    // 4. CHI luong PHIEU KHAM HIS moi di thang vao man OTP (tai khoan lay theo MaBN).
+    //    Luong CCCD thi DUNG LAI o buoc 1: ma QR khong bao gio mang so dien thoai,
+    //    benh nhan phai tu nhap SDT that cua ho roi bam Tiep tuc.
+    const laQrHis = dt.nguon === 'his' || !!dt.maBN;
+    if (laQrHis) {
+        if (typeof guiOtp === 'function') guiOtp();
+        return;
+    }
+
+    const oSdtSauQuet = document.getElementById('soDienThoai');
+    if (oSdtSauQuet) {
+        if (!oSdtSauQuet.value.trim()) {
+            showAlert('Đã đọc xong thẻ căn cước. Bạn nhập <strong>số điện thoại</strong> rồi bấm <strong>Tiếp tục</strong> để nhận mã xác thực nhé.', 'info');
+        }
+        oSdtSauQuet.focus();
     }
 }
 
@@ -506,19 +536,16 @@ function veTheQuet(dt) {
         }
     }
 
-    // Tự động điền ô Số điện thoại
-    if (oSdt) {
-        if (dt.dienThoai) {
-            oSdt.value = dt.dienThoai;
-        } else if (!oSdt.value && dt.cccd) {
-            oSdt.value = dt.cccd;
-        } else if (!oSdt.value && dt.maBN) {
-            oSdt.value = dt.maBN;
-        }
+    // Tu dong dien o So dien thoai — CHI khi ma QR that su mang so dien thoai.
+    // TUYET DOI khong do CCCD/MaBN vao o nay: o SDT la TEN TAI KHOAN, do nham vao
+    // la de ra tai khoan mang so can cuoc, con benh nhan thi mat duong nhap so that.
+    if (oSdt && dt.dienThoai) {
+        oSdt.value = dt.dienThoai;
     }
 }
 
 function xoaTheQuet() {
+    const sdtTuQr = window.danhTinhQuet ? (window.danhTinhQuet.dienThoai || '') : '';
     window.danhTinhQuet = null;
     const khung = document.getElementById('khungTheQuet');
     const oCccd = document.getElementById('cccd');
@@ -526,7 +553,9 @@ function xoaTheQuet() {
     const ghiO  = document.getElementById('ghiOCccd');
     if (khung) { khung.innerHTML = ''; khung.classList.add('d-none'); }
     if (oCccd) { oCccd.value = ''; oCccd.readOnly = false; oCccd.classList.remove('o-tu-qr'); }
-    if (oSdt)  { oSdt.value = ''; }
+    // Chi xoa o SDT khi chinh ma QR dien so do vao. So benh nhan TU GO thi giu lai
+    // — bam "Quet lai" khong phai ly do bat ho go lai so dien thoai.
+    if (oSdt && sdtTuQr && oSdt.value.trim() === sdtTuQr.trim()) { oSdt.value = ''; }
     if (ghiO)  ghiO.classList.add('d-none');
     if (typeof quayLaiStep1 === 'function') {
         quayLaiStep1();

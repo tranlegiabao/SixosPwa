@@ -169,23 +169,21 @@ public class DangNhapController : Controller
     public IActionResult GuiOtp([FromBody] GuiOtpRequest model)
     {
         var input = model.SoDienThoai?.Trim() ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(input) && !string.IsNullOrWhiteSpace(model.Cccd))
+        if (string.IsNullOrWhiteSpace(input) && model.DanhTinhQuet != null)
         {
-            input = model.Cccd.Trim();
-        }
-        else if (string.IsNullOrWhiteSpace(input) && model.DanhTinhQuet != null)
-        {
+            // TEN TAI KHOAN chi duoc lay tu SO DIEN THOAI, hoac tu MaBN khi quet QR
+            // PHIEU KHAM HIS. KHONG lay so CCCD: lam vay la de ra tai khoan mang so
+            // can cuoc, con benh nhan thi mat duong nhap so dien thoai that. Hang rao
+            // nay phai dung o CA server, vi goi thang API la vuot mat trinh duyet.
             if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet.DienThoai))
                 input = model.DanhTinhQuet.DienThoai.Trim();
-            else if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet.Cccd))
-                input = model.DanhTinhQuet.Cccd.Trim();
             else if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet.MaBN))
                 input = model.DanhTinhQuet.MaBN.Trim();
         }
 
         if (string.IsNullOrWhiteSpace(input))
         {
-            return Json(new { success = false, message = "Vui lòng nhập Số điện thoại, Email hoặc quét CCCD!" });
+            return Json(new { success = false, message = "Vui lòng nhập Số điện thoại hoặc Email!" });
         }
 
         if (input.Contains('@'))
@@ -286,16 +284,14 @@ public class DangNhapController : Controller
     public async Task<IActionResult> XacNhanOtp([FromBody] XacNhanOtpRequest model)
     {
         var input = model.SoDienThoai?.Trim() ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(input) && !string.IsNullOrWhiteSpace(model.Cccd))
+        if (string.IsNullOrWhiteSpace(input) && model.DanhTinhQuet != null)
         {
-            input = model.Cccd.Trim();
-        }
-        else if (string.IsNullOrWhiteSpace(input) && model.DanhTinhQuet != null)
-        {
+            // TEN TAI KHOAN chi duoc lay tu SO DIEN THOAI, hoac tu MaBN khi quet QR
+            // PHIEU KHAM HIS. KHONG lay so CCCD: lam vay la de ra tai khoan mang so
+            // can cuoc, con benh nhan thi mat duong nhap so dien thoai that. Hang rao
+            // nay phai dung o CA server, vi goi thang API la vuot mat trinh duyet.
             if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet.DienThoai))
                 input = model.DanhTinhQuet.DienThoai.Trim();
-            else if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet.Cccd))
-                input = model.DanhTinhQuet.Cccd.Trim();
             else if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet.MaBN))
                 input = model.DanhTinhQuet.MaBN.Trim();
         }
