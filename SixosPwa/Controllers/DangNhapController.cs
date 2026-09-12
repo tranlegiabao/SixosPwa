@@ -723,9 +723,6 @@ public class DangNhapController : Controller
     [AllowAnonymous]
     public async Task<IActionResult> UbDangKy(string coSo, string? returnUrl = null)
     {
-        // Khóa luồng tự đăng ký tài khoản bệnh nhân (chỉ chừa luồng từ HIS sang)
-        return RedirectToAction(nameof(Login), new { coSo, returnUrl });
-        /*
         var maCoSo = await LayMaCoSoDoiTacAsync(coSo);
         if (maCoSo is null) return RedirectToAction(nameof(Login), new { coSo });
 
@@ -736,16 +733,12 @@ public class DangNhapController : Controller
         ViewBag.TrangChuDoiTac = cua?.CauHinh.TrangChu?.TrimEnd('/');
         ViewBag.ChiNhanh = await LayChiNhanhAsync(maCoSo);
         return View();
-        */
     }
 
     [HttpPost]
     [AllowAnonymous]
     public async Task<IActionResult> UbTaoTaiKhoan([FromBody] UbDangKyRequest model)
     {
-        // Khóa luồng tự đăng ký tài khoản bệnh nhân (chỉ chừa luồng từ HIS sang)
-        return Json(new { success = false, message = "Chức năng đăng ký tài khoản trực tuyến đã tạm đóng. Vui lòng liên hệ cơ sở y tế." });
-        /*
         if (string.IsNullOrWhiteSpace(model.MaCoSo)
             || string.IsNullOrWhiteSpace(model.Cccd)
             || string.IsNullOrWhiteSpace(model.DienThoai))
@@ -763,7 +756,6 @@ public class DangNhapController : Controller
             model.MaCoSo.Trim(), model.Cccd.Trim(), model.DienThoai.Trim(), model.Email, model.MatKhau, model.Kenh);
 
         return Json(new { success = ketQua.ThanhCong, message = ketQua.ThongBao });
-        */
     }
 
     [HttpPost]

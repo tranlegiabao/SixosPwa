@@ -108,23 +108,18 @@
         </main>
     </div>
 
-    <!-- Page Loader (HisSoft style) -->
+    <!-- Page Loader (HisSoft / Sixos style) -->
     <div class="position-fixed top-0 bottom-0 modal-blur fade" id="page-loader-body" tabindex="-1" role="dialog" aria-hidden="true" style="z-index: -1; left: 0; right: 0; display: none; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(4px); align-items: center; justify-content: center;">
-        <div class="modal-dialog modal-sm modal-dialog-centered" style="max-width: 280px; margin: auto;" role="document">
-            <div class="modal-content shadow-lg border-0" style="border-radius: 16px; background: #ffffff;">
+        <div class="modal-dialog modal-sm modal-dialog-centered w-20" role="document" style="max-width: 280px; margin: auto;">
+            <div class="modal-content shadow-lg border-0" style="border-radius: 12px; background: #ffffff;">
                 <div class="container container-slim py-4" style="padding: 24px 20px;">
                     <div class="text-center">
-                        <div class="mb-3 d-flex justify-content-center">
-                            <div style="width: 48px; height: 48px; border-radius: 12px; background: #e0f2fe; display: flex; align-items: center; justify-content: center;">
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <polyline points="12 6 12 12 16 14"></polyline>
-                                </svg>
-                            </div>
+                        <div class="mb-3">
+                            <span class="navbar-brand navbar-brand-autodark"><img src="~/static/logo12.svg" height="36" alt="HisSoft"></span>
                         </div>
-                        <div class="text-dark mb-3 fw-bold fs-5" style="color: #1e293b; letter-spacing: -0.2px;">Đang tải...</div>
-                        <div class="progress" style="height: 4px; background: #f1f5f9; border-radius: 2px; overflow: hidden;">
-                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" style="width: 100%;"></div>
+                        <div class="text-dark mb-3 fw-bolder fs-2" style="font-size: 1.25rem !important; font-weight: 700;">Đang tải...</div>
+                        <div class="progress progress-sm" style="height: 4px; background: #f1f5f9; border-radius: 2px; position: relative; overflow: hidden;">
+                            <div class="progress-bar progress-bar-indeterminate" style="background-color: #206bc4;"></div>
                         </div>
                     </div>
                 </div>

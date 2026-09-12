@@ -784,15 +784,12 @@
             </div>
 
 
-            @* Luồng đăng ký tài khoản bệnh nhân tạm đóng - chỉ chừa luồng từ HIS sang
             <div class="container_note mt-4 pt-2">
                 <div class="text-center text-black fs-4">
                     <span>Bạn chưa có tài khoản?</span>
                     <a href="/DangNhap/UbDangKy?coSo=@ViewBag.SlugCoSo@(string.IsNullOrWhiteSpace(ViewBag.ReturnUrl as string) ? "" : "&returnUrl=" + Uri.EscapeDataString((string)ViewBag.ReturnUrl))" class="text-primary fw-semibold text-decoration-none">Đăng ký miễn phí</a>
                 </div>
-
             </div>
-            *@
             <div class="mt-4 pt-1 text-center pb-4">
                 <a href="https://benhvienungbuou.vn/cac-goi-kham-chuyen-gia"
                    class="text-primary fw-semibold text-decoration-none"
