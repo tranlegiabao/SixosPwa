@@ -138,8 +138,12 @@ public class HoSoController : Controller
     [HttpGet("/benh-nhan/ho-so/them")]
     public IActionResult Them(string? loi = null)
     {
+        // Luồng thêm hồ sơ người thân đã tạm đóng theo yêu cầu
+        return RedirectToAction(nameof(Index));
+        /*
         ViewBag.Loi = loi;
         return View();
+        */
     }
 
     [HttpPost("/benh-nhan/ho-so/them")]
@@ -147,6 +151,10 @@ public class HoSoController : Controller
     public async Task<IActionResult> Them(string cccd, string hoTen, DateTime? ngaySinh,
                                           string? sdt, string? gioiTinh)
     {
+        // Luồng thêm hồ sơ người thân đã tạm đóng theo yêu cầu
+        await Task.CompletedTask;
+        return RedirectToAction(nameof(Index));
+        /*
         var idTaiKhoan = await LayIdTaiKhoanAsync();
 
         if (idTaiKhoan is null)
@@ -181,6 +189,7 @@ public class HoSoController : Controller
         }
 
         return RedirectToAction(nameof(Index), new { xong = MaKetCuc(ketQua) });
+        */
     }
 
     // ─────────────────────────────────────────────────────────────────────────

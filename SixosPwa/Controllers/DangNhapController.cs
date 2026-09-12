@@ -201,6 +201,15 @@ public class DangNhapController : Controller
             taiKhoan = _dbContext.TaiKhoans.AsNoTracking().FirstOrDefault(tk => tk.SDT == term);
         }
 
+        // Khóa luồng tự đăng ký tài khoản: chỉ cho phép tài khoản đã có sẵn từ HIS
+        if (taiKhoan == null)
+        {
+            return Json(new {
+                success = false,
+                message = "Số điện thoại chưa có hồ sơ tại cơ sở y tế. Vui lòng liên hệ phòng khám/bệnh viện để được đăng ký."
+            });
+        }
+
         if (taiKhoan != null && (string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase)
                                  || string.Equals(taiKhoan.Role, "DoiTac", StringComparison.OrdinalIgnoreCase)))
         {
@@ -307,12 +316,13 @@ public class DangNhapController : Controller
         // (Ho van ha canh o /benh-nhan chu khong dung dau trang, vi ChonDichDenAsync
         //  bo returnUrl khi thieu ma co so — hanh vi CO SAN, khong phai do cong chan
         //  nay. Do that 10/09.) Re-auth Admin duoc mien tru.
-        if (!adminReauth && string.IsNullOrWhiteSpace(model.MaCoSo) && taiKhoan is null)
+        // Khóa luồng tự đăng ký tài khoản: chỉ cho phép tài khoản đã có sẵn từ HIS
+        if (!adminReauth && taiKhoan is null)
         {
             return Json(new
             {
                 success = false,
-                message = "Chưa xác định được cơ sở khám chữa bệnh. Bạn hãy chọn cơ sở rồi đăng ký từ trang của cơ sở đó.",
+                message = "Số điện thoại chưa có hồ sơ tại cơ sở y tế. Vui lòng liên hệ phòng khám/bệnh viện để được đăng ký.",
                 dichDen = "/"
             });
         }
@@ -443,15 +453,13 @@ public class DangNhapController : Controller
             return Json(new { success = false, message = "Cơ sở này đang tạm ngưng tiếp nhận đăng ký trực tuyến." });
         }
 
-        // 🔴 Cong chan y het XacNhanOtp (ADR 0027). Bo sot cua nay la mo cua lach:
-        // chan mot ben roi de ben kia cap cookie thi bat bien "dang nhap duoc thi
-        // phai co tai khoan" khong con la bat bien nua.
-        if (!adminReauth && string.IsNullOrWhiteSpace(model.MaCoSo) && taiKhoan is null)
+        // Khóa luồng tự đăng ký tài khoản: chỉ cho phép tài khoản đã có sẵn từ HIS
+        if (!adminReauth && taiKhoan is null)
         {
             return Json(new
             {
                 success = false,
-                message = "Chưa xác định được cơ sở khám chữa bệnh. Bạn hãy chọn cơ sở rồi đăng ký từ trang của cơ sở đó.",
+                message = "Số điện thoại chưa có hồ sơ tại cơ sở y tế. Vui lòng liên hệ phòng khám/bệnh viện để được đăng ký.",
                 dichDen = "/"
             });
         }
@@ -515,17 +523,24 @@ public class DangNhapController : Controller
     [Authorize]
     public async Task<IActionResult> DangKy(string coSo, string? returnUrl = null)
     {
+        // Khóa luồng tự đăng ký tài khoản bệnh nhân (chỉ chừa luồng từ HIS sang)
+        return RedirectToAction(nameof(Login), new { coSo, returnUrl });
+        /*
         var maCoSo = LayMaCoSoPhien(coSo);
         if (maCoSo is null) return RedirectToAction(nameof(Login));
 
         await DoNguCanhRaViewBagAsync(maCoSo, returnUrl);
         return View();
+        */
     }
 
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> TaoTaiKhoan([FromBody] TaoTaiKhoanRequest model)
     {
+        // Khóa luồng tự đăng ký tài khoản bệnh nhân (chỉ chừa luồng từ HIS sang)
+        return Json(new { success = false, message = "Chức năng đăng ký tài khoản trực tuyến đã tạm đóng. Vui lòng liên hệ cơ sở y tế." });
+        /*
         if (string.IsNullOrWhiteSpace(model.HoTen))
         {
             return Json(new { success = false, message = "Vui lòng nhập họ và tên!" });
@@ -556,6 +571,7 @@ public class DangNhapController : Controller
         }
 
         return Json(new { success = true, redirectUrl = ketQua.DichDen });
+        */
     }
 
     // ==================================================================
@@ -595,6 +611,9 @@ public class DangNhapController : Controller
     [AllowAnonymous]
     public async Task<IActionResult> UbDangKy(string coSo, string? returnUrl = null)
     {
+        // Khóa luồng tự đăng ký tài khoản bệnh nhân (chỉ chừa luồng từ HIS sang)
+        return RedirectToAction(nameof(Login), new { coSo, returnUrl });
+        /*
         var maCoSo = await LayMaCoSoDoiTacAsync(coSo);
         if (maCoSo is null) return RedirectToAction(nameof(Login), new { coSo });
 
@@ -605,12 +624,16 @@ public class DangNhapController : Controller
         ViewBag.TrangChuDoiTac = cua?.CauHinh.TrangChu?.TrimEnd('/');
         ViewBag.ChiNhanh = await LayChiNhanhAsync(maCoSo);
         return View();
+        */
     }
 
     [HttpPost]
     [AllowAnonymous]
     public async Task<IActionResult> UbTaoTaiKhoan([FromBody] UbDangKyRequest model)
     {
+        // Khóa luồng tự đăng ký tài khoản bệnh nhân (chỉ chừa luồng từ HIS sang)
+        return Json(new { success = false, message = "Chức năng đăng ký tài khoản trực tuyến đã tạm đóng. Vui lòng liên hệ cơ sở y tế." });
+        /*
         if (string.IsNullOrWhiteSpace(model.MaCoSo)
             || string.IsNullOrWhiteSpace(model.Cccd)
             || string.IsNullOrWhiteSpace(model.DienThoai))
@@ -628,6 +651,7 @@ public class DangNhapController : Controller
             model.MaCoSo.Trim(), model.Cccd.Trim(), model.DienThoai.Trim(), model.Email, model.MatKhau, model.Kenh);
 
         return Json(new { success = ketQua.ThanhCong, message = ketQua.ThongBao });
+        */
     }
 
     [HttpPost]
