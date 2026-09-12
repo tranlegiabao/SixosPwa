@@ -168,12 +168,24 @@ public class DangNhapController : Controller
     [HttpPost]
     public IActionResult GuiOtp([FromBody] GuiOtpRequest model)
     {
-        if (string.IsNullOrWhiteSpace(model.SoDienThoai))
+        var input = model.SoDienThoai?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(input) && model.DanhTinhQuet != null)
+        {
+            // TEN TAI KHOAN chi duoc lay tu SO DIEN THOAI, hoac tu MaBN khi quet QR
+            // PHIEU KHAM HIS. KHONG lay so CCCD: lam vay la de ra tai khoan mang so
+            // can cuoc, con benh nhan thi mat duong nhap so dien thoai that. Hang rao
+            // nay phai dung o CA server, vi goi thang API la vuot mat trinh duyet.
+            if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet.DienThoai))
+                input = model.DanhTinhQuet.DienThoai.Trim();
+            else if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet.MaBN))
+                input = model.DanhTinhQuet.MaBN.Trim();
+        }
+
+        if (string.IsNullOrWhiteSpace(input))
         {
             return Json(new { success = false, message = "Vui lòng nhập Số điện thoại hoặc Email!" });
         }
 
-        var input = model.SoDienThoai.Trim();
         if (input.Contains('@'))
         {
             if (!IsValidEmail(input))
@@ -185,7 +197,7 @@ public class DangNhapController : Controller
         {
             if (input.Length < 9)
             {
-                return Json(new { success = false, message = "Số điện thoại không hợp lệ!" });
+                return Json(new { success = false, message = "Số điện thoại hoặc Căn cước công dân không hợp lệ!" });
             }
         }
 
@@ -199,6 +211,30 @@ public class DangNhapController : Controller
         else
         {
             taiKhoan = _dbContext.TaiKhoans.AsNoTracking().FirstOrDefault(tk => tk.SDT == term);
+            if (taiKhoan == null && !string.IsNullOrWhiteSpace(model.Cccd))
+            {
+                var cccd = model.Cccd.Trim();
+                taiKhoan = (from p in _dbContext.BenhNhans.AsNoTracking()
+                            join t in _dbContext.TaiKhoans.AsNoTracking() on p.IdTaiKhoan equals t.Id
+                            where p.CCCD == cccd
+                            select t).FirstOrDefault()
+                        ?? (from t in _dbContext.TaiKhoans.AsNoTracking()
+                            join p in _dbContext.BenhNhans.AsNoTracking() on t.IdBenhNhan equals p.Id
+                            where p.CCCD == cccd
+                            select t).FirstOrDefault();
+            }
+        }
+
+        bool laQrHis = model.DanhTinhQuet != null && (model.DanhTinhQuet.LaNguonHis || !string.IsNullOrWhiteSpace(model.DanhTinhQuet.MaBN));
+
+        // Khóa luồng tự đăng ký tài khoản: chỉ cho phép tài khoản đã có sẵn từ HIS
+        // NGOẠI LỆ: Bệnh nhân đã khám quét QR phiếu khám HIS (nguồn HIS hoặc có MaBN)
+        if (taiKhoan == null && !laQrHis)
+        {
+            return Json(new {
+                success = false,
+                message = "Số điện thoại chưa có hồ sơ tại cơ sở y tế. Vui lòng liên hệ phòng khám/bệnh viện để được đăng ký."
+            });
         }
 
         if (taiKhoan != null && (string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase)
@@ -219,12 +255,15 @@ public class DangNhapController : Controller
 
         var displayMessage = input.Contains('@')
             ? $"Mã OTP đã gửi thành công tới email {input}!"
-            : $"Mã OTP đã gửi thành công tới số {input}!";
+            : (input.Length == 12 && char.IsDigit(input[0]))
+                ? $"Mã OTP đã tạo thành công cho CCCD {input}!"
+                : $"Mã OTP đã gửi thành công tới số {input}!";
 
         return Json(new {
             success = true,
             message = displayMessage,
-            otpDemo = otpCode
+            otpDemo = otpCode,
+            soDienThoai = input
         });
     }
 
@@ -244,12 +283,24 @@ public class DangNhapController : Controller
     [HttpPost]
     public async Task<IActionResult> XacNhanOtp([FromBody] XacNhanOtpRequest model)
     {
-        if (string.IsNullOrWhiteSpace(model.SoDienThoai) || string.IsNullOrWhiteSpace(model.Otp))
+        var input = model.SoDienThoai?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(input) && model.DanhTinhQuet != null)
+        {
+            // TEN TAI KHOAN chi duoc lay tu SO DIEN THOAI, hoac tu MaBN khi quet QR
+            // PHIEU KHAM HIS. KHONG lay so CCCD: lam vay la de ra tai khoan mang so
+            // can cuoc, con benh nhan thi mat duong nhap so dien thoai that. Hang rao
+            // nay phai dung o CA server, vi goi thang API la vuot mat trinh duyet.
+            if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet.DienThoai))
+                input = model.DanhTinhQuet.DienThoai.Trim();
+            else if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet.MaBN))
+                input = model.DanhTinhQuet.MaBN.Trim();
+        }
+
+        if (string.IsNullOrWhiteSpace(input) || string.IsNullOrWhiteSpace(model.Otp))
         {
             return Json(new { success = false, message = "Vui lòng nhập đầy đủ thông tin!" });
         }
 
-        var input = model.SoDienThoai.Trim();
         var otpInput = model.Otp.Trim();
         var adminReauth = AdminAuthentication.IsAdminReturnUrl(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl);
 
@@ -307,14 +358,59 @@ public class DangNhapController : Controller
         // (Ho van ha canh o /benh-nhan chu khong dung dau trang, vi ChonDichDenAsync
         //  bo returnUrl khi thieu ma co so — hanh vi CO SAN, khong phai do cong chan
         //  nay. Do that 10/09.) Re-auth Admin duoc mien tru.
-        if (!adminReauth && string.IsNullOrWhiteSpace(model.MaCoSo) && taiKhoan is null)
+        bool laQrHis = model.DanhTinhQuet != null && (model.DanhTinhQuet.LaNguonHis || !string.IsNullOrWhiteSpace(model.DanhTinhQuet.MaBN));
+
+        // Khóa luồng tự đăng ký tài khoản: chỉ cho phép tài khoản đã có sẵn từ HIS
+        // NGOẠI LỆ: Bệnh nhân đã khám quét QR phiếu khám HIS -> tự động tạo tài khoản và hồ sơ
+        if (!adminReauth && taiKhoan is null)
         {
-            return Json(new
+            if (!laQrHis)
             {
-                success = false,
-                message = "Chưa xác định được cơ sở khám chữa bệnh. Bạn hãy chọn cơ sở rồi đăng ký từ trang của cơ sở đó.",
-                dichDen = "/"
-            });
+                return Json(new
+                {
+                    success = false,
+                    message = "Số điện thoại chưa có hồ sơ tại cơ sở y tế. Vui lòng liên hệ phòng khám/bệnh viện để được đăng ký.",
+                    dichDen = "/"
+                });
+            }
+
+            taiKhoan = await TaoTaiKhoanVaHoSoTuQrAsync(input, model.MaCoSo, model.Cccd, model.DanhTinhQuet!);
+        }
+
+        if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet?.MaBN))
+        {
+            var coSoMa = await (from cs in _dbContext.BenhNhanCoSos
+                                join kcb in _dbContext.DMCSKCBs on cs.IdCoSo equals kcb.Id
+                                where cs.MaBN == model.DanhTinhQuet.MaBN
+                                select kcb.MaCoSo).FirstOrDefaultAsync();
+            if (!string.IsNullOrWhiteSpace(coSoMa))
+            {
+                model.MaCoSo = coSoMa;
+            }
+        }
+        if (string.IsNullOrWhiteSpace(model.MaCoSo))
+        {
+            model.MaCoSo = await _dbContext.DMCSKCBs
+                .AsNoTracking()
+                .Where(x => x.Active)
+                .OrderBy(x => x.Id)
+                .Select(x => x.MaCoSo)
+                .FirstOrDefaultAsync();
+        }
+
+        if (string.IsNullOrWhiteSpace(model.Cccd))
+        {
+            if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet?.Cccd))
+            {
+                model.Cccd = model.DanhTinhQuet.Cccd.Trim();
+            }
+            else if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet?.MaBN))
+            {
+                model.Cccd = await (from cs in _dbContext.BenhNhanCoSos
+                                    join bn in _dbContext.BenhNhans on cs.IdBenhNhan equals bn.Id
+                                    where cs.MaBN == model.DanhTinhQuet.MaBN
+                                    select bn.CCCD).FirstOrDefaultAsync();
+            }
         }
 
         string role = "BenhNhan";
@@ -377,6 +473,51 @@ public class DangNhapController : Controller
             if (!string.IsNullOrWhiteSpace(model.MaCoSo))
             {
                 claims.Add(new Claim(LuongCongBenhNhan.ClaimMaCoSo, model.MaCoSo.Trim()));
+            }
+
+            // Tự động gắn claim HoSoDangChon khi người dùng quét mã QR phiếu khám HIS
+            long? idHoSoQuet = taiKhoan?.IdBenhNhan;
+            if (model.DanhTinhQuet != null)
+            {
+                var maBnQuet = model.DanhTinhQuet.MaBN?.Trim();
+                var cccdQuet = model.DanhTinhQuet.Cccd?.Trim();
+                if (!string.IsNullOrWhiteSpace(maBnQuet))
+                {
+                    var idBn = await (from cs in _dbContext.BenhNhanCoSos
+                                      where cs.MaBN == maBnQuet
+                                      select (long?)cs.IdBenhNhan).FirstOrDefaultAsync();
+                    if (idBn != null && idBn > 0) idHoSoQuet = idBn;
+                }
+                if (idHoSoQuet == null && !string.IsNullOrWhiteSpace(cccdQuet) && !Services.Partner.LuongCongBenhNhan.LaMaGia(cccdQuet))
+                {
+                    var idBn = await _dbContext.BenhNhans
+                        .Where(b => b.CCCD == cccdQuet)
+                        .Select(b => (long?)b.Id)
+                        .FirstOrDefaultAsync();
+                    if (idBn != null && idBn > 0) idHoSoQuet = idBn;
+                }
+            }
+
+            if (idHoSoQuet != null && idHoSoQuet > 0)
+            {
+                if (taiKhoan != null && taiKhoan.Id > 0)
+                {
+                    await _thuTuc.NhanChuSoHuuAsync(idHoSoQuet.Value, taiKhoan.Id);
+                }
+
+                var csList = await _dbContext.BenhNhanCoSos
+                    .Where(x => x.IdBenhNhan == idHoSoQuet.Value && !x.DaMoTaiLieu)
+                    .ToListAsync();
+                if (csList.Count > 0)
+                {
+                    foreach (var item in csList)
+                    {
+                        item.DaMoTaiLieu = true;
+                    }
+                    await _dbContext.SaveChangesAsync();
+                }
+
+                claims.Add(new Claim(LuongCongBenhNhan.ClaimHoSoDangChon, idHoSoQuet.Value.ToString()));
             }
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -443,17 +584,59 @@ public class DangNhapController : Controller
             return Json(new { success = false, message = "Cơ sở này đang tạm ngưng tiếp nhận đăng ký trực tuyến." });
         }
 
-        // 🔴 Cong chan y het XacNhanOtp (ADR 0027). Bo sot cua nay la mo cua lach:
-        // chan mot ben roi de ben kia cap cookie thi bat bien "dang nhap duoc thi
-        // phai co tai khoan" khong con la bat bien nua.
-        if (!adminReauth && string.IsNullOrWhiteSpace(model.MaCoSo) && taiKhoan is null)
+        bool laQrHis = model.DanhTinhQuet != null && (model.DanhTinhQuet.LaNguonHis || !string.IsNullOrWhiteSpace(model.DanhTinhQuet.MaBN));
+
+        // Khóa luồng tự đăng ký tài khoản: chỉ cho phép tài khoản đã có sẵn từ HIS
+        // NGOẠI LỆ: Bệnh nhân đã khám quét QR phiếu khám HIS -> tự động tạo tài khoản và hồ sơ
+        if (!adminReauth && taiKhoan is null)
         {
-            return Json(new
+            if (!laQrHis)
             {
-                success = false,
-                message = "Chưa xác định được cơ sở khám chữa bệnh. Bạn hãy chọn cơ sở rồi đăng ký từ trang của cơ sở đó.",
-                dichDen = "/"
-            });
+                return Json(new
+                {
+                    success = false,
+                    message = "Số điện thoại chưa có hồ sơ tại cơ sở y tế. Vui lòng liên hệ phòng khám/bệnh viện để được đăng ký.",
+                    dichDen = "/"
+                });
+            }
+
+            taiKhoan = await TaoTaiKhoanVaHoSoTuQrAsync(sdt, model.MaCoSo, model.Cccd, model.DanhTinhQuet!);
+        }
+
+        if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet?.MaBN))
+        {
+            var coSoMa = await (from cs in _dbContext.BenhNhanCoSos
+                                join kcb in _dbContext.DMCSKCBs on cs.IdCoSo equals kcb.Id
+                                where cs.MaBN == model.DanhTinhQuet.MaBN
+                                select kcb.MaCoSo).FirstOrDefaultAsync();
+            if (!string.IsNullOrWhiteSpace(coSoMa))
+            {
+                model.MaCoSo = coSoMa;
+            }
+        }
+        if (string.IsNullOrWhiteSpace(model.MaCoSo))
+        {
+            model.MaCoSo = await _dbContext.DMCSKCBs
+                .AsNoTracking()
+                .Where(x => x.Active)
+                .OrderBy(x => x.Id)
+                .Select(x => x.MaCoSo)
+                .FirstOrDefaultAsync();
+        }
+
+        if (string.IsNullOrWhiteSpace(model.Cccd))
+        {
+            if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet?.Cccd))
+            {
+                model.Cccd = model.DanhTinhQuet.Cccd.Trim();
+            }
+            else if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet?.MaBN))
+            {
+                model.Cccd = await (from cs in _dbContext.BenhNhanCoSos
+                                    join bn in _dbContext.BenhNhans on cs.IdBenhNhan equals bn.Id
+                                    where cs.MaBN == model.DanhTinhQuet.MaBN
+                                    select bn.CCCD).FirstOrDefaultAsync();
+            }
         }
 
         var claims = new List<Claim>
@@ -471,6 +654,51 @@ public class DangNhapController : Controller
         if (!string.IsNullOrWhiteSpace(model.MaCoSo))
         {
             claims.Add(new Claim(LuongCongBenhNhan.ClaimMaCoSo, model.MaCoSo.Trim()));
+        }
+
+        // Tự động gắn claim HoSoDangChon khi người dùng quét mã QR phiếu khám HIS
+        long? idHoSoQuet = taiKhoan?.IdBenhNhan;
+        if (model.DanhTinhQuet != null)
+        {
+            var maBnQuet = model.DanhTinhQuet.MaBN?.Trim();
+            var cccdQuet = model.DanhTinhQuet.Cccd?.Trim();
+            if (!string.IsNullOrWhiteSpace(maBnQuet))
+            {
+                var idBn = await (from cs in _dbContext.BenhNhanCoSos
+                                  where cs.MaBN == maBnQuet
+                                  select (long?)cs.IdBenhNhan).FirstOrDefaultAsync();
+                if (idBn != null && idBn > 0) idHoSoQuet = idBn;
+            }
+            if (idHoSoQuet == null && !string.IsNullOrWhiteSpace(cccdQuet) && !Services.Partner.LuongCongBenhNhan.LaMaGia(cccdQuet))
+            {
+                var idBn = await _dbContext.BenhNhans
+                    .Where(b => b.CCCD == cccdQuet)
+                    .Select(b => (long?)b.Id)
+                    .FirstOrDefaultAsync();
+                if (idBn != null && idBn > 0) idHoSoQuet = idBn;
+            }
+        }
+
+        if (idHoSoQuet != null && idHoSoQuet > 0)
+        {
+            if (taiKhoan != null && taiKhoan.Id > 0)
+            {
+                await _thuTuc.NhanChuSoHuuAsync(idHoSoQuet.Value, taiKhoan.Id);
+            }
+
+            var csList = await _dbContext.BenhNhanCoSos
+                .Where(x => x.IdBenhNhan == idHoSoQuet.Value && !x.DaMoTaiLieu)
+                .ToListAsync();
+            if (csList.Count > 0)
+            {
+                foreach (var item in csList)
+                {
+                    item.DaMoTaiLieu = true;
+                }
+                await _dbContext.SaveChangesAsync();
+            }
+
+            claims.Add(new Claim(LuongCongBenhNhan.ClaimHoSoDangChon, idHoSoQuet.Value.ToString()));
         }
 
         var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -515,17 +743,24 @@ public class DangNhapController : Controller
     [Authorize]
     public async Task<IActionResult> DangKy(string coSo, string? returnUrl = null)
     {
+        // Khóa luồng tự đăng ký tài khoản bệnh nhân (chỉ chừa luồng từ HIS sang)
+        return RedirectToAction(nameof(Login), new { coSo, returnUrl });
+        /*
         var maCoSo = LayMaCoSoPhien(coSo);
         if (maCoSo is null) return RedirectToAction(nameof(Login));
 
         await DoNguCanhRaViewBagAsync(maCoSo, returnUrl);
         return View();
+        */
     }
 
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> TaoTaiKhoan([FromBody] TaoTaiKhoanRequest model)
     {
+        // Khóa luồng tự đăng ký tài khoản bệnh nhân (chỉ chừa luồng từ HIS sang)
+        return Json(new { success = false, message = "Chức năng đăng ký tài khoản trực tuyến đã tạm đóng. Vui lòng liên hệ cơ sở y tế." });
+        /*
         if (string.IsNullOrWhiteSpace(model.HoTen))
         {
             return Json(new { success = false, message = "Vui lòng nhập họ và tên!" });
@@ -556,6 +791,7 @@ public class DangNhapController : Controller
         }
 
         return Json(new { success = true, redirectUrl = ketQua.DichDen });
+        */
     }
 
     // ==================================================================
@@ -726,6 +962,11 @@ public class DangNhapController : Controller
         if (!string.IsNullOrWhiteSpace(taiKhoan?.Email))
         {
             claims.Add(new Claim(ClaimTypes.Email, taiKhoan.Email));
+        }
+
+        if (taiKhoan?.IdBenhNhan != null && taiKhoan.IdBenhNhan > 0)
+        {
+            claims.Add(new Claim(LuongCongBenhNhan.ClaimHoSoDangChon, taiKhoan.IdBenhNhan.ToString()!));
         }
 
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -980,6 +1221,108 @@ public class DangNhapController : Controller
         ViewBag.CoBanGiao = cua?.CoBanGiao == true;
     }
 
+    private async Task<TaiKhoan> TaoTaiKhoanVaHoSoTuQrAsync(string sdt, string? maCoSo, string? cccdInput, DanhTinhQuet quet)
+    {
+        var cccd = !string.IsNullOrWhiteSpace(quet.Cccd) ? quet.Cccd.Trim() : (cccdInput?.Trim() ?? string.Empty);
+        var hoTen = !string.IsNullOrWhiteSpace(quet.HoTen) ? quet.HoTen.Trim() : sdt;
+        var ngaySinh = quet.DoiNgay();
+        var gioiTinh = quet.DoiGioiTinh();
+        var diaChi = string.IsNullOrWhiteSpace(quet.DiaChi) ? null : quet.DiaChi.Trim();
+        var slug = Services.ChuanHoaTen.BoDau(hoTen);
+
+        // 1. Xác định cơ sở y tế và hồ sơ hiện có (nếu bệnh nhân đã có trên HIS)
+        long? idCoSo = null;
+        long? existingBnId = null;
+        if (!string.IsNullOrWhiteSpace(quet.MaBN))
+        {
+            var coSoInfo = await (from cs in _dbContext.BenhNhanCoSos
+                                  where cs.MaBN == quet.MaBN
+                                  select new { cs.IdCoSo, cs.IdBenhNhan }).FirstOrDefaultAsync();
+            if (coSoInfo != null)
+            {
+                idCoSo = coSoInfo.IdCoSo;
+                existingBnId = coSoInfo.IdBenhNhan;
+            }
+        }
+        if (idCoSo == null && !string.IsNullOrWhiteSpace(maCoSo))
+        {
+            idCoSo = await _dbContext.DMCSKCBs
+                .AsNoTracking()
+                .Where(x => x.MaCoSo == maCoSo)
+                .Select(x => (long?)x.Id)
+                .FirstOrDefaultAsync();
+        }
+        if (idCoSo == null)
+        {
+            idCoSo = await _dbContext.DMCSKCBs
+                .AsNoTracking()
+                .Where(x => x.Active)
+                .OrderBy(x => x.Id)
+                .Select(x => (long?)x.Id)
+                .FirstOrDefaultAsync();
+        }
+
+        long idBenhNhanTarget = existingBnId ?? 0;
+        if (idBenhNhanTarget <= 0)
+        {
+            // 2. Lưu thông tin người bệnh vào DM_BenhNhan nếu chưa có
+            var luuNguoi = await _thuTuc.SaveBenhNhanAsync(
+                cccd,
+                hoTen,
+                sdt,
+                null,
+                diaChi,
+                idTaiKhoan: null,
+                ngaySinh: ngaySinh,
+                hoTenKhongDau: slug,
+                gioiTinh: gioiTinh);
+            idBenhNhanTarget = luuNguoi.Id;
+
+            if (idCoSo != null && idBenhNhanTarget > 0)
+            {
+                await _thuTuc.TaoHoSoTuKhaiAsync(idBenhNhanTarget, idCoSo.Value);
+            }
+        }
+
+        // 3. Tạo tài khoản HT_TaiKhoan
+        var luuTaiKhoan = await _thuTuc.SaveTaiKhoanAsync(
+            0,
+            sdt,
+            null,
+            "BenhNhan",
+            null,
+            idBenhNhanTarget > 0 ? idBenhNhanTarget : null);
+
+        var idTaiKhoan = luuTaiKhoan.Id;
+
+        // 4. Gán quyền sở hữu hồ sơ cho tài khoản
+        if (idBenhNhanTarget > 0 && idTaiKhoan > 0)
+        {
+            await _thuTuc.NhanChuSoHuuAsync(idBenhNhanTarget, idTaiKhoan);
+        }
+
+        // 5. Đảm bảo mở tài liệu
+        if (idBenhNhanTarget > 0)
+        {
+            var csList = await _dbContext.BenhNhanCoSos
+                .Where(x => x.IdBenhNhan == idBenhNhanTarget && !x.DaMoTaiLieu)
+                .ToListAsync();
+            if (csList.Count > 0)
+            {
+                foreach (var item in csList)
+                {
+                    item.DaMoTaiLieu = true;
+                }
+                await _dbContext.SaveChangesAsync();
+            }
+        }
+
+        var taiKhoan = await _dbContext.TaiKhoans.FirstOrDefaultAsync(x => x.Id == idTaiKhoan)
+                       ?? new TaiKhoan { Id = idTaiKhoan, SDT = sdt, Role = "BenhNhan", IdBenhNhan = idBenhNhanTarget > 0 ? idBenhNhanTarget : null };
+
+        return taiKhoan;
+    }
+
     /// <summary>
     /// Cho ha canh sau khi xac thuc. Vao thang /DangNhap/Login (khong qua trang
     /// co so) thi khong biet benh nhan o co so nao, nen chi ve duoc trang benh
@@ -988,6 +1331,16 @@ public class DangNhapController : Controller
     private async Task<string?> ChonDichDenAsync(string? maCoSo, string? cccd, string dinhDanh,
                                                  string? returnUrl, DanhTinhQuet? quet = null)
     {
+        // Khi quét mã phiếu khám HIS, đích đến phải luôn là /benh-nhan (trừ khi có returnUrl cụ thể khác "/")
+        if (quet != null && (quet.LaNguonHis || !string.IsNullOrWhiteSpace(quet.MaBN)))
+        {
+            if (!string.IsNullOrWhiteSpace(returnUrl) && returnUrl != "/" && returnUrl != "/Home" && !returnUrl.StartsWith("/DangNhap"))
+            {
+                return returnUrl;
+            }
+            return "/benh-nhan";
+        }
+
         if (string.IsNullOrWhiteSpace(maCoSo) || string.IsNullOrWhiteSpace(cccd))
         {
             return "/benh-nhan";

@@ -39,11 +39,12 @@
         </header>
 
         <main class="hs-form">
-            @if (!string.IsNullOrEmpty(ViewBag.Loi as string))
-            {
-                <div class="hs-bao hs-bao-loi">@ViewBag.Loi</div>
-            }
+            <div class="hs-bao hs-bao-loi">
+                Chức năng thêm hồ sơ người thân đã tạm dừng. Vui lòng liên hệ cơ sở y tế để được hỗ trợ.
+            </div>
 
+            @* Luồng thêm hồ sơ người thân tạm dừng theo yêu cầu
+            <!--
             <form method="post" action="/benh-nhan/ho-so/them">
                 @Html.AntiForgeryToken()
 
@@ -57,14 +58,8 @@
                     <label for="cccd">Số căn cước công dân</label>
                     <input id="cccd" name="cccd" type="text" required maxlength="20"
                            inputmode="numeric" autocomplete="off" placeholder="012345678901" />
-                    <div class="hs-goi-y">
-                        Mỗi số căn cước chỉ thuộc về một tài khoản. Nếu người thân đã tự tạo hồ sơ
-                        bằng số này, hãy nhờ họ xoá hồ sơ đó trước.
-                    </div>
                 </div>
 
-                @* Bon o BAT BUOC cua *Luat gop ho so* (ADR 0018 ban bon o): thieu mot
-                   o la khong noi duoc ho so, va nguoi dung khong biet vi sao. *@
                 <div class="hs-o">
                     <label for="ngaySinh">Ngày sinh *</label>
                     <input id="ngaySinh" name="ngaySinh" type="date" required />
@@ -78,15 +73,9 @@
                         <option value="2">Nữ</option>
                         <option value="3">Chưa xác định</option>
                     </select>
-                    <div class="hs-goi-y">
-                        Họ tên, ngày sinh và giới tính dùng để tìm bệnh án của người này tại cơ sở.
-                    </div>
                 </div>
 
                 <div class="hs-o">
-                    @* 🔴 BAT BUOC, cung luat voi man *Sua ho so*: so nay la thu dung de
-                       DANG NHAP vao cong. Bat o mot cua ma tha o cua kia thi khong
-                       phai la bat buoc. *@
                     <label for="sdt">Số điện thoại *</label>
                     <input id="sdt" name="sdt" type="tel" maxlength="20" required
                            inputmode="tel" autocomplete="off" placeholder="09xxxxxxxx" />
@@ -94,6 +83,8 @@
 
                 <button type="submit" class="hs-gui">Tạo hồ sơ</button>
             </form>
+            -->
+            *@
         </main>
     </div>
 </body>

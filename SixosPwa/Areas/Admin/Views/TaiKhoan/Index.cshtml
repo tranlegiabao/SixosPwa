@@ -36,91 +36,8 @@
         };
     }
 
-    // Lấy dữ liệu hồ sơ nếu model chưa có (Đọc an toàn trực tiếp từ SQL để tránh xung đột kiểu dữ liệu)
-    var hoSoTheoTaiKhoan = Model.HoSoTheoTaiKhoan;
-    if (hoSoTheoTaiKhoan == null || hoSoTheoTaiKhoan.Count == 0)
-    {
-        var tempDict = new Dictionary<long, List<HoSoBenhNhanItemViewModel>>();
-        try
-        {
-            var conn = _db.Database.GetDbConnection();
-            if (conn.State != System.Data.ConnectionState.Open) conn.Open();
-            using var cmd = conn.CreateCommand();
-            cmd.CommandText = @"
-                SELECT b.ID, b.IDTaiKhoan, b.TenBN, b.CCCD, b.SDT, b.Email, b.DiaChi, b.NgaySinh, 
-                       CAST(b.GioiTinh AS VARCHAR(10)) AS GioiTinhStr,
-                       cs.MaBN, kcb.TenCoSo,
-                       cs.ID AS IdHoSoCoSo, cs.IDCoSo
-                FROM DM_BenhNhan b
-                LEFT JOIN DM_BenhNhanCoSo cs ON b.ID = cs.IDBenhNhan
-                LEFT JOIN DM_CSKCB kcb ON cs.IDCoSo = kcb.ID
-            ";
-            using var reader = cmd.ExecuteReader();
-            var allLoaded = new List<(long Id, long? IdTaiKhoan, string TenBN, string CCCD, string SDT, string? Email, string? DiaChi, DateTime? NgaySinh, string? GioiTinh, string? MaBN, string? TenCoSo, long? IdHoSoCoSo, long? IdCoSo)>();
-            while (reader.Read())
-            {
-                var id = Convert.ToInt64(reader["ID"]);
-                var idTaiKhoan = reader["IDTaiKhoan"] != DBNull.Value ? (long?)Convert.ToInt64(reader["IDTaiKhoan"]) : null;
-                var tenBN = reader["TenBN"]?.ToString() ?? "";
-                var cccd = reader["CCCD"]?.ToString() ?? "";
-                var sdt = reader["SDT"]?.ToString() ?? "";
-                var email = reader["Email"] != DBNull.Value ? reader["Email"]?.ToString() : null;
-                var diaChi = reader["DiaChi"] != DBNull.Value ? reader["DiaChi"]?.ToString() : null;
-                var ngaySinh = reader["NgaySinh"] != DBNull.Value ? (DateTime?)Convert.ToDateTime(reader["NgaySinh"]) : null;
-                var gioiTinh = reader["GioiTinhStr"] != DBNull.Value ? reader["GioiTinhStr"]?.ToString() : null;
-                var maBN = reader["MaBN"] != DBNull.Value ? reader["MaBN"]?.ToString() : null;
-                var tenCoSo = reader["TenCoSo"] != DBNull.Value ? reader["TenCoSo"]?.ToString() : null;
-
-                var idHoSoCoSo = reader["IdHoSoCoSo"] != DBNull.Value ? (long?)Convert.ToInt64(reader["IdHoSoCoSo"]) : null;
-                var idCoSo = reader["IDCoSo"] != DBNull.Value ? (long?)Convert.ToInt64(reader["IDCoSo"]) : null;
-
-                allLoaded.Add((id, idTaiKhoan, tenBN, cccd, sdt, email, diaChi, ngaySinh, gioiTinh, maBN, tenCoSo, idHoSoCoSo, idCoSo));
-            }
-
-            foreach (var tk in Model.Items)
-            {
-                var list = new List<HoSoBenhNhanItemViewModel>();
-                var matched = allLoaded.Where(p => p.IdTaiKhoan == tk.Id || (p.IdTaiKhoan == null && !string.IsNullOrEmpty(tk.SDT) && p.SDT == tk.SDT)).ToList();
-
-                var grouped = matched.GroupBy(x => x.Id);
-                foreach (var g in grouped)
-                {
-                    // Mot ho so co the co NHIEU dong `DM_BenhNhanCoSo` (mot dong tu khai +
-                    // mot dong da noi ma). Uu tien dong DA CO MA — do moi la dong ma nut
-                    // *Go noi* phai thao.
-                    var first = g.FirstOrDefault(x => !string.IsNullOrEmpty(x.MaBN));
-                    if (first.Id == 0) first = g.First();
-                    list.Add(new HoSoBenhNhanItemViewModel
-                    {
-                        Id = first.Id,
-                        IdTaiKhoan = tk.Id,
-                        TenBN = first.TenBN,
-                        CCCD = first.CCCD,
-                        SDT = first.SDT,
-                        Email = first.Email,
-                        DiaChi = first.DiaChi,
-                        NgaySinh = first.NgaySinh,
-                        GioiTinh = first.GioiTinh,
-                        MaBN = first.MaBN,
-                        TenCoSo = first.TenCoSo,
-                        IdHoSoCoSo = first.IdHoSoCoSo,
-                        IdCoSo = first.IdCoSo,
-                        SoCoSo = g.Count(x => !string.IsNullOrEmpty(x.MaBN))
-                    });
-                }
-                tempDict[tk.Id] = list;
-            }
-        }
-        catch
-        {
-            // Bỏ qua lỗi kết nối và tạo danh sách rỗng
-            foreach (var tk in Model.Items)
-            {
-                tempDict[tk.Id] = new List<HoSoBenhNhanItemViewModel>();
-            }
-        }
-        hoSoTheoTaiKhoan = tempDict;
-    }
+    // Dữ liệu hồ sơ bệnh nhân theo tài khoản đã được nạp sẵn từ Stored Procedure qua Model.HoSoTheoTaiKhoan
+    var hoSoTheoTaiKhoan = Model.HoSoTheoTaiKhoan ?? new Dictionary<long, List<HoSoBenhNhanItemViewModel>>();
 }
 
 <style>
@@ -670,6 +587,7 @@
 
 <div class="admin-panel">
     <form method="get" class="filter-bar tai-khoan-filter-bar" id="taiKhoanFilterForm">
+        <input type="hidden" name="loc" value="1" />
         <!-- DÒNG 1: Cơ sở (ô to rộng rãi) + CCCD + Số điện thoại + Mã bệnh nhân -->
         <div class="filter-row-top">
             <!-- 1. Dropdown cơ sở -->
@@ -724,12 +642,7 @@
         </div>
     </form>
     @{
-        var hasFilter = !string.IsNullOrWhiteSpace(Model.CCCD) ||
-                        !string.IsNullOrWhiteSpace(Model.SDT) ||
-                        !string.IsNullOrWhiteSpace(Model.MaBN) ||
-                        !string.IsNullOrWhiteSpace(Model.LoaiCS) ||
-                        !string.IsNullOrWhiteSpace(Model.Role) ||
-                        !string.IsNullOrWhiteSpace(Model.Query);
+        var hasFilter = Model.DaLoc;
     }
     <div class="table-meta">
         @if (hasFilter)
@@ -753,7 +666,7 @@
                     <th>Mã định danh</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="accountTableBody">
             @if (Model.Items.Count == 0)
             {
                 if (!hasFilter)
@@ -783,181 +696,18 @@
             }
             else
             {
-                foreach (var item in Model.Items)
-                {
-                    hoSoTheoTaiKhoan.TryGetValue(item.Id, out var danhSachHoSo);
-                    danhSachHoSo ??= new List<HoSoBenhNhanItemViewModel>();
-
-                    <tr class="account-parent-row" id="account-row-@item.Id" onclick="toggleAccountDrawer(@item.Id, event)">
-                        <td>
-                            <div class="table-person">
-                                <span class="mini-avatar">@(item.SDT.FirstOrDefault().ToString())</span>
-                                <div>
-                                    <strong>@item.SDT</strong>
-                                    <div><small class="text-muted">Đăng nhập bằng số điện thoại</small></div>
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="badge-so-hoso-count" id="badge-count-@item.Id" title="Số lượng: @(danhSachHoSo.Count) hồ sơ">
-                                @(danhSachHoSo.Count)
-                            </span>
-                        </td>
-                        <td><span class="role-badge role-@item.Role.ToLowerInvariant()">@item.Role</span></td>
-                        <td class="text-muted">#@item.Id</td>
-                    </tr>
-
-                    <!-- HÀNG DRAWER SỔ RA CÁC HỒ SƠ -->
-                    <tr id="drawer-@item.Id" class="account-drawer-row" style="display: none;">
-                        <td colspan="4" class="p-0 border-0">
-                            <div class="account-drawer-box">
-                                <div class="d-flex align-items-center justify-content-between mb-2">
-                                    <div>
-                                        <h6 class="mb-0 fw-bold text-dark d-flex align-items-center gap-2">
-                                            <span>📂</span> Hồ sơ bệnh nhân thuộc tài khoản <strong>@item.SDT</strong>
-                                            <span class="badge bg-primary text-white" id="count-label-@item.Id">@(danhSachHoSo.Count) hồ sơ</span>
-                                        </h6>
-                                        <small class="text-muted">Quản lý, xem, sửa hoặc xóa hồ sơ của thành viên trong tài khoản này</small>
-                                    </div>
-                                    <button type="button" class="btn btn-sm admin-btn-primary py-1 px-3" onclick="toggleFormThem(@item.Id)">
-                                        <span>+</span> Thêm hồ sơ
-                                    </button>
-                                </div>
-
-                                <!-- FORM THÊM HỒ SƠ MỚI -->
-                                <div id="form-them-@item.Id" class="form-them-panel" style="display: none;">
-                                    <div class="fw-bold text-primary mb-2" style="font-size: 13px;">➕ Thêm hồ sơ mới cho tài khoản @item.SDT</div>
-                                    <div class="row g-2 align-items-end">
-                                        <div class="col-md-3">
-                                            <label class="form-label mb-1" style="font-size: 11px;">Họ và tên <span class="text-danger">*</span></label>
-                                            <input type="text" id="new-ten-@item.Id" class="form-control form-control-sm" placeholder="VD: Nguyễn Văn A" />
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label class="form-label mb-1" style="font-size: 11px;">CCCD / Định danh <span class="text-danger">*</span></label>
-                                            <input type="text" id="new-cccd-@item.Id" class="form-control form-control-sm font-monospace" placeholder="12 số CCCD" />
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label class="form-label mb-1" style="font-size: 11px;">Số điện thoại</label>
-                                            <input type="tel" id="new-sdt-@item.Id" class="form-control form-control-sm" placeholder="@item.SDT" value="@item.SDT" />
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label class="form-label mb-1" style="font-size: 11px;">Ngày sinh</label>
-                                            <input type="text" id="new-ngaysinh-@item.Id" class="form-control form-control-sm datepicker-input" placeholder="dd/mm/yyyy" />
-                                        </div>
-                                        <div class="col-md-1">
-                                            <label class="form-label mb-1" style="font-size: 11px;">Giới tính</label>
-                                            <select id="new-gioitinh-@item.Id" class="form-select form-select-sm">
-                                                @foreach (var gt in danhMucGioiTinh)
-                                                {
-                                                    <option value="@gt.MaGioiTinh">@gt.TenGioiTinh</option>
-                                                }
-                                            </select>
-                                        </div>
-                                        <div class="col-md-2 d-flex gap-1 justify-content-end">
-                                            <button type="button" class="btn btn-sm btn-success px-3" onclick="taoHoSoMoi(@item.Id)">
-                                                💾 Lưu
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-light border px-2" onclick="toggleFormThem(@item.Id)">
-                                                ✕
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- BẢNG DANH SÁCH HỒ SƠ -->
-                                <div class="nested-hoso-card">
-                                    <div class="table-responsive">
-                                        <table class="table nested-hoso-table align-middle">
-                                            <thead>
-                                                <tr>
-                                                    <th style="width: 22%;">Họ và tên</th>
-                                                    <th style="width: 17%;" class="text-center">CCCD / Định danh</th>
-                                                    <th style="width: 14%;" class="text-center">Số điện thoại</th>
-                                                    <th style="width: 12%;" class="text-center">Ngày sinh</th>
-                                                    <th style="width: 10%;" class="text-center">Giới tính</th>
-                                                    <th style="width: 12%;" class="text-center">Mã BN / Cơ sở</th>
-                                                    <th style="width: 13%;" class="text-center">Thao tác</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="tbody-hoso-@item.Id">
-                                                @if (danhSachHoSo.Count == 0)
-                                                {
-                                                    <tr class="empty-hoso-tr" id="empty-row-@item.Id">
-                                                        <td colspan="7" class="text-center py-4 text-muted">
-                                                            <div>📋</div>
-                                                            <div>Chưa có hồ sơ bệnh nhân nào liên kết với tài khoản này.</div>
-                                                        </td>
-                                                    </tr>
-                                                }
-                                                else
-                                                {
-                                                    foreach (var hs in danhSachHoSo)
-                                                    {
-                                                        var ngaySinhStr = hs.NgaySinh?.ToString("dd/MM/yyyy") ?? "—";
-                                                        var ngaySinhIso = hs.NgaySinh?.ToString("yyyy-MM-dd") ?? "";
-                                                        var matchGt = danhMucGioiTinh.FirstOrDefault(x => x.MaGioiTinh == hs.GioiTinh);
-                                                        var gioiTinhStr = matchGt != null ? matchGt.TenGioiTinh : (hs.GioiTinh == "1" ? "Nam" : (hs.GioiTinh == "2" ? "Nữ" : "Chưa xác định"));
-                                                        var maBnStr = !string.IsNullOrEmpty(hs.MaBN) ? $"{hs.MaBN}" : (!string.IsNullOrEmpty(hs.TenCoSo) ? hs.TenCoSo : "Chưa nối");
-
-                                                        <tr id="hoso-row-@hs.Id" data-id="@hs.Id" data-account-id="@item.Id"
-                                                            data-ten="@hs.TenBN" data-cccd="@hs.CCCD" data-sdt="@hs.SDT"
-                                                            data-ngaysinh="@ngaySinhIso" data-gioitinh="@hs.GioiTinh"
-                                                            data-mabn="@hs.MaBN" data-tencoso="@hs.TenCoSo"
-                                                            data-idhosocoso="@hs.IdHoSoCoSo" data-idcoso="@hs.IdCoSo">
-                                                            <!-- HỌ TÊN -->
-                                                            <td>
-                                                                <span class="val-ten fw-bold text-dark">@hs.TenBN</span>
-                                                            </td>
-                                                            <!-- CCCD -->
-                                                            <td class="text-center">
-                                                                <span class="val-cccd font-monospace">@(string.IsNullOrEmpty(hs.CCCD) ? "—" : hs.CCCD)</span>
-                                                            </td>
-                                                            <!-- SĐT -->
-                                                            <td class="text-center">
-                                                                <span class="val-sdt">@(string.IsNullOrEmpty(hs.SDT) ? "—" : hs.SDT)</span>
-                                                            </td>
-                                                            <!-- NGÀY SINH -->
-                                                            <td class="text-center">
-                                                                <span class="val-ngaysinh">@ngaySinhStr</span>
-                                                            </td>
-                                                            <!-- GIỚI TÍNH -->
-                                                            <td class="text-center">
-                                                                <span class="val-gioitinh">@gioiTinhStr</span>
-                                                            </td>
-                                                            <!-- MÃ BN / CƠ SỞ -->
-                                                            <td class="text-center">
-                                                                <span class="val-mabn badge bg-light text-secondary border">@maBnStr</span>
-                                                            </td>
-                                                            <!-- THAO TÁC: SỬA - LƯU - XOÁ -->
-                                                            <td class="text-center">
-                                                                <div class="hoso-action-group">
-                                                                    <!-- NÚT SỬA (✏️) MỞ POPUP THEO MẪU -->
-                                                                    <button type="button" class="btn-hoso-icon btn-hoso-edit" onclick="moModalSuaHoSo(@hs.Id, @item.Id)" title="Sửa hồ sơ">
-                                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                                                                    </button>
-
-                                                                    <!-- NÚT XOÁ (🗑️) -->
-                                                                    <button type="button" class="btn-hoso-icon btn-hoso-delete" onclick="xoaThongTinHoSo(@hs.Id, '@hs.TenBN', @item.Id)" title="Xóa hồ sơ">
-                                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                                                                    </button>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    }
-                                                }
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                }
+                <partial name="_TaiKhoanRows" model="(Model.Items.ToList(), (Dictionary<long, List<HoSoBenhNhanItemViewModel>>)hoSoTheoTaiKhoan, danhMucGioiTinh)" />
             }
             </tbody>
         </table>
     </div>
-    <partial name="_Pagination" model="new PaginationViewModel { Page = Model.Page, TotalPages = Model.TotalPages, Query = Model.Query, Role = Model.Role, LoaiCS = Model.LoaiCS, CCCD = Model.CCCD, SDT = Model.SDT, MaBN = Model.MaBN }" />
+    <div id="infiniteScrollStatus" class="py-3 text-center" style="display: none;">
+        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+        <span class="text-muted fw-semibold" style="font-size: 13.5px;">Đang tải thêm tài khoản...</span>
+    </div>
+    <div id="infiniteScrollEnd" class="py-3 text-center text-muted fw-semibold" style="@(Model.DaLoc && Model.TotalPages <= 1 && Model.Items.Count > 0 ? "display: block;" : "display: none;") font-size: 13px; border-top: 1px dashed #e2e8f0;">
+        ✓ Đã tải hết danh sách tài khoản (@Model.TotalItems.ToString("N0") tài khoản)
+    </div>
 </div>
 
 <!-- ==================== MODAL SỬA HỒ SƠ CHUẨN GIAO DIỆN THEO ẢNH USER ==================== -->
@@ -1093,8 +843,70 @@
         });
     };
 
+    // Hàm hiển thị xác nhận dạng modal (thay thế window.confirm của trình duyệt)
+    window.showConfirm = window.showConfirm || function (noiDung, tieuDe = 'Xác nhận', nutXacNhan = 'Đồng ý', nguyHiem = true) {
+        return new Promise((resolve) => {
+            const old = document.querySelector('.ytv-nen-mo-xac-nhan');
+            if (old) old.remove();
+
+            const nen = document.createElement('div');
+            nen.className = 'ytv-nen-mo ytv-nen-mo-xac-nhan';
+            nen.style.zIndex = '1100';
+            nen.innerHTML = `
+                <div class="ytv-hop-xac-nhan" role="alertdialog" aria-modal="true" style="max-width: 440px;">
+                    <div class="ytv-hop-dau">
+                        <span class="ytv-hop-bieu-tuong" style="${nguyHiem ? 'color: #d53f52; background: #fff1f3;' : 'color: #d97706; background: #fef3c7;'}">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M12 9v4"></path><path d="M12 17h.01"></path>
+                                <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"></path>
+                            </svg>
+                        </span>
+                        <h2 class="ytv-hop-tieu-de" id="ytvXacNhanTieuDe"></h2>
+                    </div>
+                    <p class="ytv-hop-noi-dung" id="ytvXacNhanNoiDung" style="white-space: pre-line; word-break: break-word; font-size: 13.5px;"></p>
+                    <div class="ytv-hop-nut">
+                        <button type="button" class="btn admin-btn-secondary" data-ytv-huy>Hủy</button>
+                        <button type="button" class="btn ${nguyHiem ? 'ytv-nut-nguy-hiem' : 'btn-warning text-white fw-bold'}" data-ytv-dong-y></button>
+                    </div>
+                </div>`;
+
+            nen.querySelector('#ytvXacNhanTieuDe').textContent = tieuDe || 'Xác nhận';
+            nen.querySelector('#ytvXacNhanNoiDung').textContent = noiDung || '';
+            nen.querySelector('[data-ytv-huy]').textContent = 'Hủy';
+            nen.querySelector('[data-ytv-dong-y]').textContent = nutXacNhan || 'Đồng ý';
+
+            const dong = (ketQua) => {
+                document.removeEventListener('keydown', khiGoPhim);
+                nen.remove();
+                document.body.classList.remove('ytv-khoa-cuon');
+                resolve(ketQua);
+            };
+            const khiGoPhim = (e) => { if (e.key === 'Escape') dong(false); };
+
+            nen.querySelector('[data-ytv-huy]').addEventListener('click', () => dong(false));
+            nen.querySelector('[data-ytv-dong-y]').addEventListener('click', () => dong(true));
+            nen.addEventListener('click', (e) => { if (e.target === nen) dong(false); });
+            document.addEventListener('keydown', khiGoPhim);
+
+            document.body.classList.add('ytv-khoa-cuon');
+            document.body.appendChild(nen);
+            requestAnimationFrame(() => nen.classList.add('hien'));
+            nen.querySelector('[data-ytv-huy]').focus();
+        });
+    };
+
     document.addEventListener("DOMContentLoaded", function() {
         khoiTaoDatePicker();
+
+        // Kích hoạt loadingpage chuẩn HisSoft khi bấm Lọc
+        const formFilter = document.getElementById('taiKhoanFilterForm');
+        if (formFilter) {
+            formFilter.addEventListener('submit', function () {
+                if (typeof showPageloader === 'function') {
+                    showPageloader();
+                }
+            });
+        }
     });
 
     function khoiTaoDatePicker(scopeSelector) {
@@ -1424,7 +1236,8 @@
         const nhac = 'Gỡ mã ' + maHienTai + ' khỏi hồ sơ này?\n\n'
             + 'Tài liệu và đợt khám đi kèm mã này sẽ bị gỡ theo (có sao lưu để khôi phục được). '
             + 'Hồ sơ vẫn còn, chỉ trở về dạng tự khai.';
-        if (!confirm(nhac)) return;
+        const dongY = await showConfirm(nhac, 'Gỡ mã bệnh nhân?', 'Gỡ đồng bộ', true);
+        if (!dongY) return;
 
         const btn = document.getElementById('modalSuaBtnGoNoi');
         if (btn) { btn.disabled = true; btn.innerText = 'Đang gỡ...'; }
@@ -1465,7 +1278,8 @@
 
     // Xóa hồ sơ (AJAX)
     async function xoaThongTinHoSo(id, tenBN, accountId) {
-        if (!confirm(`Bạn có chắc chắn muốn xóa hồ sơ "${tenBN}" này không?`)) {
+        const dongY = await showConfirm(`Bạn có chắc chắn muốn xóa hồ sơ "${tenBN}" này không?`, 'Xóa hồ sơ bệnh nhân?', 'Xóa hồ sơ', true);
+        if (!dongY) {
             return;
         }
 
@@ -1661,5 +1475,82 @@
             `;
         }
     }
+
+    // ==================== INFINITE SCROLL CHO TÀI KHOẢN (20 dòng / lần) ====================
+    let trangHienTai = @Model.Page;
+    const tongSoTrang = @Model.TotalPages;
+    let dangTaiThem = false;
+    let hetDuLieu = @(!Model.DaLoc || Model.Page >= Model.TotalPages ? "true" : "false");
+
+    async function taiThemTaiKhoan() {
+        if (dangTaiThem || hetDuLieu) return;
+        dangTaiThem = true;
+
+        const statusEl = document.getElementById('infiniteScrollStatus');
+        const endEl = document.getElementById('infiniteScrollEnd');
+        if (statusEl) statusEl.style.display = 'block';
+
+        const startTime = Date.now();
+
+        // Bật showPageloader như HisSoft
+        if (typeof showPageloader === 'function') {
+            showPageloader();
+        }
+
+        const nextPage = trangHienTai + 1;
+        const form = document.getElementById('taiKhoanFilterForm');
+        const params = new URLSearchParams(form ? new FormData(form) : '');
+        params.set('page', nextPage);
+
+        try {
+            const resp = await fetch(`/Admin/TaiKhoan/TaiThem?${params.toString()}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+
+            if (resp.ok) {
+                const html = await resp.text();
+                if (!html || !html.trim()) {
+                    hetDuLieu = true;
+                    if (endEl) endEl.style.display = 'block';
+                } else {
+                    const tbody = document.getElementById('accountTableBody');
+                    if (tbody) {
+                        tbody.insertAdjacentHTML('beforeend', html);
+                        khoiTaoDatePicker('#accountTableBody');
+                    }
+                    trangHienTai = nextPage;
+                    const totalPagesHeader = resp.headers.get('X-Total-Pages');
+                    const maxPages = totalPagesHeader ? parseInt(totalPagesHeader, 10) : tongSoTrang;
+                    if (trangHienTai >= maxPages) {
+                        hetDuLieu = true;
+                        if (endEl) endEl.style.display = 'block';
+                    }
+                }
+            } else {
+                hetDuLieu = true;
+            }
+        } catch (err) {
+            console.error('Lỗi tải thêm tài khoản:', err);
+        } finally {
+            const elapsed = Date.now() - startTime;
+            const remaining = Math.max(0, 300 - elapsed);
+            setTimeout(() => {
+                if (typeof hidePageloader === 'function') {
+                    hidePageloader();
+                }
+                if (statusEl) statusEl.style.display = 'none';
+                dangTaiThem = false;
+            }, remaining);
+        }
+    }
+
+    window.addEventListener('scroll', function () {
+        if (hetDuLieu || dangTaiThem) return;
+        const scrollBottom = window.innerHeight + window.scrollY;
+        const threshold = document.documentElement.offsetHeight - 250;
+        if (scrollBottom >= threshold) {
+            taiThemTaiKhoan();
+        }
+    }, { passive: true });
 </script>
 }

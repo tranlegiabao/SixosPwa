@@ -11,15 +11,16 @@
      * Hop duoc chen thang vao <body>: .admin-panel co overflow: hidden nen moi
      * position: fixed long ben trong no deu bi ghim lai trong khung panel.
      */
-    function hoiXacNhan({ tieuDe, noiDung, nutXacNhan }) {
+    function hoiXacNhan({ tieuDe, noiDung, nutXacNhan = 'Đồng ý', nutHuy = 'Hủy', nguyHiem = true }) {
         return new Promise((traLoi) => {
             const nen = document.createElement('div');
             nen.className = 'ytv-nen-mo';
+            nen.style.zIndex = '1100'; // Hiển thị trên các modal khác
             nen.innerHTML = `
                 <div class="ytv-hop-xac-nhan" role="alertdialog" aria-modal="true"
-                     aria-labelledby="ytvHopTieuDe" aria-describedby="ytvHopNoiDung">
+                     aria-labelledby="ytvHopTieuDe" aria-describedby="ytvHopNoiDung" style="max-width: 440px;">
                     <div class="ytv-hop-dau">
-                        <span class="ytv-hop-bieu-tuong">
+                        <span class="ytv-hop-bieu-tuong" style="${nguyHiem ? 'color: #d53f52; background: #fff1f3;' : 'color: #d97706; background: #fef3c7;'}">
                             <svg viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="M12 9v4"></path><path d="M12 17h.01"></path>
                                 <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"></path>
@@ -27,18 +28,19 @@
                         </span>
                         <h2 class="ytv-hop-tieu-de" id="ytvHopTieuDe"></h2>
                     </div>
-                    <p class="ytv-hop-noi-dung" id="ytvHopNoiDung"></p>
+                    <p class="ytv-hop-noi-dung" id="ytvHopNoiDung" style="white-space: pre-line; word-break: break-word; font-size: 13.5px;"></p>
                     <div class="ytv-hop-nut">
-                        <button type="button" class="btn admin-btn-secondary" data-ytv-huy>Hủy</button>
-                        <button type="button" class="btn ytv-nut-nguy-hiem" data-ytv-dong-y></button>
+                        <button type="button" class="btn admin-btn-secondary" data-ytv-huy></button>
+                        <button type="button" class="btn ${nguyHiem ? 'ytv-nut-nguy-hiem' : 'btn-warning text-white fw-bold'}" data-ytv-dong-y></button>
                     </div>
                 </div>`;
 
             // Dat bang textContent chu khong noi vao chuoi HTML: noi dung den tu
             // thuoc tinh tren form, coi nhu du lieu chu khong phai ma.
-            nen.querySelector('#ytvHopTieuDe').textContent = tieuDe;
-            nen.querySelector('#ytvHopNoiDung').textContent = noiDung;
-            nen.querySelector('[data-ytv-dong-y]').textContent = nutXacNhan;
+            nen.querySelector('#ytvHopTieuDe').textContent = tieuDe || 'Xác nhận';
+            nen.querySelector('#ytvHopNoiDung').textContent = noiDung || '';
+            nen.querySelector('[data-ytv-huy]').textContent = nutHuy || 'Hủy';
+            nen.querySelector('[data-ytv-dong-y]').textContent = nutXacNhan || 'Đồng ý';
 
             const dong = (ketQua) => {
                 document.removeEventListener('keydown', khiGoPhim);
@@ -60,6 +62,11 @@
             nen.querySelector('[data-ytv-huy]').focus();
         });
     }
+
+    window.hoiXacNhan = hoiXacNhan;
+    window.showConfirm = function (noiDung, tieuDe = 'Xác nhận', nutXacNhan = 'Đồng ý', nguyHiem = true) {
+        return hoiXacNhan({ tieuDe, noiDung, nutXacNhan, nguyHiem });
+    };
 
     /**
      * Hop canh bao (modal alert) trong app: hien thong bao canh bao dang modal dep mat.
@@ -169,4 +176,52 @@
         const firstInput = document.querySelector('.admin-form input:not([type="hidden"]):not([readonly])');
         if (firstInput && window.matchMedia('(min-width: 768px)').matches) firstInput.focus();
     });
+
+    /**
+     * Page Loader theo chuan HisSoft
+     */
+    function showPageloader() {
+        if (typeof window.showPageLoader === 'function' && window.showPageLoader !== showPageloader) {
+            window.showPageLoader();
+            return;
+        }
+        var el = document.getElementById('page-loader-body');
+        if (el) {
+            el.classList.add('show');
+            el.style.zIndex = '1056';
+        }
+        if (window.jQuery) {
+            window.jQuery('#page-loader-body').addClass('show').css('z-index', '1056');
+        }
+    }
+
+    function hidePageloader() {
+        if (typeof window.hidePageLoader === 'function' && window.hidePageLoader !== hidePageloader) {
+            window.hidePageLoader();
+            return;
+        }
+        var el = document.getElementById('page-loader-body');
+        if (el) {
+            el.classList.remove('show');
+            el.style.zIndex = '-1';
+        }
+        if (window.jQuery) {
+            window.jQuery('#page-loader-body').removeClass('show').css('z-index', '-1');
+        }
+    }
+
+    if (!window.showPageloader) window.showPageloader = window.showPageLoader = showPageloader;
+    if (!window.hidePageloader) window.hidePageloader = window.hidePageLoader = hidePageloader;
+    if (!window.loadingpage) {
+        window.loadingpage = function (show = true) {
+            if (show === false || show === 'hide' || show === 0) {
+                (window.hidePageloader || hidePageloader)();
+            } else {
+                (window.showPageloader || showPageloader)();
+            }
+        };
+        window.loadingPage = window.loadingpage;
+        window.showLoadingPage = window.showPageloader || showPageloader;
+        window.hideLoadingPage = window.hidePageloader || hidePageloader;
+    }
 })();

@@ -39,37 +39,62 @@ public sealed class DanhTinhQuet
 
     public string? DiaChi { get; set; }
 
+    public string? DienThoai { get; set; }
+
     public bool LaNguonHis => string.Equals(Nguon, "his", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// <c>ddMMyyyy</c> -> ngay that. Tra <c>null</c> khi khong doc duoc, VA khi la
-    /// <c>01/01/1900</c> — do la ngay sinh GIA cua HIS luc chi biet nam sinh (5.611/74.950
-    /// ho so Thien Nam). Nhan no vao ho so la ghi mot ngay khong co that.
+    /// Hỗ trợ ddMMyyyy, yyyy-MM-dd HH:mm:ss.fff, yyyy-MM-dd, dd/MM/yyyy...
     /// </summary>
     public DateTime? DoiNgay()
     {
         var s = (NgaySinh ?? "").Trim();
-        if (s.Length != 8 || !s.All(char.IsDigit)) return null;
+        if (string.IsNullOrEmpty(s)) return null;
 
-        if (!DateTime.TryParseExact(s, "ddMMyyyy",
+        if (s.Length == 8 && s.All(char.IsDigit))
+        {
+            if (DateTime.TryParseExact(s, "ddMMyyyy",
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.None, out var ngay8))
+                return ngay8.Date == new DateTime(1900, 1, 1) ? null : ngay8;
+        }
+
+        string[] formats = new[]
+        {
+            "yyyy-MM-dd HH:mm:ss.fff",
+            "yyyy-MM-dd HH:mm:ss",
+            "yyyy-MM-ddTHH:mm:ss.fff",
+            "yyyy-MM-ddTHH:mm:ss",
+            "yyyy-MM-dd",
+            "dd/MM/yyyy",
+            "dd-MM-yyyy",
+            "yyyy/MM/dd"
+        };
+
+        if (DateTime.TryParseExact(s, formats,
                 System.Globalization.CultureInfo.InvariantCulture,
-                System.Globalization.DateTimeStyles.None, out var ngay))
-            return null;
+                System.Globalization.DateTimeStyles.None, out var ngayChung))
+        {
+            return ngayChung.Date == new DateTime(1900, 1, 1) ? null : ngayChung;
+        }
 
-        return ngay.Date == new DateTime(1900, 1, 1) ? null : ngay;
+        if (DateTime.TryParse(s, out var ngayTuDo))
+        {
+            return ngayTuDo.Date == new DateTime(1900, 1, 1) ? null : ngayTuDo;
+        }
+
+        return null;
     }
 
     /// <summary>
-    /// Chu trong ma -> ma so cua cong ("1" Nam · "2" Nu · "3" chua xac dinh), dung dung
-    /// bo gia tri cua man <c>HoSo/Them</c>. So sanh sau khi BO DAU de khong phu thuoc
-    /// vao cach ma ghi "Nu" hay "Nữ".
+    /// Chu trong ma -> ma so cua cong ("1" Nam · "2" Nu · "3" chua xac dinh)
     /// </summary>
     public string? DoiGioiTinh()
     {
         var g = Services.ChuanHoaTen.BoDau(GioiTinh).Trim().ToUpperInvariant();
         if (g.Length == 0) return null;
-        if (g == "NAM") return "1";
-        if (g == "NU") return "2";
+        if (g == "NAM" || g == "1" || g == "MALE" || g == "M") return "1";
+        if (g == "NU" || g == "2" || g == "FEMALE" || g == "F") return "2";
         return "3";
     }
 }

@@ -1001,15 +1001,6 @@
                     </button>
 
                     <div id="bnMenuDropdown" class="bn-menu-dropdown" onclick="event.stopPropagation()">
-                        <a class="bn-menu-item" href="/benh-nhan/ho-so">
-                            <span>👤</span>
-                            <span>Hồ sơ bệnh nhân</span>
-                        </a>
-                        <a class="bn-menu-item" href="/Home/DanhSachCoSo-@ViewBag.MaNhomCS">
-                            <span>🏥</span>
-                            <span>Xem cơ sở khác</span>
-                        </a>
-                        <div class="bn-menu-divider"></div>
                         <a class="bn-menu-item dangxuat" href="/DangNhap/DangXuat">
                             <span>🚪</span>
                             <span>Đăng xuất</span>
@@ -1973,6 +1964,11 @@
         .vcb-input-search::placeholder { color: #94a3b8; }
 
         /* List Cards Feed */
+        @@keyframes vcbSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
         .vcb-danh-sach-wrap {
             flex: 1;
             overflow-y: auto;
@@ -2612,6 +2608,8 @@
         let dangLocTuan = false;
         let customKhoangChon = null;
         let tuKhoaTimKiemVcb = '';
+        let soDongHienThiLich = 20;
+        let dangCuonTaiLich = false;
 
         // Biến lịch tháng
         let calNam = 2026;
@@ -3073,6 +3071,7 @@
 
         function chuyenKhoangThoiGian(direction) {
             customKhoangChon = null;
+            soDongHienThiLich = 20;
 
             // Lan bam mui ten DAU TIEN la VAO che do loc tuan, dung tuan hien tai —
             // khong nhay thang sang tuan sau/truoc. Nguoi dung phai thay minh dang
@@ -3108,7 +3107,7 @@
             }
         }
 
-        function renderDanhSachVcb() {
+        function renderDanhSachVcb(giuViTriCuon = false) {
             const container = document.getElementById('vcbDanhSachThongBao');
             if (!container) return;
 
@@ -3141,37 +3140,78 @@
                                     (x.chuyenKhoa || '').toLowerCase().includes(kw));
             }
 
-            container.innerHTML = '';
+            window.dsLichKhamLoc = ds;
+            const tongSoMuc = ds.length;
 
-            const sapToi = ds.filter(x => x.nhom === 'SAP_TOI');
-            const daKham = ds.filter(x => x.nhom === 'DA_KHAM');
+            // Phân trang hiển thị 20 dòng mỗi lần
+            const dsHienThi = ds.slice(0, soDongHienThiLich);
+
+            const sapToiGoc = ds.filter(x => x.nhom === 'SAP_TOI');
+            const daKhamGoc = ds.filter(x => x.nhom === 'DA_KHAM');
+
+            const sapToi = dsHienThi.filter(x => x.nhom === 'SAP_TOI');
+            const daKham = dsHienThi.filter(x => x.nhom === 'DA_KHAM');
 
             let html = '';
 
             // ── SAP TOI ────────────────────────────────────────────────────
-            // 🔴 Nhom nay LUON hien tieu de, ke ca khi rong: no la cho dat nhan
-            // *chua hoi duoc co so*. Giau di thi im lang lai bi dich thanh
-            // "ban khong co hen".
             html += '<div class="vcb-nhom">SẮP TỚI</div>';
 
             if (window.lichTrangThai === 'CHUA_HOI_DUOC') {
                 html += '<div class="vcb-canh-bao">Chưa hỏi được cơ sở lúc này — chưa biết bạn có hẹn hay không. '
                       + '<span class="vcb-thu-lai" onclick="thuLaiLich()">Thử lại</span></div>';
-            } else if (sapToi.length === 0) {
+            } else if (sapToiGoc.length === 0) {
                 html += '<div class="vcb-trang-rong">Bạn chưa có lịch hẹn tái khám nào sắp tới.</div>';
             } else {
                 sapToi.forEach(item => { html += veTheLich(item); });
             }
 
             // ── DA KHAM ────────────────────────────────────────────────────
-            if (daKham.length > 0) {
+            if (daKhamGoc.length > 0) {
                 html += '<div class="vcb-nhom">ĐÃ KHÁM</div>';
                 daKham.forEach(item => { html += veTheLich(item); });
             }
 
+            // Chỉ báo cuộn tải thêm / đã hiển thị toàn bộ
+            if (soDongHienThiLich < tongSoMuc) {
+                html += '<div id="vcbScrollSentinel" class="vcb-scroll-loading" style="text-align: center; padding: 14px 12px; color: #0284c7; font-size: 13px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 8px;">'
+                      +   '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation: vcbSpin 0.8s linear infinite;">'
+                      +     '<circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-linecap="round" stroke="currentColor" opacity="0.25"></circle>'
+                      +     '<path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-linecap="round"></path>'
+                      +   '</svg>'
+                      +   '<span>Đang tải thêm... (hiển thị ' + dsHienThi.length + '/' + tongSoMuc + ')</span>'
+                      + '</div>';
+            } else if (tongSoMuc > 20) {
+                html += '<div class="vcb-scroll-end" style="text-align: center; padding: 14px 12px 20px; color: #94a3b8; font-size: 12.5px;">'
+                      +   'Đã hiển thị tất cả ' + tongSoMuc + ' lịch khám'
+                      + '</div>';
+            }
+
             container.innerHTML = html;
+            if (!giuViTriCuon) {
+                container.scrollTop = 0;
+            }
             capNhatBadgeChuaDoc();
         }
+
+        // Lắng nghe sự kiện cuộn container để tự động nạp tiếp 20 dòng
+        (function initVcbInfiniteScroll() {
+            const vcbScrollBox = document.getElementById('vcbDanhSachThongBao');
+            if (vcbScrollBox) {
+                vcbScrollBox.addEventListener('scroll', function () {
+                    if (dangCuonTaiLich) return;
+                    const tongSo = (window.dsLichKhamLoc || []).length;
+                    if (soDongHienThiLich >= tongSo) return;
+
+                    if (vcbScrollBox.scrollTop + vcbScrollBox.clientHeight >= vcbScrollBox.scrollHeight - 60) {
+                        dangCuonTaiLich = true;
+                        soDongHienThiLich += 20;
+                        renderDanhSachVcb(true);
+                        setTimeout(function () { dangCuonTaiLich = false; }, 150);
+                    }
+                });
+            }
+        })();
 
         /// Mot the. 🔴 KHONG co GIO va KHONG co khoi *Lời dặn*: ca hai deu khong
         /// co nguon that. NgayTaiKham ben HIS kieu `date` (khong gio), va
@@ -3234,6 +3274,7 @@
             cheDoXemTatCaThang = false;
             dangLocTuan = false;
             offsetThoiGian = 0;
+            soDongHienThiLich = 20;
             renderDanhSachVcb();
         }
 
@@ -3248,6 +3289,7 @@
 
         function timKiemThongBaoVcb(value) {
             tuKhoaTimKiemVcb = value;
+            soDongHienThiLich = 20;
             renderDanhSachVcb();
         }
 
@@ -3262,6 +3304,7 @@
             cheDoXemTatCaThang = false;
             dangLocTuan = false;
             offsetThoiGian = 0;
+            soDongHienThiLich = 20;
 
             renderDanhSachVcb();          // ve khung truoc de man khong trong tron
 
