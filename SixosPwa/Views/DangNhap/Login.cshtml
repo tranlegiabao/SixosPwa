@@ -393,6 +393,8 @@
         <div class="card auth__card">
             <div class="card-body">
 
+                @* Khung này rỗng cho tới khi quét xong; quet-qr.js đổ nội dung vào. Nằm ngoài form để hiển thị cả khi qua bước OTP. *@
+                <div class="mb-3 d-none" id="khungTheQuet"></div>
 
                 <!-- BƯỚC 1: NHẬP SỐ ĐIỆN THOẠI HOẶC EMAIL -->
                 <form id="formStep1" class="step-1" onsubmit="event.preventDefault(); guiOtp();">
@@ -401,9 +403,6 @@
                        man dien thoai, day khoi *Cai dat ung dung vao may* xuong duoi mep. Ma co so
                        van di theo duong cu — bien maCoSoHienTai doc thang tu ViewBag, KHONG doc o
                        input nay (da kiem: khong mot dong JS nao cham toi #maCoSo). *@
-
-                    @* Khung nay rong cho toi khi quet xong; quet-qr.js do noi dung vao. *@
-                    <div class="mb-3 d-none" id="khungTheQuet"></div>
 
                     <div class="mb-3">
                         <label class="form-label" for="soDienThoai">Số điện thoại hoặc Email</label>
@@ -635,19 +634,39 @@
         }
 
         async function guiOtp() {
-            const sdtInput = document.getElementById('soDienThoai').value.trim();
-            if (!sdtInput) {
-                showAlert('Vui lòng nhập số điện thoại hoặc email!', 'danger');
+            let sdtInput = document.getElementById('soDienThoai') ? document.getElementById('soDienThoai').value.trim() : '';
+            const oCccd = document.getElementById('cccd');
+            const cccdInput = oCccd ? oCccd.value.trim() : '';
+
+            // Nếu người dùng quét QR CCCD hoặc phiếu khám mà chưa điền SĐT, tự động lấy SĐT / CCCD / Mã BN từ QR
+            if (!sdtInput && window.danhTinhQuet && window.danhTinhQuet.dienThoai) {
+                sdtInput = window.danhTinhQuet.dienThoai;
+                if (document.getElementById('soDienThoai')) {
+                    document.getElementById('soDienThoai').value = window.danhTinhQuet.dienThoai;
+                }
+            } else if (!sdtInput && cccdInput) {
+                sdtInput = cccdInput;
+                if (document.getElementById('soDienThoai')) {
+                    document.getElementById('soDienThoai').value = cccdInput;
+                }
+            } else if (!sdtInput && window.danhTinhQuet && window.danhTinhQuet.cccd) {
+                sdtInput = window.danhTinhQuet.cccd;
+                if (document.getElementById('soDienThoai')) {
+                    document.getElementById('soDienThoai').value = window.danhTinhQuet.cccd;
+                }
+            } else if (!sdtInput && window.danhTinhQuet && window.danhTinhQuet.maBN) {
+                sdtInput = window.danhTinhQuet.maBN;
+                if (document.getElementById('soDienThoai')) {
+                    document.getElementById('soDienThoai').value = window.danhTinhQuet.maBN;
+                }
+            }
+
+            if (!sdtInput && !cccdInput) {
+                showAlert('Vui lòng nhập số điện thoại hoặc quét mã QR!', 'danger');
                 return;
             }
 
-            const oCccd = document.getElementById('cccd');
-            const cccdInput = oCccd ? oCccd.value.trim() : '';
-            if (oCccd && !cccdInput) {
-                showAlert('Vui lòng nhập số Căn cước công dân!', 'danger');
-                return;
-            }
-            currentCccd = cccdInput;
+            currentCccd = cccdInput || (window.danhTinhQuet ? window.danhTinhQuet.cccd : '');
 
             const isEmail = sdtInput.indexOf('@@') !== -1;
             if (isEmail) {
@@ -658,21 +677,25 @@
                 }
             } else {
                 if (sdtInput.length < 9) {
-                    showAlert('Số điện thoại không hợp lệ!', 'danger');
+                    showAlert('Số điện thoại hoặc Căn cước công dân không hợp lệ!', 'danger');
                     return;
                 }
             }
 
             currentSdt = sdtInput;
             const btnGui = document.getElementById('btnGuiOtp');
-            btnGui.disabled = true;
-            btnGui.innerText = 'Đang xử lý...';
+            if (btnGui) {
+                btnGui.disabled = true;
+                btnGui.innerText = 'Đang xử lý...';
+            }
 
             if (useRealFirebase) {
                 if (isEmail) {
                     showAlert('Chế độ OTP qua SMS thật không hỗ trợ Email!', 'danger');
-                    btnGui.disabled = false;
-                    btnGui.innerText = 'Tiếp tục';
+                    if (btnGui) {
+                        btnGui.disabled = false;
+                        btnGui.innerText = 'Tiếp tục';
+                    }
                     return;
                 }
                 // CHẾ ĐỘ 1: GỬI SMS THẬT QUA FIREBASE
@@ -697,8 +720,10 @@
                     showAlert('Không thể gửi SMS OTP: ' + (error.message || 'Lỗi Firebase'), 'danger');
                     if (recaptchaVerifier) recaptchaVerifier.render().then(widgetId => grecaptcha.reset(widgetId));
                 } finally {
-                    btnGui.disabled = false;
-                    btnGui.innerText = 'Tiếp tục';
+                    if (btnGui) {
+                        btnGui.disabled = false;
+                        btnGui.innerText = 'Tiếp tục';
+                    }
                 }
             } else {
                 // CHẾ ĐỘ 2: DEMO MÃ THỬ NGHIỆM (NẾU CHƯA ĐIỀN API KEY FIREBASE)
@@ -716,7 +741,8 @@
 
                     const data = await response.json();
                     if (data.success) {
-                        document.getElementById('lblSoDienThoai').innerText = currentSdt;
+                        const hienThiTk = data.soDienThoai || currentSdt;
+                        document.getElementById('lblSoDienThoai').innerText = hienThiTk;
                         document.querySelector('.step-1').style.display = 'none';
                         document.querySelector('.step-2').style.display = 'block';
                         
@@ -734,8 +760,10 @@
                 } catch (err) {
                     showAlert('Lỗi kết nối máy chủ!', 'danger');
                 } finally {
-                    btnGui.disabled = false;
-                    btnGui.innerText = 'Tiếp tục';
+                    if (btnGui) {
+                        btnGui.disabled = false;
+                        btnGui.innerText = 'Tiếp tục';
+                    }
                 }
             }
         }

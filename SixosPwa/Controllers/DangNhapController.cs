@@ -168,12 +168,26 @@ public class DangNhapController : Controller
     [HttpPost]
     public IActionResult GuiOtp([FromBody] GuiOtpRequest model)
     {
-        if (string.IsNullOrWhiteSpace(model.SoDienThoai))
+        var input = model.SoDienThoai?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(input) && !string.IsNullOrWhiteSpace(model.Cccd))
         {
-            return Json(new { success = false, message = "Vui lòng nhập Số điện thoại hoặc Email!" });
+            input = model.Cccd.Trim();
+        }
+        else if (string.IsNullOrWhiteSpace(input) && model.DanhTinhQuet != null)
+        {
+            if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet.DienThoai))
+                input = model.DanhTinhQuet.DienThoai.Trim();
+            else if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet.Cccd))
+                input = model.DanhTinhQuet.Cccd.Trim();
+            else if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet.MaBN))
+                input = model.DanhTinhQuet.MaBN.Trim();
         }
 
-        var input = model.SoDienThoai.Trim();
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            return Json(new { success = false, message = "Vui lòng nhập Số điện thoại, Email hoặc quét CCCD!" });
+        }
+
         if (input.Contains('@'))
         {
             if (!IsValidEmail(input))
@@ -185,7 +199,7 @@ public class DangNhapController : Controller
         {
             if (input.Length < 9)
             {
-                return Json(new { success = false, message = "Số điện thoại không hợp lệ!" });
+                return Json(new { success = false, message = "Số điện thoại hoặc Căn cước công dân không hợp lệ!" });
             }
         }
 
@@ -199,6 +213,18 @@ public class DangNhapController : Controller
         else
         {
             taiKhoan = _dbContext.TaiKhoans.AsNoTracking().FirstOrDefault(tk => tk.SDT == term);
+            if (taiKhoan == null && !string.IsNullOrWhiteSpace(model.Cccd))
+            {
+                var cccd = model.Cccd.Trim();
+                taiKhoan = (from p in _dbContext.BenhNhans.AsNoTracking()
+                            join t in _dbContext.TaiKhoans.AsNoTracking() on p.IdTaiKhoan equals t.Id
+                            where p.CCCD == cccd
+                            select t).FirstOrDefault()
+                        ?? (from t in _dbContext.TaiKhoans.AsNoTracking()
+                            join p in _dbContext.BenhNhans.AsNoTracking() on t.IdBenhNhan equals p.Id
+                            where p.CCCD == cccd
+                            select t).FirstOrDefault();
+            }
         }
 
         bool laQrHis = model.DanhTinhQuet != null && (model.DanhTinhQuet.LaNguonHis || !string.IsNullOrWhiteSpace(model.DanhTinhQuet.MaBN));
@@ -231,12 +257,15 @@ public class DangNhapController : Controller
 
         var displayMessage = input.Contains('@')
             ? $"Mã OTP đã gửi thành công tới email {input}!"
-            : $"Mã OTP đã gửi thành công tới số {input}!";
+            : (input.Length == 12 && char.IsDigit(input[0]))
+                ? $"Mã OTP đã tạo thành công cho CCCD {input}!"
+                : $"Mã OTP đã gửi thành công tới số {input}!";
 
         return Json(new {
             success = true,
             message = displayMessage,
-            otpDemo = otpCode
+            otpDemo = otpCode,
+            soDienThoai = input
         });
     }
 
@@ -256,12 +285,26 @@ public class DangNhapController : Controller
     [HttpPost]
     public async Task<IActionResult> XacNhanOtp([FromBody] XacNhanOtpRequest model)
     {
-        if (string.IsNullOrWhiteSpace(model.SoDienThoai) || string.IsNullOrWhiteSpace(model.Otp))
+        var input = model.SoDienThoai?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(input) && !string.IsNullOrWhiteSpace(model.Cccd))
+        {
+            input = model.Cccd.Trim();
+        }
+        else if (string.IsNullOrWhiteSpace(input) && model.DanhTinhQuet != null)
+        {
+            if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet.DienThoai))
+                input = model.DanhTinhQuet.DienThoai.Trim();
+            else if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet.Cccd))
+                input = model.DanhTinhQuet.Cccd.Trim();
+            else if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet.MaBN))
+                input = model.DanhTinhQuet.MaBN.Trim();
+        }
+
+        if (string.IsNullOrWhiteSpace(input) || string.IsNullOrWhiteSpace(model.Otp))
         {
             return Json(new { success = false, message = "Vui lòng nhập đầy đủ thông tin!" });
         }
 
-        var input = model.SoDienThoai.Trim();
         var otpInput = model.Otp.Trim();
         var adminReauth = AdminAuthentication.IsAdminReturnUrl(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl);
 
