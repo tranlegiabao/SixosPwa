@@ -944,24 +944,29 @@ public sealed class CoSoYTeController : AdminControllerBase
                      || !string.IsNullOrWhiteSpace(model.KhoMatKhau);
 
         // Khong nhap gi = co so nay khong dung che do Tro duong. Khong tu xoa cau
-        // hinh dang co: o mat khau hien kieu password, trinh duyet co the khong tra
-        // ve, va xoa lang le mot kho dang chay la loi im lang.
+        // hinh dang co: xoa lang le mot kho dang chay la loi im lang.
         if (!coNhap) return null;
-
-        if (string.IsNullOrWhiteSpace(model.KhoHost)
-            || string.IsNullOrWhiteSpace(model.KhoTaiKhoan)
-            || string.IsNullOrWhiteSpace(model.KhoMatKhau))
-            return "Kho phiếu cơ sở chưa lưu: phải nhập đủ Máy chủ, Tài khoản và Mật khẩu.";
 
         var khoHienCo = await _db.KhoFtpCoSos.AsNoTracking()
             .FirstOrDefaultAsync(x => x.IdCoSo == model.Id);
+
+        // 🔴 O kieu password KHONG duoc ASP.NET render lai gia tri (co y, de khong
+        // phun mat khau ra HTML). Nen sau moi lan mo man, o do LUON TRONG — hieu
+        // "trong" la "mat khau rong" thi moi lan sua ten co so la lan lam hong kho.
+        // "Trong" = GIU MAT KHAU CU.
+        var matKhau = string.IsNullOrEmpty(model.KhoMatKhau) ? khoHienCo?.MatKhau : model.KhoMatKhau;
+
+        if (string.IsNullOrWhiteSpace(model.KhoHost)
+            || string.IsNullOrWhiteSpace(model.KhoTaiKhoan)
+            || string.IsNullOrWhiteSpace(matKhau))
+            return "Kho phiếu cơ sở chưa lưu: phải nhập đủ Máy chủ, Tài khoản và Mật khẩu.";
 
         var ketQua = await _adminStoredProcedures.SaveKhoFtpCoSoAsync(
             khoHienCo?.Id ?? 0,
             model.Id,
             model.KhoHost!.Trim(),
             model.KhoTaiKhoan!.Trim(),
-            model.KhoMatKhau!,
+            matKhau,
             model.KhoThuMucGoc?.Trim(),
             model.KhoActive);
 
@@ -977,25 +982,40 @@ public sealed class CoSoYTeController : AdminControllerBase
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ThuKetNoiKho(long id)
+    public async Task<IActionResult> ThuKetNoiKho(
+        long id, string? host, string? taiKhoan, string? matKhau, string? thuMucGoc)
     {
-        if (!await _db.KhoFtpCoSos.AnyAsync(x => x.IdCoSo == id))
-            return Json(new { success = false, message = "Hãy lưu cấu hình kho trước khi thử kết nối." });
+        // 🔴 Thu ĐUNG CAI DANG GO tren man, KHONG doc dong dang luu trong DB.
+        // Ban dau lam nguoc, va hau qua la go mat khau sai vao o van bao "dat" —
+        // vi no dang thu ban cu. Ca diem cua nut nay la bat sai TRUOC khi luu.
+        var khoHienCo = await _db.KhoFtpCoSos.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.IdCoSo == id);
 
-        bool dat;
-        try
-        {
-            dat = await _khoCoSo.ThuKetNoiAsync(id);
-        }
-        catch (Exception)
-        {
-            // ThuKetNoiAsync da nuot loi ket noi, con lai la "kho dang tat" /
-            // "chua khai bao" — noi thang chu khong de 500 roi ra man trang.
-            dat = false;
-        }
+        // O mat khau kieu password KHONG duoc render lai gia tri (ASP.NET co y the).
+        // Nen "de trong" nghia la "giu mat khau cu", khong phai "mat khau rong".
+        var matKhauThat = string.IsNullOrEmpty(matKhau) ? khoHienCo?.MatKhau : matKhau;
+
+        if (string.IsNullOrWhiteSpace(host)
+            || string.IsNullOrWhiteSpace(taiKhoan)
+            || string.IsNullOrWhiteSpace(matKhauThat))
+            return Json(new { success = false, message = "Nhập đủ Máy chủ, Tài khoản và Mật khẩu rồi hãy thử." });
+
+        var dat = await _khoCoSo.ThuKetNoiAsync(
+            new ThongSoKho(host.Trim(), taiKhoan.Trim(), matKhauThat, thuMucGoc?.Trim()));
 
         if (!dat)
             return Json(new { success = false, message = "Chưa kết nối được tới kho của cơ sở. Kiểm tra lại máy chủ, tài khoản, mật khẩu." });
+
+        // Chi ghi mốc khi cau hinh vua thu DA DUOC LUU y het. Thu dat mot dang roi
+        // luu mot dang khac ma van giu moc la mo duong bat nham kho.
+        var trungVoiBanLuu = khoHienCo != null
+            && string.Equals(khoHienCo.Host, host.Trim(), StringComparison.Ordinal)
+            && string.Equals(khoHienCo.TaiKhoan, taiKhoan.Trim(), StringComparison.Ordinal)
+            && string.Equals(khoHienCo.MatKhau, matKhauThat, StringComparison.Ordinal)
+            && string.Equals(khoHienCo.ThuMucGoc ?? "", thuMucGoc?.Trim() ?? "", StringComparison.Ordinal);
+
+        if (!trungVoiBanLuu)
+            return Json(new { success = true, luuTruoc = true, message = "Kết nối đạt. Bấm Lưu thay đổi để ghi nhận, rồi mới bật được kho." });
 
         var ghi = await _adminStoredProcedures.GhiNhanThuDatKhoFtpAsync(id);
         return ghi.Succeeded

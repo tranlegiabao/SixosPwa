@@ -52,9 +52,26 @@ public interface IKhoCoSoService
     /// <exception cref="KhoCoSoKhongNoiDuocException">Không với tới kho ⇒ 502.</exception>
     Task<Stream> TaiVeAsync(long idCoSo, string duongDan, CancellationToken ct = default);
 
-    /// <summary>Nút <i>Thử kết nối kho</i> ở màn Sửa cơ sở gọi vào đây.</summary>
-    Task<bool> ThuKetNoiAsync(long idCoSo, CancellationToken ct = default);
+    /// <summary>
+    /// Nút <i>Thử kết nối kho</i> ở màn Sửa cơ sở gọi vào đây.
+    ///
+    /// 🔴 Nhận THÔNG SỐ RỜI, cố ý KHÔNG đọc dòng đang lưu trong DB. Hai lý do, cả hai
+    /// đều đã thành lỗi thật khi bản đầu làm ngược (12/09):
+    /// <list type="number">
+    ///   <item>Người ta bấm Thử <b>trước khi Lưu</b> — phải thử đúng cái vừa gõ. Đọc DB
+    ///   thì gõ mật khẩu sai vào ô vẫn báo "đạt", vì nó đang thử bản cũ.</item>
+    ///   <item>Kho MỚI có <c>Active = 0</c>. Nếu đường thử đòi kho bật thì không đời nào
+    ///   thử đạt ⇒ không bao giờ bật được — đúng vòng luẩn quẩn chốt 41 định tránh.</item>
+    /// </list>
+    /// </summary>
+    Task<bool> ThuKetNoiAsync(ThongSoKho thongSo, CancellationToken ct = default);
 }
+
+/// <summary>
+/// Thông số một kho, tách khỏi <see cref="Models.KhoFtpCoSo"/> để thử được cấu hình
+/// <b>chưa lưu</b>. Không mang <c>Active</c>: đang thử thì cờ bật chưa có nghĩa gì.
+/// </summary>
+public sealed record ThongSoKho(string Host, string TaiKhoan, string MatKhau, string? ThuMucGoc);
 
 public sealed class KhoCoSoService : IKhoCoSoService
 {
@@ -81,6 +98,7 @@ public sealed class KhoCoSoService : IKhoCoSoService
     {
         var (kho, maCoSo) = await LayKhoAsync(idCoSo, ct);
 
+        var thongSo = new ThongSoKho(kho.Host, kho.TaiKhoan, kho.MatKhau, kho.ThuMucGoc);
         var duongDayDu = QuyDuong(kho.ThuMucGoc, maCoSo, duongDan);
         if (duongDayDu == null)
         {
@@ -91,11 +109,11 @@ public sealed class KhoCoSoService : IKhoCoSoService
             throw new KhoCoSoKhongCoTepException("Đường dẫn tài liệu nằm ngoài kho của cơ sở.");
         }
 
-        var request = TaoRequest(kho, duongDayDu, WebRequestMethods.Ftp.DownloadFile);
+        var request = TaoRequest(thongSo, duongDayDu, WebRequestMethods.Ftp.DownloadFile);
 
         try
         {
-            using var response = (FtpWebResponse)await request.GetResponseAsync().WaitAsync(ct);
+            using var response = await GoiCoHanAsync(request, ct);
             await using var luongMang = response.GetResponseStream();
 
             // Đệm trong bộ nhớ đúng một lượt rồi trả — y khuôn FtpService.DownloadAsync.
@@ -117,16 +135,19 @@ public sealed class KhoCoSoService : IKhoCoSoService
         }
     }
 
-    public async Task<bool> ThuKetNoiAsync(long idCoSo, CancellationToken ct = default)
+    public async Task<bool> ThuKetNoiAsync(ThongSoKho thongSo, CancellationToken ct = default)
     {
-        var (kho, _) = await LayKhoAsync(idCoSo, ct);
+        if (string.IsNullOrWhiteSpace(thongSo.Host)
+            || string.IsNullOrWhiteSpace(thongSo.TaiKhoan)
+            || string.IsNullOrWhiteSpace(thongSo.MatKhau))
+            return false;
 
-        var goc = (kho.ThuMucGoc ?? "").Replace('\\', '/').Trim('/');
-        var request = TaoRequest(kho, goc, WebRequestMethods.Ftp.ListDirectory);
+        var goc = (thongSo.ThuMucGoc ?? "").Replace('\\', '/').Trim('/');
+        var request = TaoRequest(thongSo, goc, WebRequestMethods.Ftp.ListDirectory);
 
         try
         {
-            using var response = (FtpWebResponse)await request.GetResponseAsync().WaitAsync(ct);
+            using var response = await GoiCoHanAsync(request, ct);
             await using var luong = response.GetResponseStream();
             using var doc = new StreamReader(luong);
             await doc.ReadToEndAsync();
@@ -134,7 +155,9 @@ public sealed class KhoCoSoService : IKhoCoSoService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Thu ket noi kho co so {IdCoSo} that bai", idCoSo);
+            // Sai mat khau, host chet, thu muc goc khong co — deu la "chua dat".
+            _logger.LogWarning(ex, "Thu ket noi kho {Host} / {TaiKhoan} that bai",
+                thongSo.Host, thongSo.TaiKhoan);
             return false;
         }
     }
@@ -158,9 +181,34 @@ public sealed class KhoCoSoService : IKhoCoSoService
         return (dong.Kho, dong.MaCoSo);
     }
 
-    private static FtpWebRequest TaoRequest(KhoFtpCoSo kho, string duongDan, string method)
+    /// <summary>
+    /// Gọi FTP với TRẦN CỨNG <see cref="TimeoutMs"/> tính bằng đồng hồ thật.
+    ///
+    /// 🔴 Vì sao không tin mỗi <c>FtpWebRequest.Timeout</c>: nó KHÔNG cắt được giai đoạn
+    /// TCP connect. Đo thật 12/09 với host chết <c>192.0.2.1</c> — đặt Timeout 10 giây
+    /// nhưng lời gọi vẫn về sau <b>21 giây</b>, đúng mốc SYN-retry mặc định của Windows.
+    /// Bệnh nhân nhìn spinner 21 giây, và tunnel cũng chết quanh mốc đó.
+    ///
+    /// Nên trần thật nằm ở đây: hết giờ thì <c>Abort()</c> request rồi ném ra, không chờ
+    /// tầng dưới tự nghĩ lại.
+    /// </summary>
+    private static async Task<FtpWebResponse> GoiCoHanAsync(FtpWebRequest request, CancellationToken ct)
     {
-        var host = (kho.Host ?? "").Trim().TrimEnd('/');
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(TimeoutMs);
+
+        // Abort() de socket khong bi bo lai treo cho den khi Windows tu bo cuoc.
+        using var dangKy = cts.Token.Register(() =>
+        {
+            try { request.Abort(); } catch { /* dang huy roi, nuot */ }
+        });
+
+        return (FtpWebResponse)await request.GetResponseAsync().WaitAsync(cts.Token);
+    }
+
+    private static FtpWebRequest TaoRequest(ThongSoKho thongSo, string duongDan, string method)
+    {
+        var host = (thongSo.Host ?? "").Trim().TrimEnd('/');
 
         // Khai host kiểu "ftp://x" hay "x" đều nhận — người khai không phải nhớ luật.
         if (host.StartsWith("ftp://", StringComparison.OrdinalIgnoreCase))
@@ -170,7 +218,7 @@ public sealed class KhoCoSoService : IKhoCoSoService
 
         var request = (FtpWebRequest)WebRequest.Create(url);
         request.Method = method;
-        request.Credentials = new NetworkCredential(kho.TaiKhoan, kho.MatKhau);
+        request.Credentials = new NetworkCredential(thongSo.TaiKhoan, thongSo.MatKhau);
         request.UseBinary = true;
         request.UsePassive = true;
         request.KeepAlive = false;

@@ -157,8 +157,21 @@
                 nut.disabled = true;
                 if (oKetQua) { oKetQua.textContent = 'Đang thử...'; oKetQua.style.color = ''; }
 
+                // 🔴 Gui GIA TRI DANG GO, khong de server doc ban da luu — nut nay sinh
+                // ra de bat sai TRUOC khi luu. Bo qua buoc nay thi go mat khau sai vao
+                // o van bao "dat" (da dinh 12/09).
+                var oHost = document.getElementById('KhoHost');
+                var oTaiKhoan = document.getElementById('KhoTaiKhoan');
+                var oMatKhau = document.getElementById('KhoMatKhau');
+                var oThuMucGoc = document.getElementById('KhoThuMucGoc');
+
                 var duLieu = new FormData();
                 duLieu.append('id', id);
+                duLieu.append('host', oHost ? oHost.value : '');
+                duLieu.append('taiKhoan', oTaiKhoan ? oTaiKhoan.value : '');
+                // De trong = giu mat khau cu (o password khong render lai gia tri).
+                duLieu.append('matKhau', oMatKhau ? oMatKhau.value : '');
+                duLieu.append('thuMucGoc', oThuMucGoc ? oThuMucGoc.value : '');
                 if (token) duLieu.append('__RequestVerificationToken', token.value);
 
                 fetch('/Admin/CoSoYTe/ThuKetNoiKho', { method: 'POST', body: duLieu })
@@ -168,8 +181,11 @@
                             oKetQua.textContent = kq.message || '';
                             oKetQua.style.color = kq.success ? '#16a34a' : '#ef4444';
                         }
-                        // Thu dat thi mo khoa o bat NGAY, khoi phai tai lai trang.
-                        if (kq.success && oBat) oBat.disabled = false;
+                        // Chi mo khoa o bat khi cau hinh vua thu DUNG BANG ban da luu.
+                        // Thu dat mot dang roi bat mot dang khac la mo duong bat nham kho;
+                        // luc do server tra luuTruoc = true, bat nguoi ta bam Luu truoc.
+                        if (kq.success && !kq.luuTruoc && oBat) oBat.disabled = false;
+                        if (kq.success && kq.luuTruoc && oKetQua) oKetQua.style.color = '#d97706';
                     })
                     .catch(function () {
                         if (oKetQua) {
