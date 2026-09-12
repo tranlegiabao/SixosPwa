@@ -23,14 +23,13 @@
         <div class="card auth__card">
             <div class="card-body">
 
-                <div class="alert alert-light border small mb-3">
-                    Số căn cước này chưa có hồ sơ tại
-                    <strong>@ViewBag.TenCoSo</strong>. Điền họ tên để tạo hồ sơ mới.
+                <div class="alert alert-info border small mb-3">
+                    Chức năng tự đăng ký tài khoản trực tuyến đã tạm dừng. Vui lòng liên hệ cơ sở y tế để được cấp tài khoản.
                 </div>
 
+                @* Luồng đăng ký tài khoản tự do đã tạm đóng theo yêu cầu
+                <!--
                 <form id="formDangKy" onsubmit="event.preventDefault(); taoTaiKhoan();">
-                    @* Ba o duoi day benh nhan da nhap o man dang nhap. Hien lai
-                       de ho doi chieu, va khoa lai de khong ai sua nham. *@
                     <div class="mb-3">
                         <label class="form-label" for="maCoSo">Mã CSKCB</label>
                         <input type="text" class="form-control" id="maCoSo" readonly
@@ -56,25 +55,12 @@
                         <div class="form-text">Ghi đúng như trên thẻ căn cước.</div>
                     </div>
 
-                    @if (ViewBag.CoBanGiao != true)
-                    {
-                        @* Chi co so NOI BO moi hoi mat khau. Co so co API rieng thi
-                           may chu sinh mat khau ngau nhien cho tai khoan ben ho va tu
-                           cat lai — benh nhan khong bao gio phai go no. *@
-                        <div class="mb-3">
-                            <label class="form-label" for="matKhau">Mật khẩu <span class="text-danger">*</span></label>
-                            <input type="password" class="form-control form-control-lg" id="matKhau"
-                                   autocomplete="new-password" minlength="6" maxlength="50" required />
-                            <div class="form-text">
-                                Tối thiểu 6 ký tự. Dùng để vào những lần sau.
-                            </div>
-                        </div>
-                    }
-
                     <button type="submit" id="btnTao" class="btn btn-primary w-100 py-2 fw-bold">
                         Tạo tài khoản
                     </button>
                 </form>
+                -->
+                *@
 
             </div>
         </div>

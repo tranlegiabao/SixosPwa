@@ -125,6 +125,7 @@ public sealed class TaiKhoanListViewModel
     public int PageSize { get; init; }
     public int TotalItems { get; init; }
     public int TotalPages => Math.Max(1, (int)Math.Ceiling(TotalItems / (double)PageSize));
+    public bool DaLoc { get; init; }
 }
 
 public sealed class TaiKhoanEditViewModel

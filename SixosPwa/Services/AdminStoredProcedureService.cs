@@ -3,6 +3,7 @@ using System.Data.Common;
 using Microsoft.EntityFrameworkCore;
 using SixosPwa.Areas.Admin.Models;
 using SixosPwa.Data;
+using SixosPwa.Models;
 
 namespace SixosPwa.Services;
 
@@ -86,6 +87,117 @@ public sealed class AdminStoredProcedureService
             AddParameter(command, "@IDTaiKhoan", DbType.Int64, idTaiKhoan);
             AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
         });
+
+    /// <summary>
+    /// Phân trang cuộn danh sách tài khoản theo chuẩn 0307 qua dbo.HT_TaiKhoan_Loc.
+    /// </summary>
+    public async Task<(List<TaiKhoan> Items, Dictionary<long, List<HoSoBenhNhanItemViewModel>> HoSoTheoTaiKhoan, int TongSoDong)> LocTaiKhoanAsync(
+        int trang,
+        int soDong,
+        string? sdt,
+        string? cccd,
+        string? maBN,
+        string? role,
+        string? loaiCS)
+    {
+        var connection = _db.Database.GetDbConnection();
+        var shouldClose = connection.State != ConnectionState.Open;
+        if (shouldClose)
+            await connection.OpenAsync();
+
+        var items = new List<TaiKhoan>();
+        var hoSoDict = new Dictionary<long, List<HoSoBenhNhanItemViewModel>>();
+        int tongSoDong = 0;
+
+        try
+        {
+            await using var command = connection.CreateCommand();
+            command.CommandType = CommandType.StoredProcedure;
+            command.CommandText = "dbo.HT_TaiKhoan_Loc";
+
+            AddParameter(command, "@Trang", DbType.Int32, trang);
+            AddParameter(command, "@SoDong", DbType.Int32, soDong);
+            AddParameter(command, "@SDT", DbType.AnsiString, sdt, 20);
+            AddParameter(command, "@CCCD", DbType.AnsiString, cccd, 20);
+            AddParameter(command, "@MaBN", DbType.String, maBN, 50);
+            AddParameter(command, "@Role", DbType.AnsiString, role, 20);
+            AddParameter(command, "@LoaiCS", DbType.String, loaiCS, 50);
+
+            await using var reader = await command.ExecuteReaderAsync();
+
+            // Result Set 1: TaiKhoan
+            while (await reader.ReadAsync())
+            {
+                var tk = new TaiKhoan
+                {
+                    Id = Convert.ToInt64(reader["ID"]),
+                    SDT = reader["SDT"]?.ToString() ?? "",
+                    Email = reader["Email"] != DBNull.Value ? reader["Email"]?.ToString() : null,
+                    Role = reader["Role"]?.ToString() ?? "BenhNhan",
+                    MatKhauNoiBo = reader["MatKhauNoiBo"] != DBNull.Value ? reader["MatKhauNoiBo"]?.ToString() : null,
+                    IdBenhNhan = reader["IDBenhNhan"] != DBNull.Value ? (long?)Convert.ToInt64(reader["IDBenhNhan"]) : null,
+                    NgayTao = Convert.ToDateTime(reader["NgayTao"])
+                };
+                items.Add(tk);
+                hoSoDict[tk.Id] = new List<HoSoBenhNhanItemViewModel>();
+
+                if (tongSoDong == 0 && reader["TongSoDong"] != DBNull.Value)
+                {
+                    tongSoDong = Convert.ToInt32(reader["TongSoDong"]);
+                }
+            }
+
+            // Result Set 2: HoSoBenhNhan
+            if (await reader.NextResultAsync())
+            {
+                var tempProfiles = new List<(long IdTaiKhoan, HoSoBenhNhanItemViewModel Item)>();
+                while (await reader.ReadAsync())
+                {
+                    var idTk = Convert.ToInt64(reader["IdTaiKhoan"]);
+                    var hs = new HoSoBenhNhanItemViewModel
+                    {
+                        Id = Convert.ToInt64(reader["IdBenhNhan"]),
+                        IdTaiKhoan = idTk,
+                        TenBN = reader["TenBN"]?.ToString() ?? "",
+                        CCCD = reader["CCCD"]?.ToString() ?? "",
+                        SDT = reader["SDT"] != DBNull.Value ? reader["SDT"]?.ToString() : null,
+                        Email = reader["Email"] != DBNull.Value ? reader["Email"]?.ToString() : null,
+                        DiaChi = reader["DiaChi"] != DBNull.Value ? reader["DiaChi"]?.ToString() : null,
+                        NgaySinh = reader["NgaySinh"] != DBNull.Value ? (DateTime?)Convert.ToDateTime(reader["NgaySinh"]) : null,
+                        GioiTinh = reader["GioiTinhStr"] != DBNull.Value ? reader["GioiTinhStr"]?.ToString() : null,
+                        MaBN = reader["MaBN"] != DBNull.Value ? reader["MaBN"]?.ToString() : null,
+                        TenCoSo = reader["TenCoSo"] != DBNull.Value ? reader["TenCoSo"]?.ToString() : null,
+                        IdHoSoCoSo = reader["IdHoSoCoSo"] != DBNull.Value ? (long?)Convert.ToInt64(reader["IdHoSoCoSo"]) : null,
+                        IdCoSo = reader["IDCoSo"] != DBNull.Value ? (long?)Convert.ToInt64(reader["IDCoSo"]) : null,
+                        SoCoSo = reader["SoCoSo"] != DBNull.Value ? Convert.ToInt32(reader["SoCoSo"]) : 0
+                    };
+                    tempProfiles.Add((idTk, hs));
+                }
+
+                foreach (var group in tempProfiles.GroupBy(x => x.IdTaiKhoan))
+                {
+                    if (hoSoDict.ContainsKey(group.Key))
+                    {
+                        var patientGroups = group.Select(x => x.Item).GroupBy(p => p.Id);
+                        foreach (var pg in patientGroups)
+                        {
+                            var firstWithMa = pg.FirstOrDefault(p => !string.IsNullOrEmpty(p.MaBN));
+                            var chosen = firstWithMa ?? pg.First();
+                            chosen.SoCoSo = pg.Count(p => !string.IsNullOrEmpty(p.MaBN));
+                            hoSoDict[group.Key].Add(chosen);
+                        }
+                    }
+                }
+            }
+        }
+        finally
+        {
+            if (shouldClose)
+                await connection.CloseAsync();
+        }
+
+        return (items, hoSoDict, tongSoDong);
+    }
 
     // ------------------------------------------------------------------
     //  Benh nhan
