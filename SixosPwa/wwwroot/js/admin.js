@@ -178,24 +178,40 @@
     });
 
     /**
-     * Page Loader theo chuẩn HisSoft
+     * Page Loader theo chuẩn HisSoft / loadingpage
      */
     function showPageloader() {
         const el = document.getElementById('page-loader-body');
         if (!el) return;
         el.style.display = 'flex';
-        el.classList.add('show');
-        el.style.zIndex = '2000';
+        el.style.zIndex = '99999';
+        requestAnimationFrame(() => {
+            el.classList.add('show');
+        });
     }
 
     function hidePageloader() {
         const el = document.getElementById('page-loader-body');
         if (!el) return;
         el.classList.remove('show');
-        el.style.display = 'none';
-        el.style.zIndex = '-1';
+        setTimeout(() => {
+            if (!el.classList.contains('show')) {
+                el.style.display = 'none';
+                el.style.zIndex = '-1';
+            }
+        }, 180);
     }
 
     window.showPageloader = window.showPageLoader = showPageloader;
     window.hidePageloader = window.hidePageLoader = hidePageloader;
+    window.loadingpage = function (show = true) {
+        if (show === false || show === 'hide' || show === 0) {
+            hidePageloader();
+        } else {
+            showPageloader();
+        }
+    };
+    window.loadingPage = window.loadingpage;
+    window.showLoadingPage = showPageloader;
+    window.hideLoadingPage = hidePageloader;
 })();

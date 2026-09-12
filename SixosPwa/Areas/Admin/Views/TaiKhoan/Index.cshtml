@@ -897,6 +897,16 @@
 
     document.addEventListener("DOMContentLoaded", function() {
         khoiTaoDatePicker();
+
+        // Kích hoạt loadingpage chuẩn HisSoft khi bấm Lọc
+        const formFilter = document.getElementById('taiKhoanFilterForm');
+        if (formFilter) {
+            formFilter.addEventListener('submit', function () {
+                if (typeof showPageloader === 'function') {
+                    showPageloader();
+                }
+            });
+        }
     });
 
     function khoiTaoDatePicker(scopeSelector) {
@@ -1480,6 +1490,8 @@
         const endEl = document.getElementById('infiniteScrollEnd');
         if (statusEl) statusEl.style.display = 'block';
 
+        const startTime = Date.now();
+
         // Bật showPageloader như HisSoft
         if (typeof showPageloader === 'function') {
             showPageloader();
@@ -1520,11 +1532,15 @@
         } catch (err) {
             console.error('Lỗi tải thêm tài khoản:', err);
         } finally {
-            if (typeof hidePageloader === 'function') {
-                hidePageloader();
-            }
-            if (statusEl) statusEl.style.display = 'none';
-            dangTaiThem = false;
+            const elapsed = Date.now() - startTime;
+            const remaining = Math.max(0, 300 - elapsed);
+            setTimeout(() => {
+                if (typeof hidePageloader === 'function') {
+                    hidePageloader();
+                }
+                if (statusEl) statusEl.style.display = 'none';
+                dangTaiThem = false;
+            }, remaining);
         }
     }
 
