@@ -350,6 +350,17 @@ public sealed class TaiKhoanController : AdminControllerBase
             var (ketQuaMa, idCoSoMoi) = await _adminStoredProcedures.SaveBenhNhanCoSoAsync(
                 bn.Id, idCoSoDich, newMaBN, moCuaTaiLieu: true);
 
+            // Code 3 = ho so DANG NOI mot ma KHAC. Hang rao chot 47 / ADR 0032:
+            // cua Luu ho so CO Y tu choi doi ma da co. Nhung man nay ten la
+            // "nhap ma benh nhan moi" — nguoi bam la bo phan ho tro va DA co y
+            // doi — nen day la cho duy nhat duoc di tiep bang CUA DOI MA (co ghi
+            // so). Bon noi goi _Save con lai KHONG duoc mo duong nay.
+            if (ketQuaMa.Code == 3)
+            {
+                (ketQuaMa, idCoSoMoi) = await _adminStoredProcedures.DoiMaBenhNhanCoSoAsync(
+                    bn.Id, idCoSoDich, newMaBN, lyDo: "Man Admin > Tai khoan");
+            }
+
             if (!ketQuaMa.Succeeded)
             {
                 return Json(new

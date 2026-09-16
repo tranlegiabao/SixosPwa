@@ -406,6 +406,34 @@ public sealed class AdminStoredProcedureService
             AddParameter(command, "@DaMoTaiLieu", DbType.Boolean, moCuaTaiLieu);
         });
 
+    /// <summary>
+    /// CUA DOI MA (chot 47, ADR 0032) — doi ma benh nhan cua mot ho so DA NOI
+    /// sang ma khac. Viec CO Y, CO GHI SO, danh cho bo phan ho tro sua mot lan
+    /// noi sai.
+    ///
+    /// 🔴 Tach khoi <see cref="SaveBenhNhanCoSoAsync"/> chu khong lam mot tham
+    /// so cua no: login <c>spwa_his</c> co EXECUTE tren <c>DM_BenhNhanCoSo_Save</c>
+    /// (Database/25), nen mot tham so cho-phep-bo-qua thi HIS chi can truyen co
+    /// la xuyen rao. Tach cua thi hang rao giu bang GRANT — <c>spwa_his</c>
+    /// KHONG duoc cap stored nay, nen HIS khong goi duoc du co muon.
+    ///
+    /// Tra <c>Code == 4</c> khi ho so chua ton tai (tao ho so la viec cua
+    /// <see cref="SaveBenhNhanCoSoAsync"/>), <c>Code == 2</c> khi ma da thuoc ve
+    /// nguoi khac tai co so do.
+    /// </summary>
+    public Task<(AdminStoredProcedureResult KetQua, long Id)> DoiMaBenhNhanCoSoAsync(
+        long idBenhNhan,
+        long idCoSo,
+        string maBN,
+        string? lyDo = null) =>
+        ExecuteWithIdAsync("dbo.DM_BenhNhanCoSo_DoiMa", "@IDBenhNhanCoSo", command =>
+        {
+            AddParameter(command, "@IDBenhNhan", DbType.Int64, idBenhNhan);
+            AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
+            AddParameter(command, "@MaBN", DbType.AnsiString, maBN, 20);
+            AddParameter(command, "@LyDo", DbType.String, lyDo, 200);
+        });
+
     public Task<(AdminStoredProcedureResult KetQua, long Id)> SaveTaiLieuBenhNhanAsync(
         long id,
         long idCoSo,
