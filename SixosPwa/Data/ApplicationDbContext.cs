@@ -259,8 +259,12 @@ public class ApplicationDbContext : DbContext
         // 🔴 Ba so DANG LECH, co y giu nguyen 500: cot khai nvarchar(1000) trong DB
         // nhung tham so stored ben HIS chan o 500, va day cung 500. Chua can vi
         // duong dai nhat do duoc la 95 ky tu (135/135 duong URLKySo tren
-        // Dev_Master3, 12/09). Noi len 1000 la phai dung ca tham so stored ben HIS.
-        modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.DuongDanFtp).HasMaxLength(500).IsRequired();
+        // Dev_Master3, 12/09).
+        // 🔴 TRAN 2000 NAM O SAU CHO -- doi mot cho ma quen cac cho kia la quay lai
+        // dung benh CAT IM LANG ma chot chan sinh ra de chong (benh nhan bam ra 404
+        // ma khong ai biet vi sao). Danh sach day du o
+        // Database/27_NANG_TRAN_DUONG_DAN_FTP.sql.
+        modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.DuongDanFtp).HasMaxLength(2000).IsRequired();
         modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.NguonKho).HasMaxLength(20).IsRequired();
         modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.DungLuongByte).IsRequired();
         modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.NgayKham);

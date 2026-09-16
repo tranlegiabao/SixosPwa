@@ -427,7 +427,8 @@ public sealed class AdminStoredProcedureService
             AddParameter(command, "@MaBN", DbType.String, maBN, 50);
             AddParameter(command, "@LoaiTaiLieu", DbType.String, loaiTaiLieu, 50);
             AddParameter(command, "@TenTaiLieu", DbType.String, tenTaiLieu, 255);
-            AddParameter(command, "@DuongDanFtp", DbType.String, duongDanFtp, 500);
+            // Tran 2000 -- xem Database/27_NANG_TRAN_DUONG_DAN_FTP.sql (con so o sau cho).
+            AddParameter(command, "@DuongDanFtp", DbType.String, duongDanFtp, 2000);
             AddParameter(command, "@DungLuongByte", DbType.Int64, dungLuongByte);
             AddParameter(command, "@NgayKham", DbType.DateTime, ngayKham);
             AddParameter(command, "@GhiChu", DbType.String, ghiChu);

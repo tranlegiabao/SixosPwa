@@ -53,7 +53,9 @@ CREATE OR ALTER PROCEDURE dbo.QL_TaiLieuBenhNhan_Save
     @MaBN           NVARCHAR(50),
     @LoaiTaiLieu    NVARCHAR(50),
     @TenTaiLieu     NVARCHAR(255),
-    @DuongDanFtp    NVARCHAR(500),
+    -- Tran 2000 (file 27). 🔴 Con so nay nam o SAU cho -- doi mot cho ma quen
+    -- cac cho kia la quay lai dung benh CAT IM LANG ma chot chan sinh ra de chong.
+    @DuongDanFtp    NVARCHAR(2000),
     @DungLuongByte  BIGINT,
     @NgayKham       DATETIME = NULL,
     @GhiChu         NVARCHAR(MAX) = NULL,

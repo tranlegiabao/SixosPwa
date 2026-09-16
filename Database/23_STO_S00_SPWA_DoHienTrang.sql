@@ -63,7 +63,7 @@ BEGIN
     DECLARE @MaBNDangNoi       varchar(20) = NULL;
     DECLARE @IDTaiKhoanTheoSdt bigint = NULL;
     DECLARE @IDTaiLieuDaCo     bigint = NULL;
-    DECLARE @DuongDanDaCo      nvarchar(500) = NULL;
+    DECLARE @DuongDanDaCo      nvarchar(2000) = NULL;   -- tran 2000, xem file 27
 
     -- (1) Co so. Het buoc nay ma NULL thi moi thu con lai vo nghia -> tra som.
     SELECT TOP 1 @IDCoSo = ID FROM dbo.DM_CSKCB WITH (NOLOCK) WHERE MaCoSo = @MaCoSo;
