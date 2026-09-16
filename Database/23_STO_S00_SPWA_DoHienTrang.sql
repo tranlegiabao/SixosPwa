@@ -1,4 +1,19 @@
 -- ============================================================================
+
+/* 🔴 BAT BUOC O DAU MOI FILE TAO STORED -- do song 16/09, mat gan mot gio:
+   `sqlcmd` mac dinh chay voi QUOTED_IDENTIFIER **OFF**, va SQL Server GHI LAI
+   thiet lap do vao chinh module (sys.sql_modules.uses_quoted_identifier).
+   Stored tao ra khi do se VO MOI LAN ghi vao bang co FILTERED INDEX:
+     "UPDATE failed because the following SET options have incorrect settings:
+      'QUOTED_IDENTIFIER'."
+   Va khong cach nao va tu ben goi: SET trong chuoi EXEC chi doi thiet lap
+   RUNTIME, con QUOTED_IDENTIFIER cua mot module la thu DONG CUNG LUC TAO.
+   (SSMS mac dinh ON nen chay tay o SSMS khong lo ra loi nay -- cang de sot.) */
+SET QUOTED_IDENTIFIER ON;
+GO
+SET ANSI_NULLS ON;
+GO
+
 -- 23 — dbo.S00_SPWA_DoHienTrang: cua DOC cua che do Tro duong (chot 52)
 --
 -- HIS goi stored nay QUA LINKED SERVER truoc khi ghi bat cu thu gi, de biet
@@ -17,11 +32,14 @@
 -- Stored nay CHI DOC. Khong INSERT/UPDATE/DELETE mot dong nao.
 -- Khuon: 15_STO_HT_TAI_KHOAN_LOC.sql (stored doc, tra result set).
 -- ============================================================================
-IF OBJECT_ID('dbo.S00_SPWA_DoHienTrang', 'P') IS NOT NULL
-    DROP PROCEDURE dbo.S00_SPWA_DoHienTrang;
-GO
-
-CREATE PROCEDURE dbo.S00_SPWA_DoHienTrang
+/* 🔴 CREATE OR ALTER, KHONG dung DROP + CREATE -- do song 16/09:
+   DROP PROCEDURE xoa luon MOI GRANT gan tren object do. Chay lai file nay theo
+   kieu DROP+CREATE la login spwa_his mat quyen EXECUTE ngay lap tuc, va che do
+   Tro duong vo voi "The EXECUTE permission was denied on the object
+   'S00_SPWA_DoHienTrang'" -- mot loi khong lien quan gi toi noi dung stored.
+   CREATE OR ALTER giu nguyen quyen. (Khuon 15_STO_HT_TAI_KHOAN_LOC.sql dung
+   DROP+CREATE vi stored do khong cap quyen cho ai ca.) */
+CREATE OR ALTER PROCEDURE dbo.S00_SPWA_DoHienTrang
     @MaCoSo      nvarchar(50),              -- DM_CSKCB.MaCoSo, = ThongTinDoanhNghiep.MaCSKCB ben HIS
     @Cccd        varchar(20)   = NULL,
     @Sdt         varchar(20)   = NULL,

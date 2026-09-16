@@ -18,6 +18,21 @@
 -- ============================================================================
 GO
 
+/* 🔴 BAT BUOC O DAU MOI FILE TAO STORED -- do song 16/09, mat gan mot gio:
+   `sqlcmd` mac dinh chay voi QUOTED_IDENTIFIER **OFF**, va SQL Server GHI LAI
+   thiet lap do vao chinh module (sys.sql_modules.uses_quoted_identifier).
+   Stored tao ra khi do se VO MOI LAN ghi vao bang co FILTERED INDEX:
+     "UPDATE failed because the following SET options have incorrect settings:
+      'QUOTED_IDENTIFIER'."
+   Va khong cach nao va tu ben goi: SET trong chuoi EXEC chi doi thiet lap
+   RUNTIME, con QUOTED_IDENTIFIER cua mot module la thu DONG CUNG LUC TAO.
+   (SSMS mac dinh ON nen chay tay o SSMS khong lo ra loi nay -- cang de sot.) */
+SET QUOTED_IDENTIFIER ON;
+GO
+SET ANSI_NULLS ON;
+GO
+
+
 /* ============================================================================
    P03 — THU TUC TAI KHOAN + DOI TAC
    ----------------------------------------------------------------------------

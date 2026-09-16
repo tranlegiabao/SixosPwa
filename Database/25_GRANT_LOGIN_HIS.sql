@@ -27,24 +27,31 @@
 SET NOCOUNT ON;
 GO
 
--- --- SUA O DAY --------------------------------------------------------------
+-- --- CHAY THE NAO ----------------------------------------------------------
+-- File nay can SQLCMD MODE (SSMS: Query > SQLCMD Mode).
+--
+-- 🔴 MAT KHAU CO Y KHONG NAM TRONG FILE. Truyen luc chay, de no khong bao gio
+--    cham dia va khong bao gio len git:
+--
+--      sqlcmd -f 65001 -S <host,port> -d HIS_CSKH -U <dba> -P <pw> -N -C
+--             -v MatKhau="<mat khau cho login spwa_his>" -i 25_GRANT_LOGIN_HIS.sql
+--
+--    Trong SSMS SQLCMD Mode thi go tay mot dong o dau query:
+--      :setvar MatKhau "<mat khau>"
+--
+--    Thieu bien nay sqlcmd dung han voi "variable is not defined" -- do la chot
+--    chan, khong phai loi. Mat khau phai TRUNG voi @MatKhau o file ben HIS:
+--    <ho so task>/sql/10_TAO_LINKED_SERVER_SPWA_CONG.sql
 :setvar TenLogin "spwa_his"
-:setvar MatKhau  "<<CHUA-SUA>>"
 -- ----------------------------------------------------------------------------
--- (Neu chay bang SSMS o che do thuong, khong co SQLCMD Mode, thi xoa ba dong
---  tren va thay truc tiep 2 gia tri o hai cau DECLARE ngay duoi.)
 
 DECLARE @TenLogin sysname      = N'$(TenLogin)';
 DECLARE @MatKhau  nvarchar(128) = N'$(MatKhau)';
 DECLARE @sql nvarchar(max);
 
-IF @MatKhau = N'<<CHUA-SUA>>'
+IF @MatKhau IS NULL OR LEN(@MatKhau) < 8
 BEGIN
-    PRINT N'  FILE NAY CHUA CHAY GI CA. Chot chan co y.';
-    PRINT N'  Dat mat khau that o khoi "SUA O DAY" roi chay lai.';
-    PRINT N'  Mat khau nay phai TRUNG voi @MatKhau o file ben HIS:';
-    PRINT N'    Database/SPWA/10_TAO_LINKED_SERVER_SPWA_CONG.sql';
-    RAISERROR (N'Chưa đặt mật khẩu cho login HIS — xem tab Messages.', 16, 1);
+    RAISERROR (N'Mật khẩu cho login HIS quá ngắn (tối thiểu 8 ký tự) — xem tab Messages.', 16, 1);
     RETURN;
 END
 
