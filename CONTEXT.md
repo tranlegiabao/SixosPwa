@@ -230,6 +230,15 @@ chủ động gửi dữ liệu lên), mà ở đây chiều đi của byte là 
 — phiếu chưa ký không có tệp nào tồn tại để trỏ tới. Xem ADR 0030.
 _Tránh_: đẩy thẳng, ghi thẳng, linked server, chế độ mới
 
+**Cửa dựng hồ sơ** *(chốt 2026-09-16)*:
+Đường HIS tự tạo tài khoản + hồ sơ bệnh nhân + nối mã bên cổng, không đợi bệnh nhân tự đăng ký.
+Đi qua **đúng những stored cổng đã có**, gọi từ HIS bằng `EXEC` qua linked server — **không** `INSERT`
+thô, vì mỗi cửa mang một khối luật mà cổng là nơi duy nhất giữ. Mở ra thì *Trỏ đường* mới đi được:
+trước đó cổng từ chối mọi tài liệu chưa có ai nhận. 🔴 Cửa này mở **cửa tài liệu** dựa trên **số điện
+thoại do phòng khám gõ vào HIS** — gõ nhầm số là người lạ nhận OTP; nên nó có ba điều kiện dữ liệu
+chặn ở đầu (căn cước 12 số thật, số điện thoại hợp lệ, số không gắn quá 10 người). Xem ADR 0031.
+_Tránh_: tự động nối hồ sơ (lẫn với *Nối hồ sơ* do người dùng bấm), tạo tài khoản ngầm
+
 **Hàng đợi gửi**:
 Bảng nằm **bên HIS**, không phải bên SixosPwa: mỗi dòng là một tài liệu chờ đẩy, mang trạng thái và
 số lần thử. Nó tồn tại vì cò đẩy là **người bấm**, nên phải có chỗ ghi nhớ cái gì đã gửi, cái gì còn
