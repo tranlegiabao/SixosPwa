@@ -432,26 +432,118 @@ public class HomeController : Controller
         {
             var idBnCoSo = hoSoInfo.HoSo.Id;
 
-            var q = _db.TaiLieuBenhNhans.AsNoTracking()
-                .Where(t => t.IdCoSo == coSo.Id && t.IdBenhNhanCoSo == idBnCoSo && t.LaBanMoiNhat);
+            var q = LocTaiLieu(coSo.Id, idBnCoSo, nhomChuan);
 
-            // Lọc chính xác theo nhóm tài liệu
-            if (nhomChuan == LoaiTaiLieu.NhomDonThuoc)
-            {
-                q = q.Where(t => t.LoaiTaiLieu == LoaiTaiLieu.DonThuoc);
-            }
-            else if (nhomChuan == LoaiTaiLieu.NhomKetQuaKham)
-            {
-                q = q.Where(t => LoaiTaiLieu.MaCuaNhomKetQuaKham.Contains(t.LoaiTaiLieu));
-            }
+            // V9 phan trang: MOC CHUP. Moi me sau deu kem t.Id <= mocId, neu khong thi tai
+            // lieu HIS day vao giua luc dang cuon se chen len dau => the lap hoac nhay coc.
+            var mocId = await q.MaxAsync(t => (long?)t.Id) ?? 0L;
+            q = q.Where(t => t.Id <= mocId);
+
+            ViewBag.MocId = mocId;
+            ViewBag.TongSo = await q.CountAsync();
 
             danhSach = await q
                 .OrderByDescending(t => t.NgayKham ?? t.NgayTao)
                 .ThenByDescending(t => t.Id)
+                .Take(KichThuocMeTaiLieu)
                 .ToListAsync();
+        }
+        else
+        {
+            ViewBag.MocId = 0L;
+            ViewBag.TongSo = 0;
         }
 
         return View(danhSach);
+    }
+
+    /// <summary>Kich thuoc mot me tai lieu (chot 1 cua plan 2026-09-17).</summary>
+    private const int KichThuocMeTaiLieu = 50;
+
+    /// <summary>
+    /// Bo loc tai lieu dung CHUNG cho me dau (DanhSachTaiLieu) va me sau (MeTaiLieu).
+    /// Lech mot cho la me sau tra sai nhom.
+    /// </summary>
+    private IQueryable<TaiLieuBenhNhan> LocTaiLieu(long idCoSo, long idBnCoSo, string nhomChuan)
+    {
+        var q = _db.TaiLieuBenhNhans.AsNoTracking()
+            .Where(t => t.IdCoSo == idCoSo && t.IdBenhNhanCoSo == idBnCoSo && t.LaBanMoiNhat);
+
+        // Lọc chính xác theo nhóm tài liệu
+        if (nhomChuan == LoaiTaiLieu.NhomDonThuoc)
+        {
+            q = q.Where(t => t.LoaiTaiLieu == LoaiTaiLieu.DonThuoc);
+        }
+        else if (nhomChuan == LoaiTaiLieu.NhomKetQuaKham)
+        {
+            q = q.Where(t => LoaiTaiLieu.MaCuaNhomKetQuaKham.Contains(t.LoaiTaiLieu));
+        }
+
+        return q;
+    }
+
+    /// <summary>
+    /// Me tai lieu tiep theo — tra ve HTML partial the tai lieu (khong phai JSON), de me sau
+    /// dung dung khuon markup voi me dau.
+    /// </summary>
+    [HttpGet("/benh-nhan/tai-lieu/me")]
+    public async Task<IActionResult> MeTaiLieu(string? nhom, int boQua, long mocId)
+    {
+        // Tu dung lai danh tinh — KHONG nhan idBenhNhanCoSo tu trinh duyet.
+        var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
+        var dinhDanh = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? string.Empty;
+
+        var coSo = string.IsNullOrWhiteSpace(maCoSo)
+            ? null
+            : await _db.DMCSKCBs.AsNoTracking().FirstOrDefaultAsync(x => x.MaCoSo == maCoSo);
+        var hoSoInfo = await LayHoSoDangDungAsync(dinhDanh, maCoSo);
+        if (coSo == null || hoSoInfo == null) return PartialView("_TheTaiLieu", new List<TaiLieuBenhNhan>());
+
+        var nhomChuan = string.IsNullOrWhiteSpace(nhom) ? LoaiTaiLieu.NhomTatCa : nhom.Trim().ToLowerInvariant();
+        if (boQua < 0) boQua = 0;
+
+        var danhSach = await LocTaiLieu(coSo.Id, hoSoInfo.HoSo.Id, nhomChuan)
+            .Where(t => t.Id <= mocId)
+            .OrderByDescending(t => t.NgayKham ?? t.NgayTao)
+            .ThenByDescending(t => t.Id)
+            .Skip(boQua)
+            .Take(KichThuocMeTaiLieu)
+            .ToListAsync();
+
+        return PartialView("_TheTaiLieu", danhSach);
+    }
+
+    /// <summary>
+    /// ADR 0033 — danh sach tai lieu CUNG LOAI (id + ten + ngay) cho trinh xem tu di,
+    /// khong phu thuoc so the da nap tren man. KHONG kem DuongDanFtp, KHONG tai PDF.
+    /// </summary>
+    [HttpGet("/benh-nhan/tai-lieu/cung-loai")]
+    public async Task<IActionResult> DanhSachCungLoai(string loai)
+    {
+        var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
+        var dinhDanh = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? string.Empty;
+
+        var coSo = string.IsNullOrWhiteSpace(maCoSo)
+            ? null
+            : await _db.DMCSKCBs.AsNoTracking().FirstOrDefaultAsync(x => x.MaCoSo == maCoSo);
+        var hoSoInfo = await LayHoSoDangDungAsync(dinhDanh, maCoSo);
+        if (coSo == null || hoSoInfo == null) return Json(Array.Empty<object>());
+
+        var idBnCoSo = hoSoInfo.HoSo.Id;
+        var danhSach = await _db.TaiLieuBenhNhans.AsNoTracking()
+            .Where(t => t.IdCoSo == coSo.Id && t.IdBenhNhanCoSo == idBnCoSo && t.LaBanMoiNhat
+                        && t.LoaiTaiLieu == loai)
+            .OrderByDescending(t => t.NgayKham ?? t.NgayTao)
+            .ThenByDescending(t => t.Id)
+            .Select(t => new
+            {
+                id = t.Id,
+                ten = t.TenTaiLieu,
+                ngay = (t.NgayKham ?? t.NgayTao).ToString("dd' thg 'MM")
+            })
+            .ToListAsync();
+
+        return Json(danhSach);
     }
 
     /// <summary>

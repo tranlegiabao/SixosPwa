@@ -1,7 +1,11 @@
 @model List<SixosPwa.Models.TaiLieuBenhNhan>
 @{
     Layout = null;
-    var countAll = Model?.Count ?? 0;
+    // V9 phan trang: countAll = TONG THAT tu may chu (badge), daNap = so the me dau.
+    var daNap = Model?.Count ?? 0;
+    var countAll = (int)(ViewBag.TongSo ?? daNap);
+    var mocId = (long)(ViewBag.MocId ?? 0L);
+    var nhomHienTai = ViewBag.Nhom as string ?? "";
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -9,7 +13,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>@(ViewBag.TieuDeTrang ?? "Tài liệu y tế") - @ViewBag.TenCoSo</title>
-    <link rel="stylesheet" href="/css/tai-lieu-benh-nhan.css?v=20260908_v8" />
+    <link rel="stylesheet" href="/css/tai-lieu-benh-nhan.css?v=20260917_v9" />
     <style>
         .tl-empty {
             flex: 1;
@@ -101,132 +105,14 @@
         </div>
 
         <!-- Danh sach tai lieu dang Grid Cards (Phong cach Google Drive) -->
-        <main class="tl-grid-container" id="tlGridList" style="@(countAll == 0 ? "display:none;" : "")">
+        <main class="tl-grid-container" id="tlGridList"
+              data-nhom="@nhomHienTai" data-moc-id="@mocId" data-tong-so="@countAll" data-da-nap="@daNap"
+              style="@(countAll == 0 ? "display:none;" : "")">
             @if (Model != null && Model.Count > 0)
             {
-                int idx = 0;
-                @foreach (var item in Model)
-                {
-                    @* V9 — ten hien thi va nhom lay tu danh muc dong
-                       (SixosPwa.Models.LoaiTaiLieu), khong so chuoi tay o view nua.
-                       Ba bien is* giu lai vi con dung de chon icon ben duoi. *@
-                    var isDonThuoc = item.LoaiTaiLieu == SixosPwa.Models.LoaiTaiLieu.DonThuoc;
-                    var isXn = item.LoaiTaiLieu == SixosPwa.Models.LoaiTaiLieu.KetQuaXn;
-                    var isCdha = item.LoaiTaiLieu == SixosPwa.Models.LoaiTaiLieu.Cdha;
-                    var loaiHienThi = SixosPwa.Models.LoaiTaiLieu.TenHienThi(item.LoaiTaiLieu);
-                    var nhom = SixosPwa.Models.LoaiTaiLieu.NhomUrl(item.LoaiTaiLieu);
-                    var fileUrl = $"/api/v1/tai-lieu/xem/{item.Id}";
-                    var safeTen = item.TenTaiLieu.Replace("'", "\\'").Replace("\"", "&quot;");
-                    var ngayHienThi = item.NgayKham?.ToString("dd' thg 'MM") ?? item.NgayTao.ToString("dd' thg 'MM");
-
-                    <article class="tl-drive-card" 
-                             data-id="@item.Id" 
-                             data-nhom="@nhom" 
-                             data-loai="@item.LoaiTaiLieu"
-                             data-loai-text="@loaiHienThi"
-                             data-index="@idx"
-                             data-url="@fileUrl"
-                             data-name="@item.TenTaiLieu"
-                             data-date="@ngayHienThi"
-                             onclick="moViewerTheoIndex(@idx)">
-                        
-                        <!-- Header the: Icon file + Ten + Menu 3 cham -->
-                        <div class="tl-drive-header">
-                            <div class="tl-file-icon-box @(isDonThuoc ? "icon-pdf" : (isXn ? "icon-sheet" : "icon-doc"))">
-                                @if (isDonThuoc)
-                                {
-                                    <!-- PDF Icon Do -->
-                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
-                                        <rect width="20" height="20" x="2" y="2" rx="4" fill="#EA4335" />
-                                        <path d="M7 6.5h10M7 9.5h10M7 12.5h6" stroke="#fff" stroke-width="1.8" stroke-linecap="round" />
-                                        <text x="6.5" y="18" fill="#fff" font-size="6" font-weight="900" font-family="sans-serif">PDF</text>
-                                    </svg>
-                                }
-                                else if (isXn)
-                                {
-                                    <!-- Sheets / Lab Icon Xanh La -->
-                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
-                                        <rect width="20" height="20" x="2" y="2" rx="4" fill="#0F9D58" />
-                                        <path d="M6 7h12M6 11h12M6 15h12M10 7v10M14 7v10" stroke="#fff" stroke-width="1.4" stroke-linecap="round" />
-                                    </svg>
-                                }
-                                else
-                                {
-                                    <!-- Docs / CĐHA Icon Xanh Bien -->
-                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
-                                        <rect width="20" height="20" x="2" y="2" rx="4" fill="#4285F4" />
-                                        <path d="M6 7h12M6 11h12M6 15h8" stroke="#fff" stroke-width="1.8" stroke-linecap="round" />
-                                    </svg>
-                                }
-                            </div>
-
-                            <div class="tl-drive-title" title="@item.TenTaiLieu">
-                                @item.TenTaiLieu
-                            </div>
-
-                            <button type="button" class="tl-drive-btn-more" onclick="moMenuTuyChon(event, @item.Id, '@safeTen', '@fileUrl')" aria-label="Thao tác khác">
-                                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                                    <circle cx="12" cy="5" r="2.2"></circle>
-                                    <circle cx="12" cy="12" r="2.2"></circle>
-                                    <circle cx="12" cy="19" r="2.2"></circle>
-                                </svg>
-                            </button>
-                        </div>
-
-                        <!-- Khung Thumbnail Preview giong Google Drive -->
-                        <!-- Khung Thumbnail Preview: Tải trang đầu tiên thật của file PDF (Google Drive style) -->
-                        <div class="tl-drive-preview">
-                            <div class="tl-preview-inner">
-                                <div class="tl-card-thumb-paper" id="tlThumbPaper_@idx">
-                                    <canvas class="tl-card-thumb-canvas" id="tlThumbCanvas_@idx"></canvas>
-                                    <div class="tl-thumb-loading" id="tlThumbLoading_@idx">
-                                        <div class="tl-thumb-spinner-sm"></div>
-                                    </div>
-                                    <!-- Fallback minh họa nếu file chưa load -->
-                                    <div class="tl-paper-sheet tl-paper-fallback" id="tlThumbFallback_@idx">
-                                        <div class="tl-paper-header-line">
-                                            <span class="tl-paper-logo"></span>
-                                            <div class="tl-paper-lines-col">
-                                                <div class="tl-paper-line tl-line-bold" style="width: 70%;"></div>
-                                                <div class="tl-paper-line" style="width: 50%;"></div>
-                                            </div>
-                                        </div>
-                                        <div class="tl-paper-body">
-                                            <div class="tl-paper-line" style="width: 90%;"></div>
-                                            <div class="tl-paper-line" style="width: 80%;"></div>
-                                            <div class="tl-paper-line" style="width: 85%;"></div>
-                                            @if (isDonThuoc)
-                                            {
-                                                <div class="tl-paper-rx-badge">Rx</div>
-                                                <div class="tl-paper-line tl-line-color-green" style="width: 75%;"></div>
-                                                <div class="tl-paper-line" style="width: 60%;"></div>
-                                            }
-                                            else
-                                            {
-                                                <div class="tl-paper-table-mini">
-                                                    <div class="tl-mini-row"><span></span><span></span></div>
-                                                    <div class="tl-mini-row"><span></span><span></span></div>
-                                                </div>
-                                            }
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Footer the: Avatar + Ngay gio -->
-                        <div class="tl-drive-footer">
-                            <div class="tl-user-avatar-mini">
-                                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path>
-                                </svg>
-                            </div>
-                            <span class="tl-drive-footer-text">Khám ngày • @ngayHienThi</span>
-                        </div>
-                    </article>
-                    idx++;
-                }
+                @await Html.PartialAsync("_TheTaiLieu", Model)
             }
+            <div class="tl-sentinel" id="tlSentinel" style="display:none;"></div>
         </main>
 
         <!-- Empty State -->
@@ -397,6 +283,6 @@
     <!-- Thu vien PDF.js CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <!-- Script chuc nang -->
-    <script src="/js/tai-lieu-benh-nhan.js?v=20260908_v8"></script>
+    <script src="/js/tai-lieu-benh-nhan.js?v=20260917_v9"></script>
 </body>
 </html>

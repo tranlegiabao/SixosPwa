@@ -411,6 +411,14 @@ HIS trùng số điện thoại của *Tài khoản cổng*, hoặc bệnh nhân
 Tóm tắt đợt khám thì **không** qua cửa này. Xem ADR 0020.
 _Tránh_: phân quyền, khoá tài liệu, xác thực (trần)
 
+**Danh sách cùng loại** *(chốt 2026-09-17)*:
+Toàn bộ tài liệu của một *hồ sơ tại cơ sở* thuộc **cùng một loại** với tài liệu đang mở — và là thứ hai
+mũi tên trong trình xem đi qua. Nó là **tài sản của hồ sơ**, không phải của màn hình: nó không đổi theo
+việc người bệnh đã cuộn danh sách tới đâu, và bộ đếm *"cái thứ mấy trên mấy"* luôn đếm theo nó. Đọc
+"cùng loại" là *"cùng loại trong hồ sơ"*, **không** phải *"cùng loại đang hiện trên màn"* — hiểu nhầm
+vế sau thì bệnh nhân mất đường tới những tài liệu chưa kịp cuộn tới. Xem ADR 0033.
+_Tránh_: tài liệu trên màn, danh sách đã tải, allDocuments
+
 **Chính chủ**:
 *Hồ sơ* sinh ra từ số căn cước người dùng gõ ở màn đăng nhập — hồ sơ của chính người đang cầm điện
 thoại. Nó luôn được tạo trước nên đứng đầu danh sách, và là hồ sơ được chọn mặc định khi phiên chưa

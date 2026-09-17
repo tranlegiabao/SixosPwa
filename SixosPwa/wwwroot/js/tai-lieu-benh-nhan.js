@@ -66,8 +66,25 @@
         collectDocumentsFromDOM();
         initModalEvents();
         initDropdownEvents();
-        loadAllCardThumbnails();
+        thietLapClickThe();
+        thietLapNapDan();
+        veThumbnailKhiLotTamNhin(document.querySelectorAll(".tl-drive-card"));
     });
+
+    /**
+     * V9 — the khong con onclick="moViewerTheoIndex(idx)" (me sau render lai tu 0 se trung
+     * index). Bat click uy quyen tren luoi, di theo data-id.
+     */
+    function thietLapClickThe() {
+        const grid = document.getElementById("tlGridList");
+        if (!grid) return;
+        grid.addEventListener("click", function (e) {
+            if (e.target.closest(".tl-drive-btn-more")) return;
+            const card = e.target.closest(".tl-drive-card");
+            if (!card) return;
+            window.moViewerTheoId(card.getAttribute("data-id"));
+        });
+    }
 
     function initDOMElements() {
         modalOverlay = document.getElementById("tlModalViewer");
@@ -121,21 +138,67 @@
     /**
      * Tự động đọc file PDF và hiển thị hình ảnh trang đầu tiên thật của tài liệu vào khung thẻ (Google Drive style)
      */
-    function loadAllCardThumbnails() {
-        if (!window.pdfjsLib) return;
+    // V9 — hang doi ve thumbnail: toi da 3 luot getDocument chay dong thoi.
+    const TOI_DA_THUMB_SONG_SONG = 3;
+    let dangVeThumb = 0;
+    const hangDoiThumb = [];
+    let thumbObserver = null;
 
-        const cards = document.querySelectorAll(".tl-drive-card");
-        cards.forEach((card) => {
-            const idx = card.getAttribute("data-index");
+    function xepHangThumb(fn) {
+        hangDoiThumb.push(fn);
+        chayHangDoiThumb();
+    }
+
+    function chayHangDoiThumb() {
+        while (dangVeThumb < TOI_DA_THUMB_SONG_SONG && hangDoiThumb.length > 0) {
+            const fn = hangDoiThumb.shift();
+            dangVeThumb++;
+            fn().catch(function () { /* da log trong veThumbnailChoThe */ })
+                .then(function () {
+                    dangVeThumb--;
+                    chayHangDoiThumb();
+                });
+        }
+    }
+
+    /**
+     * V9 — chi ve thumbnail cho the DA LOT TAM NHIN (rootMargin 300px), qua hang doi 3 luot.
+     * Bam khuon thietLapPageObserver o duoi file (cung dung IntersectionObserver + rootMargin).
+     */
+    function veThumbnailKhiLotTamNhin(cards) {
+        if (!window.pdfjsLib || !cards || cards.length === 0) return;
+
+        if (!thumbObserver) {
+            thumbObserver = new IntersectionObserver(function (entries) {
+                entries.forEach(function (entry) {
+                    if (!entry.isIntersecting) return;
+                    const card = entry.target;
+                    thumbObserver.unobserve(card); // xep hang roi thi thoi theo doi
+                    if (card.dataset.thumbDaXepHang === "1") return;
+                    card.dataset.thumbDaXepHang = "1";
+                    xepHangThumb(function () { return veThumbnailChoThe(card); });
+                });
+            }, { rootMargin: "300px 0px" });
+        }
+
+        cards.forEach(function (card) {
+            if (card.dataset.thumbDaXepHang === "1") return;
+            thumbObserver.observe(card);
+        });
+    }
+
+    function veThumbnailChoThe(card) {
+        return new Promise(function (resolve, reject) {
             const fileUrl = card.getAttribute("data-url");
-            if (!fileUrl) return;
+            if (!fileUrl) { resolve(); return; }
 
-            const canvas = document.getElementById(`tlThumbCanvas_${idx}`);
-            const loadingEl = document.getElementById(`tlThumbLoading_${idx}`);
-            const fallbackEl = document.getElementById(`tlThumbFallback_${idx}`);
-            const paperEl = document.getElementById(`tlThumbPaper_${idx}`);
-            if (!canvas) return;
+            const canvas = card.querySelector(".tl-card-thumb-canvas");
+            const loadingEl = card.querySelector(".tl-thumb-loading");
+            const fallbackEl = card.querySelector(".tl-paper-fallback");
+            const paperEl = card.querySelector(".tl-card-thumb-paper");
+            if (!canvas) { resolve(); return; }
 
+            const idx = card.getAttribute("data-id");
             const loadingTask = window.pdfjsLib.getDocument(fileUrl);
             loadingTask.promise.then(function (pdfDoc) {
                 return pdfDoc.getPage(1);
@@ -173,8 +236,100 @@
                 console.warn(`Không thể tạo thumbnail trang 1 cho tài liệu ${idx}:`, err,
                     err && err.status ? `(HTTP ${err.status})` : "");
                 if (loadingEl) loadingEl.style.display = "none";
-            });
+            }).then(resolve, resolve);
         });
+    }
+
+    /* ==========================================================
+       V9 — NẠP DẦN THEO MẺ (sentinel + 6 thẻ skeleton giữ chỗ)
+       ========================================================== */
+    const SO_THE_SKELETON = 6;
+    let napDanCauHinh = null;   // { nhom, mocId, tongSo, daNap }
+    let dangNapMe = false;
+    let sentinelObserver = null;
+
+    function thietLapNapDan() {
+        const grid = document.getElementById("tlGridList");
+        const sentinel = document.getElementById("tlSentinel");
+        if (!grid || !sentinel) return;
+
+        napDanCauHinh = {
+            nhom: grid.getAttribute("data-nhom") || "",
+            mocId: grid.getAttribute("data-moc-id") || "0",
+            tongSo: parseInt(grid.getAttribute("data-tong-so") || "0", 10),
+            daNap: parseInt(grid.getAttribute("data-da-nap") || "0", 10)
+        };
+
+        if (napDanCauHinh.daNap >= napDanCauHinh.tongSo) {
+            sentinel.remove();
+            return;
+        }
+
+        sentinel.style.display = "";
+        sentinelObserver = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) napMeTiepTheo();
+            });
+        }, { rootMargin: "300px 0px" });
+        sentinelObserver.observe(sentinel);
+    }
+
+    function themTheSkeleton(grid, sentinel) {
+        const ds = [];
+        for (let i = 0; i < SO_THE_SKELETON; i++) {
+            const el = document.createElement("div");
+            el.className = "tl-the-skeleton";
+            grid.insertBefore(el, sentinel);
+            ds.push(el);
+        }
+        return ds;
+    }
+
+    function napMeTiepTheo() {
+        if (dangNapMe || !napDanCauHinh) return;
+        const grid = document.getElementById("tlGridList");
+        const sentinel = document.getElementById("tlSentinel");
+        if (!grid || !sentinel) return;
+        if (napDanCauHinh.daNap >= napDanCauHinh.tongSo) { goSentinel(); return; }
+
+        dangNapMe = true;
+        const skeletons = themTheSkeleton(grid, sentinel);
+
+        const url = `/benh-nhan/tai-lieu/me?nhom=${encodeURIComponent(napDanCauHinh.nhom)}`
+            + `&boQua=${napDanCauHinh.daNap}&mocId=${encodeURIComponent(napDanCauHinh.mocId)}`;
+
+        fetch(url, { credentials: "same-origin" })
+            .then(function (res) {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.text();
+            })
+            .then(function (html) {
+                skeletons.forEach(function (el) { el.remove(); });
+
+                const truoc = grid.querySelectorAll(".tl-drive-card").length;
+                sentinel.insertAdjacentHTML("beforebegin", html);
+                const cards = grid.querySelectorAll(".tl-drive-card");
+                napDanCauHinh.daNap = cards.length;
+
+                // Khong nhan them the nao (du con tinh thieu) => dung lai, khong nap vo han.
+                if (cards.length === truoc) { goSentinel(); return; }
+
+                collectDocumentsFromDOM();
+                veThumbnailKhiLotTamNhin(Array.prototype.slice.call(cards, truoc));
+
+                if (napDanCauHinh.daNap >= napDanCauHinh.tongSo) goSentinel();
+            })
+            .catch(function (err) {
+                console.warn("Không nạp được mẻ tài liệu tiếp theo:", err);
+                skeletons.forEach(function (el) { el.remove(); });
+            })
+            .then(function () { dangNapMe = false; });
+    }
+
+    function goSentinel() {
+        const sentinel = document.getElementById("tlSentinel");
+        if (sentinelObserver && sentinel) sentinelObserver.unobserve(sentinel);
+        if (sentinel) sentinel.remove();
     }
 
     /* ==========================================================
@@ -220,19 +375,72 @@
     window.moViewerTheoIndex = function (globalIdx) {
         const docObj = allDocuments[globalIdx];
         if (!docObj) return;
-
-        // Lọc danh sách các tài liệu CÙNG LOẠI với tài liệu vừa bấm
-        currentSameTypeDocs = allDocuments.filter(d => d.loai === docObj.loai);
-
-        // Nếu chỉ có 1 tài liệu loại đó hoặc muốn duyệt mở rộng, giữ nhóm cùng loại
-        let indexInType = currentSameTypeDocs.findIndex(d => d.id === docObj.id);
-        if (indexInType === -1) {
-            currentSameTypeDocs = [docObj];
-            indexInType = 0;
-        }
-
-        moTaiLieuTheoIndexTrongLoai(indexInType);
+        window.moViewerTheoId(docObj.id);
     };
+
+    // ADR 0033 — dem danh sach cung loai theo loai, giu ca phien.
+    const demCungLoai = new Map();
+
+    /**
+     * ADR 0033 — mo viewer theo data-id cua the. Danh sach dieu huong KHONG con lay tu
+     * allDocuments (= the dang co tren man, tut theo me) ma nap rieng tu may chu, nen bo
+     * dem va mui ten "Sau" van di het tai lieu cua ho so.
+     */
+    window.moViewerTheoId = function (docId) {
+        const docObj = allDocuments.find(d => String(d.id) === String(docId));
+        if (!docObj) return;
+
+        // Mo ngay bang du lieu tren the, roi nap danh sach cung loai de chinh bo dem.
+        currentSameTypeDocs = [docObj];
+        moTaiLieuTheoIndexTrongLoai(0);
+
+        napDanhSachCungLoai(docObj.loai).then(function (ds) {
+            if (!ds || ds.length === 0) return;
+            // Nguoi dung co the da chuyen sang tai lieu khac trong luc cho.
+            const dangMo = currentSameTypeDocs[currentDocIndexInType];
+            if (!dangMo || String(dangMo.id) !== String(docId)) return;
+
+            currentSameTypeDocs = ds;
+            const i = ds.findIndex(d => String(d.id) === String(docId));
+            currentDocIndexInType = i >= 0 ? i : 0;
+            updateDocSwitcherUI();
+        });
+    };
+
+    function napDanhSachCungLoai(loai) {
+        if (demCungLoai.has(loai)) return Promise.resolve(demCungLoai.get(loai));
+
+        return fetch(`/benh-nhan/tai-lieu/cung-loai?loai=${encodeURIComponent(loai)}`, { credentials: "same-origin" })
+            .then(function (res) {
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            })
+            .then(function (rows) {
+                // JSON cua model CO KIEU => ASP.NET Core tra camelCase: d.id / d.ten / d.ngay.
+                const ds = (rows || []).map(function (d) {
+                    return {
+                        id: String(d.id),
+                        loai: loai,
+                        loaiText: layLoaiTextTuDOM(d.id, loai),
+                        name: d.ten,
+                        url: `/api/v1/tai-lieu/xem/${d.id}`,
+                        date: d.ngay
+                    };
+                });
+                demCungLoai.set(loai, ds);
+                return ds;
+            })
+            .catch(function (err) {
+                console.warn("Không nạp được danh sách tài liệu cùng loại:", err);
+                return null;
+            });
+    }
+
+    function layLoaiTextTuDOM(id, loai) {
+        const card = document.querySelector(`.tl-drive-card[data-id="${id}"]`)
+            || document.querySelector(`.tl-drive-card[data-loai="${loai}"]`);
+        return (card && card.getAttribute("data-loai-text")) || "Tài liệu y tế";
+    }
 
     /**
      * Mở tài liệu theo index trong danh sách cùng loại
