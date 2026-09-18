@@ -818,6 +818,11 @@ public class HomeController : Controller
             return Redirect("/benh-nhan");
         }
 
+        if (Request.Cookies.ContainsKey("qr_data"))
+        {
+            return Redirect("/qr-otp");
+        }
+
         var topCSKCBList = new List<TopCSKCBQC>();
         try
         {

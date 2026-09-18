@@ -785,13 +785,6 @@
                             document.getElementById('maOtp').value = data.otpDemo;
                             showAlert(`🔑 <strong>OTP thử nghiệm của bạn là: <span style="font-size: 1.2em; color: #0d6efd;">${data.otpDemo}</span></strong><br/><small>Đã tự động điền sẵn mật khẩu cho bạn test nhanh!</small>`, 'success');
                         }
-                        if (window.danhTinhQuet) {
-                            setTimeout(function () {
-                                if (typeof window.hienPopupCaiDatPwa === 'function') {
-                                    window.hienPopupCaiDatPwa();
-                                }
-                            }, 500);
-                        }
                     } else {
                         showAlert(data.message, 'danger');
                     }
@@ -1151,12 +1144,39 @@
             }
 
             const laTuQr = urlParams.get('tuQr') === '1' || urlParams.get('fromQr') === '1' || !!qrCookieData;
-            const canHienOtp = (hienOtp === '1' && (sdtParam || cccdParam)) || 
-                               (isReload && sessionStorage.getItem('on_otp_step') === '1');
 
-            if (canHienOtp) {
-                currentSdt = sdtParam || (qrCookieData ? qrCookieData.dienThoai : '') || cccdParam || '';
-                currentCccd = cccdParam || (qrCookieData ? qrCookieData.cccd : '') || '';
+            // 1. Lưu thông tin vào localStorage để khi mở từ icon app trên màn hình chính sẽ tự nhớ
+            if (sdtParam || cccdParam) {
+                try {
+                    localStorage.setItem('pwa_patient_cache', JSON.stringify({
+                        sdt: sdtParam || (qrCookieData ? qrCookieData.dienThoai : '') || '',
+                        cccd: cccdParam || (qrCookieData ? qrCookieData.cccd : '') || '',
+                        coSo: '@(ViewBag.SlugCoSo as string ?? "pkdk-thien-nam")'
+                    }));
+                } catch(e) {}
+            }
+
+            // 2. Kiểm tra nếu đang mở ứng dụng từ icon trên màn hình chính (Standalone mode)
+            let cachedPatient = null;
+            try {
+                const saved = localStorage.getItem('pwa_patient_cache');
+                if (saved) cachedPatient = JSON.parse(saved);
+            } catch(e) {}
+
+            const isStandaloneMode = (typeof window.isPwaStandalone === 'function' && window.isPwaStandalone()) || 
+                                     window.matchMedia('(display-mode: standalone)').matches || 
+                                     window.navigator.standalone === true;
+
+            const finalSdt = sdtParam || (qrCookieData ? qrCookieData.dienThoai : '') || (cachedPatient ? cachedPatient.sdt : '') || '';
+            const finalCccd = cccdParam || (qrCookieData ? qrCookieData.cccd : '') || (cachedPatient ? cachedPatient.cccd : '') || '';
+
+            const canHienOtp = (hienOtp === '1' && (sdtParam || cccdParam)) || 
+                               (isReload && sessionStorage.getItem('on_otp_step') === '1') ||
+                               (isStandaloneMode && (finalSdt || finalCccd));
+
+            if (canHienOtp && (finalSdt || finalCccd)) {
+                currentSdt = finalSdt;
+                currentCccd = finalCccd;
 
                 sessionStorage.setItem('on_otp_step', '1');
 
@@ -1184,12 +1204,13 @@
                     oOtp.focus();
                 }
 
-                if (laTuQr) {
+                // 3. Khi quét mã QR lần đầu trên trình duyệt: Hiện popup hỏi Cài đặt ứng dụng (2 nút Bỏ qua / Cài đặt)
+                if (laTuQr && !isStandaloneMode) {
                     setTimeout(function () {
                         if (typeof window.hienPopupCaiDatPwa === 'function') {
                             window.hienPopupCaiDatPwa();
                         }
-                    }, 500);
+                    }, 400);
                 }
             }
         });
