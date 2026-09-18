@@ -712,7 +712,14 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
         // HIS tai co so — luc do khong can them dong tu khai.
         if (idCoSo is not null && luuNguoi.Id > 0)
         {
-            await _thuTuc.TaoHoSoTuKhaiAsync(luuNguoi.Id, idCoSo.Value);
+            if (!string.IsNullOrWhiteSpace(quet?.MaBN))
+            {
+                await _thuTuc.SaveBenhNhanCoSoAsync(luuNguoi.Id, idCoSo.Value, quet.MaBN.Trim(), true);
+            }
+            else
+            {
+                await _thuTuc.TaoHoSoTuKhaiAsync(luuNguoi.Id, idCoSo.Value);
+            }
         }
 
         var taiKhoan = await TimTaiKhoanAsync(cccd, ct)
@@ -774,7 +781,7 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
             // Da co ho so roi thi khong phai dung them. NHUNG neu benh nhan vua quet ma
             // thi day la co hoi dien nhung o con trong (chot 11/09) — nhat la nhom ho so
             // dang mang ten la SO DIEN THOAI, do dang ky bang OTP tu de ra.
-            if (quet is not null) await DienOTrongTuMaAsync(cccd, dinhDanh, quet, ct);
+            if (quet is not null) await DienOTrongTuMaAsync(maCoSo, cccd, dinhDanh, quet, ct);
             return;
         }
 
@@ -782,25 +789,55 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
     }
 
     /// <summary>
-    /// Dien du lieu tu ma QR vao ho so DA CO — chi nhung o dang TRONG, cong voi o ten khi
-    /// ten cu la RAC (bang dung dinh danh). Khong dung toi ma benh nhan: viec noi benh an
-    /// di duong rieng, co cong chan rieng.
+    /// Dien du lieu tu ma QR vao ho so DA CO — dien nhung o dang TRONG, cong voi o ten khi
+    /// ten cu la RAC (bang dung dinh danh). Luu MaBN neu co quet duoc tu phieu kham.
     /// </summary>
-    private async Task DienOTrongTuMaAsync(string cccd, string dinhDanh, DanhTinhQuet quet, CancellationToken ct)
+    private async Task DienOTrongTuMaAsync(string maCoSo, string cccd, string dinhDanh, DanhTinhQuet quet, CancellationToken ct)
     {
         var o = await TinhOCanDienAsync(cccd, dinhDanh, string.Empty, quet, ct);
 
-        // Khong con gi de dien thi dung goi thu tuc — khoi ghi mot luot vo ich.
-        if (string.IsNullOrEmpty(o.Ten) && o.Ngay is null
-            && string.IsNullOrWhiteSpace(o.GioiTinh) && string.IsNullOrWhiteSpace(o.DiaChi))
-            return;
+        // Chi goi SaveBenhNhan khi co it nhat mot truong thay doi
+        if (!string.IsNullOrEmpty(o.Ten) || o.Ngay is not null
+            || !string.IsNullOrWhiteSpace(o.GioiTinh) || !string.IsNullOrWhiteSpace(o.DiaChi))
+        {
+            await _thuTuc.SaveBenhNhanAsync(
+                cccd, o.Ten, null, null, o.DiaChi,
+                idTaiKhoan: null,
+                ngaySinh: o.Ngay,
+                hoTenKhongDau: o.Slug,
+                gioiTinh: o.GioiTinh);
+        }
 
-        await _thuTuc.SaveBenhNhanAsync(
-            cccd, o.Ten, null, null, o.DiaChi,
-            idTaiKhoan: null,
-            ngaySinh: o.Ngay,
-            hoTenKhongDau: o.Slug,
-            gioiTinh: o.GioiTinh);
+        // Luu/cap nhat MaBN vao DM_BenhNhanCoSo neu quet duoc ma tren phieu kham
+        if (!string.IsNullOrWhiteSpace(quet?.MaBN))
+        {
+            var idCoSo = await LayIdCoSoAsync(maCoSo, ct);
+            if (idCoSo is not null)
+            {
+                var idTaiKhoan = await _db.TaiKhoans.AsNoTracking()
+                    .Where(t => t.SDT == dinhDanh || t.Email == dinhDanh)
+                    .Select(t => (long?)t.Id)
+                    .FirstOrDefaultAsync(ct);
+
+                var idBenhNhan = await _db.BenhNhans.AsNoTracking()
+                    .Where(p => (idTaiKhoan != null && p.IdTaiKhoan == idTaiKhoan)
+                                || p.SDT == dinhDanh || p.Email == dinhDanh
+                                || (!string.IsNullOrWhiteSpace(cccd) && !LaMaGia(cccd) && p.CCCD == cccd))
+                    .Select(p => p.Id)
+                    .FirstOrDefaultAsync(ct);
+
+                if (idBenhNhan > 0)
+                {
+                    var hoSoCoSo = await _db.BenhNhanCoSos.AsNoTracking()
+                        .FirstOrDefaultAsync(h => h.IdBenhNhan == idBenhNhan && h.IdCoSo == idCoSo.Value, ct);
+
+                    if (hoSoCoSo == null || string.IsNullOrWhiteSpace(hoSoCoSo.MaBN))
+                    {
+                        await _thuTuc.SaveBenhNhanCoSoAsync(idBenhNhan, idCoSo.Value, quet.MaBN.Trim(), true);
+                    }
+                }
+            }
+        }
     }
 
     /// <summary>

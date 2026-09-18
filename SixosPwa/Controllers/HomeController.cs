@@ -304,11 +304,29 @@ public class HomeController : Controller
         ViewBag.TenCoSo = coSo?.TenCoSo ?? "Cơ sở khám chữa bệnh";
         ViewBag.TenBenhNhan = benhNhan?.TenBN ?? dinhDanh;
 
-        // 🔴 Khoi *Ma ho so* cua giao dien moi (nhanh bk) doc ViewBag.MaBN, ma man
-        // NAY truoc do khong he dat no => no tut xuong nhanh du phong ViewBag.MaCoSo
-        // va benh nhan doc duoc MA CO SO (77121) duoi nhan "Ma ho so". Ho mang con
-        // so do ra quay tiep nhan doc thi khong ai tra cuu ra ai. Bat duoc luc
-        // nghiem thu ban merge 09/09.
+        // Tự động tìm kiếm và nối mã bệnh nhân từ HIS nếu hồ sơ hiện tại chưa có MaBN
+        if (coSo != null && hoSoCoSo != null && string.IsNullOrWhiteSpace(hoSoCoSo.MaBN) && benhNhan != null)
+        {
+            if (benhNhan.NgaySinh != null && !string.IsNullOrWhiteSpace(benhNhan.GioiTinh) && !string.IsNullOrWhiteSpace(benhNhan.TenBN))
+            {
+                try
+                {
+                    var traLoiHis = await _his.TraCuuHoSoAsync(coSo.Id, benhNhan.CCCD ?? "", benhNhan.TenBN, benhNhan.NgaySinh.Value, benhNhan.GioiTinh);
+                    if (traLoiHis.DuLieu is { Count: 1 } && !string.IsNullOrWhiteSpace(traLoiHis.DuLieu[0].MaBN))
+                    {
+                        var maHis = traLoiHis.DuLieu[0].MaBN!.Trim();
+                        await _thuTuc.SaveBenhNhanCoSoAsync(benhNhan.Id, coSo.Id, maHis, true);
+                        hoSoCoSo.MaBN = maHis;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Lỗi tự động tra cứu mã HIS cho bệnh nhân {IdBenhNhan}", benhNhan.Id);
+                }
+            }
+        }
+
+        // 🔴 Khoi *Ma ho so* cua giao dien moi (nhanh bk) doc ViewBag.MaBN
         ViewBag.MaBN = hoSoCoSo?.MaBN;
 
         // Logo + duong ra khoi trang benh nhan. Truoc day man nay khong co loi nao
