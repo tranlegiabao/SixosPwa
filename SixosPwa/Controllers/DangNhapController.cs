@@ -136,7 +136,7 @@ public class DangNhapController : Controller
         _cache.Set($"OTP_{sdtBn}", "123456", TimeSpan.FromMinutes(30));
         _cache.Set($"OTP_{cccd}", "123456", TimeSpan.FromMinutes(30));
 
-        return Redirect($"/DangNhap/Login?coSo={slug}&sdt={sdtBn}&cccd={cccd}&hienOtp=1&returnUrl=%2Fbenh-nhan");
+        return Redirect($"/DangNhap/Login?coSo={slug}&sdt={sdtBn}&cccd={cccd}&hienOtp=1&tuQr=1&returnUrl=%2Fbenh-nhan");
     }
 
     [HttpGet]

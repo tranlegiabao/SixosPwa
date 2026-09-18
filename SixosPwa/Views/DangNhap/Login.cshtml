@@ -12,6 +12,27 @@
 
     <partial name="_PwaHead" />
 
+    <script>
+        (function () {
+            var ua = navigator.userAgent || '';
+            var isZalo = /Zalo/i.test(ua) || /ZaloTheme/i.test(ua);
+            var isAndroid = /Android/i.test(ua);
+            var isIos = /iPhone|iPad|iPod/i.test(ua);
+
+            if (isZalo && isAndroid) {
+                var cleanUrl = window.location.href.replace(/^https?:\/\//i, '');
+                window.location.href = 'intent://' + cleanUrl + '#Intent;scheme=https;action=android.intent.action.VIEW;end;';
+            }
+
+            if (isZalo && isIos) {
+                document.addEventListener('DOMContentLoaded', function () {
+                    var banner = document.getElementById('zaloIosGuideBanner');
+                    if (banner) banner.classList.remove('d-none');
+                });
+            }
+        })();
+    </script>
+
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/show-toast.css" asp-append-version="true" />
@@ -382,6 +403,19 @@
 </head>
 <body class="page-center">
 
+    <!-- Banner hướng dẫn mở trình duyệt ngoài khi dùng Zalo trên iOS -->
+    <div id="zaloIosGuideBanner" class="d-none" style="position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #0068ff, #0052cc); color: #fff; padding: 12px 16px; z-index: 999999; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 0.9rem;">
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+                <span style="font-size: 1.3rem;">👉</span>
+                <div>
+                    <strong>Cài đặt ứng dụng:</strong> Bấm nút <strong>⋯</strong> ở góc trên bên phải &gt; chọn <strong>Mở bằng trình duyệt</strong> để cài ứng dụng vào máy nhé!
+                </div>
+            </div>
+            <button type="button" class="btn-close btn-close-white ms-2" onclick="document.getElementById('zaloIosGuideBanner').remove()" aria-label="Đóng"></button>
+        </div>
+    </div>
+
     <main class="auth">
         <div class="auth__brand">
             <a href="@(string.IsNullOrWhiteSpace(ViewBag.SlugCoSo as string) ? "/" : $"/DangKyOnline/{ViewBag.SlugCoSo}")" class="text-decoration-none text-reset d-inline-block" title="Quay lại @(ViewBag.TenCoSo ?? "Trang chủ")">
@@ -747,7 +781,13 @@
                             document.getElementById('maOtp').value = data.otpDemo;
                             showAlert(`🔑 <strong>OTP thử nghiệm của bạn là: <span style="font-size: 1.2em; color: #0d6efd;">${data.otpDemo}</span></strong><br/><small>Đã tự động điền sẵn mật khẩu cho bạn test nhanh!</small>`, 'success');
                         }
-                        document.getElementById('maOtp').focus();
+                        if (window.danhTinhQuet) {
+                            setTimeout(function () {
+                                if (typeof window.hienPopupCaiDatPwa === 'function') {
+                                    window.hienPopupCaiDatPwa();
+                                }
+                            }, 500);
+                        }
                     } else {
                         showAlert(data.message, 'danger');
                     }
@@ -965,6 +1005,8 @@
                 document.getElementById('cccd').value = cccdParam;
             }
 
+            const laTuQr = urlParams.get('tuQr') === '1' || urlParams.get('fromQr') === '1';
+
             if (hienOtp === '1' && (sdtParam || cccdParam)) {
                 currentSdt = sdtParam || cccdParam;
                 currentCccd = cccdParam || '';
@@ -978,6 +1020,14 @@
                 if (oOtp) {
                     oOtp.value = '123456';
                     oOtp.focus();
+                }
+
+                if (laTuQr) {
+                    setTimeout(function () {
+                        if (typeof window.hienPopupCaiDatPwa === 'function') {
+                            window.hienPopupCaiDatPwa();
+                        }
+                    }, 500);
                 }
             }
         });

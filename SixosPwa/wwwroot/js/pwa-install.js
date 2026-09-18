@@ -114,8 +114,75 @@
         window.addEventListener('appinstalled', function () {
             deferredPrompt = null;
             block.classList.add('d-none');
+            var promptEl = document.getElementById('pwaPromptModal');
+            if (promptEl && window.bootstrap && window.bootstrap.Modal) {
+                var modal = window.bootstrap.Modal.getInstance(promptEl);
+                if (modal) modal.hide();
+            }
         });
     }
+
+    // -----------------------------------------------------------------------
+    // 5. Hop thoai hoi cai dat ung dung (Popup Prompt).
+    // -----------------------------------------------------------------------
+    function setupPromptModal() {
+        var promptEl = document.getElementById('pwaPromptModal');
+        if (promptEl && promptEl.parentElement !== document.body) {
+            document.body.appendChild(promptEl);
+        }
+        var guideEl = document.getElementById('pwaGuideModal');
+        if (guideEl && guideEl.parentElement !== document.body) {
+            document.body.appendChild(guideEl);
+        }
+
+        var btnDongY = document.getElementById('btnDongYPrompt');
+        if (!btnDongY) return;
+
+        btnDongY.addEventListener('click', function () {
+            if (promptEl && window.bootstrap && window.bootstrap.Modal) {
+                var modal = window.bootstrap.Modal.getOrCreateInstance(promptEl);
+                modal.hide();
+            }
+
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(function () {
+                    deferredPrompt = null;
+                });
+                return;
+            }
+
+            openGuide(isIos() ? 'ios' : 'other');
+        });
+    }
+
+    function hienPopupCaiDatPwa() {
+        if (isStandalone()) {
+            return;
+        }
+
+        var promptEl = document.getElementById('pwaPromptModal');
+        if (!promptEl) {
+            return;
+        }
+
+        if (promptEl.parentElement !== document.body) {
+            document.body.appendChild(promptEl);
+        }
+
+        function tryShow(lan) {
+            if (window.bootstrap && window.bootstrap.Modal) {
+                var modal = window.bootstrap.Modal.getOrCreateInstance(promptEl);
+                modal.show();
+            } else if (lan < 15) {
+                setTimeout(function () { tryShow(lan + 1); }, 150);
+            }
+        }
+        tryShow(0);
+    }
+
+    window.hienPopupCaiDatPwa = hienPopupCaiDatPwa;
+    window.isPwaStandalone = isStandalone;
 
     function openGuide(which) {
         var modalEl = document.getElementById('pwaGuideModal');
@@ -139,5 +206,6 @@
     document.addEventListener('DOMContentLoaded', function () {
         showRunMode();
         setupInstallButton();
+        setupPromptModal();
     });
 })();
