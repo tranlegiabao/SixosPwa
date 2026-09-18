@@ -48,6 +48,13 @@
             };
             var dangLaAdmin = @(layoutLaAdmin ? "true" : "false");
 
+            var pwaPatient = localStorage.getItem('pwa_patient_cache');
+            var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            if (isStandalone && pwaPatient && (currentPath === '/' || currentPath === '/Home')) {
+                window.location.replace('/qr-otp');
+                return;
+            }
+
             if (!isIgnored) {
                 if (isRootPage) {
                     var referrer = document.referrer;

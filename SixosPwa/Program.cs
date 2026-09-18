@@ -9,15 +9,30 @@ using SixosPwa.Services;
 using SixosPwa.Services.Partner;
 
 var contentRoot = Directory.GetCurrentDirectory();
-if (!Directory.Exists(Path.Combine(contentRoot, "Views")) && Directory.Exists(Path.Combine(contentRoot, "SixosPwa", "Views")))
+if (!Directory.Exists(Path.Combine(contentRoot, "wwwroot")))
 {
-    contentRoot = Path.Combine(contentRoot, "SixosPwa");
+    var possibleDirs = new[]
+    {
+        Path.Combine(contentRoot, "SixosPwaTemplate", "SixosPwaTemplate", "SixosPwa"),
+        Path.Combine(contentRoot, "SixosPwaTemplate", "SixosPwa"),
+        Path.Combine(contentRoot, "SixosPwa"),
+        Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", ".."))
+    };
+    foreach (var dir in possibleDirs)
+    {
+        if (Directory.Exists(Path.Combine(dir, "wwwroot")))
+        {
+            contentRoot = dir;
+            break;
+        }
+    }
 }
 
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
     Args = args,
-    ContentRootPath = contentRoot
+    ContentRootPath = contentRoot,
+    WebRootPath = Path.Combine(contentRoot, "wwwroot")
 });
 
 builder.Services.AddControllersWithViews();
