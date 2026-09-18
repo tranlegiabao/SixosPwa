@@ -136,7 +136,60 @@ public class DangNhapController : Controller
         _cache.Set($"OTP_{sdtBn}", "123456", TimeSpan.FromMinutes(30));
         _cache.Set($"OTP_{cccd}", "123456", TimeSpan.FromMinutes(30));
 
+        // Lưu thông tin quét QR vào cookie qr_data (không giới hạn thời gian - 365 ngày)
+        var qrData = new DanhTinhQuet
+        {
+            MaBN = maBnTraCuu,
+            HoTen = hoSo?.BenhNhan.TenBN,
+            Cccd = cccd,
+            DienThoai = sdtBn,
+            NgaySinh = hoSo?.BenhNhan.NgaySinh?.ToString("dd/MM/yyyy"),
+            GioiTinh = hoSo?.BenhNhan.GioiTinh,
+            DiaChi = hoSo?.BenhNhan.DiaChi,
+            Nguon = "his"
+        };
+        var jsonOpt = new System.Text.Json.JsonSerializerOptions
+        {
+            PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
+        };
+        var qrJson = System.Text.Json.JsonSerializer.Serialize(qrData, jsonOpt);
+        Response.Cookies.Append("qr_data", Uri.EscapeDataString(qrJson), new CookieOptions
+        {
+            Path = "/",
+            Expires = DateTimeOffset.UtcNow.AddYears(1),
+            HttpOnly = false,
+            SameSite = SameSiteMode.Lax
+        });
+
         return Redirect($"/DangNhap/Login?coSo={slug}&sdt={sdtBn}&cccd={cccd}&hienOtp=1&tuQr=1&returnUrl=%2Fbenh-nhan");
+    }
+
+    /// <summary>
+    /// Hủy mã OTP trong cache và xóa cookie qr_data khi người dùng chuyển khỏi màn hình OTP
+    /// </summary>
+    [HttpPost("/DangNhap/HuyOtp")]
+    public IActionResult HuyOtp([FromBody] HuyOtpRequest? model)
+    {
+        string? sdt = model?.SoDienThoai;
+        string? cccd = model?.Cccd;
+
+        if (string.IsNullOrWhiteSpace(sdt) && string.IsNullOrWhiteSpace(cccd))
+        {
+            sdt = Request.Query["sdt"].FirstOrDefault();
+            cccd = Request.Query["cccd"].FirstOrDefault();
+        }
+
+        if (!string.IsNullOrWhiteSpace(sdt))
+        {
+            _cache.Remove($"OTP_{sdt.Trim()}");
+        }
+        if (!string.IsNullOrWhiteSpace(cccd))
+        {
+            _cache.Remove($"OTP_{cccd.Trim()}");
+        }
+
+        Response.Cookies.Delete("qr_data", new CookieOptions { Path = "/" });
+        return Json(new { success = true });
     }
 
     [HttpGet]
@@ -657,6 +710,9 @@ public class DangNhapController : Controller
                 ? model.ReturnUrl
                 : await ChonDichDenAsync(model.MaCoSo, model.Cccd, input, model.ReturnUrl, model.DanhTinhQuet);
 
+            // Xóa cookie QR đã quét khi đăng nhập thành công
+            Response.Cookies.Delete("qr_data", new CookieOptions { Path = "/" });
+
             return Json(new { success = true, redirectUrl });
     }
 
@@ -833,6 +889,9 @@ public class DangNhapController : Controller
         var dichDen = adminReauth
             ? model.ReturnUrl
             : await ChonDichDenAsync(model.MaCoSo, model.Cccd, sdt, model.ReturnUrl, model.DanhTinhQuet);
+
+        // Xóa cookie QR đã quét khi đăng nhập thành công
+        Response.Cookies.Delete("qr_data", new CookieOptions { Path = "/" });
 
         return Json(new { success = true, redirectUrl = dichDen });
     }
@@ -1568,6 +1627,12 @@ public class TaoTaiKhoanRequest
 
     /// <summary>Y dinh cua nut benh nhan da bam luc dau ("/dat-goi-kham"...).</summary>
     public string? ReturnUrl { get; set; }
+}
+
+public class HuyOtpRequest
+{
+    public string? SoDienThoai { get; set; }
+    public string? Cccd { get; set; }
 }
 
 // --- Bo man cua doi tac (ADR 0014) ---------------------------------------

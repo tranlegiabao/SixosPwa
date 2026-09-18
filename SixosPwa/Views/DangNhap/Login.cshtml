@@ -738,6 +738,8 @@
                     confirmationResultObj = await firebase.auth().signInWithPhoneNumber(formattedPhone, recaptchaVerifier);
 
                     document.getElementById('lblSoDienThoai').innerText = formattedPhone;
+                    sessionStorage.setItem('on_otp_step', '1');
+                    try { history.pushState({ step: 'otp' }, document.title, window.location.href); } catch (e) {}
                     document.querySelector('.step-1').style.display = 'none';
                     document.querySelector('.step-2').style.display = 'block';
 
@@ -771,6 +773,8 @@
                     if (data.success) {
                         const hienThiTk = data.soDienThoai || currentSdt;
                         document.getElementById('lblSoDienThoai').innerText = hienThiTk;
+                        sessionStorage.setItem('on_otp_step', '1');
+                        try { history.pushState({ step: 'otp' }, document.title, window.location.href); } catch (e) {}
                         document.querySelector('.step-1').style.display = 'none';
                         document.querySelector('.step-2').style.display = 'block';
                         
@@ -818,11 +822,34 @@
                 const d = new Date();
                 d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
                 const expires = "expires=" + d.toUTCString();
-                document.cookie = name + "=" + value + ";" + expires + ";path=/;SameSite=Strict";
+                document.cookie = name + "=" + value + ";" + expires + ";path=/;SameSite=Lax";
             } catch (e) {
                 console.warn("Lỗi ghi cookie:", e);
             }
         }
+
+        function deleteCookie(name) {
+            try {
+                const paths = ['/', window.location.pathname, ''];
+                const host = window.location.hostname;
+                const domains = ['', host, '.' + host];
+
+                paths.forEach(function (path) {
+                    domains.forEach(function (domain) {
+                        const domainAttr = domain ? '; domain=' + domain : '';
+                        const pathAttr = path ? '; path=' + path : '; path=/';
+                        document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0' + pathAttr + domainAttr + '; SameSite=Lax';
+                        document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0' + pathAttr + domainAttr;
+                    });
+                });
+            } catch (e) {
+                console.warn("Lỗi xóa cookie:", e);
+            }
+        }
+
+        window.getCookie = getCookie;
+        window.setCookie = setCookie;
+        window.deleteCookie = deleteCookie;
 
         function getDeviceId() {
             let deviceId = null;
@@ -931,6 +958,9 @@
 
                     const data = await response.json();
                     if (data.success) {
+                        window._isSubmittingOtp = true;
+                        deleteCookie('qr_data');
+                        sessionStorage.removeItem('on_otp_step');
                         showAlert('🎉 Đăng nhập thành công! Đang chuyển hướng...', 'success');
                         let targetUrl = data.redirectUrl;
                         if (window.danhTinhQuet && (window.danhTinhQuet.nguon === 'his' || window.danhTinhQuet.maBN)) {
@@ -967,6 +997,9 @@
 
                     const data = await response.json();
                     if (data.success) {
+                        window._isSubmittingOtp = true;
+                        deleteCookie('qr_data');
+                        sessionStorage.removeItem('on_otp_step');
                         showAlert('Đăng nhập thành công! Đang chuyển hướng...', 'success');
                         let targetUrl = data.redirectUrl;
                         if (window.danhTinhQuet && (window.danhTinhQuet.nguon === 'his' || window.danhTinhQuet.maBN)) {
@@ -985,12 +1018,87 @@
             }
         }
 
-        function quayLaiStep1() {
+        function quayLaiStep1(dongBoHistory = true) {
             hideAlert();
+            deleteCookie('qr_data');
+            sessionStorage.removeItem('on_otp_step');
+
+            // Gọi API hủy mã OTP cache trên server
+            try {
+                const sdt = currentSdt || (document.getElementById('soDienThoai') ? document.getElementById('soDienThoai').value.trim() : '');
+                const cccd = currentCccd || (document.getElementById('cccd') ? document.getElementById('cccd').value.trim() : '');
+                fetch('/DangNhap/HuyOtp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ soDienThoai: sdt, cccd: cccd })
+                }).catch(function (e) { console.warn("HuyOtp error:", e); });
+            } catch (e) { }
+
+            // Chỉ xóa ô Số điện thoại để người dùng đổi số khác, giữ lại CCCD và thẻ quét
+            const oSdt = document.getElementById('soDienThoai');
+            if (oSdt) {
+                oSdt.value = '';
+            }
+
+            // Dọn sạch query params trên URL (hienOtp, sdt, phone, tuQr, fromQr)
+            try {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('hienOtp');
+                url.searchParams.delete('sdt');
+                url.searchParams.delete('phone');
+                url.searchParams.delete('tuQr');
+                url.searchParams.delete('fromQr');
+                const cleanUrlStr = url.pathname + (url.search ? url.search : '');
+                if (dongBoHistory && history.state && history.state.step === 'otp') {
+                    history.replaceState({ step: 'login' }, document.title, cleanUrlStr);
+                } else if (dongBoHistory) {
+                    window.history.replaceState({}, document.title, cleanUrlStr);
+                }
+            } catch (e) { }
+
             document.querySelector('.step-2').style.display = 'none';
             document.querySelector('.step-1').style.display = 'block';
-            document.getElementById('soDienThoai').focus();
+            if (oSdt) oSdt.focus();
         }
+
+        // Bắt sự kiện phím Back của trình duyệt hoặc điện thoại khi đang ở màn OTP
+        window.addEventListener('popstate', function (e) {
+            const step2 = document.querySelector('.step-2');
+            if (step2 && getComputedStyle(step2).display !== 'none') {
+                quayLaiStep1(false);
+            }
+        });
+
+        // Bắt sự kiện người dùng bấm link điều hướng rời khỏi trang khi đang ở màn OTP
+        document.addEventListener('click', function (e) {
+            const anchor = e.target.closest('a');
+            if (anchor && anchor.getAttribute('href') && !anchor.getAttribute('href').startsWith('#')) {
+                const step2 = document.querySelector('.step-2');
+                if (step2 && getComputedStyle(step2).display !== 'none' && !window._isSubmittingOtp) {
+                    deleteCookie('qr_data');
+                    sessionStorage.removeItem('on_otp_step');
+                    try {
+                        const payload = JSON.stringify({ soDienThoai: currentSdt, cccd: currentCccd });
+                        const blob = new Blob([payload], { type: 'application/json' });
+                        navigator.sendBeacon('/DangNhap/HuyOtp', blob);
+                    } catch (err) { }
+                }
+            }
+        });
+
+        // Bắt sự kiện đóng tab hoặc rời trang
+        window.addEventListener('pagehide', function (e) {
+            const step2 = document.querySelector('.step-2');
+            if (step2 && getComputedStyle(step2).display !== 'none' && !window._isSubmittingOtp) {
+                deleteCookie('qr_data');
+                sessionStorage.removeItem('on_otp_step');
+                try {
+                    const payload = JSON.stringify({ soDienThoai: currentSdt, cccd: currentCccd });
+                    const blob = new Blob([payload], { type: 'application/json' });
+                    navigator.sendBeacon('/DangNhap/HuyOtp', blob);
+                } catch (err) { }
+            }
+        });
 
         document.addEventListener('DOMContentLoaded', function () {
             const urlParams = new URLSearchParams(window.location.search);
@@ -998,18 +1106,72 @@
             const cccdParam = urlParams.get('cccd');
             const hienOtp = urlParams.get('hienOtp');
 
+            // Kiểm tra xem lần tải này có phải là Reload (F5) không
+            let isReload = false;
+            try {
+                const navEntry = performance.getEntriesByType('navigation')[0];
+                if (navEntry && navEntry.type === 'reload') {
+                    isReload = true;
+                }
+            } catch (e) { }
+
+            // Đọc cookie qr_data nếu có
+            let qrCookieData = null;
+            const qrRaw = getCookie('qr_data');
+            if (qrRaw) {
+                try {
+                    qrCookieData = JSON.parse(decodeURIComponent(qrRaw));
+                } catch (e) {
+                    try { qrCookieData = JSON.parse(qrRaw); } catch (err) { }
+                }
+            }
+
+            if (qrCookieData && !window.danhTinhQuet) {
+                window.danhTinhQuet = qrCookieData;
+                if (typeof veTheQuet === 'function') {
+                    veTheQuet(qrCookieData);
+                }
+            }
+
+            // Nếu vào trang bình thường (không phải màn OTP) và không phải là reload: dọn sạch qr_data cũ nếu còn sót
+            if (hienOtp !== '1' && !sessionStorage.getItem('on_otp_step') && !isReload && !window.danhTinhQuet) {
+                deleteCookie('qr_data');
+            }
+
             if (sdtParam && document.getElementById('soDienThoai')) {
                 document.getElementById('soDienThoai').value = sdtParam;
+            } else if (qrCookieData && qrCookieData.dienThoai && document.getElementById('soDienThoai')) {
+                document.getElementById('soDienThoai').value = qrCookieData.dienThoai;
             }
+
             if (cccdParam && document.getElementById('cccd')) {
                 document.getElementById('cccd').value = cccdParam;
+            } else if (qrCookieData && qrCookieData.cccd && document.getElementById('cccd')) {
+                document.getElementById('cccd').value = qrCookieData.cccd;
             }
 
-            const laTuQr = urlParams.get('tuQr') === '1' || urlParams.get('fromQr') === '1';
+            const laTuQr = urlParams.get('tuQr') === '1' || urlParams.get('fromQr') === '1' || !!qrCookieData;
+            const canHienOtp = (hienOtp === '1' && (sdtParam || cccdParam)) || 
+                               (isReload && sessionStorage.getItem('on_otp_step') === '1');
 
-            if (hienOtp === '1' && (sdtParam || cccdParam)) {
-                currentSdt = sdtParam || cccdParam;
-                currentCccd = cccdParam || '';
+            if (canHienOtp) {
+                currentSdt = sdtParam || (qrCookieData ? qrCookieData.dienThoai : '') || cccdParam || '';
+                currentCccd = cccdParam || (qrCookieData ? qrCookieData.cccd : '') || '';
+
+                sessionStorage.setItem('on_otp_step', '1');
+
+                // Thiết lập history state để khi bấm nút Back trình duyệt sẽ quay về bước 1
+                try {
+                    const cleanUrl = new URL(window.location.href);
+                    cleanUrl.searchParams.delete('hienOtp');
+                    cleanUrl.searchParams.delete('sdt');
+                    cleanUrl.searchParams.delete('phone');
+                    cleanUrl.searchParams.delete('tuQr');
+                    cleanUrl.searchParams.delete('fromQr');
+                    const cleanPath = cleanUrl.pathname + (cleanUrl.search ? cleanUrl.search : '');
+                    history.replaceState({ step: 'login' }, document.title, cleanPath);
+                    history.pushState({ step: 'otp' }, document.title, window.location.href);
+                } catch (e) { }
 
                 // Chuyển thẳng sang Bước 2 (Màn hình nhập OTP)
                 document.querySelector('.step-1').style.display = 'none';
@@ -1017,7 +1179,7 @@
                 document.getElementById('lblSoDienThoai').innerText = currentSdt;
                 
                 const oOtp = document.getElementById('maOtp');
-                if (oOtp) {
+                if (oOtp && !oOtp.value) {
                     oOtp.value = '123456';
                     oOtp.focus();
                 }

@@ -424,6 +424,13 @@ function onQrCodeSuccess(decodedText, decodedResult) {
     }
 
     window.danhTinhQuet = dt;
+    if (typeof setCookie === 'function') {
+        setCookie('qr_data', encodeURIComponent(JSON.stringify(dt)), 365);
+    } else {
+        try {
+            document.cookie = 'qr_data=' + encodeURIComponent(JSON.stringify(dt)) + ';expires=' + new Date(Date.now() + 365*864e5).toUTCString() + ';path=/;SameSite=Lax';
+        } catch (e) {}
+    }
     veTheQuet(dt);
 
     // 4. CHI luong PHIEU KHAM HIS moi di thang vao man OTP (tai khoan lay theo MaBN).
@@ -547,6 +554,13 @@ function veTheQuet(dt) {
 function xoaTheQuet() {
     const sdtTuQr = window.danhTinhQuet ? (window.danhTinhQuet.dienThoai || '') : '';
     window.danhTinhQuet = null;
+    if (typeof deleteCookie === 'function') {
+        deleteCookie('qr_data');
+    } else {
+        try {
+            document.cookie = 'qr_data=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax';
+        } catch (e) {}
+    }
     const khung = document.getElementById('khungTheQuet');
     const oCccd = document.getElementById('cccd');
     const oSdt  = document.getElementById('soDienThoai');
