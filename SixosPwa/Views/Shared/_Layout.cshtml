@@ -50,7 +50,7 @@
 
             var pwaPatient = localStorage.getItem('pwa_patient_cache');
             var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-            if (isStandalone && pwaPatient && (currentPath === '/' || currentPath === '/Home' || currentPath.indexOf('/DangKyOnline') === 0)) {
+            if (isStandalone && pwaPatient && (currentPath === '/' || currentPath === '/Home')) {
                 window.location.replace('/qr-otp');
                 return;
             }
