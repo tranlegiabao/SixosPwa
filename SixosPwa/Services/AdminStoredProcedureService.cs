@@ -123,7 +123,7 @@ public sealed class AdminStoredProcedureService
         });
 
     /// <summary>
-    /// Phân trang cuộn danh sách tài khoản theo chuẩn 0307 qua dbo.HT_TaiKhoan_Loc.
+    /// Phân trang danh sách tài khoản theo chuẩn 0307 qua dbo.HT_TaiKhoan_Loc (hỗ trợ 20, 50, 100, 500 dòng/trang).
     /// </summary>
     public async Task<(List<TaiKhoan> Items, Dictionary<long, List<HoSoBenhNhanItemViewModel>> HoSoTheoTaiKhoan, int TongSoDong)> LocTaiKhoanAsync(
         int trang,
@@ -134,6 +134,9 @@ public sealed class AdminStoredProcedureService
         string? role,
         string? loaiCS)
     {
+        trang = Math.Max(1, trang);
+        soDong = soDong is 20 or 50 or 100 or 500 ? soDong : 50;
+
         var connection = _db.Database.GetDbConnection();
         var shouldClose = connection.State != ConnectionState.Open;
         if (shouldClose)

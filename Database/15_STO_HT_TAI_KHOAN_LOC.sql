@@ -9,7 +9,7 @@ GO
 
 CREATE PROCEDURE dbo.HT_TaiKhoan_Loc
     @Trang    int           = 1,
-    @SoDong   int           = 20,
+    @SoDong   int           = 50,
     @SDT      varchar(20)   = NULL,
     @CCCD     varchar(20)   = NULL,
     @MaBN     varchar(50)   = NULL,
@@ -21,8 +21,8 @@ BEGIN
 
     SET @Trang = ISNULL(@Trang, 1);
     IF @Trang < 1 SET @Trang = 1;
-    SET @SoDong = ISNULL(@SoDong, 20);
-    IF @SoDong < 1 SET @SoDong = 20;
+    SET @SoDong = ISNULL(@SoDong, 50);
+    IF @SoDong NOT IN (20, 50, 100, 500) SET @SoDong = 50;
 
     SET @SDT = NULLIF(LTRIM(RTRIM(@SDT)), '');
     SET @CCCD = NULLIF(LTRIM(RTRIM(@CCCD)), '');

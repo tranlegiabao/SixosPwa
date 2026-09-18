@@ -28,10 +28,11 @@ public sealed class TaiKhoanController : AdminControllerBase
         string? q,
         string? role,
         string? loc,
-        int page = 1)
+        int page = 1,
+        int pageSize = 50)
     {
         page = SafePage(page);
-        const int pageSize = 20;
+        pageSize = pageSize is 20 or 50 or 100 or 500 ? pageSize : 50;
 
         // Đồng bộ ô tìm kiếm số điện thoại
         if (string.IsNullOrWhiteSpace(sdt) && !string.IsNullOrWhiteSpace(q))
@@ -40,6 +41,7 @@ public sealed class TaiKhoanController : AdminControllerBase
         }
 
         var danhSachCoSo = await _db.DMCSKCBs.AsNoTracking().OrderBy(x => x.TenCoSo).ToListAsync();
+        var danhMucGioiTinh = await LayDanhMucGioiTinhAsync();
 
         var daLoc = !string.IsNullOrWhiteSpace(loc) ||
                     !string.IsNullOrWhiteSpace(loaiCS) ||
@@ -51,11 +53,12 @@ public sealed class TaiKhoanController : AdminControllerBase
 
         if (!daLoc)
         {
-            return View(new TaiKhoanListViewModel
+            var emptyModel = new TaiKhoanListViewModel
             {
                 Items = Array.Empty<TaiKhoan>(),
                 HoSoTheoTaiKhoan = new Dictionary<long, List<HoSoBenhNhanItemViewModel>>(),
                 DanhSachCoSo = danhSachCoSo,
+                DanhMucGioiTinh = danhMucGioiTinh,
                 Query = q,
                 Role = role,
                 LoaiCS = loaiCS,
@@ -66,13 +69,25 @@ public sealed class TaiKhoanController : AdminControllerBase
                 PageSize = pageSize,
                 TotalItems = 0,
                 DaLoc = false
-            });
+            };
+
+            if (IsAjaxRequest())
+            {
+                Response.Headers["X-Total-Pages"] = "0";
+                Response.Headers["X-Current-Page"] = "1";
+                Response.Headers["X-Total-Items"] = "0";
+                Response.Headers["X-Page-Size"] = pageSize.ToString();
+                Response.Headers["X-Da-Loc"] = "0";
+                return PartialView("_TaiKhoanTableBody", emptyModel);
+            }
+
+            return View(emptyModel);
         }
 
         var (items, hoSoTheoTaiKhoan, total) = await _adminStoredProcedures.LocTaiKhoanAsync(
             page, pageSize, sdt, cccd, maBN, role, loaiCS);
 
-        return View(new TaiKhoanListViewModel
+        var model = new TaiKhoanListViewModel
         {
             Items = items.Select(x =>
             {
@@ -81,6 +96,7 @@ public sealed class TaiKhoanController : AdminControllerBase
             }).ToList(),
             HoSoTheoTaiKhoan = hoSoTheoTaiKhoan,
             DanhSachCoSo = danhSachCoSo,
+            DanhMucGioiTinh = danhMucGioiTinh,
             Query = q,
             Role = role,
             LoaiCS = loaiCS,
@@ -91,11 +107,23 @@ public sealed class TaiKhoanController : AdminControllerBase
             PageSize = pageSize,
             TotalItems = total,
             DaLoc = true
-        });
+        };
+
+        if (IsAjaxRequest())
+        {
+            Response.Headers["X-Total-Pages"] = model.TotalPages.ToString();
+            Response.Headers["X-Current-Page"] = model.Page.ToString();
+            Response.Headers["X-Total-Items"] = model.TotalItems.ToString();
+            Response.Headers["X-Page-Size"] = model.PageSize.ToString();
+            Response.Headers["X-Da-Loc"] = "1";
+            return PartialView("_TaiKhoanTableBody", model);
+        }
+
+        return View(model);
     }
 
     [HttpGet]
-    public async Task<IActionResult> TaiThem(
+    public Task<IActionResult> TaiTrang(
         string? loaiCS,
         string? cccd,
         string? sdt,
@@ -103,55 +131,49 @@ public sealed class TaiKhoanController : AdminControllerBase
         string? q,
         string? role,
         string? loc,
-        int page = 2)
+        int page = 1,
+        int pageSize = 50)
     {
-        var daLoc = !string.IsNullOrWhiteSpace(loc) ||
-                    !string.IsNullOrWhiteSpace(loaiCS) ||
-                    !string.IsNullOrWhiteSpace(cccd) ||
-                    !string.IsNullOrWhiteSpace(sdt) ||
-                    !string.IsNullOrWhiteSpace(maBN) ||
-                    !string.IsNullOrWhiteSpace(role) ||
-                    !string.IsNullOrWhiteSpace(q);
+        return Index(loaiCS, cccd, sdt, maBN, q, role, loc, page, pageSize);
+    }
 
-        if (!daLoc)
+    private bool IsAjaxRequest() =>
+        Request.Headers["X-Requested-With"] == "XMLHttpRequest" ||
+        Request.Query.ContainsKey("isAjax");
+
+    private async Task<List<DMGioiTinh>> LayDanhMucGioiTinhAsync()
+    {
+        var danhMucGioiTinh = new List<DMGioiTinh>();
+        try
         {
-            Response.Headers["X-Total-Pages"] = "0";
-            Response.Headers["X-Current-Page"] = page.ToString();
-            Response.Headers["X-Total-Items"] = "0";
-            Response.Headers["X-Loaded-Count"] = "0";
-            return NoContent();
+            var conn = _db.Database.GetDbConnection();
+            if (conn.State != System.Data.ConnectionState.Open) await conn.OpenAsync();
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT MaGioiTinh, TenGioiTinh FROM DM_GioiTinh";
+            await using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                danhMucGioiTinh.Add(new DMGioiTinh
+                {
+                    MaGioiTinh = reader[0]?.ToString() ?? "",
+                    TenGioiTinh = reader[1]?.ToString() ?? ""
+                });
+            }
         }
-
-        page = Math.Max(1, page);
-        const int pageSize = 20;
-
-        if (string.IsNullOrWhiteSpace(sdt) && !string.IsNullOrWhiteSpace(q))
+        catch
         {
-            sdt = q;
+            // Bỏ qua lỗi và dùng fallback
         }
-
-        var (items, hoSoTheoTaiKhoan, total) = await _adminStoredProcedures.LocTaiKhoanAsync(
-            page, pageSize, sdt, cccd, maBN, role, loaiCS);
-
-        foreach (var item in items)
+        if (danhMucGioiTinh.Count == 0)
         {
-            item.Role = NormalizeRole(item.Role);
+            danhMucGioiTinh = new List<DMGioiTinh>
+            {
+                new DMGioiTinh { MaGioiTinh = "1", TenGioiTinh = "Nam" },
+                new DMGioiTinh { MaGioiTinh = "2", TenGioiTinh = "Nữ" },
+                new DMGioiTinh { MaGioiTinh = "3", TenGioiTinh = "Chưa xác định" }
+            };
         }
-
-        var danhMucGioiTinh = new List<DMGioiTinh>
-        {
-            new DMGioiTinh { MaGioiTinh = "1", TenGioiTinh = "Nam" },
-            new DMGioiTinh { MaGioiTinh = "2", TenGioiTinh = "Nữ" },
-            new DMGioiTinh { MaGioiTinh = "3", TenGioiTinh = "Chưa xác định" }
-        };
-
-        var totalPages = Math.Max(1, (int)Math.Ceiling(total / (double)pageSize));
-        Response.Headers["X-Total-Pages"] = totalPages.ToString();
-        Response.Headers["X-Current-Page"] = page.ToString();
-        Response.Headers["X-Total-Items"] = total.ToString();
-        Response.Headers["X-Loaded-Count"] = items.Count.ToString();
-
-        return PartialView("_TaiKhoanRows", (items, hoSoTheoTaiKhoan, danhMucGioiTinh));
+        return danhMucGioiTinh;
     }
 
     [HttpGet]
