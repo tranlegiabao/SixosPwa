@@ -949,6 +949,36 @@
             document.querySelector('.step-1').style.display = 'block';
             document.getElementById('soDienThoai').focus();
         }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const sdtParam = urlParams.get('sdt') || urlParams.get('phone');
+            const cccdParam = urlParams.get('cccd');
+            const hienOtp = urlParams.get('hienOtp');
+
+            if (sdtParam && document.getElementById('soDienThoai')) {
+                document.getElementById('soDienThoai').value = sdtParam;
+            }
+            if (cccdParam && document.getElementById('cccd')) {
+                document.getElementById('cccd').value = cccdParam;
+            }
+
+            if (hienOtp === '1' && (sdtParam || cccdParam)) {
+                currentSdt = sdtParam || cccdParam;
+                currentCccd = cccdParam || '';
+
+                // Chuyển thẳng sang Bước 2 (Màn hình nhập OTP)
+                document.querySelector('.step-1').style.display = 'none';
+                document.querySelector('.step-2').style.display = 'block';
+                document.getElementById('lblSoDienThoai').innerText = currentSdt;
+                
+                const oOtp = document.getElementById('maOtp');
+                if (oOtp) {
+                    oOtp.value = '123456';
+                    oOtp.focus();
+                }
+            }
+        });
     </script>
 </body>
 </html>
