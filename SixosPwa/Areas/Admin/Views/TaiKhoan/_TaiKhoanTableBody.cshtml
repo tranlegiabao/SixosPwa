@@ -1,0 +1,41 @@
+@model SixosPwa.Areas.Admin.Models.TaiKhoanListViewModel
+
+@if (Model.Items.Count == 0)
+{
+    if (!Model.DaLoc)
+    {
+        <tr>
+            <td colspan="4">
+                <div class="table-empty py-5">
+                    <div style="font-size: 36px; margin-bottom: 8px;">🏥</div>
+                    <strong class="fs-6">Chưa chọn bộ lọc</strong>
+                    <span class="text-muted mt-1">Vui lòng chọn cơ sở hoặc nhập CCCD / SĐT / Mã BN rồi nhấn nút <strong>Lọc</strong> để hiển thị tài khoản.</span>
+                </div>
+            </td>
+        </tr>
+    }
+    else
+    {
+        <tr>
+            <td colspan="4">
+                <div class="table-empty">
+                    <div>⌕</div>
+                    <strong>Không tìm thấy tài khoản phù hợp</strong>
+                    <span>Thử thay đổi từ khóa hoặc bộ lọc cơ sở.</span>
+                </div>
+            </td>
+        </tr>
+    }
+}
+else
+{
+    var hoSoTheoTaiKhoan = Model.HoSoTheoTaiKhoan ?? new Dictionary<long, List<SixosPwa.Areas.Admin.Models.HoSoBenhNhanItemViewModel>>();
+    var danhMucGioiTinh = Model.DanhMucGioiTinh?.ToList() ?? new List<SixosPwa.Models.DMGioiTinh>
+    {
+        new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "1", TenGioiTinh = "Nam" },
+        new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "2", TenGioiTinh = "Nữ" },
+        new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "3", TenGioiTinh = "Chưa xác định" }
+    };
+
+    <partial name="_TaiKhoanRows" model="(Model.Items.ToList(), (Dictionary<long, List<SixosPwa.Areas.Admin.Models.HoSoBenhNhanItemViewModel>>)hoSoTheoTaiKhoan, danhMucGioiTinh)" />
+}

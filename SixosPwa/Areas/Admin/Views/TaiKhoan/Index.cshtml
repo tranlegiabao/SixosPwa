@@ -1,40 +1,13 @@
 @model TaiKhoanListViewModel
-@using Microsoft.EntityFrameworkCore
-@inject SixosPwa.Data.ApplicationDbContext _db
 @{
     ViewData["Title"] = "Tài khoản";
 
-    // Lấy danh mục giới tính từ CSDL DaotaoHIS (DM_GioiTinh) an toàn
-    var danhMucGioiTinh = new List<SixosPwa.Models.DMGioiTinh>();
-    try
+    var danhMucGioiTinh = Model.DanhMucGioiTinh?.ToList() ?? new List<SixosPwa.Models.DMGioiTinh>
     {
-        var conn = _db.Database.GetDbConnection();
-        if (conn.State != System.Data.ConnectionState.Open) conn.Open();
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT MaGioiTinh, TenGioiTinh FROM DM_GioiTinh";
-        using var reader = cmd.ExecuteReader();
-        while (reader.Read())
-        {
-            danhMucGioiTinh.Add(new SixosPwa.Models.DMGioiTinh
-            {
-                MaGioiTinh = reader[0]?.ToString() ?? "",
-                TenGioiTinh = reader[1]?.ToString() ?? ""
-            });
-        }
-    }
-    catch
-    {
-        // Bỏ qua lỗi và dùng fallback
-    }
-    if (danhMucGioiTinh.Count == 0)
-    {
-        danhMucGioiTinh = new List<SixosPwa.Models.DMGioiTinh>
-        {
-            new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "1", TenGioiTinh = "Nam" },
-            new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "2", TenGioiTinh = "Nữ" },
-            new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "3", TenGioiTinh = "Chưa xác định" }
-        };
-    }
+        new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "1", TenGioiTinh = "Nam" },
+        new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "2", TenGioiTinh = "Nữ" },
+        new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "3", TenGioiTinh = "Chưa xác định" }
+    };
 
     // Dữ liệu hồ sơ bệnh nhân theo tài khoản đã được nạp sẵn từ Stored Procedure qua Model.HoSoTheoTaiKhoan
     var hoSoTheoTaiKhoan = Model.HoSoTheoTaiKhoan ?? new Dictionary<long, List<HoSoBenhNhanItemViewModel>>();
@@ -578,16 +551,192 @@
         font-weight: 700;
         font-size: 13px;
     }
+    .btn-page-ajax {
+        display: inline-grid;
+        place-items: center;
+        min-width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        color: var(--admin-blue, #2563eb);
+        background: #eef3ff;
+        border: none;
+        font-size: 16px;
+        line-height: 1;
+        cursor: pointer;
+        transition: all .15s ease;
+        padding: 0;
+        user-select: none;
+    }
+    .btn-page-ajax:hover:not(:disabled) {
+        background: #dbeafe;
+        color: #1d4ed8;
+    }
+    .btn-page-ajax:disabled {
+        color: #c4cad5;
+        background: transparent;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+    .table-loading-overlay {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(1.5px);
+        z-index: 30;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .tai-khoan-table-scroll {
+        max-height: 500px;
+        overflow-y: auto;
+        border-bottom: 1px solid var(--admin-line, #e2e8f0);
+    }
+    .tai-khoan-table-scroll thead th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: #f1f5f9 !important;
+        color: #475569 !important;
+        box-shadow: inset 0 -2px 0 #cbd5e1;
+    }
+    .page-size-select {
+        width: auto !important;
+        min-width: 65px;
+        height: 32px;
+        padding: 2px 24px 2px 8px !important;
+        font-size: 13px !important;
+        font-weight: 700 !important;
+        color: #1e293b !important;
+        border: 1.5px solid #cbd5e1 !important;
+        border-radius: 6px !important;
+        background-color: #ffffff !important;
+        cursor: pointer;
+    }
+    .page-size-select:focus {
+        border-color: #2563eb !important;
+        box-shadow: 0 0 0 2.5px rgba(37, 99, 235, 0.15) !important;
+        outline: none;
+    }
+
+    /* Ẩn footer cố định trên màn hình Tài khoản để không đè lên thanh phân trang và menu */
+    .admin-footer {
+        display: none !important;
+    }
+
+    .page-size-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: space-between;
+        min-width: 68px;
+        height: 32px;
+        padding: 2px 10px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #1e293b;
+        background-color: #ffffff;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all .15s ease;
+    }
+    .page-size-btn:hover, .page-size-btn:focus, .page-size-btn[aria-expanded="true"] {
+        border-color: #2563eb;
+        background-color: #ffffff;
+        color: #1e293b;
+        box-shadow: 0 0 0 2.5px rgba(37, 99, 235, 0.15);
+    }
+    .page-size-dropdown-menu {
+        min-width: 75px !important;
+        padding: 4px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.18) !important;
+        z-index: 1070 !important;
+        margin-bottom: 6px !important;
+    }
+    .page-size-dropdown-menu .dropdown-item {
+        font-size: 13px;
+        font-weight: 700;
+        padding: 6px 14px;
+        border-radius: 6px;
+        text-align: center;
+        color: #334155;
+        cursor: pointer;
+    }
+    .page-size-dropdown-menu .dropdown-item:hover {
+        background-color: #eff6ff;
+        color: #2563eb;
+    }
+    .page-size-dropdown-menu .dropdown-item.active {
+        background-color: #2563eb;
+        color: #ffffff;
+    }
+
+    /* ==================== MỞ RỘNG KHÍT MÀN HÌNH (DESKTOP >= 992px) ==================== */
+    @@media (min-width: 992px) {
+        /* 1. Mở rộng chiều ngang & cố định chiều cao 1 màn hình */
+        .admin-content {
+            max-width: 100% !important;
+            padding: 16px 20px 16px !important; /* Gọn gàng 16px vì đã ẩn footer cố định */
+            display: flex !important;
+            flex-direction: column !important;
+            height: calc(100vh - 86px) !important; /* 86px là topbar */
+            box-sizing: border-box !important;
+            overflow: hidden !important;
+        }
+
+        /* 2. Thu gọn khoảng cách tiêu đề trang nếu có */
+        .page-header-row {
+            margin-bottom: 12px !important;
+            flex-shrink: 0 !important;
+        }
+
+        /* 3. admin-panel thành flex-column chiếm trọn không gian còn lại */
+        .admin-panel {
+            flex: 1 1 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            min-height: 0 !important;
+            border-radius: 12px !important;
+        }
+
+        /* 4. Thanh lọc và thống kê số lượng cố định, không co lại */
+        .tai-khoan-filter-bar {
+            flex-shrink: 0 !important;
+            padding: 12px 18px !important;
+        }
+        #taiKhoanTableMeta {
+            flex-shrink: 0 !important;
+            padding: 10px 18px !important;
+        }
+
+        /* 5. Khung bảng dữ liệu co giãn trọn vẹn phần thân giữa */
+        .tai-khoan-table-scroll {
+            flex: 1 1 0 !important;
+            max-height: none !important; /* Bỏ mức cố định 500px */
+            min-height: 180px !important;
+            overflow-y: auto !important;
+        }
+
+        /* 6. Thanh phân trang ghim ở đáy panel */
+        #taiKhoanPaginationContainer {
+            flex-shrink: 0 !important;
+            background: #ffffff !important;
+            border-top: 1px solid var(--admin-line, #e2e8f0) !important;
+        }
+    }
 </style>
 
-<div class="page-header-row">
+@* <div class="page-header-row">
     <div><div class="page-kicker">QUẢN LÝ TRUY CẬP</div><h1 class="page-heading">Tài khoản</h1><p class="page-description">Kiểm soát người dùng và vai trò truy cập vào ứng dụng. Bấm vào tài khoản để mở danh sách hồ sơ bệnh nhân.</p></div>
     <a asp-action="Create" class="btn admin-btn-primary"><span>+</span> Tạo tài khoản</a>
-</div>
+</div> *@
 
 <div class="admin-panel">
     <form method="get" class="filter-bar tai-khoan-filter-bar" id="taiKhoanFilterForm">
         <input type="hidden" name="loc" value="1" />
+        <input type="hidden" name="pageSize" id="filterPageSize" value="@Model.PageSize" />
         <!-- DÒNG 1: Cơ sở (ô to rộng rãi) + CCCD + Số điện thoại + Mã bệnh nhân -->
         <div class="filter-row-top">
             <!-- 1. Dropdown cơ sở -->
@@ -644,20 +793,25 @@
     @{
         var hasFilter = Model.DaLoc;
     }
-    <div class="table-meta">
+    <div class="table-meta" id="taiKhoanTableMeta">
         @if (hasFilter)
         {
-            <span><strong>@Model.TotalItems.ToString("N0")</strong> tài khoản</span>
-            <span>Bấm vào từng dòng để mở/đóng danh sách hồ sơ</span>
+            <span id="taiKhoanCountLabel"><strong>@Model.TotalItems.ToString("N0")</strong> tài khoản</span>
+            <span id="taiKhoanHintLabel">Bấm vào từng dòng để mở/đóng danh sách hồ sơ</span>
         }
         else
         {
-            <span class="text-muted">Vui lòng chọn cơ sở (hoặc nhập tiêu chí tìm kiếm) và bấm <strong>Lọc</strong> để xem danh sách tài khoản</span>
-            <span></span>
+            <span class="text-muted" id="taiKhoanCountLabel">Vui lòng chọn cơ sở (hoặc nhập tiêu chí tìm kiếm) và bấm <strong>Lọc</strong> để xem danh sách tài khoản</span>
+            <span id="taiKhoanHintLabel"></span>
         }
     </div>
-    <div class="table-responsive">
-        <table class="table admin-table align-middle mb-0">
+    <div class="table-responsive position-relative tai-khoan-table-scroll" id="taiKhoanTableScrollContainer">
+        <div id="tableLoadingOverlay" class="table-loading-overlay" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Đang tải...</span>
+            </div>
+        </div>
+        <table class="table admin-table align-middle mb-0" id="taiKhoanMainTable">
             <thead>
                 <tr>
                     <th>Tài khoản</th>
@@ -667,46 +821,40 @@
                 </tr>
             </thead>
             <tbody id="accountTableBody">
-            @if (Model.Items.Count == 0)
-            {
-                if (!hasFilter)
-                {
-                    <tr>
-                        <td colspan="4">
-                            <div class="table-empty py-5">
-                                <div style="font-size: 36px; margin-bottom: 8px;">🏥</div>
-                                <strong class="fs-6">Chưa chọn bộ lọc</strong>
-                                <span class="text-muted mt-1">Vui lòng chọn cơ sở hoặc nhập CCCD / SĐT / Mã BN rồi nhấn nút <strong>Lọc</strong> để hiển thị tài khoản.</span>
-                            </div>
-                        </td>
-                    </tr>
-                }
-                else
-                {
-                    <tr>
-                        <td colspan="4">
-                            <div class="table-empty">
-                                <div>⌕</div>
-                                <strong>Không tìm thấy tài khoản phù hợp</strong>
-                                <span>Thử thay đổi từ khóa hoặc bộ lọc cơ sở.</span>
-                            </div>
-                        </td>
-                    </tr>
-                }
-            }
-            else
-            {
-                <partial name="_TaiKhoanRows" model="(Model.Items.ToList(), (Dictionary<long, List<HoSoBenhNhanItemViewModel>>)hoSoTheoTaiKhoan, danhMucGioiTinh)" />
-            }
+                <partial name="_TaiKhoanTableBody" model="Model" />
             </tbody>
         </table>
     </div>
-    <div id="infiniteScrollStatus" class="py-3 text-center" style="display: none;">
-        <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
-        <span class="text-muted fw-semibold" style="font-size: 13.5px;">Đang tải thêm tài khoản...</span>
-    </div>
-    <div id="infiniteScrollEnd" class="py-3 text-center text-muted fw-semibold" style="@(Model.DaLoc && Model.TotalPages <= 1 && Model.Items.Count > 0 ? "display: block;" : "display: none;") font-size: 13px; border-top: 1px dashed #e2e8f0;">
-        ✓ Đã tải hết danh sách tài khoản (@Model.TotalItems.ToString("N0") tài khoản)
+
+    <!-- THANH PHÂN TRANG AJAX GỌN GÀNG THEO CHUẨN _Pagination -->
+    <div id="taiKhoanPaginationContainer" style="@(Model.DaLoc && Model.TotalItems > 0 ? "" : "display: none;")">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 px-3 pb-3">
+            <div class="d-flex align-items-center gap-2">
+                <span class="text-muted" style="font-size: 12.5px; font-weight: 600;">Hiển thị:</span>
+                <div class="btn-group dropup">
+                    <button type="button" class="btn btn-sm page-size-btn dropdown-toggle d-flex align-items-center justify-content-between gap-2" data-bs-toggle="dropdown" aria-expanded="false" id="btnPageSizeDropdown">
+                        <span id="currentSelectedPageSize">@Model.PageSize</span>
+                    </button>
+                    <ul class="dropdown-menu page-size-dropdown-menu shadow" style="min-width: 75px; z-index: 1070;">
+                        <li><button type="button" class="dropdown-item @(Model.PageSize == 20 ? "active" : "")" data-value="20" onclick="doiSoLuongDong(20)">20</button></li>
+                        <li><button type="button" class="dropdown-item @(Model.PageSize == 50 ? "active" : "")" data-value="50" onclick="doiSoLuongDong(50)">50</button></li>
+                        <li><button type="button" class="dropdown-item @(Model.PageSize == 100 ? "active" : "")" data-value="100" onclick="doiSoLuongDong(100)">100</button></li>
+                        <li><button type="button" class="dropdown-item @(Model.PageSize == 500 ? "active" : "")" data-value="500" onclick="doiSoLuongDong(500)">500</button></li>
+                    </ul>
+                </div>
+                <input type="hidden" id="selectPageSize" value="@Model.PageSize" />
+                <span class="text-muted" style="font-size: 12.5px; font-weight: 600;">/ trang</span>
+            </div>
+            <nav class="admin-pagination mb-0" aria-label="Phân trang" id="taiKhoanPaginationNav" style="@(Model.TotalPages > 1 ? "" : "display: none;")">
+                <button type="button" class="btn-page-ajax" id="btnPageFirst" onclick="chuyenTrang('first')" title="Trang đầu" @(Model.Page <= 1 ? "disabled" : "")>&laquo;</button>
+                <button type="button" class="btn-page-ajax" id="btnPagePrev" onclick="chuyenTrang('prev')" title="Trang trước" @(Model.Page <= 1 ? "disabled" : "")>&lsaquo;</button>
+                
+                <span class="pagination-current" id="paginationCurrentText">Trang <strong>@Model.Page</strong>/<strong>@Model.TotalPages</strong></span>
+
+                <button type="button" class="btn-page-ajax" id="btnPageNext" onclick="chuyenTrang('next')" title="Trang sau" @(Model.Page >= Model.TotalPages ? "disabled" : "")>&rsaquo;</button>
+                <button type="button" class="btn-page-ajax" id="btnPageLast" onclick="chuyenTrang('last')" title="Trang cuối" @(Model.Page >= Model.TotalPages ? "disabled" : "")>&raquo;</button>
+            </nav>
+        </div>
     </div>
 </div>
 
@@ -898,13 +1046,12 @@
     document.addEventListener("DOMContentLoaded", function() {
         khoiTaoDatePicker();
 
-        // Kích hoạt loadingpage chuẩn HisSoft khi bấm Lọc
+        // Kích hoạt nạp AJAX khi bấm Lọc
         const formFilter = document.getElementById('taiKhoanFilterForm');
         if (formFilter) {
-            formFilter.addEventListener('submit', function () {
-                if (typeof showPageloader === 'function') {
-                    showPageloader();
-                }
+            formFilter.addEventListener('submit', function (e) {
+                e.preventDefault();
+                taiDanhSachTaiKhoan(1, true);
             });
         }
     });
@@ -1476,81 +1623,213 @@
         }
     }
 
-    // ==================== INFINITE SCROLL CHO TÀI KHOẢN (20 dòng / lần) ====================
+    // ==================== PHÂN TRANG AJAX CHO TÀI KHOẢN ====================
     let trangHienTai = @Model.Page;
-    const tongSoTrang = @Model.TotalPages;
-    let dangTaiThem = false;
-    let hetDuLieu = @(!Model.DaLoc || Model.Page >= Model.TotalPages ? "true" : "false");
+    let tongSoTrang = @Model.TotalPages;
+    let soLuongMoiTrang = @Model.PageSize;
+    let dangTai = false;
 
-    async function taiThemTaiKhoan() {
-        if (dangTaiThem || hetDuLieu) return;
-        dangTaiThem = true;
+    function doiSoLuongDong(val) {
+        const ps = parseInt(val, 10);
+        if ([20, 50, 100, 500].includes(ps)) {
+            soLuongMoiTrang = ps;
+            const filterPs = document.getElementById('filterPageSize');
+            if (filterPs) filterPs.value = ps;
+            const curLabel = document.getElementById('currentSelectedPageSize');
+            if (curLabel) curLabel.innerText = ps;
+            const selPs = document.getElementById('selectPageSize');
+            if (selPs) selPs.value = ps;
+            document.querySelectorAll('.page-size-dropdown-menu .dropdown-item').forEach(btn => {
+                const btnVal = parseInt(btn.getAttribute('data-value'), 10);
+                btn.classList.toggle('active', btnVal === ps);
+            });
+            taiDanhSachTaiKhoan(1, true);
+        }
+    }
 
-        const statusEl = document.getElementById('infiniteScrollStatus');
-        const endEl = document.getElementById('infiniteScrollEnd');
-        if (statusEl) statusEl.style.display = 'block';
+    function capNhatThanhPhanTrang(page, maxPages, totalItems, daLoc, pageSize) {
+        trangHienTai = page;
+        tongSoTrang = maxPages;
+        if (pageSize && [20, 50, 100, 500].includes(pageSize)) {
+            soLuongMoiTrang = pageSize;
+            const curLabel = document.getElementById('currentSelectedPageSize');
+            if (curLabel) curLabel.innerText = pageSize;
+            const selPs = document.getElementById('selectPageSize');
+            if (selPs) selPs.value = pageSize;
+            const filterPs = document.getElementById('filterPageSize');
+            if (filterPs) filterPs.value = pageSize;
+            document.querySelectorAll('.page-size-dropdown-menu .dropdown-item').forEach(btn => {
+                const btnVal = parseInt(btn.getAttribute('data-value'), 10);
+                btn.classList.toggle('active', btnVal === pageSize);
+            });
+        }
 
-        const startTime = Date.now();
+        const paginationContainer = document.getElementById('taiKhoanPaginationContainer');
+        const paginationNav = document.getElementById('taiKhoanPaginationNav');
+        const countLabel = document.getElementById('taiKhoanCountLabel');
+        const hintLabel = document.getElementById('taiKhoanHintLabel');
+        const currentText = document.getElementById('paginationCurrentText');
+        const btnFirst = document.getElementById('btnPageFirst');
+        const btnPrev = document.getElementById('btnPagePrev');
+        const btnNext = document.getElementById('btnPageNext');
+        const btnLast = document.getElementById('btnPageLast');
 
-        // Bật showPageloader như HisSoft
+        if (!daLoc) {
+            if (paginationContainer) paginationContainer.style.display = 'none';
+            if (countLabel) countLabel.innerHTML = 'Vui lòng chọn cơ sở (hoặc nhập tiêu chí tìm kiếm) và bấm <strong>Lọc</strong> để xem danh sách tài khoản';
+            if (hintLabel) hintLabel.innerText = '';
+            return;
+        }
+
+        if (countLabel) {
+            countLabel.innerHTML = totalItems > 0 ? `<strong>${totalItems.toLocaleString('vi-VN')}</strong> tài khoản` : 'Không tìm thấy tài khoản nào phù hợp';
+        }
+        if (hintLabel) {
+            hintLabel.innerText = totalItems > 0 ? 'Bấm vào từng dòng để mở/đóng danh sách hồ sơ' : '';
+        }
+
+        if (totalItems > 0) {
+            if (paginationContainer) paginationContainer.style.display = 'block';
+            if (paginationNav) {
+                paginationNav.style.display = maxPages > 1 ? 'flex' : 'none';
+            }
+            if (currentText) {
+                currentText.innerHTML = `Trang <strong>${page}</strong>/<strong>${maxPages}</strong>`;
+            }
+            if (btnFirst) btnFirst.disabled = (page <= 1);
+            if (btnPrev) btnPrev.disabled = (page <= 1);
+            if (btnNext) btnNext.disabled = (page >= maxPages);
+            if (btnLast) btnLast.disabled = (page >= maxPages);
+        } else {
+            if (paginationContainer) paginationContainer.style.display = 'none';
+        }
+    }
+
+    async function taiDanhSachTaiKhoan(page, updateUrl = true) {
+        if (dangTai) return;
+        dangTai = true;
+
+        const overlay = document.getElementById('tableLoadingOverlay');
+        if (overlay) overlay.style.display = 'flex';
+
+        // Bật loadingpage chuẩn HisSoft
         if (typeof showPageloader === 'function') {
             showPageloader();
         }
 
-        const nextPage = trangHienTai + 1;
         const form = document.getElementById('taiKhoanFilterForm');
         const params = new URLSearchParams(form ? new FormData(form) : '');
-        params.set('page', nextPage);
+        params.set('page', page);
+        params.set('pageSize', soLuongMoiTrang);
+
+        const startTime = Date.now();
 
         try {
-            const resp = await fetch(`/Admin/TaiKhoan/TaiThem?${params.toString()}`, {
+            const url = `/Admin/TaiKhoan?${params.toString()}`;
+            const resp = await fetch(url, {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             });
 
             if (resp.ok) {
                 const html = await resp.text();
-                if (!html || !html.trim()) {
-                    hetDuLieu = true;
-                    if (endEl) endEl.style.display = 'block';
-                } else {
-                    const tbody = document.getElementById('accountTableBody');
-                    if (tbody) {
-                        tbody.insertAdjacentHTML('beforeend', html);
-                        khoiTaoDatePicker('#accountTableBody');
-                    }
-                    trangHienTai = nextPage;
-                    const totalPagesHeader = resp.headers.get('X-Total-Pages');
-                    const maxPages = totalPagesHeader ? parseInt(totalPagesHeader, 10) : tongSoTrang;
-                    if (trangHienTai >= maxPages) {
-                        hetDuLieu = true;
-                        if (endEl) endEl.style.display = 'block';
+                const tbody = document.getElementById('accountTableBody');
+                if (tbody) {
+                    tbody.innerHTML = html;
+                    khoiTaoDatePicker('#accountTableBody');
+                }
+
+                const totalPagesHeader = resp.headers.get('X-Total-Pages');
+                const totalItemsHeader = resp.headers.get('X-Total-Items');
+                const currentPageHeader = resp.headers.get('X-Current-Page');
+                const pageSizeHeader = resp.headers.get('X-Page-Size');
+                const daLocHeader = resp.headers.get('X-Da-Loc');
+
+                const maxPages = totalPagesHeader ? parseInt(totalPagesHeader, 10) : 1;
+                const totalItems = totalItemsHeader ? parseInt(totalItemsHeader, 10) : 0;
+                const curPage = currentPageHeader ? parseInt(currentPageHeader, 10) : page;
+                const curPageSize = pageSizeHeader ? parseInt(pageSizeHeader, 10) : soLuongMoiTrang;
+                const daLoc = daLocHeader === '1';
+
+                capNhatThanhPhanTrang(curPage, maxPages, totalItems, daLoc, curPageSize);
+
+                if (updateUrl && window.history && window.history.pushState) {
+                    window.history.pushState({ page: curPage, pageSize: curPageSize }, '', url);
+                }
+
+                // Cuộn khung bảng lên đầu danh sách
+                const scrollBox = document.getElementById('taiKhoanTableScrollContainer');
+                if (scrollBox) {
+                    scrollBox.scrollTop = 0;
+                }
+
+                // Cuộn mượt lên đầu bảng nếu màn hình đang ở xa
+                const tableMain = document.getElementById('taiKhoanMainTable');
+                if (tableMain) {
+                    const rect = tableMain.getBoundingClientRect();
+                    if (rect.top < 60) {
+                        window.scrollTo({ top: window.scrollY + rect.top - 80, behavior: 'smooth' });
                     }
                 }
             } else {
-                hetDuLieu = true;
+                showToast('Lỗi tải danh sách tài khoản từ máy chủ.', 'error');
             }
         } catch (err) {
-            console.error('Lỗi tải thêm tài khoản:', err);
+            console.error('Lỗi tải danh sách tài khoản:', err);
+            showToast('Lỗi kết nối khi tải danh sách tài khoản.', 'error');
         } finally {
             const elapsed = Date.now() - startTime;
-            const remaining = Math.max(0, 300 - elapsed);
+            const remaining = Math.max(0, 200 - elapsed);
             setTimeout(() => {
                 if (typeof hidePageloader === 'function') {
                     hidePageloader();
                 }
-                if (statusEl) statusEl.style.display = 'none';
-                dangTaiThem = false;
+                if (overlay) overlay.style.display = 'none';
+                dangTai = false;
             }, remaining);
         }
     }
 
-    window.addEventListener('scroll', function () {
-        if (hetDuLieu || dangTaiThem) return;
-        const scrollBottom = window.innerHeight + window.scrollY;
-        const threshold = document.documentElement.offsetHeight - 250;
-        if (scrollBottom >= threshold) {
-            taiThemTaiKhoan();
+    function chuyenTrang(action) {
+        let targetPage = trangHienTai;
+        if (action === 'first') {
+            targetPage = 1;
+        } else if (action === 'prev') {
+            targetPage = trangHienTai - 1;
+        } else if (action === 'next') {
+            targetPage = trangHienTai + 1;
+        } else if (action === 'last') {
+            targetPage = tongSoTrang;
+        } else if (typeof action === 'number') {
+            targetPage = action;
+        } else {
+            targetPage = parseInt(action, 10);
         }
-    }, { passive: true });
+
+        if (isNaN(targetPage) || targetPage < 1 || targetPage > tongSoTrang || targetPage === trangHienTai) {
+            return;
+        }
+        taiDanhSachTaiKhoan(targetPage, true);
+    }
+
+    // Xử lý nút Back / Forward của trình duyệt
+    window.addEventListener('popstate', function (event) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const p = parseInt(urlParams.get('page') || '1', 10);
+        const ps = parseInt(urlParams.get('pageSize') || '50', 10);
+        if ([20, 50, 100, 500].includes(ps)) {
+            soLuongMoiTrang = ps;
+            const curLabel = document.getElementById('currentSelectedPageSize');
+            if (curLabel) curLabel.innerText = ps;
+            const selPs = document.getElementById('selectPageSize');
+            if (selPs) selPs.value = ps;
+            const filterPs = document.getElementById('filterPageSize');
+            if (filterPs) filterPs.value = ps;
+            document.querySelectorAll('.page-size-dropdown-menu .dropdown-item').forEach(btn => {
+                const btnVal = parseInt(btn.getAttribute('data-value'), 10);
+                btn.classList.toggle('active', btnVal === ps);
+            });
+        }
+        taiDanhSachTaiKhoan(p, false);
+    });
 </script>
 }

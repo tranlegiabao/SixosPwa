@@ -12,9 +12,11 @@ public sealed class BenhNhanController : AdminControllerBase
     public BenhNhanController(ApplicationDbContext db) => _db = db;
 
     [HttpGet]
-    public async Task<IActionResult> Index(string? q, string? maCoSo, int page = 1)
+    public async Task<IActionResult> Index(string? q, string? maCoSo, int page = 1, int pageSize = 50)
     {
         page = SafePage(page);
+        pageSize = pageSize is 20 or 50 or 100 or 500 ? pageSize : 50;
+
         var query = _db.BenhNhans.AsNoTracking().AsQueryable();
         if (!string.IsNullOrWhiteSpace(q))
         {
@@ -35,8 +37,8 @@ public sealed class BenhNhanController : AdminControllerBase
 
         var total = await query.CountAsync();
         var items = await query.OrderBy(x => x.TenBN)
-            .Skip((page - 1) * DefaultPageSize)
-            .Take(DefaultPageSize)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
         var idBenhNhan = items.Select(x => x.Id).ToList();
@@ -52,7 +54,7 @@ public sealed class BenhNhanController : AdminControllerBase
         var maBNTheoBN = hoSo.GroupBy(x => x.IdBenhNhan)
             .ToDictionary(g => g.Key, g => g.First().MaBN);
 
-        return View(new BenhNhanListViewModel
+        var model = new BenhNhanListViewModel
         {
             MaCoSoTheoBenhNhan = maCoSoTheoBN,
             MaBNTheoBenhNhan = maBNTheoBN,
@@ -60,8 +62,29 @@ public sealed class BenhNhanController : AdminControllerBase
             Query = q,
             MaCoSo = maCoSo,
             Page = page,
-            PageSize = DefaultPageSize,
+            PageSize = pageSize,
             TotalItems = total
-        });
+        };
+
+        if (IsAjaxRequest())
+        {
+            Response.Headers["X-Total-Pages"] = model.TotalPages.ToString();
+            Response.Headers["X-Current-Page"] = model.Page.ToString();
+            Response.Headers["X-Total-Items"] = model.TotalItems.ToString();
+            Response.Headers["X-Page-Size"] = model.PageSize.ToString();
+            return PartialView("_BenhNhanTableBody", model);
+        }
+
+        return View(model);
     }
+
+    [HttpGet]
+    public Task<IActionResult> TaiTrang(string? q, string? maCoSo, int page = 1, int pageSize = 50)
+    {
+        return Index(q, maCoSo, page, pageSize);
+    }
+
+    private bool IsAjaxRequest() =>
+        Request.Headers["X-Requested-With"] == "XMLHttpRequest"
+        || Request.Query.ContainsKey("ajax");
 }

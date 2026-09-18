@@ -1,0 +1,46 @@
+@model SixosPwa.Areas.Admin.Models.BenhNhanListViewModel
+@{
+    string MaskPhone(string? phone) => string.IsNullOrWhiteSpace(phone) ? "Chưa cập nhật" : phone.Length < 7 ? "••••" : phone[..3] + "••••" + phone[^2..];
+}
+
+@if (Model.Items.Count == 0)
+{
+    <tr>
+        <td colspan="4">
+            <div class="table-empty">
+                <div>◌</div>
+                <strong>Không tìm thấy bệnh nhân</strong>
+                <span>Thử thay đổi từ khóa hoặc mã cơ sở.</span>
+            </div>
+        </td>
+    </tr>
+}
+else
+{
+    @foreach (var item in Model.Items)
+    {
+        <tr>
+            <td>
+                <div class="table-person">
+                    <span class="mini-avatar avatar-green">@(item.TenBN.FirstOrDefault().ToString())</span>
+                    <div>
+                        <strong>@item.TenBN</strong>
+                        <small>@(item.Email ?? "Chưa có email")</small>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <div class="contact-stack">
+                    <span>@MaskPhone(item.SDT)</span>
+                    <small>@(item.DiaChi ?? "Chưa cập nhật địa chỉ")</small>
+                </div>
+            </td>
+            <td>
+                <span class="type-badge">@Model.MaCoSoTheoBenhNhan.GetValueOrDefault(item.Id, "—")</span>
+            </td>
+            <td class="text-end text-muted">
+                @Model.MaBNTheoBenhNhan.GetValueOrDefault(item.Id, "#" + item.Id)
+            </td>
+        </tr>
+    }
+}

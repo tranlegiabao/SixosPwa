@@ -115,6 +115,7 @@ public sealed class TaiKhoanListViewModel
     public IReadOnlyList<TaiKhoan> Items { get; init; } = Array.Empty<TaiKhoan>();
     public IReadOnlyDictionary<long, List<HoSoBenhNhanItemViewModel>> HoSoTheoTaiKhoan { get; init; } = new Dictionary<long, List<HoSoBenhNhanItemViewModel>>();
     public IReadOnlyList<DMCSKCB> DanhSachCoSo { get; init; } = Array.Empty<DMCSKCB>();
+    public IReadOnlyList<DMGioiTinh> DanhMucGioiTinh { get; init; } = Array.Empty<DMGioiTinh>();
     public string? Query { get; init; }
     public string? Role { get; init; }
     public string? LoaiCS { get; init; }
@@ -122,9 +123,9 @@ public sealed class TaiKhoanListViewModel
     public string? SDT { get; init; }
     public string? MaBN { get; init; }
     public int Page { get; init; }
-    public int PageSize { get; init; }
+    public int PageSize { get; init; } = 50;
     public int TotalItems { get; init; }
-    public int TotalPages => Math.Max(1, (int)Math.Ceiling(TotalItems / (double)PageSize));
+    public int TotalPages => Math.Max(1, (int)Math.Ceiling(TotalItems / (double)(PageSize > 0 ? PageSize : 50)));
     public bool DaLoc { get; init; }
 }
 
@@ -327,9 +328,9 @@ public sealed class BenhNhanListViewModel
     /// </summary>
     public string? MaCoSo { get; init; }
     public int Page { get; init; }
-    public int PageSize { get; init; }
+    public int PageSize { get; init; } = 50;
     public int TotalItems { get; init; }
-    public int TotalPages => Math.Max(1, (int)Math.Ceiling(TotalItems / (double)PageSize));
+    public int TotalPages => Math.Max(1, (int)Math.Ceiling(TotalItems / (double)(PageSize > 0 ? PageSize : 50)));
 }
 
 public sealed class PaginationViewModel
