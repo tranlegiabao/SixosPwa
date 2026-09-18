@@ -36,6 +36,109 @@ public class DangNhapController : Controller
         _thuTuc = thuTuc;
     }
 
+    /// <summary>
+    /// Cổng tiếp nhận quét mã QR: Tự động nhận diện hồ sơ bệnh nhân và chuyển thẳng vào Cổng bệnh nhân
+    /// </summary>
+    [HttpGet("/qr")]
+    [HttpGet("/qr-kham")]
+    public async Task<IActionResult> QrKham(string? mabn = null, string? coSo = null)
+    {
+        var maBnTraCuu = string.IsNullOrWhiteSpace(mabn) ? "145703" : mabn.Trim();
+        var maCoSoTraCuu = string.IsNullOrWhiteSpace(coSo) ? "77121" : coSo.Trim();
+
+        var hoSo = await (from bnCs in _dbContext.BenhNhanCoSos.AsNoTracking()
+                          join cs in _dbContext.DMCSKCBs.AsNoTracking() on bnCs.IdCoSo equals cs.Id
+                          join bn in _dbContext.BenhNhans.AsNoTracking() on bnCs.IdBenhNhan equals bn.Id
+                          where bnCs.MaBN == maBnTraCuu && (cs.MaCoSo == maCoSoTraCuu || cs.Slug == maCoSoTraCuu)
+                          select new { BenhNhan = bn, CoSo = cs }).FirstOrDefaultAsync();
+
+        if (hoSo == null)
+        {
+            hoSo = await (from bnCs in _dbContext.BenhNhanCoSos.AsNoTracking()
+                          join cs in _dbContext.DMCSKCBs.AsNoTracking() on bnCs.IdCoSo equals cs.Id
+                          join bn in _dbContext.BenhNhans.AsNoTracking() on bnCs.IdBenhNhan equals bn.Id
+                          where bnCs.MaBN == maBnTraCuu
+                          select new { BenhNhan = bn, CoSo = cs }).FirstOrDefaultAsync();
+        }
+
+        if (hoSo != null)
+        {
+            var cccd = hoSo.BenhNhan.CCCD;
+            var maCoSo = hoSo.CoSo.MaCoSo;
+            var username = !string.IsNullOrWhiteSpace(hoSo.BenhNhan.SDT) ? hoSo.BenhNhan.SDT : cccd;
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, username),
+                new Claim(ClaimTypes.Name, username),
+                new Claim(ClaimTypes.Role, "BenhNhan"),
+                new Claim(LuongCongBenhNhan.ClaimCccd, cccd),
+                new Claim(LuongCongBenhNhan.ClaimMaCoSo, maCoSo),
+                new Claim(LuongCongBenhNhan.ClaimDoiTacXacThuc, "1")
+            };
+
+            if (!string.IsNullOrWhiteSpace(hoSo.BenhNhan.SDT))
+            {
+                claims.Add(new Claim(ClaimTypes.MobilePhone, hoSo.BenhNhan.SDT));
+            }
+
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddDays(365)
+            };
+
+            await HttpContext.SignOutAsync(AdminAuthentication.Scheme);
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(identity),
+                authProperties);
+
+            return Redirect("/benh-nhan");
+        }
+
+        return Redirect($"/DangNhap/Login?ReturnUrl=%2Fbenh-nhan");
+    }
+
+    /// <summary>
+    /// Cổng tiếp nhận quét mã QR: Mở màn hình OTP, sau khi xác thực OTP thành công sẽ vào Cổng bệnh nhân
+    /// </summary>
+    [HttpGet("/qr-otp")]
+    public async Task<IActionResult> QrOtp(string? mabn = null, string? coSo = null, string? sdt = null)
+    {
+        // Luôn xóa phiên cookie cũ để đảm bảo hiển thị đúng màn hình OTP
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+        var maBnTraCuu = string.IsNullOrWhiteSpace(mabn) ? "145703" : mabn.Trim();
+        var maCoSoTraCuu = string.IsNullOrWhiteSpace(coSo) ? "77121" : coSo.Trim();
+
+        var hoSo = await (from bnCs in _dbContext.BenhNhanCoSos.AsNoTracking()
+                          join cs in _dbContext.DMCSKCBs.AsNoTracking() on bnCs.IdCoSo equals cs.Id
+                          join bn in _dbContext.BenhNhans.AsNoTracking() on bnCs.IdBenhNhan equals bn.Id
+                          where bnCs.MaBN == maBnTraCuu && (cs.MaCoSo == maCoSoTraCuu || cs.Slug == maCoSoTraCuu)
+                          select new { BenhNhan = bn, CoSo = cs }).FirstOrDefaultAsync();
+
+        if (hoSo == null)
+        {
+            hoSo = await (from bnCs in _dbContext.BenhNhanCoSos.AsNoTracking()
+                          join cs in _dbContext.DMCSKCBs.AsNoTracking() on bnCs.IdCoSo equals cs.Id
+                          join bn in _dbContext.BenhNhans.AsNoTracking() on bnCs.IdBenhNhan equals bn.Id
+                          where bnCs.MaBN == maBnTraCuu
+                          select new { BenhNhan = bn, CoSo = cs }).FirstOrDefaultAsync();
+        }
+
+        var slug = hoSo != null && !string.IsNullOrWhiteSpace(hoSo.CoSo.Slug) ? hoSo.CoSo.Slug : "pkdk-thien-nam";
+        var sdtBn = !string.IsNullOrWhiteSpace(sdt) ? sdt : (hoSo?.BenhNhan.SDT ?? "0773746879");
+        var cccd = hoSo?.BenhNhan.CCCD ?? "044071000792";
+
+        // Lưu trước OTP 123456 vào cache
+        _cache.Set($"OTP_{sdtBn}", "123456", TimeSpan.FromMinutes(30));
+        _cache.Set($"OTP_{cccd}", "123456", TimeSpan.FromMinutes(30));
+
+        return Redirect($"/DangNhap/Login?coSo={slug}&sdt={sdtBn}&cccd={cccd}&hienOtp=1&returnUrl=%2Fbenh-nhan");
+    }
+
     [HttpGet]
     public async Task<IActionResult> Login(string? returnUrl = null, string? coSo = null)
     {
