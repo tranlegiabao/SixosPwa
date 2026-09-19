@@ -35,7 +35,7 @@ bớt tham số, không đổi tên tham số, không đổi tên hay thứ tự
 | 4 | `DM_BenhNhanCoSo_Save` | **giữ nguyên tên** dù bảng `DM_BenhNhanCoSo` đã biến mất ở 1B; giữ `@IDBenhNhanCoSo OUTPUT` |
 | 5 | `QL_DotKham_Save` | giữ tên tham số `@IDBenhNhanCoSo` dù **cột** trong bảng đã đổi thành `IDBenhNhan` |
 | 6 | `QL_TaiLieuBenhNhan_Save` | như trên. Là đối tượng **duy nhất** HIS đọc được `ResultCode`, nhờ có `SELECT @rc, @rm;` ở lời gọi |
-| 7 | `S00_SPWA_DoHienTrang` | hợp đồng **cột trả về**, không phải tham số: `IDCoSo, IDBenhNhan, IDBenhNhanCoSo, MaBNDangNoi, IDTaiKhoanTheoSdt, IDTaiLieuDaCo, DuongDanDaCo` — đúng tên, đúng thứ tự. Thêm cột thì thêm **ở cuối** |
+| 7 | `S00_SPWA_DoHienTrang` | hợp đồng **cột trả về**, không phải tham số: `IDCoSo, IDBenhNhan, IDBenhNhanCoSo, MaBNDangNoi, IDTaiKhoanTheoSdt, IDTaiLieuDaCo, DuongDanDaCo` — đúng tên, đúng thứ tự. 🔴 **KHÔNG được thêm cột, kể cả ở cuối** — xem dưới |
 
 Kèm bốn luật vận hành:
 
@@ -50,6 +50,13 @@ Kèm bốn luật vận hành:
   object đó; login `spwa_his` mất `EXECUTE` ngay lập tức và hỏng theo kiểu không liên quan gì tới nội
   dung stored. Đã đạp thật ngày 16/09.
 - **Không TVP.** Table-valued parameter không đi qua linked server được. Mọi tham số phải vô hướng.
+
+🔴 **Đính chính (19-09): "thêm cột ở cuối" là SAI.** HIS hứng #7 bằng
+`INSERT INTO @do EXEC ... AT SPWA_CONG`, mà `@do` khai báo **đúng bảy cột**. `INSERT ... EXEC` đòi số
+cột khớp tuyệt đối, nên **cột thứ tám làm vỡ ngay**, dù đặt ở cuối. Chính chú thích trong stored đã
+ghi *"Lệch một cột là INSERT ... EXEC vỡ"*. Hệ quả thật: **bảy cột này là trần cứng** — không có
+đường nào báo thêm thông tin cho HIS mà không sửa HIS. Muốn nói thêm điều gì thì phải **nhét vào một
+cột đã có** (ví dụ `MaBNDangNoi`), hoặc ghi log bên cổng để người vận hành tự tra.
 
 ## Hệ quả
 
