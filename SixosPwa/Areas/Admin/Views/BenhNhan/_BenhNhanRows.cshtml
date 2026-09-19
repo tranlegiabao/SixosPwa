@@ -1,0 +1,9 @@
+@model (List<SixosPwa.Areas.Admin.Models.BenhNhanNhomItemViewModel> Items, List<SixosPwa.Models.DMGioiTinh> DanhMucGioiTinh)
+
+@if (Model.Items != null)
+{
+    foreach (var item in Model.Items)
+    {
+        <partial name="_BenhNhanRow" model="(item, Model.DanhMucGioiTinh)" />
+    }
+}

@@ -1,46 +1,40 @@
 @model SixosPwa.Areas.Admin.Models.BenhNhanListViewModel
-@{
-    string MaskPhone(string? phone) => string.IsNullOrWhiteSpace(phone) ? "Chưa cập nhật" : phone.Length < 7 ? "••••" : phone[..3] + "••••" + phone[^2..];
-}
 
 @if (Model.Items.Count == 0)
 {
-    <tr>
-        <td colspan="4">
-            <div class="table-empty">
-                <div>◌</div>
-                <strong>Không tìm thấy bệnh nhân</strong>
-                <span>Thử thay đổi từ khóa hoặc mã cơ sở.</span>
-            </div>
-        </td>
-    </tr>
-}
-else
-{
-    @foreach (var item in Model.Items)
+    if (!Model.DaLoc)
     {
         <tr>
-            <td>
-                <div class="table-person">
-                    <span class="mini-avatar avatar-green">@(item.TenBN.FirstOrDefault().ToString())</span>
-                    <div>
-                        <strong>@item.TenBN</strong>
-                        <small>@(item.Email ?? "Chưa có email")</small>
-                    </div>
+            <td colspan="3">
+                <div class="table-empty py-5">
+                    <div style="font-size: 36px; margin-bottom: 8px;">🏥</div>
+                    <strong class="fs-6">Chưa chọn bộ lọc</strong>
+                    <span class="text-muted mt-1">Vui lòng chọn cơ sở hoặc nhập CCCD / SĐT / Mã BN rồi nhấn nút <strong>Lọc</strong> để hiển thị danh sách bệnh nhân.</span>
                 </div>
-            </td>
-            <td>
-                <div class="contact-stack">
-                    <span>@MaskPhone(item.SDT)</span>
-                    <small>@(item.DiaChi ?? "Chưa cập nhật địa chỉ")</small>
-                </div>
-            </td>
-            <td>
-                <span class="type-badge">@Model.MaCoSoTheoBenhNhan.GetValueOrDefault(item.Id, "—")</span>
-            </td>
-            <td class="text-end text-muted">
-                @Model.MaBNTheoBenhNhan.GetValueOrDefault(item.Id, "#" + item.Id)
             </td>
         </tr>
     }
+    else
+    {
+        <tr>
+            <td colspan="3">
+                <div class="table-empty">
+                    <div>⌕</div>
+                    <strong>Không tìm thấy bệnh nhân phù hợp</strong>
+                    <span>Thử thay đổi từ khóa hoặc bộ lọc cơ sở.</span>
+                </div>
+            </td>
+        </tr>
+    }
+}
+else
+{
+    var danhMucGioiTinh = Model.DanhMucGioiTinh?.ToList() ?? new List<SixosPwa.Models.DMGioiTinh>
+    {
+        new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "1", TenGioiTinh = "Nam" },
+        new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "2", TenGioiTinh = "Nữ" },
+        new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "3", TenGioiTinh = "Chưa xác định" }
+    };
+
+    <partial name="_BenhNhanRows" model="(Model.Items.ToList(), danhMucGioiTinh)" />
 }

@@ -20,7 +20,7 @@ public sealed class TaiKhoanController : AdminControllerBase
         _adminStoredProcedures = adminStoredProcedures;
     }
 
-    public async Task<IActionResult> Index(
+    public IActionResult Index(
         string? loaiCS,
         string? cccd,
         string? sdt,
@@ -31,99 +31,11 @@ public sealed class TaiKhoanController : AdminControllerBase
         int page = 1,
         int pageSize = 50)
     {
-        page = SafePage(page);
-        pageSize = pageSize is 20 or 50 or 100 or 500 ? pageSize : 50;
-
-        // Đồng bộ ô tìm kiếm số điện thoại
-        if (string.IsNullOrWhiteSpace(sdt) && !string.IsNullOrWhiteSpace(q))
-        {
-            sdt = q;
-        }
-
-        var danhSachCoSo = await _db.DMCSKCBs.AsNoTracking().OrderBy(x => x.TenCoSo).ToListAsync();
-        var danhMucGioiTinh = LayDanhMucGioiTinh();
-
-        var daLoc = !string.IsNullOrWhiteSpace(loc) ||
-                    !string.IsNullOrWhiteSpace(loaiCS) ||
-                    !string.IsNullOrWhiteSpace(cccd) ||
-                    !string.IsNullOrWhiteSpace(sdt) ||
-                    !string.IsNullOrWhiteSpace(maBN) ||
-                    !string.IsNullOrWhiteSpace(role) ||
-                    !string.IsNullOrWhiteSpace(q);
-
-        if (!daLoc)
-        {
-            var emptyModel = new TaiKhoanListViewModel
-            {
-                Items = Array.Empty<TaiKhoan>(),
-                HoSoTheoTaiKhoan = new Dictionary<long, List<HoSoBenhNhanItemViewModel>>(),
-                DanhSachCoSo = danhSachCoSo,
-                DanhMucGioiTinh = danhMucGioiTinh,
-                Query = q,
-                Role = role,
-                LoaiCS = loaiCS,
-                CCCD = cccd,
-                SDT = sdt,
-                MaBN = maBN,
-                Page = 1,
-                PageSize = pageSize,
-                TotalItems = 0,
-                DaLoc = false
-            };
-
-            if (IsAjaxRequest())
-            {
-                Response.Headers["X-Total-Pages"] = "0";
-                Response.Headers["X-Current-Page"] = "1";
-                Response.Headers["X-Total-Items"] = "0";
-                Response.Headers["X-Page-Size"] = pageSize.ToString();
-                Response.Headers["X-Da-Loc"] = "0";
-                return PartialView("_TaiKhoanTableBody", emptyModel);
-            }
-
-            return View(emptyModel);
-        }
-
-        var (items, hoSoTheoTaiKhoan, total) = await _adminStoredProcedures.LocTaiKhoanAsync(
-            page, pageSize, sdt, cccd, maBN, role, loaiCS);
-
-        var model = new TaiKhoanListViewModel
-        {
-            Items = items.Select(x =>
-            {
-                x.Role = NormalizeRole(x.Role);
-                return x;
-            }).ToList(),
-            HoSoTheoTaiKhoan = hoSoTheoTaiKhoan,
-            DanhSachCoSo = danhSachCoSo,
-            DanhMucGioiTinh = danhMucGioiTinh,
-            Query = q,
-            Role = role,
-            LoaiCS = loaiCS,
-            CCCD = cccd,
-            SDT = sdt,
-            MaBN = maBN,
-            Page = page,
-            PageSize = pageSize,
-            TotalItems = total,
-            DaLoc = true
-        };
-
-        if (IsAjaxRequest())
-        {
-            Response.Headers["X-Total-Pages"] = model.TotalPages.ToString();
-            Response.Headers["X-Current-Page"] = model.Page.ToString();
-            Response.Headers["X-Total-Items"] = model.TotalItems.ToString();
-            Response.Headers["X-Page-Size"] = model.PageSize.ToString();
-            Response.Headers["X-Da-Loc"] = "1";
-            return PartialView("_TaiKhoanTableBody", model);
-        }
-
-        return View(model);
+        return RedirectToAction("Index", "BenhNhan", new { loaiCS, cccd, sdt, maBN, q, loc, page, pageSize });
     }
 
     [HttpGet]
-    public Task<IActionResult> TaiTrang(
+    public IActionResult TaiTrang(
         string? loaiCS,
         string? cccd,
         string? sdt,
@@ -134,7 +46,7 @@ public sealed class TaiKhoanController : AdminControllerBase
         int page = 1,
         int pageSize = 50)
     {
-        return Index(loaiCS, cccd, sdt, maBN, q, role, loc, page, pageSize);
+        return RedirectToAction("Index", "BenhNhan", new { loaiCS, cccd, sdt, maBN, q, loc, page, pageSize });
     }
 
     private bool IsAjaxRequest() =>

@@ -27,7 +27,7 @@
     }
 
     /* Buoc Layout cha phai full width */
-    body > *,
+    body > *:not(.ts-dropdown),
     .container, .container-fluid, .container-sm, .container-md, .container-lg, .container-xl, .container-xxl {
         max-width: 100% !important;
         width: 100% !important;
@@ -246,6 +246,13 @@
        thay vi de dang bootstrap5 mac dinh. */
     .ytv-khu-vuc .ts-wrapper {
         margin-bottom: 10px;
+        position: relative !important;
+        z-index: 1;
+    }
+
+    .ytv-khu-vuc .ts-wrapper.focus,
+    .ytv-khu-vuc .ts-wrapper.dropdown-active {
+        z-index: 1000 !important;
     }
 
     /* O chon phuong/xa bi khoa khi chua chon tinh — noi ro bang mau nhat. */
@@ -256,12 +263,58 @@
     }
 
     .ytv-khu-vuc .ts-control {
-        border: 1px solid #e2e8f0;
+        border: 1.5px solid #64748b !important;
         border-radius: 10px;
-        padding: 10px 12px;
-        min-height: 44px;
+        padding: 0 32px 0 12px !important;
+        min-height: 42px;
+        height: 42px;
         font-size: 14px;
         box-shadow: none;
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        overflow: hidden !important;
+        white-space: nowrap !important;
+        background-color: #ffffff !important;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+        background-repeat: no-repeat !important;
+        background-position: right 10px center !important;
+        background-size: 14px 10px !important;
+        cursor: pointer !important;
+    }
+
+    .ytv-khu-vuc .ts-control > input {
+        min-width: 0 !important;
+        width: 1px !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: transparent !important;
+    }
+
+    .ytv-khu-vuc .ts-control .item {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        max-width: calc(100% - 24px) !important;
+        flex: 0 1 auto !important;
+    }
+
+    .ytv-khu-vuc .ts-wrapper.single:not(.input-active) .ts-control > input {
+        opacity: 0 !important;
+        pointer-events: none !important;
+        position: absolute !important;
+        width: 1px !important;
+        min-width: 0 !important;
+    }
+
+    .ytv-khu-vuc .ts-wrapper.single.input-active .ts-control > input {
+        opacity: 1 !important;
+        position: relative !important;
+        width: auto !important;
+        flex: 1 1 auto !important;
+        min-width: 20px !important;
+        pointer-events: auto !important;
     }
 
     .ytv-khu-vuc .ts-wrapper.focus .ts-control,
@@ -270,21 +323,42 @@
     }
 
     .ytv-khu-vuc .ts-dropdown {
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+        position: absolute !important;
+        top: 100% !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        background-color: #ffffff !important;
+        border: 1px solid #475569 !important;
+        border-radius: 8px !important;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18) !important;
         margin-top: 4px;
+        z-index: 99999 !important;
+    }
+
+    .ytv-khu-vuc .ts-dropdown .ts-dropdown-content {
+        max-height: 240px !important;
+        overflow-y: auto !important;
     }
 
     .ytv-khu-vuc .ts-dropdown .option {
-        padding: 9px 12px;
-        font-size: 14px;
-        border-radius: 6px;
+        padding: 8px 14px !important;
+        font-size: 13.5px !important;
+        color: #1e293b !important;
+        cursor: pointer !important;
+        transition: background-color .1s ease !important;
     }
 
+    .ytv-khu-vuc .ts-dropdown .option:hover,
+    .ytv-khu-vuc .ts-dropdown .option.active,
+    .ytv-khu-vuc .ts-dropdown .option.selected,
     .ytv-khu-vuc .ts-dropdown .active {
-        background: #eff6ff;
-        color: #1d4ed8;
+        background-color: #ffea79 !important;
+        color: #000000 !important;
+        font-weight: 600 !important;
     }
 
     .ytv-khu-vuc .ts-dropdown .no-results {
@@ -537,7 +611,7 @@
             </div>
             <div class="ytv-search-box">
                 <i class="fas fa-search"></i>
-                <input type="text" id="searchInput" placeholder="Tìm kiếm tên cơ sở..." autocomplete="off" />
+                <input type="text" id="searchInput" placeholder="Tìm kiếm tên cơ sở..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
             </div>
         </div>
         
@@ -598,11 +672,7 @@
             let filtered = clinics;
 
             const isSearching = selectedProvinceCode || selectedWardCode || keyword;
-
-            if (!isSearching) {
-                // Nếu không tìm kiếm, ẩn các cơ sở có quảng cáo = 0
-                filtered = filtered.filter(c => c.quangCao > 0);
-            }
+            // Khi mới vào chưa tìm kiếm, hiển thị toàn bộ cơ sở của loại cơ sở đó (sắp xếp quảng cáo lên trước)
 
             // 1. Lọc theo tỉnh thành
             if (selectedProvinceCode) {

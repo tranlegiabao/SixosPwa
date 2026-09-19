@@ -378,3 +378,161 @@ body.ytv-khoa-cuon { overflow: hidden; }
   animation: progress-indeterminate 1.5s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite;
 }
 
+/* Chống xuống dòng và tạo viền đậm cho thẻ select thuần */
+select.form-select,
+select.filter-select,
+select.admin-filter-select,
+select.filter-select-square,
+select.filter-role-select {
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    border: 1.5px solid #64748b !important;
+    border-radius: 8px !important;
+    background-color: #ffffff !important;
+    color: #1e293b !important;
+}
+
+.search-control {
+    border: 1.5px solid #64748b !important;
+    border-radius: 8px !important;
+}
+
+/* Đảm bảo dropdown wrapper và các container cha không bao giờ cắt cụt menu dropdown */
+.ts-wrapper {
+    overflow: visible !important;
+    height: auto !important;
+    position: relative !important;
+}
+
+.ts-wrapper.form-select,
+.ts-wrapper.filter-select-square,
+.ts-wrapper.filter-select {
+    overflow: visible !important;
+    height: auto !important;
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.ts-wrapper.filter-select {
+    width: 170px !important;
+    flex: 0 0 170px !important;
+}
+
+.ts-wrapper.filter-select-square,
+.filter-facility-expanded .ts-wrapper {
+    flex: 1 !important;
+    width: 100% !important;
+}
+
+.admin-panel, .filter-bar, .tai-khoan-filter-bar, .filter-row-top, .filter-item-group, .filter-facility-expanded {
+    overflow: visible !important;
+}
+
+.ts-wrapper .ts-control,
+.ts-wrapper.form-select .ts-control,
+.ts-wrapper.form-control .ts-control,
+.ts-wrapper.form-select:not(.disabled) .ts-control,
+.ts-wrapper.form-control:not(.disabled) .ts-control,
+.ts-wrapper.single .ts-control,
+.ts-control {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    cursor: pointer !important;
+    background-color: #ffffff !important;
+    border: 1.5px solid #64748b !important;
+    border-radius: 8px !important;
+    min-height: 39px !important;
+    height: 39px !important;
+    padding: 0 32px 0 12px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: #1e293b !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23334155' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 11px center !important;
+    background-size: 13px 9px !important;
+    box-sizing: border-box !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+    transition: border-color .15s ease, box-shadow .15s ease !important;
+}
+
+.ts-wrapper.focus .ts-control,
+.ts-wrapper.input-active .ts-control,
+.ts-wrapper .ts-control:hover,
+.ts-control:hover {
+    border-color: #2563eb !important;
+}
+
+.ts-wrapper.focus .ts-control,
+.ts-wrapper.input-active .ts-control {
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18) !important;
+}
+
+.ts-control > input {
+    min-width: 0 !important;
+    width: 1px !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+}
+
+.ts-control .item {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: calc(100% - 24px) !important;
+    flex: 0 1 auto !important;
+}
+
+.ts-wrapper.single:not(.input-active) .ts-control > input {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    position: absolute !important;
+    width: 1px !important;
+    min-width: 0 !important;
+}
+
+.ts-wrapper.single.input-active .ts-control > input {
+    opacity: 1 !important;
+    position: relative !important;
+    width: auto !important;
+    flex: 1 1 auto !important;
+    min-width: 20px !important;
+    pointer-events: auto !important;
+}
+
+.ts-dropdown {
+    background-color: #ffffff !important;
+    border: 1px solid #475569 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18) !important;
+    z-index: 99999 !important;
+    margin-top: 4px !important;
+    padding: 4px 0 !important;
+}
+
+.ts-dropdown .option {
+    padding: 8px 14px !important;
+    font-size: 13.5px !important;
+    color: #1e293b !important;
+    cursor: pointer !important;
+    transition: background-color .1s ease !important;
+}
+
+/* Nền vàng chuẩn theo ảnh mẫu khi đang chọn hoặc hover */
+.ts-dropdown .option:hover,
+.ts-dropdown .option.active,
+.ts-dropdown .option.selected,
+.ts-dropdown .active {
+    background-color: #ffea79 !important;
+    color: #000000 !important;
+    font-weight: 600 !important;
+}
+
+

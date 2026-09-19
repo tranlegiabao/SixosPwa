@@ -136,16 +136,37 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        // Tắt triệt để gợi ý tự động của trình duyệt trên các thanh lọc và tìm kiếm
+        document.querySelectorAll('form.filter-bar, form.tai-khoan-filter-bar, form[method="get"]').forEach(f => {
+            f.setAttribute('autocomplete', 'off');
+        });
+        document.querySelectorAll('.filter-bar input, .search-control input, input[type="search"]').forEach(inp => {
+            inp.setAttribute('autocomplete', 'off');
+            inp.setAttribute('autocorrect', 'off');
+            inp.setAttribute('autocapitalize', 'off');
+            inp.setAttribute('spellcheck', 'false');
+        });
+
         if (window.TomSelect) {
             document.querySelectorAll('select.form-select:not([data-address-province]):not([data-address-ward])').forEach((select) => {
                 if (select.tomselect) return;
 
-                new TomSelect(select, {
+                const ts = new TomSelect(select, {
                     create: false,
                     allowEmptyOption: true,
+                    openOnFocus: true,
+                    dropdownParent: 'body',
                     maxOptions: 100,
                     sortField: { field: 'text', direction: 'asc' }
                 });
+
+                if (ts && ts.control) {
+                    ts.control.addEventListener('click', () => {
+                        if (!ts.isOpen) {
+                            ts.open();
+                        }
+                    });
+                }
             });
 
             document.querySelectorAll('select.admin-filter-select').forEach((select) => {

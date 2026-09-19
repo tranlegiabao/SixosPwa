@@ -297,24 +297,29 @@ public sealed class CoSoYTeEditViewModel
     public string? NoiDungLienHe { get; set; }
 }
 
+public sealed class BenhNhanNhomItemViewModel
+{
+    public long Id { get; set; }
+    public string SDT { get; set; } = "";
+    public int SoLuongHoSo => DanhSachHoSo?.Count ?? 0;
+    public List<HoSoBenhNhanItemViewModel> DanhSachHoSo { get; set; } = new();
+}
+
 public sealed class BenhNhanListViewModel
 {
-    /// <summary>Ma co so cua tung ho so benh nhan — ho so nay nam o DM_BenhNhanCoSo.</summary>
-    public IReadOnlyDictionary<long, string> MaCoSoTheoBenhNhan { get; init; } = new Dictionary<long, string>();
-
-    /// <summary>Ma ho so (MaBN) cua tung benh nhan — cung nam o DM_BenhNhanCoSo.</summary>
-    public IReadOnlyDictionary<long, string> MaBNTheoBenhNhan { get; init; } = new Dictionary<long, string>();
-    public IReadOnlyList<BenhNhan> Items { get; init; } = Array.Empty<BenhNhan>();
+    public IReadOnlyList<BenhNhanNhomItemViewModel> Items { get; init; } = Array.Empty<BenhNhanNhomItemViewModel>();
+    public IReadOnlyList<DMCSKCB> DanhSachCoSo { get; init; } = Array.Empty<DMCSKCB>();
+    public IReadOnlyList<DMGioiTinh> DanhMucGioiTinh { get; init; } = Array.Empty<DMGioiTinh>();
     public string? Query { get; init; }
-    /// <summary>
-    /// Bo loc theo MA CO SO. Truoc day ten la MaDT nhung than ham van loc theo
-    /// DM_CSKCB.MaCoSo — ten cu NOI DOI ve nghia. Doi ten o Dot 3.
-    /// </summary>
-    public string? MaCoSo { get; init; }
-    public int Page { get; init; }
+    public string? LoaiCS { get; init; }
+    public string? CCCD { get; init; }
+    public string? SDT { get; init; }
+    public string? MaBN { get; init; }
+    public int Page { get; init; } = 1;
     public int PageSize { get; init; } = 50;
     public int TotalItems { get; init; }
     public int TotalPages => Math.Max(1, (int)Math.Ceiling(TotalItems / (double)(PageSize > 0 ? PageSize : 50)));
+    public bool DaLoc { get; init; }
 }
 
 public sealed class PaginationViewModel

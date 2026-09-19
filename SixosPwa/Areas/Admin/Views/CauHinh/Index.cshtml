@@ -14,10 +14,10 @@
 </div>
 
 <div class="admin-panel">
-    <form method="get" class="filter-bar">
+    <form method="get" class="filter-bar" autocomplete="off">
         <div class="search-control">
             <span>⌕</span>
-            <input type="search" name="q" value="@Model.Query" placeholder="Tìm theo mã chức năng hoặc ghi chú..." aria-label="Tìm cấu hình" />
+            <input type="search" name="q" value="@Model.Query" placeholder="Tìm theo mã chức năng hoặc ghi chú..." aria-label="Tìm cấu hình" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
         </div>
         <select name="nhom" class="form-select filter-select admin-filter-select" aria-label="Lọc theo nhóm">
             <option value="">Tất cả nhóm</option>
