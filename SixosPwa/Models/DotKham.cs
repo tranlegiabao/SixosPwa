@@ -25,19 +25,15 @@ public class DotKham
     /// <summary>Dinh danh dot kham ben HIS — nua con lai cua khoa tu nhien.</summary>
     public string MaVaoVien { get; set; } = "";
 
-    public string MaBN { get; set; } = "";
+    // 🔴 Ba cot MaBN / NgayGioRa / ChanDoan da BI BO khoi QL_DotKham (dot A, §3).
+    //    MaBN suy duoc qua IDBenhNhanCoSo -> DM_BenhNhanCoSo.MaBN, khong can chep lai.
+    //    DTO `DotKhamDtos` VAN GIU ba truong nay vi HIS dang gui len — nhan roi BO.
 
     public DateTime NgayGioVao { get; set; }
-
-    /// <summary>Rong khi chua ra vien — 4,5% dot kham o Thien Nam dang nhu vay.</summary>
-    public DateTime? NgayGioRa { get; set; }
 
     public string? TenKhoa { get; set; }
 
     public string? TenBacSi { get; set; }
-
-    /// <summary>20,5% dot kham o Thien Nam TRONG o nay — man hien thi phai chiu duoc.</summary>
-    public string? ChanDoan { get; set; }
 
     public DateTime NgayTao { get; set; } = DateTime.Now;
 

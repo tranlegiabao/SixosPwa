@@ -83,11 +83,8 @@
                                 {
                                     <div>Giá trị: <strong class="text-dark">@item.GiaTri</strong></div>
                                 }
-                                @if (item.SoLuong.HasValue)
-                                {
-                                    <div>Số lượng: <strong class="text-dark">@item.SoLuong</strong></div>
-                                }
-                                @if (!item.GiaTri.HasValue && !item.SoLuong.HasValue)
+                                @* Cột SoLuong đã gộp vào GiaTri ở đợt A — không còn dòng "Số lượng" riêng. *@
+                                @if (!item.GiaTri.HasValue)
                                 {
                                     <span class="text-muted">—</span>
                                 }

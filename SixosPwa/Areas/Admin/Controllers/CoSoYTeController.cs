@@ -132,7 +132,7 @@ public sealed class CoSoYTeController : AdminControllerBase
             ModelState.AddModelError(nameof(model.Slug), "Vui lòng nhập đường dẫn cố định.");
 
         if (model.ImageFile != null)
-            model.Img = await SaveImageAsync(model.ImageFile, model.MaCoSo, KhoAnh.ThuMucHinhAnh, nameof(model.ImageFile));
+            model.AnhBia = await SaveImageAsync(model.ImageFile, model.MaCoSo, KhoAnh.ThuMucHinhAnh, nameof(model.ImageFile));
         model.LogoRemoved = model.LogoRemoved
             && model.LogoFile == null
             && string.IsNullOrWhiteSpace(model.LogoUrlInput);
@@ -146,13 +146,16 @@ public sealed class CoSoYTeController : AdminControllerBase
                 KhoAnh.ThuMucLogo,
                 nameof(model.LogoFile));
         var advertisingImageUrl = await ResolveAdvertisingImageAsync(model, null);
-        model.QuangCaoImg = advertisingImageUrl;
+        model.QcAnh = advertisingImageUrl;
+        // Giu nguyen net cu cua SaveAdvertisingAsync: so tien = 0 thi quang cao TAT,
+        // ca noi dung lan anh deu ve null. Chi khac la gio no la cot cua chinh co so.
+        if (model.QcSoTienDaTra.GetValueOrDefault() <= 0) model.QcNoiDung = null;
         ApplyOperatingHours(model);
         ValidateType(model.LoaiCS);
-        ValidateAdvertisingAmount(model.QuangCao);
-        ValidateImageUrl(model.Img, nameof(model.Img), "/anh/", "/static/img_cs/", "/uploads/co-so-y-te/");
+        ValidateAdvertisingAmount(model.QcSoTienDaTra);
+        ValidateImageUrl(model.AnhBia, nameof(model.AnhBia), "/anh/", "/static/img_cs/", "/uploads/co-so-y-te/");
         ValidateImageUrl(model.Logo, nameof(model.Logo), "/anh/", "/static/logo_cs/", "/uploads/co-so-y-te/logo/");
-        ValidateImageUrl(advertisingImageUrl, nameof(model.QuangCaoImgUrlInput), "/anh/", "/static/img_qc_kcb/");
+        ValidateImageUrl(advertisingImageUrl, nameof(model.QcAnhUrlInput), "/anh/", "/static/img_qc_kcb/");
         if (ModelState.IsValid && !string.IsNullOrWhiteSpace(model.MaCoSo)
             && await _db.DMCSKCBs.AnyAsync(x => x.MaCoSo == model.MaCoSo))
             ModelState.AddModelError(nameof(model.MaCoSo), "Mã cơ sở đã tồn tại.");
@@ -188,16 +191,9 @@ public sealed class CoSoYTeController : AdminControllerBase
                 return RedirectToAction(nameof(Edit), new { id = createdFacilityForAdvertising.Id, topicId = model.TopicId });
             }
 
-            var advertisingResult = await SaveAdvertisingAsync(
-                createdFacilityForAdvertising.Id,
-                model,
-                advertisingImageUrl);
-            if (!advertisingResult.Succeeded)
-            {
-                if (IsAjaxRequest()) return AjaxFailure(advertisingResult.Message ?? "Không thể lưu quảng cáo.");
-                Error(advertisingResult.Message ?? "Khong the luu quang cao.");
-                return RedirectToAction(nameof(Edit), new { id = createdFacilityForAdvertising.Id, topicId = model.TopicId });
-            }
+            // 🔴 Dot A: DM_CSKCB_QuangCao_Save bi bo — noi dung / anh quang cao la
+            // cot QcNoiDung / QcAnh cua chinh DM_CSKCB, da luu xong o DM_CSKCB_Save
+            // ngay tren. Khong con luot ghi thu hai nao o day.
         }
 
         if (createdFacilityForAdvertising != null)
@@ -249,10 +245,6 @@ public sealed class CoSoYTeController : AdminControllerBase
         // loai co so. Da dinh o Dot 3.
         var model = await ToViewModelAsync(entity);
         model.ActiveSection = section;
-        await NapKhoFtpAsync(model, entity.Id);
-        var advertising = await GetAdvertisingAsync(entity.Id);
-        model.NoiDungQuangCao = advertising?.NoiDung;
-        model.QuangCaoImg = advertising?.Img;
         await PopulateContentEditorAsync(model, topicId);
         return View(model);
     }
@@ -264,21 +256,19 @@ public sealed class CoSoYTeController : AdminControllerBase
         var entity = await _db.DMCSKCBs.AsNoTracking().FirstOrDefaultAsync(x => x.Id == model.Id);
         if (entity == null) return NotFound();
 
-        var existingAdvertising = await GetAdvertisingAsync(entity.Id);
-
         // Ghi nho anh cu de don SAU KHI luu thanh cong. Khong duoc xoa som: doan
         // giai quyet anh nam truoc SaveCoSoYTeAsync, thu tuc do van co the that
         // bai — xoa truoc la mat anh trong khi DB con tro toi no.
         var logoCu = entity.Logo;
-        var anhCoSoCu = entity.Img;
-        var anhQuangCaoCu = existingAdvertising?.Img;
+        var anhCoSoCu = entity.AnhBia;
+        var anhQuangCaoCu = entity.QcAnh;
 
         Normalize(model);
         await ApDungLoaiCoSoAsync(model);
         if (model.ImageFile != null)
-            model.Img = await SaveImageAsync(model.ImageFile, model.MaCoSo, KhoAnh.ThuMucHinhAnh, nameof(model.ImageFile)) ?? entity.Img;
+            model.AnhBia = await SaveImageAsync(model.ImageFile, model.MaCoSo, KhoAnh.ThuMucHinhAnh, nameof(model.ImageFile)) ?? entity.AnhBia;
         else
-            model.Img = entity.Img;
+            model.AnhBia = entity.AnhBia;
         model.LogoRemoved = model.LogoRemoved
             && model.LogoFile == null
             && string.IsNullOrWhiteSpace(model.LogoUrlInput);
@@ -291,14 +281,17 @@ public sealed class CoSoYTeController : AdminControllerBase
                 model.MaCoSo,
                 KhoAnh.ThuMucLogo,
                 nameof(model.LogoFile));
-        var advertisingImageUrl = await ResolveAdvertisingImageAsync(model, existingAdvertising?.Img);
-        model.QuangCaoImg = advertisingImageUrl;
+        var advertisingImageUrl = await ResolveAdvertisingImageAsync(model, entity.QcAnh);
+        model.QcAnh = advertisingImageUrl;
+        // Giu nguyen net cu cua SaveAdvertisingAsync: so tien = 0 thi quang cao TAT,
+        // ca noi dung lan anh deu ve null. Chi khac la gio no la cot cua chinh co so.
+        if (model.QcSoTienDaTra.GetValueOrDefault() <= 0) model.QcNoiDung = null;
         ApplyOperatingHours(model);
         ValidateType(model.LoaiCS);
-        ValidateAdvertisingAmount(model.QuangCao);
-        ValidateImageUrl(model.Img, nameof(model.Img), "/anh/", "/static/img_cs/", "/uploads/co-so-y-te/");
+        ValidateAdvertisingAmount(model.QcSoTienDaTra);
+        ValidateImageUrl(model.AnhBia, nameof(model.AnhBia), "/anh/", "/static/img_cs/", "/uploads/co-so-y-te/");
         ValidateImageUrl(model.Logo, nameof(model.Logo), "/anh/", "/static/logo_cs/", "/uploads/co-so-y-te/logo/");
-        ValidateImageUrl(advertisingImageUrl, nameof(model.QuangCaoImgUrlInput), "/anh/", "/static/img_qc_kcb/");
+        ValidateImageUrl(advertisingImageUrl, nameof(model.QcAnhUrlInput), "/anh/", "/static/img_qc_kcb/");
 
         if (ModelState.IsValid && !string.IsNullOrWhiteSpace(model.MaCoSo)
             && await _db.DMCSKCBs.AnyAsync(x => x.Id != model.Id && x.MaCoSo == model.MaCoSo))
@@ -324,24 +317,15 @@ public sealed class CoSoYTeController : AdminControllerBase
             return View(model);
         }
 
-        // Kho phieu co so: chay SAU khi co so luu xong (stored kiem FK toi DM_CSKCB).
-        // Loi o day KHONG lam hong viec luu co so — nhet vao _canhBao nhu duong anh.
-        var loiKho = await LuuKhoFtpAsync(model);
-        if (loiKho != null) _canhBao.Add(loiKho);
+        // 🔴 Dot A: HT_KhoFtpCoSo_Save bi bo — cau hinh kho la cot Ftp_* cua chinh
+        // DM_CSKCB, da luu cung luot DM_CSKCB_Save ngay tren. Khong con luot ghi thu
+        // hai, nen cung khong con canh bao "kho chua luu" rieng.
 
         var loiGioLamViec = await LuuGioLamViecAsync(model.Id, model);
         if (loiGioLamViec != null)
         {
             if (IsAjaxRequest()) return AjaxFailure(loiGioLamViec);
             Error(loiGioLamViec);
-            return RedirectToAction(nameof(Edit), new { id = model.Id, topicId = model.TopicId, section = model.ActiveSection });
-        }
-
-        var advertisingResult = await SaveAdvertisingAsync(model.Id, model, advertisingImageUrl);
-        if (!advertisingResult.Succeeded)
-        {
-            if (IsAjaxRequest()) return AjaxFailure(advertisingResult.Message ?? "Không thể lưu quảng cáo.");
-            Error(advertisingResult.Message ?? "Khong the luu quang cao.");
             return RedirectToAction(nameof(Edit), new { id = model.Id, topicId = model.TopicId, section = model.ActiveSection });
         }
 
@@ -374,7 +358,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         // Toi day moi ba thu tuc luu deu da thanh cong => DB dang giu gia tri MOI,
         // nen anh cu nao khong con dong nao tro toi thi don duoc.
         await _donAnh.DonAsync(logoCu, model.Logo);
-        await _donAnh.DonAsync(anhCoSoCu, model.Img);
+        await _donAnh.DonAsync(anhCoSoCu, model.AnhBia);
         await _donAnh.DonAsync(anhQuangCaoCu, advertisingImageUrl);
         foreach (var (cu, moi) in noiDungCu)
             await _donAnh.DonTheoHtmlAsync(cu, moi);
@@ -404,10 +388,9 @@ public sealed class CoSoYTeController : AdminControllerBase
         }
 
         // Doc anh cua co so TRUOC khi xoa. DM_CSKCB_Delete xoa ca dong cua co so
-        // lan moi dong DM_CSKCB_QuangCao / DM_CSKCB_NoiDung cua no, nen sau khi
+        // lan moi dong DM_CSKCB_NoiDung cua no, nen sau khi
         // goi thu tuc thi khong con cach nao biet no da dung nhung anh gi.
         var coSo = await _db.DMCSKCBs.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
-        var quangCao = coSo == null ? null : await GetAdvertisingAsync(id);
         var baiViet = coSo == null
             ? new List<string?>()
             : await _db.NDCSKCBs.AsNoTracking()
@@ -426,8 +409,8 @@ public sealed class CoSoYTeController : AdminControllerBase
             // so da bien khoi DB nen phep do cheo trong DonAnhService tra dung ket
             // qua — anh nao con co so KHAC dung thi van duoc giu lai.
             await _donAnh.DonAsync(coSo?.Logo, null);
-            await _donAnh.DonAsync(coSo?.Img, null);
-            await _donAnh.DonAsync(quangCao?.Img, null);
+            await _donAnh.DonAsync(coSo?.AnhBia, null);
+            await _donAnh.DonAsync(coSo?.QcAnh, null);
             foreach (var noiDung in baiViet)
                 await _donAnh.DonTheoHtmlAsync(noiDung, null);
 
@@ -454,11 +437,11 @@ public sealed class CoSoYTeController : AdminControllerBase
             TenCoSo = model.TenCoSo ?? storedFacility?.TenCoSo ?? string.Empty,
             DiaChi = model.DiaChi ?? storedFacility?.DiaChi,
             IdNhomCS = model.SelectedNhomCSId ?? storedFacility?.IdNhomCS,
-            Img = model.Img ?? storedFacility?.Img,
+            AnhBia = model.AnhBia ?? storedFacility?.AnhBia,
             Logo = model.LogoRemoved
                 ? null
                 : await ReadPreviewImageAsync(model.LogoFile, model.LogoUrlInput, model.Logo ?? storedFacility?.Logo),
-            Active = model.Active
+            HienThiCongKhai = model.HienThiCongKhai
         };
 
         // Gio lam viec nay nam o bang con DM_CSKCB_GioLamViec, khong con la cot cua
@@ -508,7 +491,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         ViewData["TenCoSo"] = facility.TenCoSo ?? "Cơ sở y tế";
         ViewData["DiaChi"] = facility.DiaChi ?? "Đang cập nhật";
         ViewData["Type"] = model.LoaiCS ?? "benhvien";
-        ViewData["Img"] = facility.Img;
+        ViewData["Img"] = facility.AnhBia;
         ViewData["Logo"] = facility.Logo;
         ViewData["TGLamViec"] = tgLamViecXemTruoc;
         ViewData["NoiDungCskcb"] = contents;
@@ -525,20 +508,16 @@ public sealed class CoSoYTeController : AdminControllerBase
         var storedFacility = model.Id > 0
             ? await _db.DMCSKCBs.AsNoTracking().FirstOrDefaultAsync(x => x.Id == model.Id)
             : null;
-        var storedAdvertising = storedFacility == null
-            ? null
-            : await GetAdvertisingAsync(storedFacility.Id);
-
         var previewItems = await LoadHomePreviewAdsAsync();
         var previewImage = await ReadPreviewImageAsync(
             model.QuangCaoImageFile,
-            model.QuangCaoImgUrlInput,
-            model.QuangCaoImg ?? storedAdvertising?.Img);
-        var previewContent = string.IsNullOrWhiteSpace(model.NoiDungQuangCao)
-            ? storedAdvertising?.NoiDung
-            : model.NoiDungQuangCao;
+            model.QcAnhUrlInput,
+            model.QcAnh ?? storedFacility?.QcAnh);
+        var previewContent = string.IsNullOrWhiteSpace(model.QcNoiDung)
+            ? storedFacility?.QcNoiDung
+            : model.QcNoiDung;
 
-        if (model.QuangCao.GetValueOrDefault() > 0
+        if (model.QcSoTienDaTra.GetValueOrDefault() > 0
             && !string.IsNullOrWhiteSpace(model.TenCoSo))
         {
             previewItems.RemoveAll(x => string.Equals(x.TenCoSo, model.TenCoSo, StringComparison.OrdinalIgnoreCase));
@@ -557,24 +536,16 @@ public sealed class CoSoYTeController : AdminControllerBase
         return View("~/Views/Home/ThongTinBenhNhan.cshtml", new List<DotKham>());
     }
 
-    /// <summary>
-    /// Quang cao nay khoa theo IDCoSo. Truoc dot tai kien truc no phai do tim theo
-    /// MaCoSo roi nga sang TenCoSo — mot bang khong co rang buoc nao noi ve co so.
-    /// UK_DM_CSKCB_QuangCao bao dam moi co so nhieu nhat mot dong.
-    /// </summary>
-    private Task<QCKCB?> GetAdvertisingAsync(long idCoSo) =>
-        _db.QCKCBs.AsNoTracking().FirstOrDefaultAsync(x => x.IdCoSo == idCoSo);
-
     private async Task<string?> ResolveAdvertisingImageAsync(
         CoSoYTeEditViewModel model,
         string? existingImage)
     {
-        if (model.QuangCao.GetValueOrDefault() <= 0)
+        if (model.QcSoTienDaTra.GetValueOrDefault() <= 0)
             return null;
 
         return await ResolveImageAsync(
             model.QuangCaoImageFile,
-            model.QuangCaoImgUrlInput,
+            model.QcAnhUrlInput,
             existingImage,
             model.MaCoSo,
             KhoAnh.ThuMucQuangCao,
@@ -594,18 +565,6 @@ public sealed class CoSoYTeController : AdminControllerBase
             return await SaveImageAsync(imageFile, maCoSo, thuMuc, propertyName) ?? fallback;
 
         return string.IsNullOrWhiteSpace(urlInput) ? fallback : urlInput.Trim();
-    }
-
-    private Task<AdminStoredProcedureResult> SaveAdvertisingAsync(
-        long idCoSo,
-        CoSoYTeEditViewModel model,
-        string? imageUrl)
-    {
-        var enabled = model.QuangCao.GetValueOrDefault() > 0;
-        return _adminStoredProcedures.SaveQCKCBAsync(
-            idCoSo,
-            enabled ? model.NoiDungQuangCao : null,
-            enabled ? imageUrl : null);
     }
 
     private void ValidateType(string? type)
@@ -656,7 +615,7 @@ public sealed class CoSoYTeController : AdminControllerBase
     private void ValidateAdvertisingAmount(decimal? amount)
     {
         if (amount.HasValue && amount.Value != decimal.Truncate(amount.Value))
-            ModelState.AddModelError(nameof(CoSoYTeEditViewModel.QuangCao), "Số tiền quảng cáo phải là số nguyên VNĐ.");
+            ModelState.AddModelError(nameof(CoSoYTeEditViewModel.QcSoTienDaTra), "Số tiền quảng cáo phải là số nguyên VNĐ.");
     }
 
     /// <summary>
@@ -714,18 +673,27 @@ public sealed class CoSoYTeController : AdminControllerBase
             : model.Slug.Trim().ToLowerInvariant();
         model.TenCoSo = model.TenCoSo?.Trim();
         model.DiaChi = model.DiaChi?.Trim();
-        model.SoToaNha = model.SoToaNha?.Trim();
         model.LoaiCS = model.LoaiCS?.Trim().ToLowerInvariant();
         model.TGLamViec = model.TGLamViec?.Trim();
         model.NgayLamViec = model.NgayLamViec?.Trim();
         model.GioMoCua = model.GioMoCua?.Trim();
         model.GioDongCua = model.GioDongCua?.Trim();
-        model.Img = model.Img?.Trim();
+        model.AnhBia = model.AnhBia?.Trim();
+        model.KetNoi_UrlChuyenHuong = model.KetNoi_UrlChuyenHuong?.Trim();
+        model.KetNoi_BaseUrlHIS = model.KetNoi_BaseUrlHIS?.Trim();
+        model.Ftp_Host = model.Ftp_Host?.Trim();
+        model.Ftp_ThuMucGoc = model.Ftp_ThuMucGoc?.Trim();
+        // 🔴 Ba o bi mat KHONG duoc ep ve chuoi rong: rong va NULL o day cung mot
+        // nghia "khong doi", va stored phan biet bang NULL. Ep "" la GHI DE mat khau
+        // bang chuoi rong — dung kho ngay lap tuc.
+        model.Ftp_TaiKhoan = RongThanhNull(model.Ftp_TaiKhoan);
+        model.Ftp_MatKhau = RongThanhNull(model.Ftp_MatKhau);
+        model.KetNoi_KhoaGoiHIS = RongThanhNull(model.KetNoi_KhoaGoiHIS);
         model.Logo = model.Logo?.Trim();
         model.LogoUrlInput = model.LogoUrlInput?.Trim();
-        model.NoiDungQuangCao = model.NoiDungQuangCao?.Trim();
-        model.QuangCaoImg = model.QuangCaoImg?.Trim();
-        model.QuangCaoImgUrlInput = model.QuangCaoImgUrlInput?.Trim();
+        model.QcNoiDung = model.QcNoiDung?.Trim();
+        model.QcAnh = model.QcAnh?.Trim();
+        model.QcAnhUrlInput = model.QcAnhUrlInput?.Trim();
         model.ActiveSection = model.ActiveSection?.Trim();
         model.TopicContentsJson = model.TopicContentsJson?.Trim();
     }
@@ -823,25 +791,17 @@ public sealed class CoSoYTeController : AdminControllerBase
     private async Task<List<TopCSKCBQC>> LoadHomePreviewAdsAsync()
     {
         var facilities = await _db.DMCSKCBs.AsNoTracking()
-            .Where(x => x.QuangCao.GetValueOrDefault() > 0)
-            .OrderByDescending(x => x.QuangCao)
+            .Where(x => x.QcSoTienDaTra.GetValueOrDefault() > 0)
+            .OrderByDescending(x => x.QcSoTienDaTra)
             .Take(5)
             .ToListAsync();
-        var facilityIds = facilities.Select(x => x.Id).ToList();
-        var advertising = await _db.QCKCBs.AsNoTracking()
-            .Where(x => facilityIds.Contains(x.IdCoSo))
-            .OrderByDescending(x => x.Id)
-            .ToListAsync();
-
-        return facilities.Select(facility =>
+        // Dot A: noi dung / anh quang cao doc thang tren dong co so, khong con
+        // bang con DM_CSKCB_QuangCao de ghep.
+        return facilities.Select(facility => new TopCSKCBQC
         {
-            var item = advertising.FirstOrDefault(x => x.IdCoSo == facility.Id);
-            return new TopCSKCBQC
-            {
-                TenCoSo = facility.TenCoSo ?? string.Empty,
-                NoiDung = item?.NoiDung ?? string.Empty,
-                Img = item?.Img ?? facility.Img ?? string.Empty
-            };
+            TenCoSo = facility.TenCoSo ?? string.Empty,
+            NoiDung = facility.QcNoiDung ?? string.Empty,
+            Img = facility.QcAnh ?? facility.AnhBia ?? string.Empty
         }).ToList();
     }
 
@@ -915,65 +875,18 @@ public sealed class CoSoYTeController : AdminControllerBase
     }
 
     // ====================== Kho phieu co so (ADR 0030) ======================
-
-    /// <summary>Nap cau hinh kho cua co so vao man Sua. Khong co kho thi de trong.</summary>
-    private async Task NapKhoFtpAsync(CoSoYTeEditViewModel model, long idCoSo)
-    {
-        var kho = await _db.KhoFtpCoSos.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.IdCoSo == idCoSo);
-        if (kho == null) return;
-
-        model.KhoHost = kho.Host;
-        model.KhoTaiKhoan = kho.TaiKhoan;
-        model.KhoMatKhau = kho.MatKhau;
-        model.KhoThuMucGoc = kho.ThuMucGoc;
-        model.KhoActive = kho.Active;
-        model.KhoNgayThuDat = kho.NgayThuDat;
-    }
-
-    /// <summary>
-    /// Ghi cau hinh kho. Tra ve thong diep loi, null neu dat hoac khong co gi de ghi.
-    ///
-    /// 🔴 Luat "chua Thu ket noi dat thi khong bat duoc" nam o STORED, khong chep len
-    /// day (ADR 0008: moi duong ghi di qua stored). Bat @ResultCode = 6 roi noi lai.
-    /// </summary>
-    private async Task<string?> LuuKhoFtpAsync(CoSoYTeEditViewModel model)
-    {
-        var coNhap = !string.IsNullOrWhiteSpace(model.KhoHost)
-                     || !string.IsNullOrWhiteSpace(model.KhoTaiKhoan)
-                     || !string.IsNullOrWhiteSpace(model.KhoMatKhau);
-
-        // Khong nhap gi = co so nay khong dung che do Tro duong. Khong tu xoa cau
-        // hinh dang co: xoa lang le mot kho dang chay la loi im lang.
-        if (!coNhap) return null;
-
-        var khoHienCo = await _db.KhoFtpCoSos.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.IdCoSo == model.Id);
-
-        // 🔴 O kieu password KHONG duoc ASP.NET render lai gia tri (co y, de khong
-        // phun mat khau ra HTML). Nen sau moi lan mo man, o do LUON TRONG — hieu
-        // "trong" la "mat khau rong" thi moi lan sua ten co so la lan lam hong kho.
-        // "Trong" = GIU MAT KHAU CU.
-        var matKhau = string.IsNullOrEmpty(model.KhoMatKhau) ? khoHienCo?.MatKhau : model.KhoMatKhau;
-
-        if (string.IsNullOrWhiteSpace(model.KhoHost)
-            || string.IsNullOrWhiteSpace(model.KhoTaiKhoan)
-            || string.IsNullOrWhiteSpace(matKhau))
-            return "Kho phiếu cơ sở chưa lưu: phải nhập đủ Máy chủ, Tài khoản và Mật khẩu.";
-
-        var ketQua = await _adminStoredProcedures.SaveKhoFtpCoSoAsync(
-            khoHienCo?.Id ?? 0,
-            model.Id,
-            model.KhoHost!.Trim(),
-            model.KhoTaiKhoan!.Trim(),
-            matKhau,
-            model.KhoThuMucGoc?.Trim(),
-            model.KhoActive);
-
-        return ketQua.KetQua.Succeeded
-            ? null
-            : (ketQua.KetQua.Message ?? "Không thể lưu kho phiếu cơ sở.");
-    }
+    //
+    // 🔴 Dot A: bang HT_KhoFtpCoSo bi gop thang vao DM_CSKCB (cot Ftp_*), va hai
+    // stored HT_KhoFtpCoSo_Save / HT_KhoaApiCoSo_Save bi bo. Duong GHI cau hinh kho
+    // gio di chung mot luot voi DM_CSKCB_Save, nen o day khong con ham nap/ghi rieng.
+    //
+    // Ba cot Ftp_TaiKhoan / Ftp_MatKhau / KetNoi_KhoaGoiHIS la COT BI MAT: chung KHONG
+    // duoc map vao thuc the EF DMCSKCB (59 cho doc bang nay qua EF, trang cong khai nap
+    // tron thuc the). Hai he qua phai song chung:
+    //   - Man Sua KHONG hien lai gia tri cu => o de trong, trong = "khong doi" (stored
+    //     nhan NULL thi giu nguyen gia tri cu).
+    //   - Nut "Thu ket noi" KHONG con doc duoc ban dang luu => admin phai GO DU
+    //     tai khoan + mat khau moi thu duoc.
 
     /// <summary>
     /// Nut <i>Thu ket noi kho</i>. Day la cho DUY NHAT kiem duoc cau hinh truoc khi
@@ -988,39 +901,98 @@ public sealed class CoSoYTeController : AdminControllerBase
         // 🔴 Thu ĐUNG CAI DANG GO tren man, KHONG doc dong dang luu trong DB.
         // Ban dau lam nguoc, va hau qua la go mat khau sai vao o van bao "dat" —
         // vi no dang thu ban cu. Ca diem cua nut nay la bat sai TRUOC khi luu.
-        var khoHienCo = await _db.KhoFtpCoSos.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.IdCoSo == id);
-
-        // O mat khau kieu password KHONG duoc render lai gia tri (ASP.NET co y the).
-        // Nen "de trong" nghia la "giu mat khau cu", khong phai "mat khau rong".
-        var matKhauThat = string.IsNullOrEmpty(matKhau) ? khoHienCo?.MatKhau : matKhau;
-
+        //
+        // Sau dot A dieu do thanh BAT BUOC chu khong con la lua chon: tai khoan va
+        // mat khau la cot bi mat, may chu khong doc lai duoc qua EF. "De trong" gio
+        // KHONG con nghia "giu cai cu" nua — trong la khong thu duoc.
         if (string.IsNullOrWhiteSpace(host)
             || string.IsNullOrWhiteSpace(taiKhoan)
-            || string.IsNullOrWhiteSpace(matKhauThat))
+            || string.IsNullOrWhiteSpace(matKhau))
             return Json(new { success = false, message = "Nhập đủ Máy chủ, Tài khoản và Mật khẩu rồi hãy thử." });
 
         var dat = await _khoCoSo.ThuKetNoiAsync(
-            new ThongSoKho(host.Trim(), taiKhoan.Trim(), matKhauThat, thuMucGoc?.Trim()));
+            new ThongSoKho(host.Trim(), taiKhoan.Trim(), matKhau, thuMucGoc?.Trim()));
 
         if (!dat)
             return Json(new { success = false, message = "Chưa kết nối được tới kho của cơ sở. Kiểm tra lại máy chủ, tài khoản, mật khẩu." });
 
-        // Chi ghi mốc khi cau hinh vua thu DA DUOC LUU y het. Thu dat mot dang roi
-        // luu mot dang khac ma van giu moc la mo duong bat nham kho.
-        var trungVoiBanLuu = khoHienCo != null
-            && string.Equals(khoHienCo.Host, host.Trim(), StringComparison.Ordinal)
-            && string.Equals(khoHienCo.TaiKhoan, taiKhoan.Trim(), StringComparison.Ordinal)
-            && string.Equals(khoHienCo.MatKhau, matKhauThat, StringComparison.Ordinal)
-            && string.Equals(khoHienCo.ThuMucGoc ?? "", thuMucGoc?.Trim() ?? "", StringComparison.Ordinal);
+        // Co so chua duoc luu lan nao thi chua co IDCoSo de gan moc vao.
+        if (id <= 0)
+            return Json(new { success = true, luuTruoc = true, message = "Kết nối đạt. Bấm Lưu cơ sở để ghi nhận, rồi mới bật được kho." });
 
-        if (!trungVoiBanLuu)
-            return Json(new { success = true, luuTruoc = true, message = "Kết nối đạt. Bấm Lưu thay đổi để ghi nhận, rồi mới bật được kho." });
+        // 🔴 Chố "thử đạt một đằng rồi lưu một đằng khác" phải bịt NGAY Ở ĐÂY, không giao
+        // được cho tầng stored. Lý do: DM_CSKCB_Save nhận @Ftp_TaiKhoan/@Ftp_MatKhau = NULL
+        // theo nghĩa "giữ nguyên giá trị cũ" (màn Admin không hiện lại mật khẩu nên không gửi
+        // lại) ⇒ nó KHÔNG phân biệt được "không đổi" với "đổi rồi nhưng chưa lưu".
+        // Hậu quả nếu đóng dấu vô điều kiện: admin gõ host/tài khoản/mật khẩu mới → Thử đạt
+        // → Ftp_NgayThuDat ghi ngay → admin bỏ trang (hoặc xoá ô mật khẩu rồi Lưu) ⇒ Ftp_Active
+        // bật được với bộ thông số CHƯA TẮNG thử; tệ hơn, cơ sở chưa lưu lần nào thì Ftp_Host
+        // vẫn NULL ⇒ KhoCoSoService.LayKhoAsync ném "Cơ sở chưa khai báo kho phiếu" cho MỌI
+        // tài liệu bệnh nhân. Đây chính là ý của guard `trungVoiBanLuu` cũ, khôi phục lại.
+        if (!await TrungVoiKhoDangLuuAsync(id, host, taiKhoan, matKhau, thuMucGoc))
+            return Json(new
+            {
+                success = true,
+                luuTruoc = true,
+                message = "Kết nối đạt, nhưng đây là thông số chưa lưu. Bấm Lưu thay đổi rồi thử lại để ghi nhận, sau đó mới bật được kho."
+            });
 
         var ghi = await _adminStoredProcedures.GhiNhanThuDatKhoFtpAsync(id);
         return ghi.Succeeded
-            ? Json(new { success = true, message = "Kết nối kho đạt. Giờ có thể bật kho." })
+            ? Json(new { success = true, message = "Kết nối kho đạt. Đã ghi nhận mốc thử đạt — bật được kho rồi." })
             : Json(new { success = false, message = ghi.Message ?? "Kết nối đạt nhưng không ghi nhận được." });
+    }
+
+    /// <summary>
+    /// Bộ thông số vừa gõ trên màn có <b>trùng đúng bản đang lưu</b> trong DB không.
+    ///
+    /// <para>
+    /// 🔴 So sánh ĐẶT TRONG CÂU SQL chứ không đọc giá trị về C#: <c>Ftp_TaiKhoan</c> /
+    /// <c>Ftp_MatKhau</c> là <b>cột bí mật</b> (lưu thô, cố ý) — hợp đồng đợt A chỉ cho 3 chỗ đọc
+    /// chúng. Kéo về controller chỉ để <c>==</c> là thêm chỗ thứ 4 một cách vô ích; ở đây SQL chỉ
+    /// trả về đúng một bit 0/1, mật khẩu không rời khỏi máy chủ.
+    /// </para>
+    /// <para>
+    /// Dùng collation <c>Latin1_General_BIN2</c>: collation mặc định KHÔNG phân biệt hoa thường,
+    /// mà mật khẩu FTP thì có — so lỏng là đóng dấu cho một chuỗi khác với bản đang lưu.
+    /// </para>
+    /// </summary>
+    private async Task<bool> TrungVoiKhoDangLuuAsync(
+        long idCoSo, string? host, string? taiKhoan, string? matKhau, string? thuMucGoc)
+    {
+        var conn = _db.Database.GetDbConnection();
+        if (conn.State != System.Data.ConnectionState.Open)
+            await conn.OpenAsync();
+
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = @"
+SELECT CASE WHEN
+        ISNULL(Ftp_Host,      N'') COLLATE Latin1_General_BIN2 = @host
+    AND ISNULL(Ftp_TaiKhoan,  N'') COLLATE Latin1_General_BIN2 = @taiKhoan
+    AND ISNULL(Ftp_MatKhau,   N'') COLLATE Latin1_General_BIN2 = @matKhau
+    AND ISNULL(Ftp_ThuMucGoc, N'') COLLATE Latin1_General_BIN2 = @thuMucGoc
+    THEN 1 ELSE 0 END
+FROM dbo.DM_CSKCB
+WHERE ID = @idCoSo;";
+
+        ThemThamSo(cmd, "@idCoSo", System.Data.DbType.Int64, idCoSo);
+        ThemThamSo(cmd, "@host", System.Data.DbType.String, (host ?? "").Trim());
+        ThemThamSo(cmd, "@taiKhoan", System.Data.DbType.String, (taiKhoan ?? "").Trim());
+        ThemThamSo(cmd, "@matKhau", System.Data.DbType.String, matKhau ?? "");
+        ThemThamSo(cmd, "@thuMucGoc", System.Data.DbType.String, (thuMucGoc ?? "").Trim());
+
+        var ketQua = await cmd.ExecuteScalarAsync();
+        return ketQua != null && ketQua != DBNull.Value && Convert.ToInt32(ketQua) == 1;
+    }
+
+    private static void ThemThamSo(
+        System.Data.Common.DbCommand cmd, string ten, System.Data.DbType kieu, object giaTri)
+    {
+        var p = cmd.CreateParameter();
+        p.ParameterName = ten;
+        p.DbType = kieu;
+        p.Value = giaTri;
+        cmd.Parameters.Add(p);
     }
 
     /// <summary>
@@ -1183,18 +1155,38 @@ public sealed class CoSoYTeController : AdminControllerBase
             Slug = entity.Slug,
             TenCoSo = entity.TenCoSo,
             DiaChi = entity.DiaChi,
-            SoToaNha = entity.SoToaNha,
             Tinh = entity.Tinh,
             PhuongXa = entity.PhuongXa,
             SDT = entity.SDT,
             Email = entity.Email,
-            TenTM = entity.TenTM,
             SelectedNhomCSId = entity.IdNhomCS,
-            Active = entity.Active,
-            Img = entity.Img,
+            HienThiCongKhai = entity.HienThiCongKhai,
+            AnhBia = entity.AnhBia,
             Logo = entity.Logo,
-            QuangCao = entity.QuangCao
+            IDCongTy = entity.IDCongTy,
+
+            // Quang cao: gop tu bang con DM_CSKCB_QuangCao vao thang cot cua co so.
+            QcSoTienDaTra = entity.QcSoTienDaTra,
+            QcNoiDung = entity.QcNoiDung,
+            QcAnh = entity.QcAnh,
+
+            // Ket noi HIS: gop tu bang con DM_DoiTacApi.
+            KetNoi_UrlChuyenHuong = entity.KetNoi_UrlChuyenHuong,
+            KetNoi_BaseUrlHIS = entity.KetNoi_BaseUrlHIS,
+            KetNoi_Active = entity.KetNoi_Active,
+
+            // Kho FTP: gop tu bang con HT_KhoFtpCoSo.
+            // 🔴 Ftp_TaiKhoan / Ftp_MatKhau / KetNoi_KhoaGoiHIS CO Y de trong — cot bi
+            // mat, khong map vao EF va khong duoc phun ra HTML. Trong = "khong doi".
+            Ftp_Host = entity.Ftp_Host,
+            Ftp_ThuMucGoc = entity.Ftp_ThuMucGoc,
+            Ftp_Active = entity.Ftp_Active,
+            Ftp_NgayThuDat = entity.Ftp_NgayThuDat
         };
+
+    /// <summary>Chuoi rong/trang = KHONG nhap, tra NULL de stored hieu la "giu nguyen".</summary>
+    private static string? RongThanhNull(string? giaTri) =>
+        string.IsNullOrWhiteSpace(giaTri) ? null : giaTri.Trim();
 
     /// <summary>Nhu tren nhung nap them gio lam viec tu bang con.</summary>
     private async Task<CoSoYTeEditViewModel> ToViewModelAsync(DMCSKCB entity)

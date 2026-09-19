@@ -10,8 +10,46 @@ document.addEventListener('DOMContentLoaded', function () {
     const selectedProvince = provinceSelect.dataset.selectedValue || '';
     const selectedWard = wardSelect.dataset.selectedValue || '';
     const existingAddress = addressResult.value.trim();
-    const preserveExistingAddress = Boolean(existingAddress && !buildingInput.value.trim() && !selectedWard);
     let wardRequestId = 0;
+
+    // Đợt A bỏ cột DM_CSKCB.SoToaNha ⇒ ô "Số nhà / tên đường" không còn bind vào model,
+    // nên lúc nạp trang nó LUÔN RỖNG. Trước đây vòng ghép vẫn chạy vô điều kiện sau khi
+    // nạp xong phường/xã ⇒ sửa mỗi số điện thoại cũng ghi đè DiaChi thành "Phường X, TP.HCM",
+    // NUỐT MẤT số nhà vĩnh viễn (ô kết quả readonly, admin không gõ lại được). Hai lớp chống:
+    //   (1) Nạp lại số nhà từ chính DiaChi đang lưu (bóc đuôi "phường, tỉnh").
+    //   (2) CHỈ ghi đè DiaChi khi người dùng thực sự đụng vào 1 trong 3 ô địa chỉ — nếu bóc
+    //       không ra (dữ liệu cũ gõ tay, tên phường không khớp API) thì DiaChi đứng yên.
+    let nguoiDungDaSuaDiaChi = false;
+
+    const chuanHoa = (s) => (s || '').trim().toLowerCase();
+
+    /// Bóc phần "số nhà / tên đường" ra khỏi DiaChi đang lưu, để vòng ghép dựng lại đủ.
+    const napLaiSoNhaTuDiaChi = () => {
+        if (!existingAddress || buildingInput.value.trim()) return;
+
+        const ward = getSelectedOptionText(wardSelect);
+        const province = getSelectedOptionText(provinceSelect);
+        const duoi = [ward, province].filter(Boolean).join(', ');
+
+        // Cách 1 — chắc nhất: DiaChi kết thúc đúng bằng "phường, tỉnh" thì phần đầu là số nhà.
+        if (duoi && chuanHoa(existingAddress).endsWith(chuanHoa(duoi))) {
+            const soNha = existingAddress
+                .slice(0, existingAddress.length - duoi.length)
+                .replace(/[\s,]+$/, '')
+                .trim();
+            if (soNha) buildingInput.value = soNha;
+            return;
+        }
+
+        // Cách 2 — dự phòng: lấy đoạn trước dấu phẩy ĐẦU TIÊN, nhưng chỉ khi nó không
+        // phải chính tên phường/tỉnh — tránh ca DiaChi vốn không có số nhà ("Phường X, TP.HCM")
+        // bị nhân đôi thành "Phường X, Phường X, TP.HCM".
+        const viTri = existingAddress.indexOf(',');
+        if (viTri <= 0) return;
+        const dau = existingAddress.slice(0, viTri).trim();
+        if (!dau || chuanHoa(dau) === chuanHoa(ward) || chuanHoa(dau) === chuanHoa(province)) return;
+        buildingInput.value = dau;
+    };
 
     const setStatus = (message) => {
         if (addressStatus) addressStatus.textContent = message;
@@ -29,6 +67,9 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     const updateAddress = () => {
+        // Chưa ai đụng vào 3 ô địa chỉ thì KHÔNG được ghi đè DiaChi đang lưu.
+        if (!nguoiDungDaSuaDiaChi) return;
+
         const building = buildingInput.value.trim();
         const ward = getSelectedOptionText(wardSelect);
         const province = getSelectedOptionText(provinceSelect);
@@ -162,13 +203,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (matchedProvince) {
                 await loadWards(selectedProvince, selectedWard);
-            } else if (!preserveExistingAddress) {
-                updateAddress();
             }
 
-            if (preserveExistingAddress) {
-                addressResult.value = existingAddress;
-            }
+            // Nạp xong tỉnh + phường mới bóc được số nhà (cần biết tên để cắt đuôi).
+            napLaiSoNhaTuDiaChi();
 
             setStatus('');
         } catch (error) {
@@ -180,16 +218,19 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     provinceSelect.addEventListener('change', async () => {
+        nguoiDungDaSuaDiaChi = true;
         const provinceCode = provinceSelect.value;
         await loadWards(provinceCode);
         updateAddress();
     });
 
     wardSelect.addEventListener('change', () => {
+        nguoiDungDaSuaDiaChi = true;
         updateAddress();
     });
 
     buildingInput.addEventListener('input', () => {
+        nguoiDungDaSuaDiaChi = true;
         updateAddress();
     });
 

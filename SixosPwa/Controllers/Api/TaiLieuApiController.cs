@@ -75,13 +75,12 @@ public class TaiLieuApiController : ControllerBase
         [FromBody] TiepNhanTaiLieuRequest request)
     {
         var cskcb = HttpContext.CoSoDaXacThuc();
-        var idKhoa = HttpContext.IdKhoaDaXacThuc();
         var duong = HttpContext.Request.Path.Value ?? "";
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
 
         if (string.IsNullOrWhiteSpace(loaiTaiLieu))
         {
-            await _nhatKy.GhiAsync(duong, KetQuaApi.TuChoi, cskcb.Id, idKhoa,
+            await _nhatKy.GhiAsync(duong, KetQuaApi.TuChoi, cskcb.Id,
                 lyDo: LyDoApi.ThieuHeader, ipGoi: ip);
             return BadRequest(ApiResponse<TiepNhanTaiLieuResponseData>.Fail("Thiếu Header loại tài liệu 'X-Loai-Tai-Lieu'."));
         }
@@ -92,7 +91,7 @@ public class TaiLieuApiController : ControllerBase
         // de ben HIS sua duoc ngay chu khong phai doan.
         if (!LoaiTaiLieu.HopLe(loaiTaiLieu))
         {
-            await _nhatKy.GhiAsync(duong, KetQuaApi.TuChoi, cskcb.Id, idKhoa,
+            await _nhatKy.GhiAsync(duong, KetQuaApi.TuChoi, cskcb.Id,
                 lyDo: LyDoApi.LoaiTaiLieuLa, ipGoi: ip);
             return BadRequest(ApiResponse<TiepNhanTaiLieuResponseData>.Fail(
                 $"Loại tài liệu '{loaiTaiLieu}' không hợp lệ. Chỉ nhận: {LoaiTaiLieu.DanhSachChoNguoiDoc()}.",
@@ -101,7 +100,7 @@ public class TaiLieuApiController : ControllerBase
 
         if (request == null)
         {
-            await _nhatKy.GhiAsync(duong, KetQuaApi.TuChoi, cskcb.Id, idKhoa,
+            await _nhatKy.GhiAsync(duong, KetQuaApi.TuChoi, cskcb.Id,
                 lyDo: LyDoApi.DuLieuSai, ipGoi: ip);
             return BadRequest(ApiResponse<TiepNhanTaiLieuResponseData>.Fail("Dữ liệu Request Body không được để trống."));
         }
@@ -110,7 +109,7 @@ public class TaiLieuApiController : ControllerBase
         try
         {
             var ketQua = await _taiLieuService.TiepNhanTaiLieuAsync(cskcb, loaiTaiLieu, request);
-            await _nhatKy.GhiAsync(duong, KetQuaApi.Nhan, cskcb.Id, idKhoa,
+            await _nhatKy.GhiAsync(duong, KetQuaApi.Nhan, cskcb.Id,
                 maBN: request.MaBenhNhan, maNguonHIS: request.MaNguonHIS, ipGoi: ip);
             // Nội dung y hệt bản đang có ⇒ vẫn là THÀNH CÔNG (tài liệu đã ở đúng
             // chỗ nó cần ở), nhưng nói rõ là không tạo bản mới — để người ở quầy
@@ -126,7 +125,7 @@ public class TaiLieuApiController : ControllerBase
             // 🔴 Chot 3: khong luu gi, khong day tep. Ma may LyDoApi.ChuaCoNguoiNhan
             // nam trong errors de hang doi ben HIS phan biet duoc voi loi ky
             // thuat — dung doc cau tieng Viet de quyet dinh co thu lai hay khong.
-            await _nhatKy.GhiAsync(duong, KetQuaApi.TuChoi, cskcb.Id, idKhoa,
+            await _nhatKy.GhiAsync(duong, KetQuaApi.TuChoi, cskcb.Id,
                 maBN: ex.MaBN, maNguonHIS: request.MaNguonHIS,
                 lyDo: LyDoApi.ChuaCoNguoiNhan, ipGoi: ip);
 
@@ -137,14 +136,14 @@ public class TaiLieuApiController : ControllerBase
         catch (ArgumentException ex)
         {
             _logger.LogWarning(ex, "Tham so khong hop le khi tiep nhan tai lieu co so {MaCoSo}: {Message}", cskcb.MaCoSo, ex.Message);
-            await _nhatKy.GhiAsync(duong, KetQuaApi.TuChoi, cskcb.Id, idKhoa,
+            await _nhatKy.GhiAsync(duong, KetQuaApi.TuChoi, cskcb.Id,
                 maBN: request.MaBenhNhan, lyDo: LyDoApi.DuLieuSai, ipGoi: ip);
             return BadRequest(ApiResponse<TiepNhanTaiLieuResponseData>.Fail(ex.Message));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Loi xu ly khi tiep nhan tai lieu cho co so {MaCoSo}", cskcb.MaCoSo);
-            await _nhatKy.GhiAsync(duong, KetQuaApi.Loi, cskcb.Id, idKhoa,
+            await _nhatKy.GhiAsync(duong, KetQuaApi.Loi, cskcb.Id,
                 maBN: request.MaBenhNhan, ipGoi: ip);
             return StatusCode(StatusCodes.Status500InternalServerError,
                 ApiResponse<TiepNhanTaiLieuResponseData>.Fail("Đã xảy ra lỗi máy chủ nội bộ trong quá trình tiếp nhận tài liệu."));
@@ -185,18 +184,34 @@ public class TaiLieuApiController : ControllerBase
         var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
         var dinhDanh = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? string.Empty;
 
-        var laCuaNguoiDangXem = await (
+        // 🔴 Lay luon MaBN cua HO SO tu DM_BenhNhanCoSo: cot QL_TaiLieuBenhNhan.MaBN
+        // da bi xoa (no chi la ban sao cua ho so, de lech). Cung mot cau, khong them
+        // luot hoi CSDL nao.
+        // 🔴 Chu so huu ho so noi bang DM_BenhNhan.IdTaiKhoan (ADR 0019), KHONG
+        // bang so dien thoai. Ban cu chi so `p.SDT == dinhDanh`, ma SDT cua HO SO
+        // thuong KHAC SDT cua TAI KHOAN — mot tai khoan giu nhieu ho so (me + con),
+        // moi ho so mang so dien thoai rieng cua nguoi do. Hau qua do duoc that:
+        // Cong tai lieu LIET KE duoc tai lieu, nhung bam vao lai 404 vi chot quyen
+        // soi bang khoa khac voi cau liet ke.
+        // Van giu nhanh so SDT/Email lam DU PHONG cho ho so cu chua noi IdTaiKhoan.
+        var idTaiKhoan = await _db.TaiKhoans.AsNoTracking()
+            .Where(t => t.SDT == dinhDanh || t.Email == dinhDanh)
+            .Select(t => (long?)t.Id)
+            .FirstOrDefaultAsync();
+
+        var hoSo = await (
             from p in _db.BenhNhans.AsNoTracking()
             join h in _db.BenhNhanCoSos.AsNoTracking() on p.Id equals h.IdBenhNhan
             join cs in _db.DMCSKCBs.AsNoTracking() on h.IdCoSo equals cs.Id
-            where (p.SDT == dinhDanh || p.Email == dinhDanh)
+            where ((idTaiKhoan != null && p.IdTaiKhoan == idTaiKhoan)
+                   || p.SDT == dinhDanh || p.Email == dinhDanh)
                   && h.DaMoTaiLieu
                   && cs.MaCoSo == maCoSo
                   && cs.Id == taiLieu.IdCoSo
                   && h.Id == taiLieu.IdBenhNhanCoSo
-            select h.Id).AnyAsync();
+            select new { h.Id, h.MaBN }).FirstOrDefaultAsync();
 
-        if (!laCuaNguoiDangXem)
+        if (hoSo is null)
         {
             _logger.LogWarning("Chan doc tai lieu {Id} khong thuoc nguoi dang dang nhap", id);
             return NotFound("Không tìm thấy tài liệu yêu cầu.");
@@ -210,7 +225,7 @@ public class TaiLieuApiController : ControllerBase
                 ? await _khoCoSo.TaiVeAsync(taiLieu.IdCoSo, taiLieu.DuongDanFtp)
                 : await _taiLieuService.TaiStreamPdfAsync(taiLieu.DuongDanFtp);
 
-            var safeFileName = $"{taiLieu.MaBN}_{taiLieu.LoaiTaiLieu}_{taiLieu.Id}.pdf";
+            var safeFileName = $"{hoSo.MaBN}_{taiLieu.LoaiTaiLieu}_{taiLieu.Id}.pdf";
 
             Response.Headers["Content-Disposition"] = $"inline; filename=\"{safeFileName}\"";
             // 🔴 KHONG dat [ResponseCache] kieu AnhController (Duration = 86400): anh logo

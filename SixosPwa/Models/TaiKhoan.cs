@@ -8,15 +8,16 @@ public class TaiKhoan
     public string Role { get; set; } = "";
 
     /// <summary>
-    /// Mat khau dang nhap noi bo cua Admin / DoiTac. Tach han khoi mat khau doi tac
-    /// (<see cref="TaiKhoanDoiTac.MatKhau"/>) — xem ADR 0009.
+    /// Mat khau dang nhap noi bo. Dot A da xoa bang <c>HT_TaiKhoanDoiTac</c> nen
+    /// day la cho DUY NHAT con giu mat khau (ADR 0009).
     /// Sau migration cot nay dang NULL: phan BAM chua duoc thi hanh (xem muc Dinh chinh
     /// cua ADR 0009), nen hai tai khoan Admin/DoiTac tam thoi khong dang nhap duoc.
     /// </summary>
     public string? MatKhauNoiBo { get; set; }
 
-    /// <summary>Ho so con nguoi tuong ung. NULL voi Admin/DoiTac va voi tai khoan vua dang ky OTP.</summary>
-    public long? IdBenhNhan { get; set; }
+    // 🔴 Cot HT_TaiKhoan.IDBenhNhan da BI BO (dot A, §3). Chieu dung la nguoc
+    //    lai: DM_BenhNhan.IDTaiKhoan tro ve tai khoan quan minh (ADR 0019) — mot
+    //    tai khoan quan NHIEU ho so, nen khoa 1-1 cu la sai ban chat.
 
     public DateTime NgayTao { get; set; } = DateTime.Now;
 }

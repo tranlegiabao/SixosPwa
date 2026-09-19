@@ -14,8 +14,10 @@ public class TaiLieuBenhNhan
     /// <summary>Khóa ngoại sang <see cref="BenhNhanCoSo"/> (null nếu bệnh nhân chưa có hồ sơ tại cơ sở).</summary>
     public long? IdBenhNhanCoSo { get; set; }
 
-    /// <summary>Mã bệnh nhân do chính cơ sở cấp (MaBN trong HIS).</summary>
-    public string MaBN { get; set; } = "";
+    // 🔴 Ba cột MaBN / DungLuongByte / GhiChu đã BỊ BỎ khỏi QL_TaiLieuBenhNhan
+    //    (đợt A, §3). MaBN suy qua IDBenhNhanCoSo -> DM_BenhNhanCoSo.MaBN.
+    //    DTO `TaiLieuDtos` VẪN GIỮ `GhiChu`/`MaBenhNhan` vì HIS đang gửi lên —
+    //    nhận rồi BỎ, không INSERT (tiền lệ V14).
 
     /// <summary>Loại tài liệu (DON_THUOC, KET_QUA_XN, CDHA, GIAY_RA_VIEN,...).</summary>
     public string LoaiTaiLieu { get; set; } = "";
@@ -37,14 +39,8 @@ public class TaiLieuBenhNhan
     /// </summary>
     public string NguonKho { get; set; } = "CONG";
 
-    /// <summary>Dung lượng file (byte).</summary>
-    public long DungLuongByte { get; set; }
-
     /// <summary>Ngày khám / ngày phát hành tài liệu.</summary>
     public DateTime? NgayKham { get; set; }
-
-    /// <summary>Ghi chú bổ sung.</summary>
-    public string? GhiChu { get; set; }
 
     /// <summary>Dinh danh phieu ben HIS — nua kia cua khoa tu nhien chong trung.</summary>
     public string? MaNguonHIS { get; set; }

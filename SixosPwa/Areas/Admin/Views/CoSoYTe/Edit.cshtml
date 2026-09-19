@@ -39,26 +39,47 @@
             <div class="media-ad-row">
                 <div class="ad-amount-stack">
                     <div class="ad-amount-cell">
-                        <label asp-for="QuangCao" class="form-label">Số tiền đã trả cho quảng cáo (VNĐ)</label>
-                        <div class="input-group"><input asp-for="QuangCao" class="form-control" type="number" min="0" step="1000" inputmode="numeric" placeholder="Nhập số tiền" data-advertising-amount /><span class="input-group-text">VNĐ</span></div>
-                        <span asp-validation-for="QuangCao" class="text-danger field-error"></span>
+                        <label asp-for="QcSoTienDaTra" class="form-label">Số tiền đã trả cho quảng cáo (VNĐ)</label>
+                        <div class="input-group"><input asp-for="QcSoTienDaTra" class="form-control" type="number" min="0" step="1000" inputmode="numeric" placeholder="Nhập số tiền" data-advertising-amount /><span class="input-group-text">VNĐ</span></div>
+                        <span asp-validation-for="QcSoTienDaTra" class="text-danger field-error"></span>
                     </div>
-                    <div class="advertising-details @(Model.QuangCao.GetValueOrDefault() > 0 ? string.Empty : "d-none")" data-advertising-details>
+                    <div class="advertising-details @(Model.QcSoTienDaTra.GetValueOrDefault() > 0 ? string.Empty : "d-none")" data-advertising-details>
                         <label class="form-label">Ảnh quảng cáo</label>
                         @await Html.PartialAsync("_QuangCaoImageSourceField", Model)
                         <div class="form-note"><span>i</span> Số tiền quảng cáo cao hơn sẽ được ưu tiên hiển thị trước.</div>
                     </div>
                 </div>
-                <div class="ad-content-cell @(Model.QuangCao.GetValueOrDefault() > 0 ? string.Empty : "d-none")" data-advertising-content>
-                    <label asp-for="NoiDungQuangCao" class="form-label">Nội dung quảng cáo</label>
-                    <textarea asp-for="NoiDungQuangCao" id="advertisingContentEditor" class="form-control" rows="5" placeholder="Nhập nội dung quảng cáo"></textarea>
-                    <span asp-validation-for="NoiDungQuangCao" class="text-danger field-error"></span>
+                <div class="ad-content-cell @(Model.QcSoTienDaTra.GetValueOrDefault() > 0 ? string.Empty : "d-none")" data-advertising-content>
+                    <label asp-for="QcNoiDung" class="form-label">Nội dung quảng cáo</label>
+                    <textarea asp-for="QcNoiDung" id="advertisingContentEditor" class="form-control" rows="5" placeholder="Nhập nội dung quảng cáo"></textarea>
+                    <span asp-validation-for="QcNoiDung" class="text-danger field-error"></span>
                 </div>
             </div>
         </div>
 
         <div id="section-noi-dung-chi-tiet" class="d-none">
             @await Html.PartialAsync("_CoSoYTeDashboardContentFields", Model)
+        </div>
+
+        @* Ket noi HIS — gop tu bang 1:1 DM_DoiTacApi vao thang DM_CSKCB (dot A). *@
+        <div class="form-section-title"><i class="ti ti-plug-connected me-1"></i>Kết nối HIS của cơ sở</div>
+        <div class="row g-3">
+            <div class="col-12">
+                <div class="form-text">
+                    Cấu hình để cổng gọi sang HIS của chính cơ sở. Trước đợt A các ô này nằm ở
+                    bảng riêng <code>DM_DoiTacApi</code>; nay là cột của chính cơ sở.
+                </div>
+            </div>
+            <div class="col-md-6"><label asp-for="KetNoi_UrlChuyenHuong" class="form-label">Đường dẫn chuyển hướng</label><input asp-for="KetNoi_UrlChuyenHuong" class="form-control" autocomplete="off" placeholder="https://..." /><span asp-validation-for="KetNoi_UrlChuyenHuong" class="text-danger field-error"></span></div>
+            <div class="col-md-6"><label asp-for="KetNoi_BaseUrlHIS" class="form-label">Base URL của HIS</label><input asp-for="KetNoi_BaseUrlHIS" class="form-control" autocomplete="off" placeholder="https://his.example.vn" /><span asp-validation-for="KetNoi_BaseUrlHIS" class="text-danger field-error"></span></div>
+            @* 🔴 Cột bí mật — không đổ khóa cũ ra HTML. Rỗng = giữ nguyên khóa đang dùng. *@
+            <div class="col-md-6"><label asp-for="KetNoi_KhoaGoiHIS" class="form-label">Khóa gọi HIS</label><input asp-for="KetNoi_KhoaGoiHIS" type="password" class="form-control" value="" autocomplete="new-password" placeholder="Để trống nếu không đổi" /><span asp-validation-for="KetNoi_KhoaGoiHIS" class="text-danger field-error"></span></div>
+            <div class="col-md-6 d-flex align-items-end">
+                <div class="form-check form-switch">
+                    <input asp-for="KetNoi_Active" class="form-check-input" />
+                    <label asp-for="KetNoi_Active" class="form-check-label">Bật kết nối HIS</label>
+                </div>
+            </div>
         </div>
 
         @* Kho phieu co so — FTP CUA PHONG KHAM, cong CHI DOC (che do Tro duong, ADR 0030).
@@ -72,10 +93,13 @@
                     <strong>chỉ đọc</strong> kho này — không ghi, không xoá, không giữ bản sao.
                 </div>
             </div>
-            <div class="col-md-6"><label asp-for="KhoHost" class="form-label">Máy chủ kho (FTP)</label><input asp-for="KhoHost" class="form-control" autocomplete="off" placeholder="118.69.34.247" /><span asp-validation-for="KhoHost" class="text-danger field-error"></span></div>
-            <div class="col-md-6"><label asp-for="KhoThuMucGoc" class="form-label">Thư mục gốc</label><input asp-for="KhoThuMucGoc" class="form-control" autocomplete="off" placeholder="(để trống nếu đường dẫn tính từ gốc FTP)" /><span asp-validation-for="KhoThuMucGoc" class="text-danger field-error"></span></div>
-            <div class="col-md-6"><label asp-for="KhoTaiKhoan" class="form-label">Tài khoản</label><input asp-for="KhoTaiKhoan" class="form-control" autocomplete="off" /><span asp-validation-for="KhoTaiKhoan" class="text-danger field-error"></span></div>
-            <div class="col-md-6"><label asp-for="KhoMatKhau" class="form-label">Mật khẩu</label><input asp-for="KhoMatKhau" type="password" class="form-control" autocomplete="new-password" /><span asp-validation-for="KhoMatKhau" class="text-danger field-error"></span></div>
+            <div class="col-md-6"><label asp-for="Ftp_Host" class="form-label">Máy chủ kho (FTP)</label><input asp-for="Ftp_Host" class="form-control" autocomplete="off" placeholder="118.69.34.247" /><span asp-validation-for="Ftp_Host" class="text-danger field-error"></span></div>
+            <div class="col-md-6"><label asp-for="Ftp_ThuMucGoc" class="form-label">Thư mục gốc</label><input asp-for="Ftp_ThuMucGoc" class="form-control" autocomplete="off" placeholder="(để trống nếu đường dẫn tính từ gốc FTP)" /><span asp-validation-for="Ftp_ThuMucGoc" class="text-danger field-error"></span></div>
+            @* 🔴 Hai ô dưới là CỘT BÍ MẬT (Ftp_TaiKhoan / Ftp_MatKhau, mật khẩu lưu THÔ).
+               Màn Sửa KHÔNG đổ giá trị cũ ra HTML — luôn để trống. Gửi rỗng lên là gửi
+               NULL cho DM_CSKCB_Save, và stored hiểu NULL = GIỮ NGUYÊN giá trị cũ. *@
+            <div class="col-md-6"><label asp-for="Ftp_TaiKhoan" class="form-label">Tài khoản</label><input asp-for="Ftp_TaiKhoan" class="form-control" value="" autocomplete="off" placeholder="Để trống nếu không đổi" /><span asp-validation-for="Ftp_TaiKhoan" class="text-danger field-error"></span></div>
+            <div class="col-md-6"><label asp-for="Ftp_MatKhau" class="form-label">Mật khẩu</label><input asp-for="Ftp_MatKhau" type="password" class="form-control" value="" autocomplete="new-password" placeholder="Để trống nếu không đổi" /><span asp-validation-for="Ftp_MatKhau" class="text-danger field-error"></span></div>
             <div class="col-12">
                 <button type="button" class="btn admin-btn-secondary" id="btnThuKetNoiKho" data-co-so-id="@Model.Id">Thử kết nối kho</button>
                 <span id="ketQuaThuKho" class="ms-2"></span>
@@ -84,23 +108,23 @@
                 @* Chot 41: chua thu dat thi KHOA o bat. Khoa o ca hai tang — disabled o
                    day cho nguoi dung thay ngay, con stored moi la cho chan that su. *@
                 <div class="form-check form-switch">
-                    <input asp-for="KhoActive" class="form-check-input" id="khoActiveSwitch" disabled="@(Model.KhoNgayThuDat == null)" />
-                    <label asp-for="KhoActive" class="form-check-label">Bật đọc kho phiếu của cơ sở này</label>
+                    <input asp-for="Ftp_Active" class="form-check-input" id="khoActiveSwitch" disabled="@(Model.Ftp_NgayThuDat == null)" />
+                    <label asp-for="Ftp_Active" class="form-check-label">Bật đọc kho phiếu của cơ sở này</label>
                 </div>
                 <div class="form-text" id="khoTrangThaiThu">
-                    @if (Model.KhoNgayThuDat == null)
+                    @if (Model.Ftp_NgayThuDat == null)
                     {
                         <text>Chưa thử kết nối đạt lần nào — bấm <strong>Thử kết nối kho</strong> trước khi bật.</text>
                     }
                     else
                     {
-                        <text>Thử kết nối đạt lúc @Model.KhoNgayThuDat.Value.ToString("dd/MM/yyyy HH:mm"). Đổi máy chủ / tài khoản / mật khẩu thì phải thử lại.</text>
+                        <text>Thử kết nối đạt lúc @Model.Ftp_NgayThuDat.Value.ToString("dd/MM/yyyy HH:mm"). Đổi máy chủ / tài khoản / mật khẩu thì phải thử lại.</text>
                     }
                 </div>
             </div>
         </div>
 
-        <div class="form-check form-switch mt-4 mb-4"><input asp-for="Active" class="form-check-input" /><label asp-for="Active" class="form-check-label">Cho phép hiển thị công khai</label></div>
+        <div class="form-check form-switch mt-4 mb-4"><input asp-for="HienThiCongKhai" class="form-check-input" /><label asp-for="HienThiCongKhai" class="form-check-label">Cho phép hiển thị công khai</label></div>
 
         <div class="form-actions"><a asp-action="Index" class="btn admin-btn-secondary">Hủy</a><button type="submit" class="btn admin-btn-primary">Lưu thay đổi</button></div>
     </form>
@@ -160,16 +184,18 @@
                 // 🔴 Gui GIA TRI DANG GO, khong de server doc ban da luu — nut nay sinh
                 // ra de bat sai TRUOC khi luu. Bo qua buoc nay thi go mat khau sai vao
                 // o van bao "dat" (da dinh 12/09).
-                var oHost = document.getElementById('KhoHost');
-                var oTaiKhoan = document.getElementById('KhoTaiKhoan');
-                var oMatKhau = document.getElementById('KhoMatKhau');
-                var oThuMucGoc = document.getElementById('KhoThuMucGoc');
+                var oHost = document.getElementById('Ftp_Host');
+                var oTaiKhoan = document.getElementById('Ftp_TaiKhoan');
+                var oMatKhau = document.getElementById('Ftp_MatKhau');
+                var oThuMucGoc = document.getElementById('Ftp_ThuMucGoc');
 
                 var duLieu = new FormData();
                 duLieu.append('id', id);
                 duLieu.append('host', oHost ? oHost.value : '');
                 duLieu.append('taiKhoan', oTaiKhoan ? oTaiKhoan.value : '');
-                // De trong = giu mat khau cu (o password khong render lai gia tri).
+                // 🔴 Sau dot A, Tai khoan/Mat khau la COT BI MAT — may chu KHONG doc
+                // duoc ban dang luu qua EF nua. Muon Thu ket noi thi phai GO DU ca hai
+                // o. De trong = khong thu duoc (khac ban cu: truoc day rong la "giu cu").
                 duLieu.append('matKhau', oMatKhau ? oMatKhau.value : '');
                 duLieu.append('thuMucGoc', oThuMucGoc ? oThuMucGoc.value : '');
                 if (token) duLieu.append('__RequestVerificationToken', token.value);

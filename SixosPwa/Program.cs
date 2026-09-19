@@ -48,10 +48,9 @@ builder.Services.AddScoped<IHTConfigService, HTConfigService>();
 builder.Services.AddScoped<AdminStoredProcedureService>();
 
 builder.Services.AddHttpClient();
-builder.Services.AddScoped<IPartnerGateway, NoApiGateway>();
-builder.Services.AddScoped<IPartnerGateway, UbGateway>();
-builder.Services.AddScoped<IPartnerGateway, HisGateway>();
-builder.Services.AddScoped<IPartnerGatewayFactory, PartnerGatewayFactory>();
+// Tang cua doi tac (3 gateway + factory, 695 dong) da duoc go o dot A:
+// noi chuyen huong sang he ngoai gio la DU LIEU - cot DM_CSKCB.KetNoi_UrlChuyenHuong.
+builder.Services.AddScoped<CuaCoSoService>();
 builder.Services.AddScoped<ILuongCongBenhNhan, LuongCongBenhNhan>();
 
 // Kho anh tren FTP dung chung voi HisSoft (xem docs/adr/0012).

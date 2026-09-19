@@ -30,7 +30,6 @@ public interface INhatKyApi
         string endpoint,
         string ketQua,
         long? idCoSo = null,
-        long? idKhoa = null,
         string? maBN = null,
         string? maNguonHIS = null,
         string? lyDo = null,
@@ -66,7 +65,6 @@ public class NhatKyApiService : INhatKyApi
         string endpoint,
         string ketQua,
         long? idCoSo = null,
-        long? idKhoa = null,
         string? maBN = null,
         string? maNguonHIS = null,
         string? lyDo = null,
@@ -75,8 +73,11 @@ public class NhatKyApiService : INhatKyApi
     {
         try
         {
+            // 🔴 Cột HT_LogApiCoSo.IDKhoa đã bị xoá và tham số @IDKhoa đã gỡ khỏi stored
+            // HT_LogApiCoSo_Ghi (gộp HT_KhoaApiCoSo vào DM_CSKCB). Còn truyền idKhoa vào
+            // đây thì SqlException nuốt ở catch dưới ⇒ nhật ký API chết trong im lặng.
             await _thuTuc.GhiLogApiCoSoAsync(
-                idCoSo, idKhoa, endpoint, maBN, maNguonHIS, ketQua, lyDo, soLuong, ipGoi);
+                idCoSo, endpoint, maBN, maNguonHIS, ketQua, lyDo, soLuong, ipGoi);
         }
         catch (Exception ex)
         {

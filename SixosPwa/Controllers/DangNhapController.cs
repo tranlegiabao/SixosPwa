@@ -22,18 +22,26 @@ public class DangNhapController : Controller
 
     private readonly AdminStoredProcedureService _thuTuc;
 
+    /// <summary>
+    /// Cua co so doc thang tu du lieu (DM_CSKCB.KetNoi_UrlChuyenHuong) sau khi tang
+    /// cua doi tac bi go. Chi dung cho hang rao mat khau o man Dang ky.
+    /// </summary>
+    private readonly CuaCoSoService _cuaCoSo;
+
     public DangNhapController(
         IMemoryCache cache,
         ITaiKhoanService taiKhoanService,
         ApplicationDbContext dbContext,
         ILuongCongBenhNhan luong,
-        AdminStoredProcedureService thuTuc)
+        AdminStoredProcedureService thuTuc,
+        CuaCoSoService cuaCoSo)
     {
         _cache = cache;
         _taiKhoanService = taiKhoanService;
         _dbContext = dbContext;
         _luong = luong;
         _thuTuc = thuTuc;
+        _cuaCoSo = cuaCoSo;
     }
 
     /// <summary>
@@ -73,8 +81,7 @@ public class DangNhapController : Controller
                 new Claim(ClaimTypes.Name, username),
                 new Claim(ClaimTypes.Role, "BenhNhan"),
                 new Claim(LuongCongBenhNhan.ClaimCccd, cccd),
-                new Claim(LuongCongBenhNhan.ClaimMaCoSo, maCoSo),
-                new Claim(LuongCongBenhNhan.ClaimDoiTacXacThuc, "1")
+                new Claim(LuongCongBenhNhan.ClaimMaCoSo, maCoSo)
             };
 
             if (!string.IsNullOrWhiteSpace(hoSo.BenhNhan.SDT))
@@ -209,12 +216,12 @@ public class DangNhapController : Controller
             // Chan ngay o day thay vi de benh nhan go het OTP roi moi bi tu choi
             // (va ton mot tin nhan OTP vo ich). Entity da nam trong tay, khong ton
             // them truy van. Xem ADR 0013.
-            if (thongTin is not null && !thongTin.Active) return Redirect("/");
+            if (thongTin is not null && !thongTin.HienThiCongKhai) return Redirect("/");
 
             // 🔴 ?coSo= chi nhan SLUG. Go vao mot gia tri khong tra ra co so nao
             // (hay gap nhat: go MA co so, vd 77121) truoc day tut lang le xuong che
             // do khong-co-so: van cho go OTP, van cap cookie, roi tha vao /benh-nhan
-            // ma khong tao noi tai khoan. Da ve "/" giong het nhanh Active = 0 ngay
+            // ma khong tao noi tai khoan. Da ve "/" giong het nhanh HienThiCongKhai = 0 ngay
             // tren — sai cua thi phai biet ngay, dung sau khi go xong OTP. ADR 0027.
             if (thongTin is null) return Redirect("/");
 
@@ -222,7 +229,6 @@ public class DangNhapController : Controller
             ViewBag.MaCoSo = thongTin?.MaCoSo;
             ViewBag.TenCoSo = thongTin?.TenCoSo;
             ViewBag.LogoCoSo = LayLogoCoSo(thongTin);
-            ViewBag.TrangChuDoiTac = null as string;
             ViewBag.SlugCoSo = coSo;
         }
 
@@ -268,55 +274,6 @@ public class DangNhapController : Controller
 
         ViewData["AdminReauth"] = adminReauth;
         ViewData["ReturnUrl"] = adminReauth ? returnUrl : null;
-
-        // DIEM RE DUY NHAT. Co so da biet TRUOC khi vao man dang nhap (benh nhan
-        // di DanhSachCoSo -> ChiTietCoSo -> /DangNhap/Login?coSo={slug}), nen chi
-        // can tra cau hinh cua co so o day. Co so dung bo man cua doi tac thi tra man clone;
-        // moi co so khac giu nguyen man OTP cua SixosPwa. ADR 0014.
-        //
-        // Dat SAU moi guard phia tren la co y: re nhanh khong duoc phep bo qua
-        // chan co so an (ADR 0013) hay chan dang nhap cheo co so (ADR 0006).
-        if (!adminReauth && !string.IsNullOrWhiteSpace(maCoSoTuUrl))
-        {
-            var cuaDoiTac = await _luong.LayCuaAsync(maCoSoTuUrl);
-            if (cuaDoiTac?.DungManDoiTac == true)
-            {
-                // Phien con song va DA MANG DAU AN cua doi tac: benh nhan da tung
-                // go mat khau that o may nay, khong bat go lai nua — hoi doi tac
-                // bang mat khau da cat roi ban giao thang. ADR 0016.
-                //
-                // Doi ca ba ve, thieu mot la khong tu di:
-                //   - con phien (co CCCD),
-                //   - CO dau an (phien duc tu XacNhanOtp thi khong co),
-                //   - dung CO SO cua phien (khong muon dang nhap ho sang co so khac).
-                //
-                // 🔴 Khoi nay nam SAU moi guard phia tren la CO Y — chan co so an
-                // (ADR 0013) va chan dang nhap cheo co so (ADR 0006) phai chay
-                // truoc. Dung don len dau ham.
-                if (!string.IsNullOrWhiteSpace(cccdPhien)
-                    && User.FindFirst(LuongCongBenhNhan.ClaimDoiTacXacThuc) is not null
-                    && string.Equals(cuaPhien, maCoSoTuUrl, StringComparison.Ordinal))
-                {
-                    var diTiep = await _luong.DangNhapLaiBangMatKhauDaCatAsync(
-                        maCoSoTuUrl, cccdPhien, returnUrl);
-
-                    if (diTiep.ThanhCong && !string.IsNullOrWhiteSpace(diTiep.DichDen))
-                    {
-                        return Redirect(diTiep.DichDen);
-                    }
-
-                    // Khong tu di duoc (mat khau da doi ben ho, hoac ben ho dang
-                    // hong): roi xuong man dang nhap nhu cu, nhung phai NOI RO vi
-                    // sao — benh nhan vua bam mot nut ma lai thay man dang nhap.
-                    ViewBag.LoiDangNhapLai = diTiep.ThongBao;
-                }
-
-                ViewBag.ReturnUrl = returnUrl;
-                ViewBag.TrangChuDoiTac = cuaDoiTac.CauHinh.TrangChu?.TrimEnd('/');
-                ViewBag.ChiNhanh = await LayChiNhanhAsync(maCoSoTuUrl);
-                return View("UbLogin");
-            }
-        }
 
         return View();
     }
@@ -370,12 +327,10 @@ public class DangNhapController : Controller
             if (taiKhoan == null && !string.IsNullOrWhiteSpace(model.Cccd))
             {
                 var cccd = model.Cccd.Trim();
+                // Chi con MOT chieu noi: DM_BenhNhan.IDTaiKhoan (1 tai khoan - N ho so).
+                // Nhanh cu noi nguoc qua HT_TaiKhoan.IDBenhNhan da bi go (ADR 0019).
                 taiKhoan = (from p in _dbContext.BenhNhans.AsNoTracking()
                             join t in _dbContext.TaiKhoans.AsNoTracking() on p.IdTaiKhoan equals t.Id
-                            where p.CCCD == cccd
-                            select t).FirstOrDefault()
-                        ?? (from t in _dbContext.TaiKhoans.AsNoTracking()
-                            join p in _dbContext.BenhNhans.AsNoTracking() on t.IdBenhNhan equals p.Id
                             where p.CCCD == cccd
                             select t).FirstOrDefault();
             }
@@ -460,7 +415,7 @@ public class DangNhapController : Controller
         var otpInput = model.Otp.Trim();
         var adminReauth = AdminAuthentication.IsAdminReturnUrl(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl);
 
-        // Co so dang an (DM_CSKCB.Active = 0) thi khong sinh phien MOI tai co so do.
+        // Co so dang an (DM_CSKCB.HienThiCongKhai = 0) thi khong sinh phien MOI tai co so do.
         // Ve !adminReauth la BAT BUOC: action nay phuc vu ca re-auth Admin/DoiTac,
         // thieu no la khoa luon duong dang nhap quan tri. Xem ADR 0013.
         if (!adminReauth && !string.IsNullOrWhiteSpace(model.MaCoSo)
@@ -548,7 +503,7 @@ public class DangNhapController : Controller
         {
             model.MaCoSo = await _dbContext.DMCSKCBs
                 .AsNoTracking()
-                .Where(x => x.Active)
+                .Where(x => x.HienThiCongKhai)
                 .OrderBy(x => x.Id)
                 .Select(x => x.MaCoSo)
                 .FirstOrDefaultAsync();
@@ -562,10 +517,16 @@ public class DangNhapController : Controller
             }
             else if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet?.MaBN))
             {
-                model.Cccd = await (from cs in _dbContext.BenhNhanCoSos
-                                    join bn in _dbContext.BenhNhans on cs.IdBenhNhan equals bn.Id
-                                    where cs.MaBN == model.DanhTinhQuet.MaBN
-                                    select bn.CCCD).FirstOrDefaultAsync();
+                // 🔴 MaBN chi duy nhat THEO TUNG CO SO (ApplicationDbContext: unique
+                // (IdCoSo, MaBN)), nen tra khong loc co so la doc nham ho so cua co
+                // so khac — xem TimHoSoTheoMaBnTaiCoSoAsync.
+                var idHoSoTheoMa = await TimHoSoTheoMaBnTaiCoSoAsync(model.DanhTinhQuet.MaBN, model.MaCoSo);
+                model.Cccd = idHoSoTheoMa is null
+                    ? null
+                    : await _dbContext.BenhNhans.AsNoTracking()
+                        .Where(bn => bn.Id == idHoSoTheoMa.Value)
+                        .Select(bn => bn.CCCD)
+                        .FirstOrDefaultAsync();
             }
         }
 
@@ -632,16 +593,17 @@ public class DangNhapController : Controller
             }
 
             // Tự động gắn claim HoSoDangChon khi người dùng quét mã QR phiếu khám HIS
-            long? idHoSoQuet = taiKhoan?.IdBenhNhan;
+            // 🔴 Chi mo san ho so khi tai khoan co DUNG MOT ho so. Tai khoan nhieu ho so
+        // (me + 2 con) ma lay bua mot cai la bug tham lang — de null thi nguoi dung
+        // tu chon o man Ho so. Nhanh QR duoi day van ghi de bang ho so quet duoc.
+        long? idHoSoQuet = taiKhoan == null ? null : await HoSoDuyNhatCuaTaiKhoanAsync(taiKhoan.Id);
             if (model.DanhTinhQuet != null)
             {
                 var maBnQuet = model.DanhTinhQuet.MaBN?.Trim();
                 var cccdQuet = model.DanhTinhQuet.Cccd?.Trim();
                 if (!string.IsNullOrWhiteSpace(maBnQuet))
                 {
-                    var idBn = await (from cs in _dbContext.BenhNhanCoSos
-                                      where cs.MaBN == maBnQuet
-                                      select (long?)cs.IdBenhNhan).FirstOrDefaultAsync();
+                    var idBn = await TimHoSoTheoMaBnTaiCoSoAsync(maBnQuet, model.MaCoSo);
                     if (idBn != null && idBn > 0) idHoSoQuet = idBn;
                 }
                 if (idHoSoQuet == null && !string.IsNullOrWhiteSpace(cccdQuet) && !Services.Partner.LuongCongBenhNhan.LaMaGia(cccdQuet))
@@ -700,9 +662,6 @@ public class DangNhapController : Controller
             }
 
             _cache.Remove($"OTP_{input}");
-
-            // Lưu thông tin thiết bị đăng nhập vào database
-            await LuuThietBiDangNhapAsync(username, model.DeviceId, model.DeviceName);
 
             // Cay quyet dinh sau OTP: chi mot cho duy nhat, nam trong
             // ILuongCongBenhNhan. Man hinh khong duoc tu kiem tra MaCoSo.
@@ -777,7 +736,7 @@ public class DangNhapController : Controller
         {
             model.MaCoSo = await _dbContext.DMCSKCBs
                 .AsNoTracking()
-                .Where(x => x.Active)
+                .Where(x => x.HienThiCongKhai)
                 .OrderBy(x => x.Id)
                 .Select(x => x.MaCoSo)
                 .FirstOrDefaultAsync();
@@ -791,10 +750,16 @@ public class DangNhapController : Controller
             }
             else if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet?.MaBN))
             {
-                model.Cccd = await (from cs in _dbContext.BenhNhanCoSos
-                                    join bn in _dbContext.BenhNhans on cs.IdBenhNhan equals bn.Id
-                                    where cs.MaBN == model.DanhTinhQuet.MaBN
-                                    select bn.CCCD).FirstOrDefaultAsync();
+                // 🔴 MaBN chi duy nhat THEO TUNG CO SO (ApplicationDbContext: unique
+                // (IdCoSo, MaBN)), nen tra khong loc co so la doc nham ho so cua co
+                // so khac — xem TimHoSoTheoMaBnTaiCoSoAsync.
+                var idHoSoTheoMa = await TimHoSoTheoMaBnTaiCoSoAsync(model.DanhTinhQuet.MaBN, model.MaCoSo);
+                model.Cccd = idHoSoTheoMa is null
+                    ? null
+                    : await _dbContext.BenhNhans.AsNoTracking()
+                        .Where(bn => bn.Id == idHoSoTheoMa.Value)
+                        .Select(bn => bn.CCCD)
+                        .FirstOrDefaultAsync();
             }
         }
 
@@ -816,16 +781,17 @@ public class DangNhapController : Controller
         }
 
         // Tự động gắn claim HoSoDangChon khi người dùng quét mã QR phiếu khám HIS
-        long? idHoSoQuet = taiKhoan?.IdBenhNhan;
+        // 🔴 Chi mo san ho so khi tai khoan co DUNG MOT ho so. Tai khoan nhieu ho so
+        // (me + 2 con) ma lay bua mot cai la bug tham lang — de null thi nguoi dung
+        // tu chon o man Ho so. Nhanh QR duoi day van ghi de bang ho so quet duoc.
+        long? idHoSoQuet = taiKhoan == null ? null : await HoSoDuyNhatCuaTaiKhoanAsync(taiKhoan.Id);
         if (model.DanhTinhQuet != null)
         {
             var maBnQuet = model.DanhTinhQuet.MaBN?.Trim();
             var cccdQuet = model.DanhTinhQuet.Cccd?.Trim();
             if (!string.IsNullOrWhiteSpace(maBnQuet))
             {
-                var idBn = await (from cs in _dbContext.BenhNhanCoSos
-                                  where cs.MaBN == maBnQuet
-                                  select (long?)cs.IdBenhNhan).FirstOrDefaultAsync();
+                var idBn = await TimHoSoTheoMaBnTaiCoSoAsync(maBnQuet, model.MaCoSo);
                 if (idBn != null && idBn > 0) idHoSoQuet = idBn;
             }
             if (idHoSoQuet == null && !string.IsNullOrWhiteSpace(cccdQuet) && !Services.Partner.LuongCongBenhNhan.LaMaGia(cccdQuet))
@@ -883,9 +849,6 @@ public class DangNhapController : Controller
                 new AuthenticationProperties { IsPersistent = false });
         }
 
-        // Lưu thông tin thiết bị đăng nhập vào database
-        await LuuThietBiDangNhapAsync(sdt, model.DeviceId, model.DeviceName);
-
         var dichDen = adminReauth
             ? model.ReturnUrl
             : await ChonDichDenAsync(model.MaCoSo, model.Cccd, sdt, model.ReturnUrl, model.DanhTinhQuet);
@@ -936,10 +899,13 @@ public class DangNhapController : Controller
             return Json(new { success = false, message = "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại!" });
         }
 
-        // Nhanh co API: mat khau ben doi tac = CCCD, man Dang ky khong hoi nua.
-        // Nhanh noi bo: benh nhan tu dat, van phai kiem do dai.
-        var cua = await _luong.LayCuaAsync(maCoSo);
-        if (cua?.CoBanGiao != true && (string.IsNullOrWhiteSpace(model.MatKhau) || model.MatKhau.Length < 6))
+        // Co so co URL chuyen huong sang he doi tac thi mat khau do BEN DO dat,
+        // man Dang ky khong hoi nua. Co so KHONG co URL chuyen huong la co so noi bo:
+        // benh nhan tu dat mat khau nen VAN phai kiem du dai toi thieu 6 ky tu.
+        var idCoSo = await _dbContext.DMCSKCBs.AsNoTracking()
+            .Where(x => x.MaCoSo == maCoSo).Select(x => (long?)x.Id).FirstOrDefaultAsync();
+        var coChuyenHuong = idCoSo is not null && await _cuaCoSo.CoChuyenHuongAsync(idCoSo.Value);
+        if (!coChuyenHuong && (string.IsNullOrWhiteSpace(model.MatKhau) || model.MatKhau.Length < 6))
         {
             return Json(new { success = false, message = "Mật khẩu phải có ít nhất 6 ký tự!" });
         }
@@ -954,217 +920,6 @@ public class DangNhapController : Controller
 
         return Json(new { success = true, redirectUrl = ketQua.DichDen });
         */
-    }
-
-    // ==================================================================
-    //  Bo man cua doi tac — Dang nhap / Dang ky / Quen mat khau (ADR 0014)
-    //
-    //  Deu la [AllowAnonymous]: benh nhan CHUA co phien khi go vao day, nen
-    //  khac han cac man o tren (lay danh tinh tu phien). maCoSo nhan tu client
-    //  la CHAP NHAN DUOC — slug co so von cong khai tren trang, va thu quyet
-    //  dinh moi chuyen la mat khau, do CHINH doi tac phan xu.
-    // ==================================================================
-
-    [HttpPost]
-    [AllowAnonymous]
-    public async Task<IActionResult> UbDangNhap([FromBody] UbDangNhapRequest model)
-    {
-        if (string.IsNullOrWhiteSpace(model.MaCoSo)
-            || string.IsNullOrWhiteSpace(model.Cccd)
-            || string.IsNullOrWhiteSpace(model.MatKhau))
-        {
-            return Json(new { success = false, message = "Vui lòng nhập đầy đủ thông tin!" });
-        }
-
-        var cccd = model.Cccd.Trim();
-        var ketQua = await _luong.DangNhapDoiTacAsync(model.MaCoSo.Trim(), cccd, model.MatKhau, model.ReturnUrl);
-
-        if (!ketQua.ThanhCong)
-        {
-            return Json(new { success = false, message = ketQua.ThongBao });
-        }
-
-        await CapPhienBenhNhanAsync(cccd, model.MaCoSo.Trim(), model.DeviceId, model.DeviceName);
-
-        return Json(new { success = true, redirectUrl = ketQua.DichDen });
-    }
-
-    [HttpGet]
-    [AllowAnonymous]
-    public async Task<IActionResult> UbDangKy(string coSo, string? returnUrl = null)
-    {
-        var maCoSo = await LayMaCoSoDoiTacAsync(coSo);
-        if (maCoSo is null) return RedirectToAction(nameof(Login), new { coSo });
-
-        await DoNguCanhRaViewBagAsync(maCoSo, returnUrl);
-        ViewBag.SlugCoSo = coSo;
-
-        var cua = await _luong.LayCuaAsync(maCoSo);
-        ViewBag.TrangChuDoiTac = cua?.CauHinh.TrangChu?.TrimEnd('/');
-        ViewBag.ChiNhanh = await LayChiNhanhAsync(maCoSo);
-        return View();
-    }
-
-    [HttpPost]
-    [AllowAnonymous]
-    public async Task<IActionResult> UbTaoTaiKhoan([FromBody] UbDangKyRequest model)
-    {
-        if (string.IsNullOrWhiteSpace(model.MaCoSo)
-            || string.IsNullOrWhiteSpace(model.Cccd)
-            || string.IsNullOrWhiteSpace(model.DienThoai))
-        {
-            return Json(new { success = false, message = "Vui lòng nhập đầy đủ thông tin!" });
-        }
-
-        // Doi tac bat toi thieu 6 ky tu; chan ngay o day de khoi ton mot luot goi.
-        if (string.IsNullOrWhiteSpace(model.MatKhau) || model.MatKhau.Length < 6)
-        {
-            return Json(new { success = false, message = "Mật khẩu phải có ít nhất 6 ký tự!" });
-        }
-
-        var ketQua = await _luong.DangKyDoiTacAsync(
-            model.MaCoSo.Trim(), model.Cccd.Trim(), model.DienThoai.Trim(), model.Email, model.MatKhau, model.Kenh);
-
-        return Json(new { success = ketQua.ThanhCong, message = ketQua.ThongBao });
-    }
-
-    [HttpPost]
-    [AllowAnonymous]
-    public async Task<IActionResult> UbXacThucMa([FromBody] UbXacThucMaRequest model)
-    {
-        if (string.IsNullOrWhiteSpace(model.MaCoSo)
-            || string.IsNullOrWhiteSpace(model.Cccd)
-            || string.IsNullOrWhiteSpace(model.Ma))
-        {
-            return Json(new { success = false, message = "Vui lòng nhập mã xác thực!" });
-        }
-
-        var cccd = model.Cccd.Trim();
-        var ketQua = await _luong.XacThucMaDoiTacAsync(model.MaCoSo.Trim(), cccd, model.Ma.Trim(), model.ReturnUrl);
-
-        if (!ketQua.ThanhCong)
-        {
-            return Json(new { success = false, message = ketQua.ThongBao });
-        }
-
-        await CapPhienBenhNhanAsync(cccd, model.MaCoSo.Trim(), model.DeviceId, model.DeviceName);
-
-        return Json(new { success = true, redirectUrl = ketQua.DichDen });
-    }
-
-    [HttpGet]
-    [AllowAnonymous]
-    public async Task<IActionResult> UbQuenMatKhau(string coSo)
-    {
-        var maCoSo = await LayMaCoSoDoiTacAsync(coSo);
-        if (maCoSo is null) return RedirectToAction(nameof(Login), new { coSo });
-
-        await DoNguCanhRaViewBagAsync(maCoSo, null);
-        ViewBag.SlugCoSo = coSo;
-        return View();
-    }
-
-    [HttpPost]
-    [AllowAnonymous]
-    public async Task<IActionResult> UbGuiQuenMatKhau([FromBody] UbQuenMatKhauRequest model)
-    {
-        if (string.IsNullOrWhiteSpace(model.MaCoSo)
-            || string.IsNullOrWhiteSpace(model.Cccd)
-            || string.IsNullOrWhiteSpace(model.EmailHoacSdt))
-        {
-            return Json(new { success = false, message = "Vui lòng nhập đầy đủ thông tin!" });
-        }
-
-        var ketQua = await _luong.QuenMatKhauDoiTacAsync(
-            model.MaCoSo.Trim(), model.Cccd.Trim(), model.EmailHoacSdt.Trim());
-
-        return Json(new { success = ketQua.ThanhCong, message = ketQua.ThongBao });
-    }
-
-    /// <summary>
-    /// Cap phien SixosPwa cho benh nhan vua duoc DOI TAC xac nhan danh tinh.
-    ///
-    /// Bam theo dung khuon claim cua XacNhanOtp — hai claim ClaimCccd va
-    /// ClaimMaCoSo la cach cac man phia sau (Ban giao, trang benh nhan) biet
-    /// benh nhan la ai va dang o co so nao.
-    ///
-    /// KHONG co nhanh adminReauth o day: bo man doi tac chi phuc vu benh nhan,
-    /// tai khoan quan tri van dang nhap o khu vuc Admin nhu cu.
-    /// </summary>
-    private async Task CapPhienBenhNhanAsync(string cccd, string maCoSo, string? deviceId, string? deviceName)
-    {
-        // Doi tac giu ten/dien thoai that; ta chi chac chan ve CCCD. Ho so noi bo
-        // vua duoc GhiHoSoRoiChoBanGiaoAsync tao xong nen doc lai duoc so dien thoai.
-        var taiKhoan = await (from t in _dbContext.TaiKhoans
-                              join b in _dbContext.BenhNhans on t.IdBenhNhan equals b.Id
-                              where b.CCCD == cccd
-                              select t).FirstOrDefaultAsync();
-
-        var username = string.IsNullOrWhiteSpace(taiKhoan?.SDT) ? cccd : taiKhoan!.SDT;
-
-        var claims = new List<Claim>
-        {
-            new Claim(ClaimTypes.NameIdentifier, username),
-            new Claim(ClaimTypes.Name, username),
-            new Claim(ClaimTypes.Role, "BenhNhan"),
-            new Claim(LuongCongBenhNhan.ClaimCccd, cccd),
-            new Claim(LuongCongBenhNhan.ClaimMaCoSo, maCoSo),
-
-            // DAU AN — chi dong o day, va day la CHO DUY NHAT. Toi duoc ham nay
-            // nghia la CHINH doi tac vua phan xu mat khau that (UbDangNhap) hoac ma
-            // xac thuc cua ho (UbXacThucMa). Phien duc tu XacNhanOtp KHONG bao gio
-            // co claim nay — do la toan bo diem cua thiet ke. Xem ADR 0016.
-            new Claim(LuongCongBenhNhan.ClaimDoiTacXacThuc, "1")
-        };
-
-        if (!string.IsNullOrWhiteSpace(taiKhoan?.SDT))
-        {
-            claims.Add(new Claim(ClaimTypes.MobilePhone, taiKhoan.SDT));
-        }
-        if (!string.IsNullOrWhiteSpace(taiKhoan?.Email))
-        {
-            claims.Add(new Claim(ClaimTypes.Email, taiKhoan.Email));
-        }
-
-        if (taiKhoan?.IdBenhNhan != null && taiKhoan.IdBenhNhan > 0)
-        {
-            claims.Add(new Claim(LuongCongBenhNhan.ClaimHoSoDangChon, taiKhoan.IdBenhNhan.ToString()!));
-        }
-
-        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        var authProperties = new AuthenticationProperties
-        {
-            IsPersistent = true,
-            ExpiresUtc = DateTimeOffset.UtcNow.AddDays(365)
-        };
-
-        await HttpContext.SignOutAsync(AdminAuthentication.Scheme);
-        await HttpContext.SignInAsync(
-            CookieAuthenticationDefaults.AuthenticationScheme,
-            new ClaimsPrincipal(identity),
-            authProperties);
-
-        await LuuThietBiDangNhapAsync(username, deviceId, deviceName);
-    }
-
-    /// <summary>
-    /// Slug -> ma co so, va chi tra ve khi co so do THAT SU dung man doi tac.
-    /// Go tay URL /DangNhap/UbDangKy?coSo=&lt;co so noi bo&gt; thi bi day ve man
-    /// dang nhap thuong chu khong duoc thay man clone.
-    /// </summary>
-    private async Task<string?> LayMaCoSoDoiTacAsync(string? slug)
-    {
-        if (string.IsNullOrWhiteSpace(slug)) return null;
-
-        var thongTin = await _dbContext.DMCSKCBs
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Slug == slug);
-
-        // Co so dang an thi khong nhan dang ky moi (ADR 0013).
-        if (thongTin is null || !thongTin.Active) return null;
-
-        var cua = await _luong.LayCuaAsync(thongTin.MaCoSo);
-        return cua?.DungManDoiTac == true ? thongTin.MaCoSo : null;
     }
 
     [HttpGet]
@@ -1199,52 +954,6 @@ public class DangNhapController : Controller
     }
 
     /// <summary>
-    /// Man trung gian ban giao phien sang he doi tac. KHONG goi HTTP o day —
-    /// cookie phai duoc dat tren trinh duyet benh nhan, nen view se POST bang
-    /// form top-level trong popup. Xem ADR 0003.
-    /// </summary>
-    [HttpGet]
-    [Authorize]
-    public async Task<IActionResult> BanGiao(string coSo, string? returnUrl = null)
-    {
-        var maCoSo = LayMaCoSoPhien(coSo);
-        if (maCoSo is null) return RedirectToAction(nameof(Login));
-
-        // 🔴 CHOT CHAN — dung go bo. Man nay tra ve mot form da dien san MAT KHAU
-        // THAT cua benh nhan, chi cho tu POST sang doi tac. Vi vay [Authorize] mot
-        // minh la KHONG du: XacNhanOtp goi tran duoc, ma OTP con dang ke tam mot
-        // gia tri co dinh, va ca Cccd lan MaCoSo deu lay thang tu than request —
-        // ai biet CCCD cua nguoi khac la duc duoc mot phien roi mo thang man nay.
-        //
-        // Chan ngay tai cua XacNhanOtp thi KHONG du: bo trong MaCoSo la phien khong
-        // co claim, roi LayMaCoSoPhien lai lay ?coSo= tren URL. Phai doi DAU AN nam
-        // tren chinh phien. Xem ADR 0016.
-        var cuaBanGiao = await _luong.LayCuaAsync(maCoSo);
-        if (cuaBanGiao?.DungManDoiTac == true
-            && User.FindFirst(LuongCongBenhNhan.ClaimDoiTacXacThuc) is null)
-        {
-            return await VeManDangNhapCoSoAsync(maCoSo);
-        }
-
-        // returnUrl la y dinh cua nut benh nhan da bam ("/dat-goi-kham"...).
-        // Doi tac se tu dich sang man tuong ung ben ho.
-        var yDinh = returnUrl?.Trim('/');
-        var thongTin = await _luong.DungThongTinBanGiaoAsync(maCoSo, User, yDinh);
-
-        if (thongTin is null)
-        {
-            // Khong dung duoc form ban giao (thieu credential, hoac co so khong
-            // co API): dua ve trang benh nhan noi bo thay vi treo man trang.
-            return Redirect("/benh-nhan");
-        }
-
-        await DoNguCanhRaViewBagAsync(maCoSo, null);
-        ViewBag.CacBuoc = thongTin.CacBuoc;
-        ViewBag.TrangChu = thongTin.DichCuoi;
-        return View();
-    }
-
-    /// <summary>
     /// Nguoi dung chu dong bam "Tiep tuc" o man dang nhap khi phien van con, hoac
     /// bam "Ho so benh nhan" o menu 3 gach khi da dang nhap. Day moi la cho chay
     /// cay quyet dinh — KHONG tu chay khi chi mo trang. Chi thao tac tren MaCoSo
@@ -1265,41 +974,8 @@ public class DangNhapController : Controller
             return Redirect("/benh-nhan");
         }
 
-        // Co so dung man cua doi tac: ChonDichDenAsync CO Y tra ve man dang nhap
-        // (chot chan cho duong OTP — xem chu thich tai LuongCongBenhNhan.cs). Duong
-        // moi di BEN CANH no, khoa bang dau an, chu KHONG di xuyen qua no: dung sua
-        // ChonDichDenAsync de "cho tien". ADR 0016.
-        var cuaCoSo = await _luong.LayCuaAsync(maCoSo);
-        if (cuaCoSo?.DungManDoiTac == true
-            && User.FindFirst(LuongCongBenhNhan.ClaimDoiTacXacThuc) is not null)
-        {
-            var diTiep = await _luong.DangNhapLaiBangMatKhauDaCatAsync(maCoSo, cccd, returnUrl);
-            if (diTiep.ThanhCong && !string.IsNullOrWhiteSpace(diTiep.DichDen))
-            {
-                return Redirect(diTiep.DichDen);
-            }
-        }
-
         var dichDen = await _luong.ChonDichDenAsync(maCoSo, cccd, dinhDanh, returnUrl);
         return Redirect(dichDen);
-    }
-
-    /// <summary>
-    /// Dua benh nhan ve dung man dang nhap CUA CO SO do. Ve /DangNhap/Login tran
-    /// thi man dang nhap khong biet co so nao, phien sau khong co claim MaCoSo va
-    /// benh nhan roi thang vao nhanh noi bo — cung ly le voi DangXuat.
-    /// </summary>
-    private async Task<IActionResult> VeManDangNhapCoSoAsync(string maCoSo)
-    {
-        var slug = await _dbContext.DMCSKCBs
-            .AsNoTracking()
-            .Where(x => x.MaCoSo == maCoSo)
-            .Select(x => x.Slug)
-            .FirstOrDefaultAsync();
-
-        return string.IsNullOrWhiteSpace(slug)
-            ? RedirectToAction(nameof(Login))
-            : Redirect($"/DangNhap/Login?coSo={Uri.EscapeDataString(slug)}");
     }
 
     /// <summary>
@@ -1335,26 +1011,6 @@ public class DangNhapController : Controller
     ///
     /// Tra null khi co so chua co logo — view tu roi ve anh mac dinh.
     /// </summary>
-    /// <summary>
-    /// Chi nhanh cua doi tac cho panel trai o kho may tinh. Cache 10 phut: day chi
-    /// la khoi TRANG TRI, khong dang de moi lan mo man dang nhap la mot luot goi
-    /// sang trang doi tac. Hong thi tra rong — panel tu an, khong chan dang nhap.
-    /// </summary>
-    private async Task<IReadOnlyList<ChiNhanhDoiTac>> LayChiNhanhAsync(string? maCoSo)
-    {
-        if (string.IsNullOrWhiteSpace(maCoSo)) return Array.Empty<ChiNhanhDoiTac>();
-
-        var khoa = "ChiNhanhDoiTac_" + maCoSo;
-        if (_cache.TryGetValue(khoa, out IReadOnlyList<ChiNhanhDoiTac>? cu) && cu is not null)
-        {
-            return cu;
-        }
-
-        var ds = await _luong.LayChiNhanhDoiTacAsync(maCoSo);
-        _cache.Set(khoa, ds, TimeSpan.FromMinutes(10));
-        return ds;
-    }
-
     private static string? LayLogoCoSo(DMCSKCB? coSo)
     {
         var logo = coSo?.Logo;
@@ -1376,11 +1032,6 @@ public class DangNhapController : Controller
         ViewBag.Cccd = User.FindFirst(LuongCongBenhNhan.ClaimCccd)?.Value;
         ViewBag.DinhDanh = User.FindFirst(ClaimTypes.Name)?.Value;
         ViewBag.DienThoai = User.FindFirst(ClaimTypes.MobilePhone)?.Value;
-
-        // Co so co API rieng thi mat khau ben ho dat bang CCCD, khong hoi benh
-        // nhan nua. Co so noi bo thi van de ho tu dat.
-        var cua = await _luong.LayCuaAsync(maCoSo);
-        ViewBag.CoBanGiao = cua?.CoBanGiao == true;
     }
 
     private async Task<TaiKhoan> TaoTaiKhoanVaHoSoTuQrAsync(string sdt, string? maCoSo, string? cccdInput, DanhTinhQuet quet)
@@ -1418,7 +1069,7 @@ public class DangNhapController : Controller
         {
             idCoSo = await _dbContext.DMCSKCBs
                 .AsNoTracking()
-                .Where(x => x.Active)
+                .Where(x => x.HienThiCongKhai)
                 .OrderBy(x => x.Id)
                 .Select(x => (long?)x.Id)
                 .FirstOrDefaultAsync();
@@ -1452,8 +1103,7 @@ public class DangNhapController : Controller
             sdt,
             null,
             "BenhNhan",
-            null,
-            idBenhNhanTarget > 0 ? idBenhNhanTarget : null);
+            null);
 
         var idTaiKhoan = luuTaiKhoan.Id;
 
@@ -1480,7 +1130,7 @@ public class DangNhapController : Controller
         }
 
         var taiKhoan = await _dbContext.TaiKhoans.FirstOrDefaultAsync(x => x.Id == idTaiKhoan)
-                       ?? new TaiKhoan { Id = idTaiKhoan, SDT = sdt, Role = "BenhNhan", IdBenhNhan = idBenhNhanTarget > 0 ? idBenhNhanTarget : null };
+                       ?? new TaiKhoan { Id = idTaiKhoan, SDT = sdt, Role = "BenhNhan" };
 
         return taiKhoan;
     }
@@ -1509,29 +1159,6 @@ public class DangNhapController : Controller
         }
 
         return await _luong.ChonDichDenAsync(maCoSo, cccd.Trim(), dinhDanh, returnUrl, quet);
-    }
-
-    private async Task LuuThietBiDangNhapAsync(string soDienThoai, string? deviceId, string? deviceName)
-    {
-        if (string.IsNullOrWhiteSpace(deviceId)) return;
-
-        try
-        {
-            // Thiet bi nay khoa theo IDTaiKhoan chu khong con theo chuoi so dien thoai,
-            // va moi duong ghi di qua thu tuc (ADR 0008). Thu tuc tu lo them-hay-cap-nhat.
-            var idTaiKhoan = await _dbContext.TaiKhoans.AsNoTracking()
-                .Where(t => t.SDT == soDienThoai)
-                .Select(t => (long?)t.Id)
-                .FirstOrDefaultAsync();
-
-            if (idTaiKhoan is null) return;
-
-            await _thuTuc.SaveThietBiAsync(idTaiKhoan.Value, deviceId, deviceName, true);
-        }
-        catch (Exception)
-        {
-            // Bỏ qua lỗi để không làm gián đoạn đăng nhập của người dùng
-        }
     }
 
     /// <summary>
@@ -1574,6 +1201,52 @@ public class DangNhapController : Controller
 
         return RedirectToAction(nameof(Login));
     }
+
+    /// <summary>
+    /// Tra ho so (<c>DM_BenhNhan.ID</c>) theo ma benh nhan quet duoc tren phieu kham,
+    /// <b>gioi han trong dung co so dang dang nhap</b>.
+    ///
+    /// 🔴 <c>MaBN</c> chi duy nhat THEO TUNG CO SO — <c>ApplicationDbContext</c> dat
+    /// <c>HasIndex(IdCoSo, MaBN).IsUnique()</c>. Tra ma khong loc co so thi benh nhan
+    /// dang o co so B quet phieu mang ma do co so A cap se lay ra ho so cua NGUOI LA,
+    /// va duong <c>NhanChuSoHuuAsync</c> phia sau se gan ho so do cho tai khoan dang quet.
+    ///
+    /// Khong biet co so nao (thieu <paramref name="maCoSo"/>) thi tra <c>null</c> —
+    /// hong theo huong an toan, thua hon la doan.
+    /// </summary>
+    private async Task<long?> TimHoSoTheoMaBnTaiCoSoAsync(string? maBn, string? maCoSo)
+    {
+        if (string.IsNullOrWhiteSpace(maBn) || string.IsNullOrWhiteSpace(maCoSo)) return null;
+
+        var ma = maBn.Trim();
+        var maCs = maCoSo.Trim();
+
+        return await (from cs in _dbContext.BenhNhanCoSos.AsNoTracking()
+                      join co in _dbContext.DMCSKCBs.AsNoTracking() on cs.IdCoSo equals co.Id
+                      where cs.MaBN == ma && (co.MaCoSo == maCs || co.Slug == maCs)
+                      select (long?)cs.IdBenhNhan).FirstOrDefaultAsync();
+    }
+
+    /// <summary>
+    /// Ho so benh nhan DUY NHAT cua mot tai khoan, hoac <c>null</c> khi tai khoan
+    /// chua co ho so nao HOAC co tu hai ho so tro len.
+    ///
+    /// 🔴 Quan he sau ADR 0019 la 1-N: <c>DM_BenhNhan.IDTaiKhoan</c>. Mot tai khoan
+    /// giu duoc nhieu ho so (me + cac con), nen "ho so dang chon" phai do nguoi dung
+    /// chon va nam o claim/phien — KHONG duoc lay <c>FirstOrDefault</c> mot ho so bat ky.
+    /// </summary>
+    private async Task<long?> HoSoDuyNhatCuaTaiKhoanAsync(long idTaiKhoan)
+    {
+        if (idTaiKhoan <= 0) return null;
+
+        var ids = await _dbContext.BenhNhans.AsNoTracking()
+            .Where(b => b.IdTaiKhoan == idTaiKhoan)
+            .Select(b => b.Id)
+            .Take(2)
+            .ToListAsync();
+
+        return ids.Count == 1 ? ids[0] : null;
+    }
 }
 
 public class GuiOtpRequest
@@ -1586,8 +1259,6 @@ public class GuiOtpRequest
     /// <summary>Khoa noi benh nhan sang he doi tac (V6).</summary>
     public string? Cccd { get; set; }
 
-    public string? DeviceId { get; set; }
-    public string? DeviceName { get; set; }
     public string? ReturnUrl { get; set; }
     /// <summary>
     /// Danh tinh doc duoc tu ma QR o man Dang nhap, neu benh nhan di duong do.
@@ -1608,8 +1279,6 @@ public class XacNhanOtpRequest
     /// <summary>Khoa noi benh nhan sang he doi tac (V6).</summary>
     public string? Cccd { get; set; }
 
-    public string? DeviceId { get; set; }
-    public string? DeviceName { get; set; }
     public string? ReturnUrl { get; set; }
     /// <summary>
     /// Danh tinh doc duoc tu ma QR o man Dang nhap, neu benh nhan di duong do.
@@ -1633,55 +1302,6 @@ public class HuyOtpRequest
 {
     public string? SoDienThoai { get; set; }
     public string? Cccd { get; set; }
-}
-
-// --- Bo man cua doi tac (ADR 0014) ---------------------------------------
-//  Deu mang MaCoSo trong than: benh nhan CHUA co phien khi go vao cac man nay.
-
-public class UbDangNhapRequest
-{
-    public string MaCoSo { get; set; } = string.Empty;
-    public string Cccd { get; set; } = string.Empty;
-    public string MatKhau { get; set; } = string.Empty;
-    public string? ReturnUrl { get; set; }
-    public string? DeviceId { get; set; }
-    public string? DeviceName { get; set; }
-}
-
-public class UbDangKyRequest
-{
-    public string MaCoSo { get; set; } = string.Empty;
-    public string Cccd { get; set; } = string.Empty;
-    public string DienThoai { get; set; } = string.Empty;
-    public string? Email { get; set; }
-    public string MatKhau { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Kenh benh nhan chon o man Dang ky (1 = Zalo, 3 = SMS). Ban cai cua doi tac
-    /// tu kiem lai, khong nhan ra thi ve SMS — nen khong tin thang gia tri nay.
-    /// </summary>
-    public int Kenh { get; set; }
-}
-
-public class UbXacThucMaRequest
-{
-    public string MaCoSo { get; set; } = string.Empty;
-    public string Cccd { get; set; } = string.Empty;
-
-    /// <summary>Ma 4 so doi tac vua gui qua SMS — benh nhan tu go.</summary>
-    public string Ma { get; set; } = string.Empty;
-    public string? ReturnUrl { get; set; }
-    public string? DeviceId { get; set; }
-    public string? DeviceName { get; set; }
-}
-
-public class UbQuenMatKhauRequest
-{
-    public string MaCoSo { get; set; } = string.Empty;
-    public string Cccd { get; set; } = string.Empty;
-
-    /// <summary>Doi tac tu nhan ra la Email hay so dien thoai va chon kenh gui.</summary>
-    public string EmailHoacSdt { get; set; } = string.Empty;
 }
 
 public class DoiMatKhauRequest

@@ -118,9 +118,13 @@ toggleIcon.innerText = "👁️";
 async function locDanhSachBN() { 
 const partnerSelect = document.getElementById("partnerSelect"); 
 const selectedOption = partnerSelect.options[partnerSelect.selectedIndex]; 
+// Khoa dang nhap doi tac la MaDT (UNIQUE) — chinh la value cua <option>.
+// Truoc day gui selectedOption.text (TEN doi tac, KHONG unique) nen hai doi tac
+// trung ten thi mat khau nguoi nay mo duoc du lieu nguoi kia.
+const maDT = partnerSelect.value || ""; 
 const tenDT = selectedOption ? selectedOption.text : ""; 
 const password = document.getElementById("smsPassword").value.trim(); 
-if (!tenDT || tenDT === "-- Tự cấu hình đối tác khác..." || partnerSelect.value === "custom") { 
+if (!maDT || tenDT === "-- Tự cấu hình đối tác khác..." || partnerSelect.value === "custom") { 
  showToast("Vui lòng chọn một đối tác từ danh sách trước khi lọc bệnh nhân!", 'warning');
 return; 
 } 
@@ -143,7 +147,7 @@ headers: {
 "Content-Type": "application/json", 
 "X-Requested-With": "XMLHttpRequest" 
 }, 
-body: JSON.stringify({ tenDT, password }) 
+body: JSON.stringify({ maDT, password }) 
 }); 
 const result = await resp.json(); 
 if (!result.success) { 

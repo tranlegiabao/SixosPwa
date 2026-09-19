@@ -53,15 +53,35 @@ public sealed class DashboardController : AdminControllerBase
             : null;
 
 
-        // Count of patient accounts by MaCoSo
-        // CCCD nay thuoc DM_BenhNhan, va co so thi khoa theo IDCoSo.
+        // Đếm HỒ SƠ bệnh nhân theo MaCoSo.
+        //
+        // 🔴 Đợt A đổi hẳn trục đi: bảng `HT_TaiKhoanDoiTac` bị xóa và cột
+        // `HT_TaiKhoan.IDBenhNhan` cũng bị xóa (thi hành nốt ADR 0019), nên bản cũ
+        // (tài khoản-đối tác → tài khoản → hồ sơ, 1–1) không còn đường nào chạy.
+        // Trục đúng bây giờ: DM_BenhNhanCoSo (hồ sơ TẠI một cơ sở) → DM_BenhNhan →
+        // HT_TaiKhoan qua `DM_BenhNhan.IdTaiKhoan`, quan hệ 1–N.
+        //
+        // Hệ quả CỐ Ý: một tài khoản quản nhiều hồ sơ thì đếm NHIỀU dòng, vì con số
+        // trên dashboard là "bao nhiêu hồ sơ bệnh nhân thuộc cơ sở này" — đúng thứ
+        // cơ sở quan tâm — chứ không phải "bao nhiêu người đăng nhập". Giữ join 1–1
+        // cũ thì mỗi tài khoản chỉ đếm được một hồ sơ, các hồ sơ còn lại BIẾN MẤT.
+        //
+        // Tài khoản có thể NULL (hồ sơ cơ sở tự khai, chưa ai nhận) ⇒ LEFT JOIN, và
+        // khi đó SDT lấy từ chính hồ sơ.
         var facilityPatients = await (
-            from td in _db.TaiKhoanDoiTacs.AsNoTracking()
-            join tk in _db.TaiKhoans.AsNoTracking() on td.IdTaiKhoan equals tk.Id
-            join cs in _db.DMCSKCBs.AsNoTracking() on td.IdCoSo equals cs.Id
-            join p in _db.BenhNhans.AsNoTracking() on tk.IdBenhNhan equals p.Id into hoSo
-            from p in hoSo.DefaultIfEmpty()
-            select new { MaCoSo = cs.MaCoSo, tk.SDT, tk.Id, CCCD = p != null ? p.CCCD : null })
+            from h in _db.BenhNhanCoSos.AsNoTracking()
+            join cs in _db.DMCSKCBs.AsNoTracking() on h.IdCoSo equals cs.Id
+            join p in _db.BenhNhans.AsNoTracking() on h.IdBenhNhan equals p.Id
+            join tk in _db.TaiKhoans.AsNoTracking() on p.IdTaiKhoan equals tk.Id into taiKhoan
+            from tk in taiKhoan.DefaultIfEmpty()
+            select new
+            {
+                MaCoSo = cs.MaCoSo,
+                SDT = tk != null ? tk.SDT : p.SDT,
+                // Ho so chua gan tai khoan => null (KHONG phai 0, xem PatientAccountStat.Id).
+                Id = tk != null ? (long?)tk.Id : null,
+                CCCD = p.CCCD
+            })
             .ToListAsync();
 
         var patientsByFacility = facilityPatients
@@ -99,7 +119,7 @@ public sealed class DashboardController : AdminControllerBase
             PartnerCount = await _db.DoiTacs.CountAsync(),
             PatientCount = await _db.BenhNhans.CountAsync(),
             FacilityCount = await _db.DMCSKCBs.CountAsync(),
-            VisibleFacilityCount = await _db.DMCSKCBs.CountAsync(x => x.Active),
+            VisibleFacilityCount = await _db.DMCSKCBs.CountAsync(x => x.HienThiCongKhai),
             NotificationCount = await _db.ThongBaos.CountAsync(),
             PushSubscriptionCount = await _db.PushDangKys.CountAsync(),
             UnreadNotificationCount = await _db.ThongBaos.CountAsync(x => !x.DaDoc),

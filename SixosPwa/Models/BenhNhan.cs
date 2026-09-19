@@ -48,6 +48,12 @@ public class BenhNhan
     public DateTime NgayTao { get; set; } = DateTime.Now;
 }
 
+/// <summary>
+/// Giới tính. 🔴 Đợt A đã XOÁ bảng <c>DM_GioiTinh</c> — đây KHÔNG còn là thực thể EF
+/// (không có DbSet, không có mapping). Ba giá trị <c>1=Nam · 2=Nữ · 3=Không xác định</c>
+/// nay là HẰNG trong C# + <c>CHECK</c> trên <c>DM_BenhNhan.GioiTinh</c>.
+/// Lớp này giữ lại chỉ để các màn đang dựng danh mục tại chỗ không phải viết lại kiểu.
+/// </summary>
 public class DMGioiTinh
 {
     public string MaGioiTinh { get; set; } = "";

@@ -36,6 +36,10 @@ public class TiepNhanTaiLieuRequest
     [JsonPropertyName("ngayKham")]
     public DateTime? NgayKham { get; set; }
 
+    /// <summary>
+    /// 🔴 GIỮ NGUYÊN dù cột <c>QL_TaiLieuBenhNhan.GhiChu</c> đã bị bỏ ở đợt A:
+    /// HIS đang gửi lên, bỏ tham số là vỡ bên HIS (tiền lệ V14). Nhận rồi BỎ.
+    /// </summary>
     [JsonPropertyName("ghiChu")]
     public string? GhiChu { get; set; }
 }

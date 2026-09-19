@@ -24,7 +24,7 @@ public sealed class AdminStoredProcedureService
     public AdminStoredProcedureService(ApplicationDbContext db) => _db = db;
 
     // ------------------------------------------------------------------
-    //  Tai khoan / doi tac
+    //  Tai khoan
     // ------------------------------------------------------------------
 
     /// <summary>
@@ -36,8 +36,7 @@ public sealed class AdminStoredProcedureService
         string sdt,
         string? email,
         string role,
-        string? matKhauNoiBoDaBam,
-        long? idBenhNhan) =>
+        string? matKhauNoiBoDaBam) =>
         ExecuteWithIdAsync("dbo.HT_TaiKhoan_Save", "@IDTaiKhoan", command =>
         {
             AddParameter(command, "@ID", DbType.Int64, id);
@@ -45,39 +44,13 @@ public sealed class AdminStoredProcedureService
             AddParameter(command, "@Email", DbType.String, email, 50);
             AddParameter(command, "@Role", DbType.AnsiString, role, 20);
             AddParameter(command, "@MatKhauNoiBoDaBam", DbType.AnsiString, matKhauNoiBoDaBam, 255);
-            AddParameter(command, "@IDBenhNhan", DbType.Int64, idBenhNhan);
-        });
-
-    /// <summary>
-    /// Lưu cấu hình "Kho phiếu cơ sở" (FTP của phòng khám, cổng chỉ đọc — ADR 0030).
-    ///
-    /// 🔴 Stored TỪ CHỐI <paramref name="active"/> = true khi chưa Thử kết nối đạt
-    /// (<c>@ResultCode = 6</c>), và tự xóa mốc thử cũ nếu Host/TàiKhoản/MậtKhẩu/ThưMụcGốc
-    /// đổi — lần thử trước hết hiệu lực (chốt 41). Đừng chép luật đó lên tầng C#: một
-    /// bản luật là đủ, và bản ở stored là bản chặn được mọi đường ghi (ADR 0008).
-    /// </summary>
-    public Task<(AdminStoredProcedureResult KetQua, long Id)> SaveKhoFtpCoSoAsync(
-        long id,
-        long idCoSo,
-        string host,
-        string taiKhoan,
-        string matKhau,
-        string? thuMucGoc,
-        bool active) =>
-        ExecuteWithIdAsync("dbo.HT_KhoFtpCoSo_Save", "@IDKho", command =>
-        {
-            AddParameter(command, "@ID", DbType.Int64, id);
-            AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
-            AddParameter(command, "@Host", DbType.String, host, 200);
-            AddParameter(command, "@TaiKhoan", DbType.String, taiKhoan, 100);
-            AddParameter(command, "@MatKhau", DbType.String, matKhau, 200);
-            AddParameter(command, "@ThuMucGoc", DbType.String, thuMucGoc ?? "", 200);
-            AddParameter(command, "@Active", DbType.Boolean, active);
+            // Tham so @IDBenhNhan da bi go (ADR 0019): quan he nay la 1-N va nam o
+            // cot DM_BenhNhan.IDTaiKhoan, khong con o HT_TaiKhoan.
         });
 
     /// <summary>Nút <i>Thử kết nối kho</i> bấm ĐẠT thì ghi mốc. Tách khỏi Save có chủ ý.</summary>
     public Task<AdminStoredProcedureResult> GhiNhanThuDatKhoFtpAsync(long idCoSo) =>
-        ExecuteAsync("dbo.HT_KhoFtpCoSo_GhiNhanThuDat", command =>
+        ExecuteAsync("dbo.DM_CSKCB_GhiNhanThuDatFtp", command =>
         {
             AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
         });
@@ -97,29 +70,6 @@ public sealed class AdminStoredProcedureService
             AddParameter(command, "@BrandName", DbType.String, model.BrandName, 100);
             AddParameter(command, "@MatKhauDoiTac", DbType.String,
                 updatePassword ? model.MatKhauDoiTac : null, 255);
-        });
-
-    public Task<(AdminStoredProcedureResult KetQua, long Id)> SaveTaiKhoanDoiTacAsync(
-        long idTaiKhoan,
-        long idCoSo,
-        string? matKhau,
-        string? maXacNhanTam,
-        bool daLienKet) =>
-        ExecuteWithIdAsync("dbo.HT_TaiKhoanDoiTac_Save", "@IDLienKet", command =>
-        {
-            AddParameter(command, "@IDTaiKhoan", DbType.Int64, idTaiKhoan);
-            AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
-            AddParameter(command, "@MatKhau", DbType.String, matKhau, 255);
-            AddParameter(command, "@MaXacNhanTam", DbType.AnsiString, maXacNhanTam, 10);
-            AddParameter(command, "@DaLienKet", DbType.Boolean, daLienKet);
-        });
-
-    /// <summary>Ma xac nhan chi dung MOT lan o man Ban giao roi phai bien mat ngay.</summary>
-    public Task XoaMaXacNhanAsync(long idTaiKhoan, long idCoSo) =>
-        ExecuteNoResultAsync("dbo.HT_TaiKhoanDoiTac_XoaMaXacNhan", command =>
-        {
-            AddParameter(command, "@IDTaiKhoan", DbType.Int64, idTaiKhoan);
-            AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
         });
 
     /// <summary>
@@ -172,7 +122,8 @@ public sealed class AdminStoredProcedureService
                     Email = reader["Email"] != DBNull.Value ? reader["Email"]?.ToString() : null,
                     Role = reader["Role"]?.ToString() ?? "BenhNhan",
                     MatKhauNoiBo = reader["MatKhauNoiBo"] != DBNull.Value ? reader["MatKhauNoiBo"]?.ToString() : null,
-                    IdBenhNhan = reader["IDBenhNhan"] != DBNull.Value ? (long?)Convert.ToInt64(reader["IDBenhNhan"]) : null,
+                    // Cot IDBenhNhan da bi xoa khoi HT_TaiKhoan (ADR 0019); ho so cua
+                    // tai khoan nam o Result Set 2 duoi day, quan he 1-N.
                     NgayTao = Convert.ToDateTime(reader["NgayTao"])
                 };
                 items.Add(tk);
@@ -471,32 +422,9 @@ public sealed class AdminStoredProcedureService
     //  Khu API nhan (dot 2 giai doan 2)
     // ------------------------------------------------------------------
 
-    /// <summary>
-    /// Cap hoac sua mot khoa API cua co so. <paramref name="khoaTho"/> chi bat
-    /// buoc khi CAP MOI (<paramref name="id"/> = 0); thu tuc tu bam, khoa tho
-    /// khong bao gio duoc luu.
-    /// </summary>
-    public Task<(AdminStoredProcedureResult KetQua, long Id)> SaveKhoaApiCoSoAsync(
-        long id,
-        long idCoSo,
-        string tenKhoa,
-        string? khoaTho,
-        bool active,
-        DateTime? ngayHetHan) =>
-        ExecuteWithIdAsync("dbo.HT_KhoaApiCoSo_Save", "@IDKhoa", command =>
-        {
-            AddParameter(command, "@ID", DbType.Int64, id);
-            AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
-            AddParameter(command, "@TenKhoa", DbType.String, tenKhoa, 100);
-            AddParameter(command, "@KhoaTho", DbType.AnsiString, khoaTho, 100);
-            AddParameter(command, "@Active", DbType.Boolean, active);
-            AddParameter(command, "@NgayHetHan", DbType.DateTime, ngayHetHan);
-        });
-
     /// <summary>Mot dong nhat ky doi soat. Thu tuc nay khong tra ResultCode.</summary>
     public Task GhiLogApiCoSoAsync(
         long? idCoSo,
-        long? idKhoa,
         string endpoint,
         string? maBN,
         string? maNguonHIS,
@@ -507,7 +435,7 @@ public sealed class AdminStoredProcedureService
         ExecuteNoResultAsync("dbo.HT_LogApiCoSo_Ghi", command =>
         {
             AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
-            AddParameter(command, "@IDKhoa", DbType.Int64, idKhoa);
+            // Cot IDKhoa da bi xoa khoi HT_LogApiCoSo va tham so @IDKhoa da go khoi stored.
             AddParameter(command, "@Endpoint", DbType.AnsiString, endpoint, 100);
             AddParameter(command, "@MaBN", DbType.AnsiString, maBN, 20);
             AddParameter(command, "@MaNguonHIS", DbType.AnsiString, maNguonHIS, 50);
@@ -549,41 +477,66 @@ public sealed class AdminStoredProcedureService
     //  Co so y te
     // ------------------------------------------------------------------
 
+    /// <summary>
+    /// Ghi MOT co so y te. Sau dot A, <c>DM_CSKCB</c> da nuot tron ba bang con
+    /// (<c>DM_DoiTacApi</c>, <c>DM_CSKCB_QuangCao</c>, <c>HT_KhoFtpCoSo</c>) nen
+    /// day la duong ghi DUY NHAT cho ca ket noi HIS, quang cao va kho FTP.
+    ///
+    /// 🔴 Ba o BI MAT — <c>@KetNoi_KhoaGoiHIS</c>, <c>@KhoaBam</c>, <c>@Ftp_MatKhau</c> —
+    /// truyen NULL nghia la GIU NGUYEN gia tri cu (man Admin khong do mat khau ra
+    /// man hinh nen khong the gui lai). Vi the o day TUYET DOI khong duoc bien
+    /// null thanh chuoi rong: <c>CoSoYTeController.Normalize</c> da ep o trong ve
+    /// null co y, bien no thanh "" la XOA TRANG khoa that.
+    /// </summary>
     public Task<AdminStoredProcedureResult> SaveCoSoYTeAsync(CoSoYTeEditViewModel model) =>
         ExecuteAsync("dbo.DM_CSKCB_Save", command =>
         {
             AddParameter(command, "@ID", DbType.Int64, model.Id);
             AddParameter(command, "@MaCoSo", DbType.AnsiString, model.MaCoSo, 10);
-            AddParameter(command, "@TenCoSo", DbType.String, model.TenCoSo, 100);
+            AddParameter(command, "@TenCoSo", DbType.String, model.TenCoSo, 200);
             AddParameter(command, "@Slug", DbType.AnsiString, model.Slug, 100);
             AddParameter(command, "@IDNhomCS", DbType.Int64, model.SelectedNhomCSId);
             AddParameter(command, "@DiaChi", DbType.String, model.DiaChi, 255);
-            AddParameter(command, "@SoToaNha", DbType.String, model.SoToaNha, 100);
             AddParameter(command, "@Tinh", DbType.Int32, model.Tinh);
             AddParameter(command, "@PhuongXa", DbType.Int32, model.PhuongXa);
             AddParameter(command, "@SDT", DbType.AnsiString, model.SDT, 20);
             AddParameter(command, "@Email", DbType.AnsiString, model.Email, 100);
-            AddParameter(command, "@TenTM", DbType.String, model.TenTM, 100);
-            AddParameter(command, "@Img", DbType.String, model.Img, 500);
+            AddParameter(command, "@AnhBia", DbType.String, model.AnhBia, 500);
             AddParameter(command, "@Logo", DbType.String, model.Logo, size: -1);
-            AddParameter(command, "@Active", DbType.Boolean, model.Active);
-            AddParameter(command, "@QuangCao", DbType.Decimal, model.QuangCao, precision: 15, scale: 0);
+            AddParameter(command, "@HienThiCongKhai", DbType.Boolean, model.HienThiCongKhai);
+            AddParameter(command, "@QcSoTienDaTra", DbType.Decimal, model.QcSoTienDaTra,
+                precision: 15, scale: 0);
+            AddParameter(command, "@QcNoiDung", DbType.String, model.QcNoiDung, size: -1);
+            AddParameter(command, "@QcAnh", DbType.String, model.QcAnh, size: -1);
+            AddParameter(command, "@IDCongTy", DbType.Int64, model.IDCongTy);
+
+            // ---- Ket noi HIS (cu la bang 1-1 DM_DoiTacApi) ----------------------
+            AddParameter(command, "@KetNoi_UrlChuyenHuong", DbType.String,
+                model.KetNoi_UrlChuyenHuong, 255);
+            AddParameter(command, "@KetNoi_BaseUrlHIS", DbType.String,
+                model.KetNoi_BaseUrlHIS, 255);
+            // 🔒 null = giu nguyen
+            AddParameter(command, "@KetNoi_KhoaGoiHIS", DbType.String,
+                model.KetNoi_KhoaGoiHIS, 500);
+            AddParameter(command, "@KetNoi_Active", DbType.Boolean, model.KetNoi_Active);
+
+            // ---- Khoa goi API cua co so (cu la HT_KhoaApiCoSo) -------------------
+            // 🔒 Man Admin khong cap khoa bam qua duong nay ⇒ luon NULL = giu nguyen.
+            AddParameter(command, "@KhoaBam", DbType.Binary, null, 32);
+            AddParameter(command, "@Khoa_NgayHetHan", DbType.DateTime, null);
+
+            // ---- Kho phieu co so: FTP (cu la HT_KhoFtpCoSo) ----------------------
+            AddParameter(command, "@Ftp_Host", DbType.String, model.Ftp_Host, 200);
+            AddParameter(command, "@Ftp_TaiKhoan", DbType.String, model.Ftp_TaiKhoan, 100);
+            // 🔒 null = giu nguyen
+            AddParameter(command, "@Ftp_MatKhau", DbType.String, model.Ftp_MatKhau, 200);
+            AddParameter(command, "@Ftp_ThuMucGoc", DbType.String, model.Ftp_ThuMucGoc, 200);
+            AddParameter(command, "@Ftp_Active", DbType.Boolean, model.Ftp_Active);
         });
 
     public Task<AdminStoredProcedureResult> DeleteCoSoYTeAsync(long id) =>
         ExecuteAsync("dbo.DM_CSKCB_Delete", command =>
             AddParameter(command, "@ID", DbType.Int64, id));
-
-    public Task<AdminStoredProcedureResult> SaveQCKCBAsync(
-        long idCoSo,
-        string? noiDung,
-        string? img) =>
-        ExecuteAsync("dbo.DM_CSKCB_QuangCao_Save", command =>
-        {
-            AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
-            AddParameter(command, "@NoiDung", DbType.String, noiDung, size: -1);
-            AddParameter(command, "@Img", DbType.String, img, size: -1);
-        });
 
     public Task<AdminStoredProcedureResult> SaveNoiDungCskcbAsync(
         long idCoSo,
@@ -653,32 +606,19 @@ public sealed class AdminStoredProcedureService
         ExecuteNoResultAsync("dbo.HT_ThongBao_DanhDauDaDoc", command =>
             AddParameter(command, "@IDNguoiNhan", DbType.Int64, idNguoiNhan));
 
-    public Task<(AdminStoredProcedureResult KetQua, long Id)> SaveThietBiAsync(
-        long idTaiKhoan,
-        string maThietBi,
-        string? tenThietBi,
-        bool trangThai) =>
-        ExecuteWithIdAsync("dbo.HT_ThietBi_Save", "@IDThietBi", command =>
-        {
-            AddParameter(command, "@IDTaiKhoan", DbType.Int64, idTaiKhoan);
-            AddParameter(command, "@MaThietBi", DbType.AnsiString, maThietBi, 100);
-            AddParameter(command, "@TenThietBi", DbType.String, tenThietBi, 255);
-            AddParameter(command, "@TrangThai", DbType.Boolean, trangThai);
-        });
-
     public Task<(AdminStoredProcedureResult KetQua, long Id)> SavePushDangKyAsync(
         long idTaiKhoan,
         string endpoint,
         string p256dh,
-        string auth,
-        string? maThietBi) =>
+        string auth) =>
         ExecuteWithIdAsync("dbo.HT_PushDangKy_Save", "@IDDangKy", command =>
         {
             AddParameter(command, "@IDTaiKhoan", DbType.Int64, idTaiKhoan);
             AddParameter(command, "@Endpoint", DbType.String, endpoint, 2000);
             AddParameter(command, "@P256dh", DbType.String, p256dh, 1000);
             AddParameter(command, "@Auth", DbType.String, auth, 400);
-            AddParameter(command, "@MaThietBi", DbType.AnsiString, maThietBi, 100);
+            // Tham so @MaThietBi da bi go: cot HT_PushDangKy.IDThietBi va bang
+            // HT_ThietBi deu khong con.
         });
 
     /// <summary>Don mot subscription da het han (browser tra 404/410).</summary>

@@ -21,6 +21,11 @@ public class NhanDotKhamRequest
 /// co nguoi hoi, va KHONG mang chi tiet tung dong thuoc (don thuoc di duong
 /// tai lieu, dang PDF).
 /// </summary>
+/// <summary>
+/// 🔴 GIỮ NGUYÊN <c>MaBenhNhan</c>, <c>NgayGioRa</c>, <c>ChanDoan</c> dù ba cột
+/// tương ứng trong <c>QL_DotKham</c> đã bị bỏ ở đợt A: HIS đang GỬI LÊN, bỏ tham số
+/// là vỡ bên HIS (tiền lệ V14). Nhận rồi BỎ — không INSERT xuống DB.
+/// </summary>
 public class DotKhamItem
 {
     [JsonPropertyName("maVaoVien")]

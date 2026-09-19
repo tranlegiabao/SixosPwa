@@ -8,7 +8,7 @@ public class DoiTac
     public string? DiaChi { get; set; }
     public string? SDT { get; set; }
     public string? Email { get; set; }
-    public long? IdPm { get; set; }
+    // 🔴 Cot DM_DoiTac.IDPM da BI BO (dot A, §3) — chua bao gio duoc dung.
     public string? BrandName { get; set; }
 
     /// <summary>Doi ten tu Password — tranh nham voi mat khau dang nhap noi bo (ADR 0009).</summary>

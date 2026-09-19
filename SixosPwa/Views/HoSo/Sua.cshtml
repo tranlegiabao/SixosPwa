@@ -4,37 +4,16 @@
 @{
     Layout = null;
 
-    // Lấy danh mục giới tính từ database DaotaoHIS (DM_GioiTinh) an toàn
-    var danhMucGioiTinh = new List<SixosPwa.Models.DMGioiTinh>();
-    try
+    // 🔴 Đợt A (bước A04): bảng DM_GioiTinh ĐÃ BỊ XOÁ. Câu SQL thô cũ ở đây nằm trong
+    // try/catch nên không ai thấy lỗi, nhưng mỗi lượt render là một lượt hỏi DB hỏng.
+    // Danh mục nay là HẰNG trong C#, dùng ĐÚNG bộ giá trị với
+    // Areas/Admin/Controllers/TaiKhoanController.DanhMucGioiTinhCoDinh.
+    var danhMucGioiTinh = new List<SixosPwa.Models.DMGioiTinh>
     {
-        var conn = _db.Database.GetDbConnection();
-        if (conn.State != System.Data.ConnectionState.Open) conn.Open();
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT MaGioiTinh, TenGioiTinh FROM DM_GioiTinh";
-        using var reader = cmd.ExecuteReader();
-        while (reader.Read())
-        {
-            danhMucGioiTinh.Add(new SixosPwa.Models.DMGioiTinh
-            {
-                MaGioiTinh = reader[0]?.ToString() ?? "",
-                TenGioiTinh = reader[1]?.ToString() ?? ""
-            });
-        }
-    }
-    catch
-    {
-        // Bỏ qua lỗi và dùng fallback
-    }
-    if (danhMucGioiTinh.Count == 0)
-    {
-        danhMucGioiTinh = new List<SixosPwa.Models.DMGioiTinh>
-        {
-            new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "1", TenGioiTinh = "Nam" },
-            new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "2", TenGioiTinh = "Nữ" },
-            new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "3", TenGioiTinh = "Chưa xác định" }
-        };
-    }
+        new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "1", TenGioiTinh = "Nam" },
+        new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "2", TenGioiTinh = "Nữ" },
+        new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "3", TenGioiTinh = "Không xác định" }
+    };
 
     // Ung vien cua *Tang 2*: co thi man doi hinh — thay vi khoi *Ma benh nhan tai
     // co so* thi hien danh sach cho nguoi dung tu nhan.

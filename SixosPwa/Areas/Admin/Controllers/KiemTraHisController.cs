@@ -14,14 +14,13 @@ namespace SixosPwa.Areas.Admin.Controllers;
 /// benh vien, SixosPwa chay tren internet khong bao gio goi toi duoc, va khong
 /// ai biet cho den luc benh nhan bam nut.
 ///
-/// Nhung <c>DM_DoiTacApi</c> HIEN KHONG CO MAN LUU NAO — no duoc cau hinh bang
-/// SQL truc tiep (da ra soat: khong mot cho nao trong app ghi vao bang do). Nen
-/// khong co su kien "luu" de moc vao. Thay vi dung ca mot man CRUD nam ngoai
-/// pham vi dot nay, dat dung mot cua kiem tra goi duoc NGAY SAU khi chay seed —
-/// bat dung ba thu hay sai nhat, theo thu tu tu re den dat:
+/// Truoc dot A, <c>DM_DoiTacApi</c> KHONG CO MAN LUU NAO — no duoc cau hinh bang
+/// SQL truc tiep. Tu dot A cac o do da nam trong man Sua co so (cot KetNoi_*),
+/// nhung cua kiem tra nay van giu vi no bat dung ba thu hay sai nhat NGAY SAU khi
+/// luu — theo thu tu tu re den dat:
 ///
-///   1. Cau hinh: co dong <c>DM_DoiTacApi</c> chua, <c>Active = 1</c> chua,
-///      <c>BaseUrl</c> co hop le khong.
+///   1. Cau hinh: <c>KetNoi_Active = 1</c> chua, <c>KetNoi_BaseUrlHIS</c> co hop le
+///      khong. (Dot A: bang <c>DM_DoiTacApi</c> da gop thanh cot cua <c>DM_CSKCB</c>.)
 ///   2. Noi duoc toi HIS khong (day la cho ADR 0014 sap).
 ///   3. Khoa + ma co so co dung khong — goi <c>SPWA_TraCuuHoSo</c> KHONG kem
 ///      tham so: HIS tra 400 (qua duoc cua xac thuc, thieu tham so) = khoa DUNG;
@@ -60,26 +59,20 @@ public sealed class KiemTraHisController : AdminControllerBase
         if (coSo is null)
             return Json(new { dat = false, ketQua = new[] { new KetQuaKiemTra(false, "Cau hinh", $"Khong co co so Id={idCoSo}") } });
 
-        var cauHinh = await _db.DoiTacApis.AsNoTracking().FirstOrDefaultAsync(x => x.IdCoSo == idCoSo, ct);
+        // Dot A: bang 1:1 DM_DoiTacApi da gop thang vao DM_CSKCB (cot KetNoi_*),
+        // nen khong con "chua co dong nao" — chi con "chua dien cau hinh".
+        if (!coSo.KetNoi_Active)
+            ketQua.Add(new KetQuaKiemTra(false, "Cau hinh", "DM_CSKCB.KetNoi_Active = 0 — cua dang tat"));
 
-        if (cauHinh is null)
+        if (string.IsNullOrWhiteSpace(coSo.KetNoi_BaseUrlHIS))
         {
-            ketQua.Add(new KetQuaKiemTra(false, "Cau hinh", "Chua co dong nao trong DM_DoiTacApi cho co so nay"));
+            ketQua.Add(new KetQuaKiemTra(false, "Cau hinh", "KetNoi_BaseUrlHIS rong — khong biet goi di dau"));
             return Json(new { dat = false, coSo = coSo.TenCoSo, ketQua });
         }
 
-        if (!cauHinh.Active)
-            ketQua.Add(new KetQuaKiemTra(false, "Cau hinh", "DM_DoiTacApi.Active = 0 — cua dang tat"));
-
-        if (string.IsNullOrWhiteSpace(cauHinh.BaseUrl))
+        if (!Uri.TryCreate(coSo.KetNoi_BaseUrlHIS.TrimEnd('/') + "/", UriKind.Absolute, out var goc))
         {
-            ketQua.Add(new KetQuaKiemTra(false, "Cau hinh", "BaseUrl rong — khong biet goi di dau"));
-            return Json(new { dat = false, coSo = coSo.TenCoSo, ketQua });
-        }
-
-        if (!Uri.TryCreate(cauHinh.BaseUrl.TrimEnd('/') + "/", UriKind.Absolute, out var goc))
-        {
-            ketQua.Add(new KetQuaKiemTra(false, "Cau hinh", $"BaseUrl khong hop le: {cauHinh.BaseUrl}"));
+            ketQua.Add(new KetQuaKiemTra(false, "Cau hinh", $"KetNoi_BaseUrlHIS khong hop le: {coSo.KetNoi_BaseUrlHIS}"));
             return Json(new { dat = false, coSo = coSo.TenCoSo, ketQua });
         }
 

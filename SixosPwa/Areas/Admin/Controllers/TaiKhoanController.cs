@@ -41,7 +41,7 @@ public sealed class TaiKhoanController : AdminControllerBase
         }
 
         var danhSachCoSo = await _db.DMCSKCBs.AsNoTracking().OrderBy(x => x.TenCoSo).ToListAsync();
-        var danhMucGioiTinh = await LayDanhMucGioiTinhAsync();
+        var danhMucGioiTinh = LayDanhMucGioiTinh();
 
         var daLoc = !string.IsNullOrWhiteSpace(loc) ||
                     !string.IsNullOrWhiteSpace(loaiCS) ||
@@ -141,40 +141,20 @@ public sealed class TaiKhoanController : AdminControllerBase
         Request.Headers["X-Requested-With"] == "XMLHttpRequest" ||
         Request.Query.ContainsKey("isAjax");
 
-    private async Task<List<DMGioiTinh>> LayDanhMucGioiTinhAsync()
+    /// <summary>
+    /// 🔴 Đợt A: bảng <c>DM_GioiTinh</c> đã bị xóa (chỉ còn <c>CHECK</c> trên
+    /// <c>DM_BenhNhan.GioiTinh</c>), nên danh mục này là HẰNG trong C# — không còn
+    /// câu SQL thô nào đọc bảng đó nữa. Mã giữ nguyên mã cũ của HIS để dữ liệu đã
+    /// lưu không phải dịch lại: <c>1 = Nam</c>, <c>2 = Nữ</c>, <c>3 = Không xác định</c>.
+    /// </summary>
+    private static readonly List<DMGioiTinh> DanhMucGioiTinhCoDinh = new()
     {
-        var danhMucGioiTinh = new List<DMGioiTinh>();
-        try
-        {
-            var conn = _db.Database.GetDbConnection();
-            if (conn.State != System.Data.ConnectionState.Open) await conn.OpenAsync();
-            await using var cmd = conn.CreateCommand();
-            cmd.CommandText = "SELECT MaGioiTinh, TenGioiTinh FROM DM_GioiTinh";
-            await using var reader = await cmd.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
-            {
-                danhMucGioiTinh.Add(new DMGioiTinh
-                {
-                    MaGioiTinh = reader[0]?.ToString() ?? "",
-                    TenGioiTinh = reader[1]?.ToString() ?? ""
-                });
-            }
-        }
-        catch
-        {
-            // Bỏ qua lỗi và dùng fallback
-        }
-        if (danhMucGioiTinh.Count == 0)
-        {
-            danhMucGioiTinh = new List<DMGioiTinh>
-            {
-                new DMGioiTinh { MaGioiTinh = "1", TenGioiTinh = "Nam" },
-                new DMGioiTinh { MaGioiTinh = "2", TenGioiTinh = "Nữ" },
-                new DMGioiTinh { MaGioiTinh = "3", TenGioiTinh = "Chưa xác định" }
-            };
-        }
-        return danhMucGioiTinh;
-    }
+        new DMGioiTinh { MaGioiTinh = "1", TenGioiTinh = "Nam" },
+        new DMGioiTinh { MaGioiTinh = "2", TenGioiTinh = "Nữ" },
+        new DMGioiTinh { MaGioiTinh = "3", TenGioiTinh = "Không xác định" }
+    };
+
+    private static List<DMGioiTinh> LayDanhMucGioiTinh() => DanhMucGioiTinhCoDinh;
 
     [HttpGet]
     public IActionResult Create() => View(new TaiKhoanEditViewModel());
@@ -194,7 +174,7 @@ public sealed class TaiKhoanController : AdminControllerBase
 
         // MatKhauNoiBo de null — phan bam chua thi hanh (Dinh chinh ADR 0009).
         var (result, _) = await _adminStoredProcedures.SaveTaiKhoanAsync(
-            0, model.SDT, null, model.Role, null, null);
+            0, model.SDT, null, model.Role, null);
         if (!result.Succeeded)
         {
             ModelState.AddModelError(nameof(model.SDT), result.Message ?? "Không thể tạo tài khoản.");
@@ -239,8 +219,7 @@ public sealed class TaiKhoanController : AdminControllerBase
             entity.SDT,
             entity.Email,
             NormalizeRole(model.Role),
-            null,
-            entity.IdBenhNhan);
+            null);
         if (!result.Succeeded)
         {
             if (result.Code == 3) return NotFound();
@@ -396,19 +375,13 @@ public sealed class TaiKhoanController : AdminControllerBase
             maBNSauKhiLuu = newMaBN;
             idCoSoHienThi = idCoSoDich;
 
-            // Đồng bộ tài liệu và đợt khám của mã này tại cơ sở nếu có dòng chưa gắn IDBenhNhanCoSo
-            if (idHoSoCoSoResult.HasValue && idHoSoCoSoResult.Value > 0)
-            {
-                var taiLieus = await _db.TaiLieuBenhNhans
-                    .Where(t => t.IdCoSo == idCoSoDich && t.MaBN == newMaBN && t.IdBenhNhanCoSo == null)
-                    .ToListAsync();
-                foreach (var tl in taiLieus) tl.IdBenhNhanCoSo = idHoSoCoSoResult.Value;
-
-                var dotKhams = await _db.DotKhams
-                    .Where(d => d.IdCoSo == idCoSoDich && d.MaBN == newMaBN && d.IdBenhNhanCoSo <= 0)
-                    .ToListAsync();
-                foreach (var dk in dotKhams) dk.IdBenhNhanCoSo = idHoSoCoSoResult.Value;
-            }
+            // 🔴 Khoi "dong bo dong mo coi" cu da bi go o dot A.
+            // No tim tai lieu / dot kham CHUA gan IDBenhNhanCoSo roi doi chieu bang cot
+            // MaBN nam tren chinh hai bang do. Ca hai cot MaBN nay da bi xoa
+            // (QL_TaiLieuBenhNhan.MaBN, QL_DotKham.MaBN) va ma benh nhan gio chi con
+            // suy ra duoc QUA IDBenhNhanCoSo — tuc la phai dung chinh cai dang thieu
+            // de tim no. Khong con manh moi nao de noi lai, ma tu dot A moi duong ghi
+            // deu bat buoc co IDBenhNhanCoSo ngay tu dau nen cung khong sinh them dong mo coi.
         }
         else if (!string.IsNullOrEmpty(coSoRecord?.MaBN))
         {
@@ -432,8 +405,11 @@ public sealed class TaiKhoanController : AdminControllerBase
             var tk = await _db.TaiKhoans.AsNoTracking().FirstOrDefaultAsync(t => t.Id == bn.IdTaiKhoan.Value);
             if (tk != null)
             {
+                // 🔴 Dot A: cot HT_TaiKhoan.IDBenhNhan da bi xoa (thi hanh not ADR 0019).
+                // Quan he gio la 1-N theo chieu DM_BenhNhan.IdTaiKhoan, nen "ho so chinh"
+                // chi con mot nghia doc duoc: tai khoan nay dang quan DUNG MOT ho so.
                 var countHoSo = await _db.BenhNhans.CountAsync(x => x.IdTaiKhoan == tk.Id);
-                if (tk.IdBenhNhan == bn.Id || countHoSo == 1)
+                if (countHoSo == 1)
                 {
                     isPrimary = true;
                 }
