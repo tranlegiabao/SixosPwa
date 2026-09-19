@@ -15,9 +15,9 @@ public class TaiKhoan
     /// </summary>
     public string? MatKhauNoiBo { get; set; }
 
-    // 🔴 Cot HT_TaiKhoan.IDBenhNhan da BI BO (dot A, §3). Chieu dung la nguoc
-    //    lai: DM_BenhNhan.IDTaiKhoan tro ve tai khoan quan minh (ADR 0019) — mot
-    //    tai khoan quan NHIEU ho so, nen khoa 1-1 cu la sai ban chat.
+    // 🔴 Tu dot 1B bang nay CHI CON ADMIN: CK_HT_TaiKhoan_Role CHECK (Role='Admin').
+    //    Benh nhan khong con tai khoan — "loi vao" cua ho la dong DM_BenhNhan co
+    //    dung SDT tai dung co so (luat C7b). Xem ADR 0027 (da dao) va ADR 0034.
 
     public DateTime NgayTao { get; set; } = DateTime.Now;
 }

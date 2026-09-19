@@ -26,13 +26,12 @@ public sealed class BenhNhanController : AdminControllerBase
             query = query.Where(x => x.TenBN.Contains(q)
                 || (x.SDT != null && x.SDT.Contains(q))
                 || x.CCCD.Contains(q)
-                || _db.BenhNhanCoSos.Any(h => h.IdBenhNhan == x.Id && h.MaBN.Contains(q)));
+                || (x.MaBN != null && x.MaBN.Contains(q)));
         }
         if (!string.IsNullOrWhiteSpace(maCoSo))
         {
             var maCoSoLoc = maCoSo.Trim();
-            query = query.Where(x => _db.BenhNhanCoSos.Any(h => h.IdBenhNhan == x.Id
-                && _db.DMCSKCBs.Any(cs => cs.Id == h.IdCoSo && cs.MaCoSo == maCoSoLoc)));
+            query = query.Where(x => _db.DMCSKCBs.Any(cs => cs.Id == x.IdCoSo && cs.MaCoSo == maCoSoLoc));
         }
 
         var total = await query.CountAsync();
@@ -42,12 +41,13 @@ public sealed class BenhNhanController : AdminControllerBase
             .ToListAsync();
 
         var idBenhNhan = items.Select(x => x.Id).ToList();
+        // Dot 1B: mot dong DA LA ho so tai co so nen khong con tu noi.
         var hoSo = await (
-            from h in _db.BenhNhanCoSos.AsNoTracking()
-            join cs in _db.DMCSKCBs.AsNoTracking() on h.IdCoSo equals cs.Id
-            where idBenhNhan.Contains(h.IdBenhNhan)
+            from h in _db.BenhNhans.AsNoTracking()
+            join cs in _db.DMCSKCBs.AsNoTracking() on h.IdCoSo equals (long?)cs.Id
+            where idBenhNhan.Contains(h.Id)
             orderby h.Id
-            select new { h.IdBenhNhan, h.MaBN, cs.MaCoSo }).ToListAsync();
+            select new { IdBenhNhan = h.Id, h.MaBN, cs.MaCoSo }).ToListAsync();
 
         var maCoSoTheoBN = hoSo.GroupBy(x => x.IdBenhNhan)
             .ToDictionary(g => g.Key, g => g.First().MaCoSo);

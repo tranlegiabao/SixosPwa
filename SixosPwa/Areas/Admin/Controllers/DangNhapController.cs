@@ -53,7 +53,7 @@ public sealed class DangNhapController : Controller
         // Kiểm tra xem tài khoản có tồn tại và là Admin hay không
         var taiKhoan = await _taiKhoanService.DangNhapAsync(input, "");
 
-        if (taiKhoan == null || (!string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase) && !string.Equals(taiKhoan.Role, "DoiTac", StringComparison.OrdinalIgnoreCase)))
+        if (taiKhoan == null || (!string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase)))
         {
             return Json(new { success = false, message = "Tài khoản không có quyền truy cập khu vực Admin." });
         }
@@ -75,7 +75,7 @@ public sealed class DangNhapController : Controller
         var otpInput = model.Otp.Trim();
 
         var taiKhoan = await _taiKhoanService.DangNhapAsync(input, "");
-        if (taiKhoan == null || (!string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase) && !string.Equals(taiKhoan.Role, "DoiTac", StringComparison.OrdinalIgnoreCase)))
+        if (taiKhoan == null || (!string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase)))
         {
             return Json(new
             {

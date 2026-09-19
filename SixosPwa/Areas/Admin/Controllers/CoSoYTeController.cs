@@ -1163,7 +1163,7 @@ WHERE ID = @idCoSo;";
             HienThiCongKhai = entity.HienThiCongKhai,
             AnhBia = entity.AnhBia,
             Logo = entity.Logo,
-            IDCongTy = entity.IDCongTy,
+            TenCongTy = entity.TenCongTy,
 
             // Quang cao: gop tu bang con DM_CSKCB_QuangCao vao thang cot cua co so.
             QcSoTienDaTra = entity.QcSoTienDaTra,

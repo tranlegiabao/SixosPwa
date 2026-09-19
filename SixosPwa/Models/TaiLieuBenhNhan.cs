@@ -12,7 +12,7 @@ public class TaiLieuBenhNhan
     public long IdCoSo { get; set; }
 
     /// <summary>Khóa ngoại sang <see cref="BenhNhanCoSo"/> (null nếu bệnh nhân chưa có hồ sơ tại cơ sở).</summary>
-    public long? IdBenhNhanCoSo { get; set; }
+    public long? IdBenhNhan { get; set; }
 
     // 🔴 Ba cột MaBN / DungLuongByte / GhiChu đã BỊ BỎ khỏi QL_TaiLieuBenhNhan
     //    (đợt A, §3). MaBN suy qua IDBenhNhanCoSo -> DM_BenhNhanCoSo.MaBN.

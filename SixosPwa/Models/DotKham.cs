@@ -20,7 +20,7 @@ public class DotKham
 
     public long IdCoSo { get; set; }
 
-    public long IdBenhNhanCoSo { get; set; }
+    public long IdBenhNhan { get; set; }
 
     /// <summary>Dinh danh dot kham ben HIS — nua con lai cua khoa tu nhien.</summary>
     public string MaVaoVien { get; set; } = "";

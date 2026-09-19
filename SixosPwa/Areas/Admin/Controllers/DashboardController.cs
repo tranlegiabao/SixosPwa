@@ -68,19 +68,18 @@ public sealed class DashboardController : AdminControllerBase
         //
         // Tài khoản có thể NULL (hồ sơ cơ sở tự khai, chưa ai nhận) ⇒ LEFT JOIN, và
         // khi đó SDT lấy từ chính hồ sơ.
+        // Dot 1B: mot dong = con nguoi + ho so tai co so, va benh nhan khong con
+        // tai khoan => SDT lay thang tu chinh dong do.
         var facilityPatients = await (
-            from h in _db.BenhNhanCoSos.AsNoTracking()
-            join cs in _db.DMCSKCBs.AsNoTracking() on h.IdCoSo equals cs.Id
-            join p in _db.BenhNhans.AsNoTracking() on h.IdBenhNhan equals p.Id
-            join tk in _db.TaiKhoans.AsNoTracking() on p.IdTaiKhoan equals tk.Id into taiKhoan
-            from tk in taiKhoan.DefaultIfEmpty()
+            from h in _db.BenhNhans.AsNoTracking()
+            join cs in _db.DMCSKCBs.AsNoTracking() on h.IdCoSo equals (long?)cs.Id
             select new
             {
                 MaCoSo = cs.MaCoSo,
-                SDT = tk != null ? tk.SDT : p.SDT,
-                // Ho so chua gan tai khoan => null (KHONG phai 0, xem PatientAccountStat.Id).
-                Id = tk != null ? (long?)tk.Id : null,
-                CCCD = p.CCCD
+                SDT = h.SDT,
+                // Dot 1B: khong con tai khoan benh nhan; ID cua ho so chinh la danh tinh.
+                Id = (long?)h.Id,
+                CCCD = h.CCCD
             })
             .ToListAsync();
 
@@ -115,8 +114,8 @@ public sealed class DashboardController : AdminControllerBase
         {
             AccountCount = await _db.TaiKhoans.CountAsync(),
             AdminAccountCount = await _db.TaiKhoans.CountAsync(x => x.Role == "Admin"),
-            PatientAccountCount = await _db.TaiKhoans.CountAsync(x => x.Role != "Admin"),
-            PartnerCount = await _db.DoiTacs.CountAsync(),
+            // Dot 1B: benh nhan khong con tai khoan (ADR 0034) => luon 0.
+            PatientAccountCount = 0,
             PatientCount = await _db.BenhNhans.CountAsync(),
             FacilityCount = await _db.DMCSKCBs.CountAsync(),
             VisibleFacilityCount = await _db.DMCSKCBs.CountAsync(x => x.HienThiCongKhai),
@@ -135,10 +134,6 @@ public sealed class DashboardController : AdminControllerBase
                     x.Role = NormalizeRole(x.Role);
                     return x;
                 }).ToList(),
-            RecentPartners = await _db.DoiTacs.AsNoTracking()
-                .OrderByDescending(x => x.Id)
-                .Take(4)
-                .ToListAsync(),
             RecentFacilities = await _db.DMCSKCBs.AsNoTracking().OrderByDescending(x => x.Id).Take(4).ToListAsync(),
             NhomCSList = nhomCSList,
             ChuDeList = chuDeList,

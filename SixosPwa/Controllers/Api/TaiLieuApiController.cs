@@ -199,16 +199,15 @@ public class TaiLieuApiController : ControllerBase
             .Select(t => (long?)t.Id)
             .FirstOrDefaultAsync();
 
+        // Dot 1B: mot dong DA LA "con nguoi + ho so tai co so" (luat C2).
         var hoSo = await (
-            from p in _db.BenhNhans.AsNoTracking()
-            join h in _db.BenhNhanCoSos.AsNoTracking() on p.Id equals h.IdBenhNhan
-            join cs in _db.DMCSKCBs.AsNoTracking() on h.IdCoSo equals cs.Id
-            where ((idTaiKhoan != null && p.IdTaiKhoan == idTaiKhoan)
-                   || p.SDT == dinhDanh || p.Email == dinhDanh)
+            from h in _db.BenhNhans.AsNoTracking()
+            join cs in _db.DMCSKCBs.AsNoTracking() on h.IdCoSo equals (long?)cs.Id
+            where (h.SDT == dinhDanh || h.Email == dinhDanh)
                   && h.DaMoTaiLieu
                   && cs.MaCoSo == maCoSo
                   && cs.Id == taiLieu.IdCoSo
-                  && h.Id == taiLieu.IdBenhNhanCoSo
+                  && h.Id == taiLieu.IdBenhNhan
             select new { h.Id, h.MaBN }).FirstOrDefaultAsync();
 
         if (hoSo is null)

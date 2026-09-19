@@ -222,6 +222,25 @@ lên SixosPwa (tài liệu, đợt khám). *Gọi thẳng* = SixosPwa chủ đ�
 (lịch trống, đặt/huỷ lịch). Lịch hẹn **không** có bản sao ở SixosPwa. Xem ADR 0017.
 _Tránh_: đồng bộ (chung chung — không nói được ai gọi ai), push/pull
 
+**Hợp đồng `SPWA_CONG`** *(chốt 2026-09-19)*:
+Bảy đối tượng CSDL bên cổng mà HIS gọi thẳng qua linked server. Gọi là *hợp đồng* chứ không phải *API*
+vì nó không có phiên bản, không có cổng vào, và **không grep nào bên repo cổng nhìn thấy nó** — vi
+phạm thì build vẫn xanh. Chỉ được **thêm** tham số có mặc định, không bao giờ bớt. Xem ADR 0035.
+_Tránh_: API nội bộ, interface HIS, tích hợp
+
+**Dòng neo** *(chốt 2026-09-19)*:
+Một dòng `DM_BenhNhan` **chưa gắn cơ sở** (`IDCoSo IS NULL`). Đây là **trạng thái quá độ**, không phải
+một loại hồ sơ: nó sinh ra ở *cửa 1* (HIS chưa nói được cơ sở nào) và chết đi ở *cửa 4* khi được
+**thăng cấp**. Vô hình với toàn bộ giao diện — mọi câu đọc đều lọc `IDCoSo IS NOT NULL` — và **không
+đăng nhập được**. Dòng neo nằm lại quá 30 ngày là luồng đã chết giữa hai cửa, bị dọn tự động.
+_Tránh_: hồ sơ tạm, hồ sơ rỗng, hồ sơ chờ (đều gợi ý đây là một loại hồ sơ thường trực — nó không phải)
+
+**Thăng cấp** / **Nhân bản** *(chốt 2026-09-19)*:
+Hai việc *cửa 4* làm để một người có hồ sơ tại một cơ sở. *Thăng cấp* = gán `IDCoSo` cho chính **dòng
+neo** đang có. *Nhân bản* = dựng dòng **mới** tại cơ sở này vì dòng nguồn đã thuộc về cơ sở khác — đây
+đúng là *"chấp nhận lặp dòng"*, và là lý do một *Con người* có nhiều dòng `DM_BenhNhan`.
+_Tránh_: gộp hồ sơ (ngược nghĩa), copy, clone
+
 **Trỏ đường** *(chốt 2026-09-12)*:
 Chế độ thứ hai để tài liệu tới cổng, đối lại *Chế độ API*. HIS **chỉ ghi ĐƯỜNG** tới phiếu đã ký số —
 không gửi byte nào — còn bản thân tệp nằm nguyên trên FTP của phòng khám; cổng giữ đường đó và **tự
@@ -336,16 +355,23 @@ _Tránh_: tài liệu treo, ký gửi, pending
 
 ### Tài khoản và hồ sơ (chốt 2026-09-08)
 
-**Tài khoản cổng**:
-Một dòng `HT_TaiKhoan`, khoá bằng **số điện thoại** (`UK_HT_TaiKhoan_SDT`) — thứ đi qua OTP. Từ
-2026-09-08 một tài khoản quản **nhiều** *Con người* (ADR 0019), chứ không còn một-một. Vẫn phải phân
-biệt với *Con người*: tài khoản là chỗ đăng nhập, con người là người đi khám.
-🔴 Quan hệ nhiều-hồ-sơ này **chỉ áp cho nhánh màn chung**; cơ sở đi *nhánh bàn giao* (`KieuApi='UB'`)
-giữ nguyên một tài khoản một người. Hai mô hình danh tính song song là **cố ý**, không phải bỏ sót.
-🔴 Tài khoản là **điều kiện** để có phiên, không phải hệ quả của phiên: không có dòng
-`HT_TaiKhoan` thì không ai đăng nhập được — *đã đăng nhập mà không có tài khoản* là một trạng thái
-hệ thống không tự thoát ra được, và nó từng tồn tại thật cho tới 10/09/2026. Xem ADR 0027.
-_Tránh_: user, người dùng, tài khoản (trần — dễ lẫn với `HT_TaiKhoanDoiTac`)
+**Tài khoản cổng** *(sửa 2026-09-19 — đợt 1B)*:
+Một dòng `HT_TaiKhoan`. 🔴 **Từ đợt 1B đây là khái niệm của riêng khu Admin.** Bệnh nhân **không còn
+tài khoản**: `HT_TaiKhoan` chỉ giữ Admin (`CK_HT_TaiKhoan_Role CHECK (Role = 'Admin')`), 13.152 dòng
+vai trò `BenhNhan` đã bị xoá — trong đó 13.000 vốn là seed giả.
+_Tránh_: user, người dùng, tài khoản (trần); **tài khoản bệnh nhân** (không còn tồn tại)
+
+**Lối vào** *(chốt 2026-09-19)*:
+Thứ thay chỗ *tài khoản bệnh nhân* sau đợt 1B. Một người đăng nhập được vào một cơ sở **khi và chỉ khi**
+tồn tại dòng `DM_BenhNhan` có `SDT` của họ **và** `IDCoSo` của cơ sở đó. Không có bảng riêng, không có
+dòng trung gian — *hồ sơ tại cơ sở* **chính là** lối vào.
+🔴 Đây là **đảo ngược** bất biến cũ *"đăng nhập được thì phải có `HT_TaiKhoan`"* (ADR 0027): bất biến
+giữ nguyên hình dạng, chỉ đổi bảng neo. Câu báo lỗi đang hiển thị — *"Số điện thoại chưa có hồ sơ tại
+cơ sở y tế"* — trước 1B **nói chặt hơn code**, sau 1B mới thành đúng nghĩa đen.
+🔴 Quan hệ một-số-điện-thoại-nhiều-hồ-sơ **chỉ áp cho nhánh màn chung**; cơ sở đi *nhánh bàn giao*
+(`KieuApi='UB'`) giữ nguyên một người một hồ sơ. Hai mô hình danh tính song song là **cố ý**.
+Xem ADR 0027 (đã đảo) và ADR 0034.
+_Tránh_: tài khoản bệnh nhân, đăng ký, profile
 
 **Hồ sơ tự khai**:
 Một *Con người* do chính người dùng gõ tay trên màn *Hồ sơ của tôi*, khi cơ sở **chưa** có người đó.

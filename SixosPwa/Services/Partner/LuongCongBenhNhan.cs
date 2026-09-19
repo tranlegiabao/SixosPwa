@@ -272,12 +272,9 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
     /// </summary>
     private async Task<TaiKhoan?> TimTaiKhoanAsync(string cccd, CancellationToken ct)
     {
-        // Chieu MOI truoc (ADR 0019): con nguoi tro ve tai khoan quan minh.
-        var theoChuSoHuu = await (
-            from p in _db.BenhNhans
-            join t in _db.TaiKhoans on p.IdTaiKhoan equals t.Id
-            where p.CCCD == cccd
-            select t).FirstOrDefaultAsync(ct);
+        // 🔴 Dot 1B: benh nhan KHONG CON tai khoan (HT_TaiKhoan chi con Admin),
+        // nen khong con duong nao di tu CCCD sang tai khoan. Xem ADR 0034.
+        TaiKhoan? theoChuSoHuu = null;
 
         // 🔴 Dot A da bo cot HT_TaiKhoan.IDBenhNhan, nen nhanh lui ve chieu CU
         // (join t.IdBenhNhan = p.ID) khong con nua. Script 09 da do het du lieu
@@ -304,12 +301,11 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
             .Select(t => (long?)t.Id)
             .FirstOrDefaultAsync(ct);
 
+        // Dot 1B: pham vi la cap (SDT x co so) — luat C2.
         return await (
-            from p in _db.BenhNhans.AsNoTracking()
-            join h in _db.BenhNhanCoSos.AsNoTracking() on p.Id equals h.IdBenhNhan
-            join cs in _db.DMCSKCBs.AsNoTracking() on h.IdCoSo equals cs.Id
-            where ((idTaiKhoan != null && p.IdTaiKhoan == idTaiKhoan)
-                   || (p.IdTaiKhoan == null && (p.SDT == dinhDanh || p.Email == dinhDanh)))
+            from h in _db.BenhNhans.AsNoTracking()
+            join cs in _db.DMCSKCBs.AsNoTracking() on h.IdCoSo equals (long?)cs.Id
+            where (h.SDT == dinhDanh || h.Email == dinhDanh)
                   && cs.MaCoSo == maCoSo
                   && h.DaMoTaiLieu
             select h.Id).CountAsync(ct);
@@ -383,16 +379,9 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
         // ho so do khong thuoc ve tai khoan nay. Chan o day thi nguoi go nham mot
         // so CCCD se bi khoa hoan toan khoi cong ma khong hieu vi sao. Man *Ho so
         // cua toi* moi la cho hien loi va chi duong ra.
-        if (luuNguoi.Id > 0 && idTaiKhoan > 0)
-        {
-            var nhanChu = await _thuTuc.NhanChuSoHuuAsync(luuNguoi.Id, idTaiKhoan);
-            if (!nhanChu.Succeeded)
-            {
-                _logger.LogInformation(
-                    "Ho so {IdBenhNhan} da thuoc tai khoan khac, tai khoan {IdTaiKhoan} khong nhan duoc: {ThongBao}",
-                    luuNguoi.Id, idTaiKhoan, nhanChu.Message);
-            }
-        }
+        // 🔴 Cua 3 "nhan chu so huu" da chet tu dot 1B: cot DM_BenhNhan.IDTaiKhoan
+        // khong con, va "ho so thuoc ve ai" nay la cap (SDT x co so) cua chinh
+        // dong do. Xem ADR 0034 va CONTEXT.md muc *Loi vao*.
 
         return await _db.TaiKhoans.FirstAsync(x => x.Id == idTaiKhoan, ct);
     }
@@ -410,11 +399,9 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
         var idCoSo = await LayIdCoSoAsync(maCoSo, ct);
         if (idCoSo is null) return;
 
-        var daCoHoSo = await (
-            from p in _db.BenhNhans
-            join h in _db.BenhNhanCoSos on p.Id equals h.IdBenhNhan
-            where (p.SDT == dinhDanh || p.Email == dinhDanh) && h.IdCoSo == idCoSo.Value
-            select p.Id).AnyAsync(ct);
+        var daCoHoSo = await _db.BenhNhans
+            .AnyAsync(h => (h.SDT == dinhDanh || h.Email == dinhDanh)
+                        && h.IdCoSo == idCoSo.Value, ct);
 
         if (daCoHoSo)
         {
@@ -460,16 +447,16 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
                     .FirstOrDefaultAsync(ct);
 
                 var idBenhNhan = await _db.BenhNhans.AsNoTracking()
-                    .Where(p => (idTaiKhoan != null && p.IdTaiKhoan == idTaiKhoan)
-                                || p.SDT == dinhDanh || p.Email == dinhDanh
-                                || (!string.IsNullOrWhiteSpace(cccd) && !LaMaGia(cccd) && p.CCCD == cccd))
+                    .Where(p => p.IdCoSo == idCoSo.Value
+                             && (p.SDT == dinhDanh || p.Email == dinhDanh
+                                 || (!string.IsNullOrWhiteSpace(cccd) && !LaMaGia(cccd) && p.CCCD == cccd)))
                     .Select(p => p.Id)
                     .FirstOrDefaultAsync(ct);
 
                 if (idBenhNhan > 0)
                 {
-                    var hoSoCoSo = await _db.BenhNhanCoSos.AsNoTracking()
-                        .FirstOrDefaultAsync(h => h.IdBenhNhan == idBenhNhan && h.IdCoSo == idCoSo.Value, ct);
+                    var hoSoCoSo = await _db.BenhNhans.AsNoTracking()
+                        .FirstOrDefaultAsync(h => h.Id == idBenhNhan && h.IdCoSo == idCoSo.Value, ct);
 
                     if (hoSoCoSo == null || string.IsNullOrWhiteSpace(hoSoCoSo.MaBN))
                     {

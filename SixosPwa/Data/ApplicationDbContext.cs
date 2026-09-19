@@ -14,9 +14,7 @@ public class ApplicationDbContext : DbContext
     {
     }
 
-    public DbSet<DoiTac> DoiTacs => Set<DoiTac>();
     public DbSet<BenhNhan> BenhNhans => Set<BenhNhan>();
-    public DbSet<BenhNhanCoSo> BenhNhanCoSos => Set<BenhNhanCoSo>();
     public DbSet<TaiKhoan> TaiKhoans => Set<TaiKhoan>();
     public DbSet<ThongBao> ThongBaos => Set<ThongBao>();
     public DbSet<PushDangKy> PushDangKys => Set<PushDangKy>();
@@ -34,18 +32,6 @@ public class ApplicationDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // ---------------------------------------------------------------- DM_DoiTac
-        modelBuilder.Entity<DoiTac>().ToTable("DM_DoiTac");
-        modelBuilder.Entity<DoiTac>().HasKey(e => e.Id);
-        modelBuilder.Entity<DoiTac>().Property(e => e.Id).HasColumnName("ID");
-        modelBuilder.Entity<DoiTac>().Property(e => e.MaDT).HasMaxLength(20).IsRequired();
-        modelBuilder.Entity<DoiTac>().Property(e => e.TenDT).HasMaxLength(100).IsRequired();
-        modelBuilder.Entity<DoiTac>().Property(e => e.DiaChi).HasMaxLength(255);
-        modelBuilder.Entity<DoiTac>().Property(e => e.SDT).HasMaxLength(20);
-        modelBuilder.Entity<DoiTac>().Property(e => e.Email).HasMaxLength(100);
-        modelBuilder.Entity<DoiTac>().Property(e => e.BrandName).HasMaxLength(100);
-        modelBuilder.Entity<DoiTac>().Property(e => e.MatKhauDoiTac).HasMaxLength(255);
-
         // ------------------------------------------------------------- DM_BenhNhan
         modelBuilder.Entity<BenhNhan>().ToTable("DM_BenhNhan");
         modelBuilder.Entity<BenhNhan>().HasKey(e => e.Id);
@@ -55,23 +41,19 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<BenhNhan>().Property(e => e.SDT).HasMaxLength(20);
         modelBuilder.Entity<BenhNhan>().Property(e => e.Email).HasMaxLength(100);
         modelBuilder.Entity<BenhNhan>().Property(e => e.DiaChi).HasMaxLength(255);
-        modelBuilder.Entity<BenhNhan>().Property(e => e.IdTaiKhoan).HasColumnName("IDTaiKhoan");
+        modelBuilder.Entity<BenhNhan>().Property(e => e.IdCoSo).HasColumnName("IDCoSo");
+        modelBuilder.Entity<BenhNhan>().Property(e => e.MaBN).HasMaxLength(20);
+        modelBuilder.Entity<BenhNhan>().Property(e => e.DaMoTaiLieu).IsRequired();
+        modelBuilder.Entity<BenhNhan>().Property(e => e.NgayXemLichCuoi);
         modelBuilder.Entity<BenhNhan>().Property(e => e.NgaySinh);
         modelBuilder.Entity<BenhNhan>().Property(e => e.HoTenKhongDau).HasMaxLength(100);
         modelBuilder.Entity<BenhNhan>().Property(e => e.GioiTinh).HasMaxLength(10);
-        modelBuilder.Entity<BenhNhan>().HasIndex(e => e.CCCD).IsUnique();
-
-        // -------------------------------------------------------- DM_BenhNhanCoSo
-        modelBuilder.Entity<BenhNhanCoSo>().ToTable("DM_BenhNhanCoSo");
-        modelBuilder.Entity<BenhNhanCoSo>().HasKey(e => e.Id);
-        modelBuilder.Entity<BenhNhanCoSo>().Property(e => e.Id).HasColumnName("ID");
-        modelBuilder.Entity<BenhNhanCoSo>().Property(e => e.IdBenhNhan).HasColumnName("IDBenhNhan").IsRequired();
-        modelBuilder.Entity<BenhNhanCoSo>().Property(e => e.IdCoSo).HasColumnName("IDCoSo").IsRequired();
-        // KHONG IsRequired nua: ho so tu khai chua co ma co so cap (chot 12).
-        modelBuilder.Entity<BenhNhanCoSo>().Property(e => e.MaBN).HasMaxLength(20);
-        modelBuilder.Entity<BenhNhanCoSo>().Property(e => e.DaMoTaiLieu).IsRequired();
-        modelBuilder.Entity<BenhNhanCoSo>().Property(e => e.NgayXemLichCuoi);
-        modelBuilder.Entity<BenhNhanCoSo>().HasIndex(e => new { e.IdCoSo, e.MaBN }).IsUnique();
+        // 🔴 UNIQUE gio la (IDCoSo, CCCD) va (IDCoSo, MaBN), deu LOC IDCoSo IS NOT NULL:
+        //    SQL Server coi cac NULL la BANG NHAU trong unique index, thieu ve loc thi
+        //    hai dong neo cung CCCD se dam nhau. EF khong dien ta duoc filter nen chi
+        //    khai bao de truy van hieu khoa; nguon su that la B02.
+        modelBuilder.Entity<BenhNhan>().HasIndex(e => new { e.IdCoSo, e.CCCD });
+        modelBuilder.Entity<BenhNhan>().HasIndex(e => new { e.IdCoSo, e.MaBN });
 
         // ------------------------------------------------------------- HT_TaiKhoan
         modelBuilder.Entity<TaiKhoan>().ToTable("HT_TaiKhoan");
@@ -97,7 +79,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<PushDangKy>().ToTable("HT_PushDangKy");
         modelBuilder.Entity<PushDangKy>().HasKey(e => e.Id);
         modelBuilder.Entity<PushDangKy>().Property(e => e.Id).HasColumnName("ID");
-        modelBuilder.Entity<PushDangKy>().Property(e => e.IdTaiKhoan).HasColumnName("IDTaiKhoan").IsRequired();
+        modelBuilder.Entity<PushDangKy>().Property(e => e.IdBenhNhan).HasColumnName("IDBenhNhan").IsRequired();
         modelBuilder.Entity<PushDangKy>().Property(e => e.Endpoint).HasMaxLength(1000).IsRequired();
         modelBuilder.Entity<PushDangKy>().Property(e => e.P256dh).HasMaxLength(500).IsRequired();
         modelBuilder.Entity<PushDangKy>().Property(e => e.Auth).HasMaxLength(200).IsRequired();
@@ -110,7 +92,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<DotKham>().HasKey(e => e.Id);
         modelBuilder.Entity<DotKham>().Property(e => e.Id).HasColumnName("ID");
         modelBuilder.Entity<DotKham>().Property(e => e.IdCoSo).HasColumnName("IDCoSo").IsRequired();
-        modelBuilder.Entity<DotKham>().Property(e => e.IdBenhNhanCoSo).HasColumnName("IDBenhNhanCoSo").IsRequired();
+        modelBuilder.Entity<DotKham>().Property(e => e.IdBenhNhan).HasColumnName("IDBenhNhan").IsRequired();
         modelBuilder.Entity<DotKham>().Property(e => e.MaVaoVien).HasMaxLength(50).IsRequired();
         modelBuilder.Entity<DotKham>().Property(e => e.NgayGioVao).IsRequired();
         modelBuilder.Entity<DotKham>().Property(e => e.TenKhoa).HasMaxLength(255);
@@ -126,6 +108,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<DMCSKCB>().Property(e => e.MaCoSo).HasMaxLength(10).IsRequired();
         modelBuilder.Entity<DMCSKCB>().Property(e => e.TenCoSo).HasMaxLength(200).IsRequired();
         modelBuilder.Entity<DMCSKCB>().Property(e => e.Slug).HasMaxLength(100).IsRequired();
+        modelBuilder.Entity<DMCSKCB>().Property(e => e.TenCongTy).HasMaxLength(200);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.IdNhomCS).HasColumnName("IDNhomCS");
         modelBuilder.Entity<DMCSKCB>().Property(e => e.DiaChi).HasMaxLength(255);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.SDT).HasMaxLength(20);
@@ -134,7 +117,6 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<DMCSKCB>().Property(e => e.QcSoTienDaTra).HasColumnType("decimal(15,0)");
         modelBuilder.Entity<DMCSKCB>().Property(e => e.QcNoiDung).HasColumnType("nvarchar(max)");
         modelBuilder.Entity<DMCSKCB>().Property(e => e.QcAnh).HasColumnType("nvarchar(max)");
-        modelBuilder.Entity<DMCSKCB>().Property(e => e.IDCongTy).HasColumnName("IDCongTy");
         // Ket noi sang he HIS cua co so (gop tu DM_DoiTacApi).
         modelBuilder.Entity<DMCSKCB>().Property(e => e.KetNoi_UrlChuyenHuong).HasMaxLength(255);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.KetNoi_BaseUrlHIS).HasMaxLength(255);
@@ -175,7 +157,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<TaiLieuBenhNhan>().HasKey(e => e.Id);
         modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.Id).HasColumnName("ID");
         modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.IdCoSo).HasColumnName("IDCoSo").IsRequired();
-        modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.IdBenhNhanCoSo).HasColumnName("IDBenhNhanCoSo");
+        modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.IdBenhNhan).HasColumnName("IDBenhNhan");
         modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.LoaiTaiLieu).HasMaxLength(50).IsRequired();
         modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.TenTaiLieu).HasMaxLength(255).IsRequired();
         // 🔴 Ba so DANG LECH, co y giu nguyen 500: cot khai nvarchar(1000) trong DB
@@ -193,7 +175,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.PhienBan).IsRequired();
         modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.LaBanMoiNhat).IsRequired();
         modelBuilder.Entity<TaiLieuBenhNhan>().Property(e => e.NgayTao).IsRequired();
-        modelBuilder.Entity<TaiLieuBenhNhan>().HasIndex(e => e.IdBenhNhanCoSo);
+        modelBuilder.Entity<TaiLieuBenhNhan>().HasIndex(e => e.IdBenhNhan);
 
         // ------------------------------------------------------------ HT_Config
         modelBuilder.Entity<HTConfig>().ToTable("HT_Config");

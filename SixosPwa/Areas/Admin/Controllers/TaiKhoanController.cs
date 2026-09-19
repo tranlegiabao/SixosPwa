@@ -256,10 +256,8 @@ public sealed class TaiKhoanController : AdminControllerBase
             return Json(new { success = false, message = "Không tìm thấy hồ sơ bệnh nhân." });
 
         // 🔴 KIỂM TRA: Nếu hồ sơ đang có mã bệnh nhân tại cơ sở thì KHÔNG cho sửa thông tin. Phải gỡ nối trước!
-        var coSoRecord = await _db.BenhNhanCoSos
-            .Where(x => x.IdBenhNhan == bn.Id)
-            .OrderByDescending(x => x.MaBN != null)
-            .FirstOrDefaultAsync();
+        // Dot 1B: chinh dong do LA ho so tai co so, giu dung mot ma (ADR 0032).
+        var coSoRecord = bn;
 
         if (!string.IsNullOrEmpty(coSoRecord?.MaBN))
         {
@@ -280,7 +278,7 @@ public sealed class TaiKhoanController : AdminControllerBase
                 .AnyAsync(x => x.CCCD == cccdMoi && x.Id != bn.Id);
             if (trungCccd)
             {
-                return Json(new { success = false, isWarning = true, message = "Số căn cước này đã được một tài khoản khác khai trước." });
+                return Json(new { success = false, isWarning = true, message = "Số căn cước này đã có hồ sơ khác tại cơ sở này." });
             }
         }
         else if (laCccdKhongCo && req.NgaySinh.HasValue && !string.IsNullOrEmpty(req.GioiTinh))
@@ -291,10 +289,10 @@ public sealed class TaiKhoanController : AdminControllerBase
                             && x.NgaySinh.HasValue && x.NgaySinh.Value.Date == req.NgaySinh.Value.Date
                             && x.GioiTinh == req.GioiTinh
                             && x.Id != bn.Id
-                            && x.IdTaiKhoan != null && x.IdTaiKhoan != bn.IdTaiKhoan);
+                            && x.IdCoSo != null && x.IdCoSo == bn.IdCoSo);
             if (trungNhanThan)
             {
-                return Json(new { success = false, isWarning = true, message = "Hồ sơ với thông tin này (Họ tên, ngày sinh, giới tính) đã được một tài khoản khác khai trước." });
+                return Json(new { success = false, isWarning = true, message = "Hồ sơ với thông tin này (Họ tên, ngày sinh, giới tính) đã có hồ sơ khác tại cơ sở này." });
             }
         }
 
@@ -318,8 +316,8 @@ public sealed class TaiKhoanController : AdminControllerBase
         // Gọi tạo dòng tự khai trước
         if (idCoSoDich > 0)
         {
-            var dongHienTai = await _db.BenhNhanCoSos
-                .FirstOrDefaultAsync(x => x.IdBenhNhan == bn.Id && x.IdCoSo == idCoSoDich);
+            var dongHienTai = await _db.BenhNhans
+                .FirstOrDefaultAsync(x => x.Id == bn.Id && x.IdCoSo == idCoSoDich);
 
             if (dongHienTai == null)
             {
@@ -400,15 +398,15 @@ public sealed class TaiKhoanController : AdminControllerBase
 
         // Kiểm tra xem hồ sơ này có phải hồ sơ chính của tài khoản không
         bool isPrimary = false;
-        if (bn.IdTaiKhoan.HasValue)
+        if (bn.IdCoSo.HasValue)
         {
-            var tk = await _db.TaiKhoans.AsNoTracking().FirstOrDefaultAsync(t => t.Id == bn.IdTaiKhoan.Value);
+            var tk = await _db.TaiKhoans.AsNoTracking().FirstOrDefaultAsync(t => t.Id == bn.IdCoSo.Value);
             if (tk != null)
             {
                 // 🔴 Dot A: cot HT_TaiKhoan.IDBenhNhan da bi xoa (thi hanh not ADR 0019).
                 // Quan he gio la 1-N theo chieu DM_BenhNhan.IdTaiKhoan, nen "ho so chinh"
                 // chi con mot nghia doc duoc: tai khoan nay dang quan DUNG MOT ho so.
-                var countHoSo = await _db.BenhNhans.CountAsync(x => x.IdTaiKhoan == tk.Id);
+                var countHoSo = await _db.BenhNhans.CountAsync(x => x.IdCoSo == tk.Id);
                 if (countHoSo == 1)
                 {
                     isPrimary = true;
@@ -425,7 +423,7 @@ public sealed class TaiKhoanController : AdminControllerBase
             data = new
             {
                 id = bn.Id,
-                idTaiKhoan = bn.IdTaiKhoan,
+                idTaiKhoan = bn.IdCoSo,
                 tenBN = bn.TenBN,
                 cccd = bn.CCCD,
                 sdt = bn.SDT ?? "",
@@ -467,9 +465,9 @@ public sealed class TaiKhoanController : AdminControllerBase
         if (req == null || req.IdHoSoCoSo <= 0)
             return Json(new { success = false, message = "Không xác định được dòng hồ sơ tại cơ sở cần gỡ." });
 
-        var dong = await _db.BenhNhanCoSos.AsNoTracking()
+        var dong = await _db.BenhNhans.AsNoTracking()
             .Where(x => x.Id == req.IdHoSoCoSo)
-            .Select(x => new { x.Id, x.IdBenhNhan, x.MaBN })
+            .Select(x => new { x.Id, IdBenhNhan = x.Id, x.MaBN })
             .FirstOrDefaultAsync();
 
         if (dong == null)
@@ -478,21 +476,24 @@ public sealed class TaiKhoanController : AdminControllerBase
         if (string.IsNullOrEmpty(dong.MaBN))
             return Json(new { success = false, message = "Hồ sơ này chưa nối mã nào nên không có gì để gỡ." });
 
-        var chuSoHuu = await _db.BenhNhans.AsNoTracking()
-            .Where(b => b.Id == dong.IdBenhNhan)
-            .Select(b => b.IdTaiKhoan)
+        // Dot 1B: "chu so huu" la cap (SDT x co so) cua chinh dong ho so do
+        // (ADR 0034). Khu Admin di duong nay thay mat benh nhan nen lay SDT +
+        // co so tu chinh dong, khong hoi phien.
+        var neo = await _db.BenhNhans.AsNoTracking()
+            .Where(b => b.Id == dong.Id)
+            .Select(b => new { b.SDT, b.IdCoSo })
             .FirstOrDefaultAsync();
 
-        if (chuSoHuu is null or <= 0)
+        if (neo is null || string.IsNullOrWhiteSpace(neo.SDT) || neo.IdCoSo is null)
         {
             return Json(new
             {
                 success = false,
-                message = "Hồ sơ này chưa thuộc tài khoản nào nên chưa gỡ đồng bộ được."
+                message = "Hồ sơ này chưa có số điện thoại hoặc chưa gắn cơ sở nên chưa gỡ đồng bộ được."
             });
         }
 
-        var ketQua = await _adminStoredProcedures.GoNoiAsync(req.IdHoSoCoSo, chuSoHuu.Value);
+        var ketQua = await _adminStoredProcedures.GoNoiAsync(req.IdHoSoCoSo, neo.SDT, neo.IdCoSo.Value);
 
         return Json(new
         {
@@ -514,10 +515,10 @@ public sealed class TaiKhoanController : AdminControllerBase
         if (bn == null)
             return Json(new { success = false, message = "Không tìm thấy hồ sơ bệnh nhân." });
 
-        var cosos = await _db.BenhNhanCoSos.Where(x => x.IdBenhNhan == bn.Id).ToListAsync();
+        var cosos = await _db.BenhNhans.Where(x => x.Id == bn.Id).ToListAsync();
         if (cosos.Any())
         {
-            _db.BenhNhanCoSos.RemoveRange(cosos);
+            _db.BenhNhans.RemoveRange(cosos);
             await _db.SaveChangesAsync();
         }
 
@@ -554,7 +555,7 @@ public sealed class TaiKhoanController : AdminControllerBase
                 .AnyAsync(x => x.CCCD == cccdMoi);
             if (trungCccd)
             {
-                return Json(new { success = false, isWarning = true, message = "Số căn cước này đã được một tài khoản khác khai trước." });
+                return Json(new { success = false, isWarning = true, message = "Số căn cước này đã có hồ sơ khác tại cơ sở này." });
             }
         }
         else if (laCccdKhongCo && req.NgaySinh.HasValue && !string.IsNullOrEmpty(req.GioiTinh))
@@ -564,16 +565,16 @@ public sealed class TaiKhoanController : AdminControllerBase
                 .AnyAsync(x => x.HoTenKhongDau == tenKd
                             && x.NgaySinh.HasValue && x.NgaySinh.Value.Date == req.NgaySinh.Value.Date
                             && x.GioiTinh == req.GioiTinh
-                            && x.IdTaiKhoan != null && x.IdTaiKhoan != req.IdTaiKhoan);
+);
             if (trungNhanThan)
             {
-                return Json(new { success = false, isWarning = true, message = "Hồ sơ với thông tin này (Họ tên, ngày sinh, giới tính) đã được một tài khoản khác khai trước." });
+                return Json(new { success = false, isWarning = true, message = "Hồ sơ với thông tin này (Họ tên, ngày sinh, giới tính) đã có hồ sơ khác tại cơ sở này." });
             }
         }
 
         var bn = new SixosPwa.Models.BenhNhan
         {
-            IdTaiKhoan = req.IdTaiKhoan,
+            // Dot 1B: khong con cot IDTaiKhoan; ho so thuoc ve cap (SDT x co so).
             TenBN = req.TenBN.Trim(),
             CCCD = cccdMoi,
             SDT = string.IsNullOrWhiteSpace(req.SDT) ? null : req.SDT.Trim(),
@@ -611,7 +612,7 @@ public sealed class TaiKhoanController : AdminControllerBase
             data = new
             {
                 id = bn.Id,
-                idTaiKhoan = bn.IdTaiKhoan,
+                idTaiKhoan = bn.IdCoSo,
                 tenBN = bn.TenBN,
                 cccd = bn.CCCD,
                 sdt = bn.SDT ?? "",

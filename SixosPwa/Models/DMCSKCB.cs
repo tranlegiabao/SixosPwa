@@ -67,8 +67,12 @@ public class DMCSKCB
     public DateTime NgayTao { get; set; } = DateTime.Now;
     public DateTime? NgayCapNhat { get; set; }
 
-    /// <summary>Cong ty chu quan — ten cu la <c>IDDoiTac</c>, khoa ngoai sang <see cref="DoiTac"/>.</summary>
-    public long? IDCongTy { get; set; }
+    /// <summary>
+    /// Ten cong ty chu quan — cot phang <c>DM_CSKCB.TenCongTy</c>.
+    /// 🔴 Dot 1B (C16/PA-1) bo bang <c>DM_DoiTac</c> va khoa ngoai <c>IDCongTy</c>:
+    /// chi 1/12 co so tung co gia tri, khong dang mot bang rieng. Dao ADR 0011.
+    /// </summary>
+    public string? TenCongTy { get; set; }
 
     // --- Ket noi sang he HIS cua co so (tu DM_DoiTacApi) --------------------
 

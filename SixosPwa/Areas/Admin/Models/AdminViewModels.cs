@@ -18,7 +18,6 @@ public sealed class DashboardViewModel
     public int UnreadNotificationCount { get; init; }
     public IReadOnlyList<ThongBao> RecentNotifications { get; init; } = Array.Empty<ThongBao>();
     public IReadOnlyList<TaiKhoan> RecentAccounts { get; init; } = Array.Empty<TaiKhoan>();
-    public IReadOnlyList<DoiTac> RecentPartners { get; init; } = Array.Empty<DoiTac>();
     public IReadOnlyList<DMCSKCB> RecentFacilities { get; init; } = Array.Empty<DMCSKCB>();
     public IReadOnlyList<DMNhomCS> NhomCSList { get; init; } = Array.Empty<DMNhomCS>();
     public IReadOnlyList<DMChuDe> ChuDeList { get; init; } = Array.Empty<DMChuDe>();
@@ -138,46 +137,7 @@ public sealed class TaiKhoanEditViewModel
     public string SDT { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Vui lòng chọn vai trò.")]
-    public string Role { get; set; } = "BenhNhan";
-}
-
-public sealed class DoiTacListViewModel
-{
-    public IReadOnlyList<DoiTac> Items { get; init; } = Array.Empty<DoiTac>();
-    public string? Query { get; init; }
-    public int Page { get; init; }
-    public int PageSize { get; init; }
-    public int TotalItems { get; init; }
-    public int TotalPages => Math.Max(1, (int)Math.Ceiling(TotalItems / (double)PageSize));
-}
-
-public sealed class DoiTacEditViewModel
-{
-    public long Id { get; set; }
-
-    [Required(ErrorMessage = "Vui lòng nhập mã đối tác.")]
-    [StringLength(20, ErrorMessage = "Mã đối tác tối đa 20 ký tự.")]
-    public string MaDT { get; set; } = string.Empty;
-
-    [Required(ErrorMessage = "Vui lòng nhập tên đối tác.")]
-    [StringLength(100, ErrorMessage = "Tên đối tác tối đa 100 ký tự.")]
-    public string TenDT { get; set; } = string.Empty;
-
-    [StringLength(255)]
-    public string? DiaChi { get; set; }
-
-    [StringLength(20)]
-    public string? SDT { get; set; }
-
-    [EmailAddress(ErrorMessage = "Email không hợp lệ.")]
-    [StringLength(100)]
-    public string? Email { get; set; }
-
-    [StringLength(100)]
-    public string? BrandName { get; set; }
-
-    [StringLength(255, ErrorMessage = "Mật khẩu đối tác tối đa 255 ký tự.")]
-    public string? MatKhauDoiTac { get; set; }
+    public string Role { get; set; } = "Admin";
 }
 
 public sealed class CoSoYTeListViewModel
@@ -234,8 +194,8 @@ public sealed class CoSoYTeEditViewModel
     /// <summary>Cột <c>DM_CSKCB.HienThiCongKhai</c> — tên cũ là <c>Active</c>.</summary>
     public bool HienThiCongKhai { get; set; }
 
-    /// <summary>Công ty (đối tác) sở hữu cơ sở — cột <c>DM_CSKCB.IDCongTy</c>, tên cũ <c>IDDoiTac</c>.</summary>
-    public long? IDCongTy { get; set; }
+    /// <summary>Công ty (đối tác) sở hữu cơ sở — cột <c>DM_CSKCB.TenCongTy</c>, tên cũ <c>IDDoiTac</c>.</summary>
+    public string? TenCongTy { get; set; }
 
     // ---- Kết nối HIS: gộp từ bảng 1:1 DM_DoiTacApi vào thẳng DM_CSKCB ----------
 

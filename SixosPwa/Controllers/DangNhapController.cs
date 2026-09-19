@@ -27,6 +27,7 @@ public class DangNhapController : Controller
     /// cua doi tac bi go. Chi dung cho hang rao mat khau o man Dang ky.
     /// </summary>
     private readonly CuaCoSoService _cuaCoSo;
+    private readonly IHoSoBenhNhanService _hoSo;
 
     public DangNhapController(
         IMemoryCache cache,
@@ -34,7 +35,8 @@ public class DangNhapController : Controller
         ApplicationDbContext dbContext,
         ILuongCongBenhNhan luong,
         AdminStoredProcedureService thuTuc,
-        CuaCoSoService cuaCoSo)
+        CuaCoSoService cuaCoSo,
+        IHoSoBenhNhanService hoSo)
     {
         _cache = cache;
         _taiKhoanService = taiKhoanService;
@@ -42,6 +44,7 @@ public class DangNhapController : Controller
         _luong = luong;
         _thuTuc = thuTuc;
         _cuaCoSo = cuaCoSo;
+        _hoSo = hoSo;
     }
 
     /// <summary>
@@ -54,18 +57,17 @@ public class DangNhapController : Controller
         var maBnTraCuu = string.IsNullOrWhiteSpace(mabn) ? "145703" : mabn.Trim();
         var maCoSoTraCuu = string.IsNullOrWhiteSpace(coSo) ? "77121" : coSo.Trim();
 
-        var hoSo = await (from bnCs in _dbContext.BenhNhanCoSos.AsNoTracking()
-                          join cs in _dbContext.DMCSKCBs.AsNoTracking() on bnCs.IdCoSo equals cs.Id
-                          join bn in _dbContext.BenhNhans.AsNoTracking() on bnCs.IdBenhNhan equals bn.Id
-                          where bnCs.MaBN == maBnTraCuu && (cs.MaCoSo == maCoSoTraCuu || cs.Slug == maCoSoTraCuu)
+        // Dot 1B: mot dong DA LA "con nguoi + ho so tai co so" nen khong con tu noi.
+        var hoSo = await (from bn in _dbContext.BenhNhans.AsNoTracking()
+                          join cs in _dbContext.DMCSKCBs.AsNoTracking() on bn.IdCoSo equals (long?)cs.Id
+                          where bn.MaBN == maBnTraCuu && (cs.MaCoSo == maCoSoTraCuu || cs.Slug == maCoSoTraCuu)
                           select new { BenhNhan = bn, CoSo = cs }).FirstOrDefaultAsync();
 
         if (hoSo == null)
         {
-            hoSo = await (from bnCs in _dbContext.BenhNhanCoSos.AsNoTracking()
-                          join cs in _dbContext.DMCSKCBs.AsNoTracking() on bnCs.IdCoSo equals cs.Id
-                          join bn in _dbContext.BenhNhans.AsNoTracking() on bnCs.IdBenhNhan equals bn.Id
-                          where bnCs.MaBN == maBnTraCuu
+            hoSo = await (from bn in _dbContext.BenhNhans.AsNoTracking()
+                          join cs in _dbContext.DMCSKCBs.AsNoTracking() on bn.IdCoSo equals (long?)cs.Id
+                          where bn.MaBN == maBnTraCuu
                           select new { BenhNhan = bn, CoSo = cs }).FirstOrDefaultAsync();
         }
 
@@ -120,18 +122,17 @@ public class DangNhapController : Controller
         var maBnTraCuu = string.IsNullOrWhiteSpace(mabn) ? "145703" : mabn.Trim();
         var maCoSoTraCuu = string.IsNullOrWhiteSpace(coSo) ? "77121" : coSo.Trim();
 
-        var hoSo = await (from bnCs in _dbContext.BenhNhanCoSos.AsNoTracking()
-                          join cs in _dbContext.DMCSKCBs.AsNoTracking() on bnCs.IdCoSo equals cs.Id
-                          join bn in _dbContext.BenhNhans.AsNoTracking() on bnCs.IdBenhNhan equals bn.Id
-                          where bnCs.MaBN == maBnTraCuu && (cs.MaCoSo == maCoSoTraCuu || cs.Slug == maCoSoTraCuu)
+        // Dot 1B: mot dong DA LA "con nguoi + ho so tai co so" nen khong con tu noi.
+        var hoSo = await (from bn in _dbContext.BenhNhans.AsNoTracking()
+                          join cs in _dbContext.DMCSKCBs.AsNoTracking() on bn.IdCoSo equals (long?)cs.Id
+                          where bn.MaBN == maBnTraCuu && (cs.MaCoSo == maCoSoTraCuu || cs.Slug == maCoSoTraCuu)
                           select new { BenhNhan = bn, CoSo = cs }).FirstOrDefaultAsync();
 
         if (hoSo == null)
         {
-            hoSo = await (from bnCs in _dbContext.BenhNhanCoSos.AsNoTracking()
-                          join cs in _dbContext.DMCSKCBs.AsNoTracking() on bnCs.IdCoSo equals cs.Id
-                          join bn in _dbContext.BenhNhans.AsNoTracking() on bnCs.IdBenhNhan equals bn.Id
-                          where bnCs.MaBN == maBnTraCuu
+            hoSo = await (from bn in _dbContext.BenhNhans.AsNoTracking()
+                          join cs in _dbContext.DMCSKCBs.AsNoTracking() on bn.IdCoSo equals (long?)cs.Id
+                          where bn.MaBN == maBnTraCuu
                           select new { BenhNhan = bn, CoSo = cs }).FirstOrDefaultAsync();
         }
 
@@ -326,13 +327,10 @@ public class DangNhapController : Controller
             taiKhoan = _dbContext.TaiKhoans.AsNoTracking().FirstOrDefault(tk => tk.SDT == term);
             if (taiKhoan == null && !string.IsNullOrWhiteSpace(model.Cccd))
             {
-                var cccd = model.Cccd.Trim();
-                // Chi con MOT chieu noi: DM_BenhNhan.IDTaiKhoan (1 tai khoan - N ho so).
-                // Nhanh cu noi nguoc qua HT_TaiKhoan.IDBenhNhan da bi go (ADR 0019).
-                taiKhoan = (from p in _dbContext.BenhNhans.AsNoTracking()
-                            join t in _dbContext.TaiKhoans.AsNoTracking() on p.IdTaiKhoan equals t.Id
-                            where p.CCCD == cccd
-                            select t).FirstOrDefault();
+                // 🔴 Dot 1B: benh nhan KHONG CON tai khoan, nen khong con duong
+                // nao di tu CCCD sang HT_TaiKhoan. Bang do chi con Admin.
+                // "Co loi vao hay khong" duoc hoi o hang rao C7b ben duoi.
+                taiKhoan = null;
             }
         }
 
@@ -348,8 +346,7 @@ public class DangNhapController : Controller
             });
         }
 
-        if (taiKhoan != null && (string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase)
-                                 || string.Equals(taiKhoan.Role, "DoiTac", StringComparison.OrdinalIgnoreCase)))
+        if (taiKhoan != null && (string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase)))
         {
             return Json(new {
                 success = true,
@@ -427,8 +424,7 @@ public class DangNhapController : Controller
         // Tìm tài khoản từ database theo SĐT hoặc Email trước để kiểm tra role
         var taiKhoan = await _taiKhoanService.DangNhapAsync(input, "");
 
-        if (taiKhoan != null && (string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase)
-                                 || string.Equals(taiKhoan.Role, "DoiTac", StringComparison.OrdinalIgnoreCase)))
+        if (taiKhoan != null && (string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase)))
         {
             // Kiểm tra mật khẩu trong database
             // Cot nay la MatKhauNoiBo (ADR 0009). Sau migration no dang NULL vi phan
@@ -473,7 +469,13 @@ public class DangNhapController : Controller
 
         // Khóa luồng tự đăng ký tài khoản: chỉ cho phép tài khoản đã có sẵn từ HIS
         // NGOẠI LỆ: Bệnh nhân đã khám quét QR phiếu khám HIS -> tự động tạo tài khoản và hồ sơ
-        if (!adminReauth && taiKhoan is null)
+        // 🔴 C7b — CUA 1 trong HAI cua. Cua kia o nhanh Firebase (tim
+        // "C7b - CUA 2"). Sot mot cua la mo duong lach (ADR 0027 da canh bao
+        // dung chuyen nay). Tu dot 1B hang rao khong con treo vao HT_TaiKhoan
+        // ma hoi thang: SO NAY CO HO SO TAI CO SO NAY KHONG (ADR 0034).
+        // Loi bao hien tai noi "chua co ho so tai co so y te" — truoc 1B loi do
+        // CHAT HON code, nay moi dung nghia den, nen giu nguyen chu.
+        if (!adminReauth && !await _hoSo.CoLoiVaoAsync(input, model.MaCoSo))
         {
             if (!laQrHis)
             {
@@ -490,8 +492,8 @@ public class DangNhapController : Controller
 
         if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet?.MaBN))
         {
-            var coSoMa = await (from cs in _dbContext.BenhNhanCoSos
-                                join kcb in _dbContext.DMCSKCBs on cs.IdCoSo equals kcb.Id
+            var coSoMa = await (from cs in _dbContext.BenhNhans
+                                join kcb in _dbContext.DMCSKCBs on cs.IdCoSo equals (long?)kcb.Id
                                 where cs.MaBN == model.DanhTinhQuet.MaBN
                                 select kcb.MaCoSo).FirstOrDefaultAsync();
             if (!string.IsNullOrWhiteSpace(coSoMa))
@@ -596,7 +598,7 @@ public class DangNhapController : Controller
             // 🔴 Chi mo san ho so khi tai khoan co DUNG MOT ho so. Tai khoan nhieu ho so
         // (me + 2 con) ma lay bua mot cai la bug tham lang — de null thi nguoi dung
         // tu chon o man Ho so. Nhanh QR duoi day van ghi de bang ho so quet duoc.
-        long? idHoSoQuet = taiKhoan == null ? null : await HoSoDuyNhatCuaTaiKhoanAsync(taiKhoan.Id);
+        long? idHoSoQuet = await HoSoDuyNhatCuaTaiKhoanAsync(input, model.MaCoSo);
             if (model.DanhTinhQuet != null)
             {
                 var maBnQuet = model.DanhTinhQuet.MaBN?.Trim();
@@ -618,13 +620,12 @@ public class DangNhapController : Controller
 
             if (idHoSoQuet != null && idHoSoQuet > 0)
             {
-                if (taiKhoan != null && taiKhoan.Id > 0)
-                {
-                    await _thuTuc.NhanChuSoHuuAsync(idHoSoQuet.Value, taiKhoan.Id);
-                }
+                // 🔴 Cua 3 "nhan chu so huu" da chet o dot 1B: cot
+                // DM_BenhNhan.IDTaiKhoan khong con, chu so huu nay la cap
+                // (SDT x co so) cua chinh dong do. Xem ADR 0034.
 
-                var csList = await _dbContext.BenhNhanCoSos
-                    .Where(x => x.IdBenhNhan == idHoSoQuet.Value && !x.DaMoTaiLieu)
+                var csList = await _dbContext.BenhNhans
+                    .Where(x => x.Id == idHoSoQuet.Value && !x.DaMoTaiLieu)
                     .ToListAsync();
                 if (csList.Count > 0)
                 {
@@ -704,9 +705,9 @@ public class DangNhapController : Controller
 
         bool laQrHis = model.DanhTinhQuet != null && (model.DanhTinhQuet.LaNguonHis || !string.IsNullOrWhiteSpace(model.DanhTinhQuet.MaBN));
 
-        // Khóa luồng tự đăng ký tài khoản: chỉ cho phép tài khoản đã có sẵn từ HIS
-        // NGOẠI LỆ: Bệnh nhân đã khám quét QR phiếu khám HIS -> tự động tạo tài khoản và hồ sơ
-        if (!adminReauth && taiKhoan is null)
+        // 🔴 C7b — CUA 2 trong HAI cua (cua kia o nhanh OTP phia tren).
+        // Sot mot cua la mo duong lach. Cung luat, cung loi bao.
+        if (!adminReauth && !await _hoSo.CoLoiVaoAsync(sdt, model.MaCoSo))
         {
             if (!laQrHis)
             {
@@ -723,8 +724,8 @@ public class DangNhapController : Controller
 
         if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet?.MaBN))
         {
-            var coSoMa = await (from cs in _dbContext.BenhNhanCoSos
-                                join kcb in _dbContext.DMCSKCBs on cs.IdCoSo equals kcb.Id
+            var coSoMa = await (from cs in _dbContext.BenhNhans
+                                join kcb in _dbContext.DMCSKCBs on cs.IdCoSo equals (long?)kcb.Id
                                 where cs.MaBN == model.DanhTinhQuet.MaBN
                                 select kcb.MaCoSo).FirstOrDefaultAsync();
             if (!string.IsNullOrWhiteSpace(coSoMa))
@@ -784,7 +785,7 @@ public class DangNhapController : Controller
         // 🔴 Chi mo san ho so khi tai khoan co DUNG MOT ho so. Tai khoan nhieu ho so
         // (me + 2 con) ma lay bua mot cai la bug tham lang — de null thi nguoi dung
         // tu chon o man Ho so. Nhanh QR duoi day van ghi de bang ho so quet duoc.
-        long? idHoSoQuet = taiKhoan == null ? null : await HoSoDuyNhatCuaTaiKhoanAsync(taiKhoan.Id);
+        long? idHoSoQuet = await HoSoDuyNhatCuaTaiKhoanAsync(sdt, model.MaCoSo);
         if (model.DanhTinhQuet != null)
         {
             var maBnQuet = model.DanhTinhQuet.MaBN?.Trim();
@@ -808,11 +809,11 @@ public class DangNhapController : Controller
         {
             if (taiKhoan != null && taiKhoan.Id > 0)
             {
-                await _thuTuc.NhanChuSoHuuAsync(idHoSoQuet.Value, taiKhoan.Id);
+                // Cua 3 da thanh no-op tu dot 1B (ADR 0034).
             }
 
-            var csList = await _dbContext.BenhNhanCoSos
-                .Where(x => x.IdBenhNhan == idHoSoQuet.Value && !x.DaMoTaiLieu)
+            var csList = await _dbContext.BenhNhans
+                .Where(x => x.Id == idHoSoQuet.Value && !x.DaMoTaiLieu)
                 .ToListAsync();
             if (csList.Count > 0)
             {
@@ -1048,13 +1049,27 @@ public class DangNhapController : Controller
         long? existingBnId = null;
         if (!string.IsNullOrWhiteSpace(quet.MaBN))
         {
-            var coSoInfo = await (from cs in _dbContext.BenhNhanCoSos
-                                  where cs.MaBN == quet.MaBN
-                                  select new { cs.IdCoSo, cs.IdBenhNhan }).FirstOrDefaultAsync();
-            if (coSoInfo != null)
+            // 🔴 C7c — LO CHIEM HO SO NGUOI LA. Ban cu tra MaBN KHONG LOC CO SO
+            // roi FirstOrDefault: do that co 190 ma ton tai o >1 co so, phu 1.868
+            // dong; ma 01-6041 la cua SAU nguoi o SAU co so. Va cho nay nam tren
+            // DUONG NAP DUY NHAT cua cong.
+            // Nay bat buoc co maCoSo va loc dung co so do.
+            var idCoSoQuet = string.IsNullOrWhiteSpace(maCoSo)
+                ? (long?)null
+                : await _dbContext.DMCSKCBs.AsNoTracking()
+                    .Where(x => x.MaCoSo == maCoSo)
+                    .Select(x => (long?)x.Id).FirstOrDefaultAsync();
+
+            if (idCoSoQuet != null)
             {
-                idCoSo = coSoInfo.IdCoSo;
-                existingBnId = coSoInfo.IdBenhNhan;
+                var coSoInfo = await (from cs in _dbContext.BenhNhans
+                                      where cs.MaBN == quet.MaBN && cs.IdCoSo == idCoSoQuet.Value
+                                      select new { cs.IdCoSo, IdBenhNhan = cs.Id }).FirstOrDefaultAsync();
+                if (coSoInfo != null)
+                {
+                    idCoSo = coSoInfo.IdCoSo;
+                    existingBnId = coSoInfo.IdBenhNhan;
+                }
             }
         }
         if (idCoSo == null && !string.IsNullOrWhiteSpace(maCoSo))
@@ -1110,14 +1125,14 @@ public class DangNhapController : Controller
         // 4. Gán quyền sở hữu hồ sơ cho tài khoản
         if (idBenhNhanTarget > 0 && idTaiKhoan > 0)
         {
-            await _thuTuc.NhanChuSoHuuAsync(idBenhNhanTarget, idTaiKhoan);
+            // Cua 3 da thanh no-op tu dot 1B (ADR 0034).
         }
 
         // 5. Đảm bảo mở tài liệu
         if (idBenhNhanTarget > 0)
         {
-            var csList = await _dbContext.BenhNhanCoSos
-                .Where(x => x.IdBenhNhan == idBenhNhanTarget && !x.DaMoTaiLieu)
+            var csList = await _dbContext.BenhNhans
+                .Where(x => x.Id == idBenhNhanTarget && !x.DaMoTaiLieu)
                 .ToListAsync();
             if (csList.Count > 0)
             {
@@ -1221,26 +1236,34 @@ public class DangNhapController : Controller
         var ma = maBn.Trim();
         var maCs = maCoSo.Trim();
 
-        return await (from cs in _dbContext.BenhNhanCoSos.AsNoTracking()
-                      join co in _dbContext.DMCSKCBs.AsNoTracking() on cs.IdCoSo equals co.Id
+        return await (from cs in _dbContext.BenhNhans.AsNoTracking()
+                      join co in _dbContext.DMCSKCBs.AsNoTracking() on cs.IdCoSo equals (long?)co.Id
                       where cs.MaBN == ma && (co.MaCoSo == maCs || co.Slug == maCs)
-                      select (long?)cs.IdBenhNhan).FirstOrDefaultAsync();
+                      select (long?)cs.Id).FirstOrDefaultAsync();
     }
 
     /// <summary>
-    /// Ho so benh nhan DUY NHAT cua mot tai khoan, hoac <c>null</c> khi tai khoan
-    /// chua co ho so nao HOAC co tu hai ho so tro len.
+    /// Ho so DUY NHAT cua mot so dien thoai TAI MOT CO SO, hoac <c>null</c> khi
+    /// khong co ho so nao HOAC co tu hai ho so tro len.
     ///
-    /// 🔴 Quan he sau ADR 0019 la 1-N: <c>DM_BenhNhan.IDTaiKhoan</c>. Mot tai khoan
-    /// giu duoc nhieu ho so (me + cac con), nen "ho so dang chon" phai do nguoi dung
-    /// chon va nam o claim/phien — KHONG duoc lay <c>FirstOrDefault</c> mot ho so bat ky.
+    /// 🔴 Tu dot 1B quan he la (SDT x co so) -> N ho so: mot so giu duoc nhieu ho
+    /// so (me + cac con) tai cung co so, nen "ho so dang chon" phai do nguoi dung
+    /// chon va nam o claim/phien — KHONG duoc lay <c>FirstOrDefault</c> bat ky.
+    /// Xem ADR 0034 va muc *Loi vao* trong CONTEXT.md.
     /// </summary>
-    private async Task<long?> HoSoDuyNhatCuaTaiKhoanAsync(long idTaiKhoan)
+    private async Task<long?> HoSoDuyNhatCuaTaiKhoanAsync(string? sdt, string? maCoSo)
     {
-        if (idTaiKhoan <= 0) return null;
+        if (string.IsNullOrWhiteSpace(sdt) || string.IsNullOrWhiteSpace(maCoSo)) return null;
+
+        var idCoSo = await _dbContext.DMCSKCBs.AsNoTracking()
+            .Where(x => x.MaCoSo == maCoSo)
+            .Select(x => (long?)x.Id)
+            .FirstOrDefaultAsync();
+
+        if (idCoSo is null) return null;
 
         var ids = await _dbContext.BenhNhans.AsNoTracking()
-            .Where(b => b.IdTaiKhoan == idTaiKhoan)
+            .Where(b => b.SDT == sdt && b.IdCoSo == idCoSo.Value)
             .Select(b => b.Id)
             .Take(2)
             .ToListAsync();

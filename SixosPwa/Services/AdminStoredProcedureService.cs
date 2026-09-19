@@ -44,8 +44,10 @@ public sealed class AdminStoredProcedureService
             AddParameter(command, "@Email", DbType.String, email, 50);
             AddParameter(command, "@Role", DbType.AnsiString, role, 20);
             AddParameter(command, "@MatKhauNoiBoDaBam", DbType.AnsiString, matKhauNoiBoDaBam, 255);
-            // Tham so @IDBenhNhan da bi go (ADR 0019): quan he nay la 1-N va nam o
-            // cot DM_BenhNhan.IDTaiKhoan, khong con o HT_TaiKhoan.
+            // 🔴 Tham so @IDBenhNhan van con trong CHU KY stored (hop dong linked
+            // server, ADR 0035 #2) nhung khong truyen tu day: C# cua cong khong
+            // dung toi. Tu dot 1B stored chi con nhan Role='Admin'; vai tro khac
+            // bi ghi log roi bo qua.
         });
 
     /// <summary>Nút <i>Thử kết nối kho</i> bấm ĐẠT thì ghi mốc. Tách khỏi Save có chủ ý.</summary>
@@ -53,23 +55,6 @@ public sealed class AdminStoredProcedureService
         ExecuteAsync("dbo.DM_CSKCB_GhiNhanThuDatFtp", command =>
         {
             AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
-        });
-
-    public Task<AdminStoredProcedureResult> SaveDoiTacAsync(
-        DoiTacEditViewModel model,
-        bool updatePassword) =>
-        ExecuteAsync("dbo.DM_DoiTac_Save", command =>
-        {
-            AddParameter(command, "@ID", DbType.Int64, model.Id);
-            AddParameter(command, "@MaDT", DbType.AnsiString, model.MaDT, 20);
-            AddParameter(command, "@TenDT", DbType.String, model.TenDT, 100);
-            AddParameter(command, "@DiaChi", DbType.String, model.DiaChi, 255);
-            AddParameter(command, "@SDT", DbType.AnsiString, model.SDT, 20);
-            AddParameter(command, "@Email", DbType.AnsiString, model.Email, 100);
-            AddParameter(command, "@IDPM", DbType.Int64, null);
-            AddParameter(command, "@BrandName", DbType.String, model.BrandName, 100);
-            AddParameter(command, "@MatKhauDoiTac", DbType.String,
-                updatePassword ? model.MatKhauDoiTac : null, 255);
         });
 
     /// <summary>
@@ -221,6 +206,8 @@ public sealed class AdminStoredProcedureService
             AddParameter(command, "@SDT", DbType.AnsiString, sdt, 20);
             AddParameter(command, "@Email", DbType.AnsiString, email, 100);
             AddParameter(command, "@DiaChi", DbType.String, diaChi, 255);
+            // Giu tham so (hop dong linked server, ADR 0035 #1) nhung stored da
+            // NHAN ROI BO: cot DM_BenhNhan.IDTaiKhoan bi xoa o dot 1B.
             AddParameter(command, "@IDTaiKhoan", DbType.Int64, idTaiKhoan);
             AddParameter(command, "@NgaySinh", DbType.DateTime, ngaySinh);
             AddParameter(command, "@HoTenKhongDau", DbType.String, hoTenKhongDau, 100);
@@ -238,7 +225,8 @@ public sealed class AdminStoredProcedureService
     /// </summary>
     public Task<AdminStoredProcedureResult> SuaHoSoAsync(
         long idBenhNhan,
-        long idTaiKhoan,
+        string sdtPhien,
+        long idCoSo,
         string? cccd,
         string? tenBN,
         string? sdt,
@@ -248,10 +236,11 @@ public sealed class AdminStoredProcedureService
         ExecuteAsync("dbo.DM_BenhNhan_SuaHoSo", command =>
         {
             AddParameter(command, "@IDBenhNhan", DbType.Int64, idBenhNhan);
-            AddParameter(command, "@IDTaiKhoan", DbType.Int64, idTaiKhoan);
+            AddParameter(command, "@SDT", DbType.AnsiString, sdtPhien, 20);
+            AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
             AddParameter(command, "@CCCD", DbType.AnsiString, cccd, 20);
             AddParameter(command, "@TenBN", DbType.String, tenBN, 100);
-            AddParameter(command, "@SDT", DbType.AnsiString, sdt, 20);
+            AddParameter(command, "@SDTMoi", DbType.AnsiString, sdt, 20);
             AddParameter(command, "@NgaySinh", DbType.DateTime, ngaySinh);
             AddParameter(command, "@HoTenKhongDau", DbType.String, hoTenKhongDau, 100);
             AddParameter(command, "@GioiTinh", DbType.AnsiString, gioiTinh, 10);
@@ -267,11 +256,12 @@ public sealed class AdminStoredProcedureService
     /// Mat khong vinh vien — cua <c>kiem-tra-nhan</c> se dua ma ve trang thai
     /// "chua ai nhan" nen hang doi ben HIS day lai duoc.
     /// </summary>
-    public Task<AdminStoredProcedureResult> GoNoiAsync(long idBenhNhanCoSo, long idTaiKhoan) =>
-        ExecuteAsync("dbo.DM_BenhNhanCoSo_GoNoi", command =>
+    public Task<AdminStoredProcedureResult> GoNoiAsync(long idBenhNhan, string sdt, long idCoSo) =>
+        ExecuteAsync("dbo.DM_BenhNhan_GoNoi", command =>
         {
-            AddParameter(command, "@IDBenhNhanCoSo", DbType.Int64, idBenhNhanCoSo);
-            AddParameter(command, "@IDTaiKhoan", DbType.Int64, idTaiKhoan);
+            AddParameter(command, "@IDBenhNhan", DbType.Int64, idBenhNhan);
+            AddParameter(command, "@SDT", DbType.AnsiString, sdt, 20);
+            AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
         });
 
     /// <summary>
@@ -280,12 +270,12 @@ public sealed class AdminStoredProcedureService
     /// het cac ma lai thanh mot danh sach nen "da xem" phai la mot trang thai duy nhat.
     /// </summary>
     public Task<AdminStoredProcedureResult> DoiMocXemLichAsync(
-        long idBenhNhan, long idCoSo, long idTaiKhoan) =>
-        ExecuteAsync("dbo.DM_BenhNhanCoSo_DoiMocXemLich", command =>
+        long idBenhNhan, long idCoSo, string sdt) =>
+        ExecuteAsync("dbo.DM_BenhNhan_DoiMocXemLich", command =>
         {
             AddParameter(command, "@IDBenhNhan", DbType.Int64, idBenhNhan);
             AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
-            AddParameter(command, "@IDTaiKhoan", DbType.Int64, idTaiKhoan);
+            AddParameter(command, "@SDT", DbType.AnsiString, sdt, 20);
         });
 
     /// <summary>
@@ -300,7 +290,7 @@ public sealed class AdminStoredProcedureService
     public Task<(AdminStoredProcedureResult KetQua, long Id)> TaoHoSoTuKhaiAsync(
         long idBenhNhan,
         long idCoSo) =>
-        ExecuteWithIdAsync("dbo.DM_BenhNhanCoSo_TaoTuKhai", "@IDBenhNhanCoSo", command =>
+        ExecuteWithIdAsync("dbo.DM_BenhNhan_TaoTuKhai", "@IDBenhNhanCoSo", command =>
         {
             AddParameter(command, "@IDBenhNhan", DbType.Int64, idBenhNhan);
             AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
@@ -313,24 +303,15 @@ public sealed class AdminStoredProcedureService
     /// du lieu kham.
     /// </summary>
     /// <summary>
-    /// Gan chu so huu cho mot ho so, CHI khi cot dang bo trong.
-    ///
-    /// Tach khoi <see cref="SaveBenhNhanAsync"/> vi trong luong dang ky, CON
-    /// NGUOI duoc tao TRUOC tai khoan nen luc do chua biet chu la ai. Da co chu
-    /// khac thi tra <c>ResultCode 3</c> — "ai khai truoc giu CCCD" (ADR 0019).
+    /// Xoa mot ho so tai co so. Tu 1B chu so huu la cap (SDT phien x co so phien),
+    /// khong con <c>IDTaiKhoan</c> — xem ADR 0027 (da dao) va ADR 0034.
     /// </summary>
-    public Task<AdminStoredProcedureResult> NhanChuSoHuuAsync(long idBenhNhan, long idTaiKhoan) =>
-        ExecuteAsync("dbo.DM_BenhNhan_NhanChuSoHuu", command =>
-        {
-            AddParameter(command, "@IDBenhNhan", DbType.Int64, idBenhNhan);
-            AddParameter(command, "@IDTaiKhoan", DbType.Int64, idTaiKhoan);
-        });
-
-    public Task<AdminStoredProcedureResult> XoaHoSoAsync(long idBenhNhan, long idTaiKhoan) =>
+    public Task<AdminStoredProcedureResult> XoaHoSoAsync(long idBenhNhan, string sdt, long idCoSo) =>
         ExecuteAsync("dbo.DM_BenhNhan_XoaHoSo", command =>
         {
             AddParameter(command, "@IDBenhNhan", DbType.Int64, idBenhNhan);
-            AddParameter(command, "@IDTaiKhoan", DbType.Int64, idTaiKhoan);
+            AddParameter(command, "@SDT", DbType.AnsiString, sdt, 20);
+            AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
         });
 
     /// <summary>
@@ -380,7 +361,7 @@ public sealed class AdminStoredProcedureService
         long idCoSo,
         string maBN,
         string? lyDo = null) =>
-        ExecuteWithIdAsync("dbo.DM_BenhNhanCoSo_DoiMa", "@IDBenhNhanCoSo", command =>
+        ExecuteWithIdAsync("dbo.DM_BenhNhan_DoiMa", "@IDBenhNhanCoSo", command =>
         {
             AddParameter(command, "@IDBenhNhan", DbType.Int64, idBenhNhan);
             AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
@@ -391,7 +372,7 @@ public sealed class AdminStoredProcedureService
     public Task<(AdminStoredProcedureResult KetQua, long Id)> SaveTaiLieuBenhNhanAsync(
         long id,
         long idCoSo,
-        long? idBenhNhanCoSo,
+        long? idBenhNhan,
         string maBN,
         string loaiTaiLieu,
         string tenTaiLieu,
@@ -405,7 +386,7 @@ public sealed class AdminStoredProcedureService
         {
             AddParameter(command, "@ID", DbType.Int64, id);
             AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
-            AddParameter(command, "@IDBenhNhanCoSo", DbType.Int64, idBenhNhanCoSo);
+            AddParameter(command, "@IDBenhNhanCoSo", DbType.Int64, idBenhNhan);
             AddParameter(command, "@MaBN", DbType.String, maBN, 50);
             AddParameter(command, "@LoaiTaiLieu", DbType.String, loaiTaiLieu, 50);
             AddParameter(command, "@TenTaiLieu", DbType.String, tenTaiLieu, 255);
@@ -452,7 +433,7 @@ public sealed class AdminStoredProcedureService
     /// </summary>
     public Task<(AdminStoredProcedureResult KetQua, long Id)> SaveDotKhamAsync(
         long idCoSo,
-        long idBenhNhanCoSo,
+        long idBenhNhan,
         string maVaoVien,
         string maBN,
         DateTime ngayGioVao,
@@ -463,7 +444,7 @@ public sealed class AdminStoredProcedureService
         ExecuteWithIdAsync("dbo.QL_DotKham_Save", "@IDDotKham", command =>
         {
             AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
-            AddParameter(command, "@IDBenhNhanCoSo", DbType.Int64, idBenhNhanCoSo);
+            AddParameter(command, "@IDBenhNhanCoSo", DbType.Int64, idBenhNhan);
             AddParameter(command, "@MaVaoVien", DbType.AnsiString, maVaoVien, 50);
             AddParameter(command, "@MaBN", DbType.AnsiString, maBN, 20);
             AddParameter(command, "@NgayGioVao", DbType.DateTime, ngayGioVao);
@@ -508,7 +489,7 @@ public sealed class AdminStoredProcedureService
                 precision: 15, scale: 0);
             AddParameter(command, "@QcNoiDung", DbType.String, model.QcNoiDung, size: -1);
             AddParameter(command, "@QcAnh", DbType.String, model.QcAnh, size: -1);
-            AddParameter(command, "@IDCongTy", DbType.Int64, model.IDCongTy);
+            AddParameter(command, "@TenCongTy", DbType.String, model.TenCongTy, 200);
 
             // ---- Ket noi HIS (cu la bang 1-1 DM_DoiTacApi) ----------------------
             AddParameter(command, "@KetNoi_UrlChuyenHuong", DbType.String,

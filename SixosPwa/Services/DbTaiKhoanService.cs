@@ -29,12 +29,10 @@ public class DbTaiKhoanService : ITaiKhoanService
                 .FirstOrDefaultAsync(tk => tk.SDT == term);
             if (tk != null) return tk;
 
-            // Chi con MOT chieu noi: DM_BenhNhan.IDTaiKhoan (1 tai khoan - N ho so).
-            // Nhanh cu noi nguoc qua HT_TaiKhoan.IDBenhNhan da bi go (ADR 0019).
-            return await (from p in _context.BenhNhans
-                          join t in _context.TaiKhoans on p.IdTaiKhoan equals t.Id
-                          where p.CCCD == term
-                          select t).FirstOrDefaultAsync();
+            // 🔴 Dot 1B: benh nhan KHONG CON tai khoan (HT_TaiKhoan chi con Admin,
+            // CK_HT_TaiKhoan_Role CHECK Role='Admin'), nen khong con duong nao di
+            // tu CCCD sang tai khoan. Xem ADR 0027 (da dao) va ADR 0034.
+            return null;
         }
     }
 

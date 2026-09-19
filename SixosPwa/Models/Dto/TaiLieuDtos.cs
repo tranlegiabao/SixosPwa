@@ -52,8 +52,8 @@ public class TiepNhanTaiLieuResponseData
     [JsonPropertyName("id")]
     public long Id { get; set; }
 
-    [JsonPropertyName("idBenhNhanCoSo")]
-    public long? IdBenhNhanCoSo { get; set; }
+    [JsonPropertyName("idBenhNhan")]
+    public long? IdBenhNhan { get; set; }
 
     /// <summary>
     /// true = noi dung y het ban dang co nen cong GIU NGUYEN ban do: khong them
