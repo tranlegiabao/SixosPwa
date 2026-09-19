@@ -31,10 +31,22 @@ GO
        khong con nhan duoc SELECT * cua DM_BenhNhan (14 cot). Dung bang moi. -- */
 IF SCHEMA_ID('bak3') IS NULL EXEC('CREATE SCHEMA bak3');
 GO
+/* 🔴 SELECT * INTO CHEP CA THUOC TINH IDENTITY sang bang dich => moi cau
+   INSERT ... SELECT * vao no deu no "An explicit value for the identity column
+   ... can only be specified when a column list is used". Da dap that 19-09.
+   Meo UNION ALL triet IDENTITY ma khong phai liet ke 14 cot (liet ke tay la
+   them mot cho phai sua moi lan bang doi). */
+IF OBJECT_ID('bak3.GoNoi_HoSo_V002') IS NOT NULL
+   AND EXISTS (SELECT 1 FROM sys.columns
+                WHERE object_id = OBJECT_ID('bak3.GoNoi_HoSo_V002') AND is_identity = 1)
+    DROP TABLE bak3.GoNoi_HoSo_V002;
+GO
 IF OBJECT_ID('bak3.GoNoi_HoSo_V002') IS NULL
-    SELECT TOP 0 *, CAST(NULL AS datetime) AS NgayGo
+    SELECT TOP 0 x.*, CAST(NULL AS datetime) AS NgayGo
       INTO bak3.GoNoi_HoSo_V002
-      FROM dbo.DM_BenhNhan;
+      FROM (SELECT * FROM dbo.DM_BenhNhan
+            UNION ALL
+            SELECT * FROM dbo.DM_BenhNhan) x;
 GO
 
 /* ===========================================================================
@@ -717,6 +729,14 @@ GO
 
 /* ===========================================================================
    13. dbo.QL_TaiLieuBenhNhan_TimTrungNoiDung  - doi ten cot tra ve
+   ---------------------------------------------------------------------------
+   🔴 BAN TREN DB DANG HONG SAN TU DOT A: no SELECT MaBN va DungLuongByte, ma
+   dot A da XOA hai cot do khoi QL_TaiLieuBenhNhan (buoc A05 "bo 16 cot chet").
+   Goi vao la nem "Invalid column name". Build xanh, khong ai phat hien, vi
+   KHONG DONG C# NAO GOI stored nay (da grep ca cay nguon).
+   Buoc 1B nay lam lo ra vi CREATE OR ALTER co kiem cot cua bang DA TON TAI
+   (phan giai ten tre chi ap cho BANG thieu, khong ap cho COT thieu).
+   Sua luon cho dung schema that.
    =========================================================================== */
 CREATE OR ALTER PROCEDURE dbo.QL_TaiLieuBenhNhan_TimTrungNoiDung
     @IDCoSo      bigint,
@@ -732,8 +752,8 @@ BEGIN
         RETURN;
 
     SELECT TOP 1
-           ID, IDBenhNhan, MaBN, LoaiTaiLieu, TenTaiLieu,
-           DuongDanFtp, DungLuongByte, PhienBan, NgayTao
+           ID, IDBenhNhan, LoaiTaiLieu, TenTaiLieu,
+           DuongDanFtp, PhienBan, NgayTao
       FROM dbo.QL_TaiLieuBenhNhan WITH (NOLOCK)
      WHERE IDCoSo       = @IDCoSo
        AND LoaiTaiLieu  = @LoaiTaiLieu

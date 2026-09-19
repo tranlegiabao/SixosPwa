@@ -16,10 +16,13 @@ SET NOCOUNT ON;
 SET XACT_ABORT ON;
 GO
 
-DECLARE @coSnapshot    bit = CASE WHEN OBJECT_ID('bak3.DM_BenhNhanCoSo_B01') IS NOT NULL THEN 1 ELSE 0 END;
-DECLARE @daGopCot      bit = CASE WHEN COL_LENGTH('dbo.DM_BenhNhan', 'IDCoSo') IS NOT NULL
+/* 🔴 int chu KHONG phai bit: RAISERROR khong nhan bit lam tham so thay the %d
+   (loi "Cannot specify bit data type as a substitution parameter"), va do la loi
+   BIEN DICH — ca batch khong chay, ke ca nhanh ELSE. Da dap that 19-09. */
+DECLARE @coSnapshot    int = CASE WHEN OBJECT_ID('bak3.DM_BenhNhanCoSo_B01') IS NOT NULL THEN 1 ELSE 0 END;
+DECLARE @daGopCot      int = CASE WHEN COL_LENGTH('dbo.DM_BenhNhan', 'IDCoSo') IS NOT NULL
                                    AND COL_LENGTH('dbo.DM_BenhNhan', 'MaBN')   IS NOT NULL THEN 1 ELSE 0 END;
-DECLARE @daDoiTenCot   bit = CASE WHEN COL_LENGTH('dbo.QL_DotKham', 'IDBenhNhan')         IS NOT NULL
+DECLARE @daDoiTenCot   int = CASE WHEN COL_LENGTH('dbo.QL_DotKham', 'IDBenhNhan')         IS NOT NULL
                                    AND COL_LENGTH('dbo.QL_TaiLieuBenhNhan', 'IDBenhNhan') IS NOT NULL THEN 1 ELSE 0 END;
 DECLARE @conFkCu       int = (SELECT COUNT(*) FROM sys.foreign_keys
                                WHERE referenced_object_id = OBJECT_ID('dbo.DM_BenhNhanCoSo'));
