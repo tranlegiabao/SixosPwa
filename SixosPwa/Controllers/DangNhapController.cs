@@ -208,6 +208,7 @@ public class DangNhapController : Controller
         // ?coSo=slug den tu hai nut ben trang co so. Do ra ViewBag de man dang
         // nhap hien o "Ma CSKCB" khoa cung, va de JS gui kem khi goi OTP.
         string? maCoSoTuUrl = null;
+        long? idCoSoTuUrl = null;
         if (!string.IsNullOrWhiteSpace(coSo))
         {
             var thongTin = await _dbContext.DMCSKCBs
@@ -227,6 +228,7 @@ public class DangNhapController : Controller
             if (thongTin is null) return Redirect("/");
 
             maCoSoTuUrl = thongTin?.MaCoSo;
+            idCoSoTuUrl = thongTin?.Id;
             ViewBag.MaCoSo = thongTin?.MaCoSo;
             ViewBag.TenCoSo = thongTin?.TenCoSo;
             ViewBag.LogoCoSo = LayLogoCoSo(thongTin);
@@ -270,6 +272,32 @@ public class DangNhapController : Controller
             else if (User.IsInRole("Admin"))
             {
                 return Redirect("/Admin");
+            }
+        }
+
+        // ── ĐIỂM RẼ: cơ sở dùng màn của khách ─────────────────────────────
+        // 🔴 Cơ sở có KetNoi_UrlChuyenHuong (và KetNoi_Active) thì việc đăng nhập
+        // / đăng ký do CHÍNH HỌ làm — SixosPwa không hỏi OTP, không dựng tài khoản.
+        // Đưa thẳng sang trang của họ.
+        //
+        // Đặt ĐÚNG Ở ĐÂY, sau mọi guard, theo ADR 0014: không được phép vượt mặt
+        // chặn cơ sở ẩn (ADR 0013) hay chặn đăng nhập chéo cơ sở (ADR 0006).
+        //
+        // 🔴 Vì sao nhánh này phải tồn tại: đợt A xoá bộ màn UB dựng-lại-trong-cổng
+        // (UbLogin/UbDangKy/UbQuenMatKhau) VÀ xoá luôn điểm rẽ cũ
+        // `if (cuaDoiTac?.DungManDoiTac == true) return View("UbLogin")`, định thay
+        // bằng CuaCoSoService — nhưng nhánh thay thế KHÔNG được viết. Hệ quả: bệnh
+        // nhân bấm Đăng nhập ở cơ sở UB lại thấy màn đăng nhập của SixosPwa, một
+        // màn không dùng được cho họ. Phiên ĐÃ đăng nhập thì không dính, vì
+        // ChonDichDenAsync vẫn trả URL đối tác — nên lỗi chỉ lộ ở người CHƯA đăng nhập.
+        //
+        // adminReauth đi đường riêng: quản trị viên xác thực lại thì phải ở lại cổng.
+        if (!adminReauth && idCoSoTuUrl is > 0)
+        {
+            var cua = await _cuaCoSo.LayCuaAsync(idCoSoTuUrl.Value);
+            if (cua?.UrlChuyenHuong is { Length: > 0 } urlKhach)
+            {
+                return Redirect(urlKhach);
             }
         }
 
