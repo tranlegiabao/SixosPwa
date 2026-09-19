@@ -280,7 +280,7 @@ public class DangNhapController : Controller
     }
 
     [HttpPost]
-    public IActionResult GuiOtp([FromBody] GuiOtpRequest model)
+    public async Task<IActionResult> GuiOtp([FromBody] GuiOtpRequest model)
     {
         var input = model.SoDienThoai?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(input) && model.DanhTinhQuet != null)
@@ -336,9 +336,18 @@ public class DangNhapController : Controller
 
         bool laQrHis = model.DanhTinhQuet != null && (model.DanhTinhQuet.LaNguonHis || !string.IsNullOrWhiteSpace(model.DanhTinhQuet.MaBN));
 
-        // Khóa luồng tự đăng ký tài khoản: chỉ cho phép tài khoản đã có sẵn từ HIS
-        // NGOẠI LỆ: Bệnh nhân đã khám quét QR phiếu khám HIS (nguồn HIS hoặc có MaBN)
-        if (taiKhoan == null && !laQrHis)
+        // 🔴 C7b — CUA 3, o buoc GUI OTP. PLAN §7.1 KHONG LIET KE CUA NAY (no chi
+        // neu hai cua :476 va :708). Bo sot thi benh nhan chet ngay tu buoc gui
+        // OTP, truoc khi cham toi hai cua kia: sau dot 1B `taiKhoan` LUON null
+        // voi benh nhan (HT_TaiKhoan chi con Admin) nen dieu kien cu chan sach.
+        // Bat duoc luc chay nghiem thu that 19-09 — khong phep nao khac thay.
+        //
+        // Admin van phai di duong `taiKhoan != null` ngay duoi (nhanh mat khau),
+        // nen o day chi mo cho ai CO LOI VAO, va van giu ngoai le quet QR HIS.
+        var coLoiVao = taiKhoan != null
+                       || await _hoSo.CoLoiVaoAsync(input, model.MaCoSo);
+
+        if (!coLoiVao && !laQrHis)
         {
             return Json(new {
                 success = false,
@@ -469,6 +478,31 @@ public class DangNhapController : Controller
 
         // Khóa luồng tự đăng ký tài khoản: chỉ cho phép tài khoản đã có sẵn từ HIS
         // NGOẠI LỆ: Bệnh nhân đã khám quét QR phiếu khám HIS -> tự động tạo tài khoản và hồ sơ
+        // 🔴 THU TU BAT BUOC: khoi dien MaCoSo phai chay TRUOC chot C7b.
+        // Chot cu ("taiKhoan is null") khong dung toi MaCoSo nen dat o dau cung
+        // duoc; chot C7b thi CO — de nguyen thu tu cu la phien khong mang MaCoSo
+        // bi chan sach, ke ca nguoi CO ho so. Da dap that luc chay nghiem thu 19-09.
+        if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet?.MaBN))
+        {
+            var coSoMa = await (from cs in _dbContext.BenhNhans
+                                join kcb in _dbContext.DMCSKCBs on cs.IdCoSo equals (long?)kcb.Id
+                                where cs.MaBN == model.DanhTinhQuet.MaBN
+                                select kcb.MaCoSo).FirstOrDefaultAsync();
+            if (!string.IsNullOrWhiteSpace(coSoMa))
+            {
+                model.MaCoSo = coSoMa;
+            }
+        }
+        if (string.IsNullOrWhiteSpace(model.MaCoSo))
+        {
+            model.MaCoSo = await _dbContext.DMCSKCBs
+                .AsNoTracking()
+                .Where(x => x.HienThiCongKhai)
+                .OrderBy(x => x.Id)
+                .Select(x => x.MaCoSo)
+                .FirstOrDefaultAsync();
+        }
+
         // 🔴 C7b — CUA 1 trong HAI cua. Cua kia o nhanh Firebase (tim
         // "C7b - CUA 2"). Sot mot cua la mo duong lach (ADR 0027 da canh bao
         // dung chuyen nay). Tu dot 1B hang rao khong con treo vao HT_TaiKhoan
@@ -490,26 +524,6 @@ public class DangNhapController : Controller
             taiKhoan = await TaoTaiKhoanVaHoSoTuQrAsync(input, model.MaCoSo, model.Cccd, model.DanhTinhQuet!);
         }
 
-        if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet?.MaBN))
-        {
-            var coSoMa = await (from cs in _dbContext.BenhNhans
-                                join kcb in _dbContext.DMCSKCBs on cs.IdCoSo equals (long?)kcb.Id
-                                where cs.MaBN == model.DanhTinhQuet.MaBN
-                                select kcb.MaCoSo).FirstOrDefaultAsync();
-            if (!string.IsNullOrWhiteSpace(coSoMa))
-            {
-                model.MaCoSo = coSoMa;
-            }
-        }
-        if (string.IsNullOrWhiteSpace(model.MaCoSo))
-        {
-            model.MaCoSo = await _dbContext.DMCSKCBs
-                .AsNoTracking()
-                .Where(x => x.HienThiCongKhai)
-                .OrderBy(x => x.Id)
-                .Select(x => x.MaCoSo)
-                .FirstOrDefaultAsync();
-        }
 
         if (string.IsNullOrWhiteSpace(model.Cccd))
         {
@@ -705,23 +719,10 @@ public class DangNhapController : Controller
 
         bool laQrHis = model.DanhTinhQuet != null && (model.DanhTinhQuet.LaNguonHis || !string.IsNullOrWhiteSpace(model.DanhTinhQuet.MaBN));
 
-        // 🔴 C7b — CUA 2 trong HAI cua (cua kia o nhanh OTP phia tren).
-        // Sot mot cua la mo duong lach. Cung luat, cung loi bao.
-        if (!adminReauth && !await _hoSo.CoLoiVaoAsync(sdt, model.MaCoSo))
-        {
-            if (!laQrHis)
-            {
-                return Json(new
-                {
-                    success = false,
-                    message = "Số điện thoại chưa có hồ sơ tại cơ sở y tế. Vui lòng liên hệ phòng khám/bệnh viện để được đăng ký.",
-                    dichDen = "/"
-                });
-            }
-
-            taiKhoan = await TaoTaiKhoanVaHoSoTuQrAsync(sdt, model.MaCoSo, model.Cccd, model.DanhTinhQuet!);
-        }
-
+        // 🔴 THU TU BAT BUOC: khoi dien MaCoSo phai chay TRUOC chot C7b.
+        // Chot cu ("taiKhoan is null") khong dung toi MaCoSo nen dat o dau cung
+        // duoc; chot C7b thi CO — de nguyen thu tu cu la phien khong mang MaCoSo
+        // bi chan sach, ke ca nguoi CO ho so. Da dap that luc chay nghiem thu 19-09.
         if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet?.MaBN))
         {
             var coSoMa = await (from cs in _dbContext.BenhNhans
@@ -742,6 +743,24 @@ public class DangNhapController : Controller
                 .Select(x => x.MaCoSo)
                 .FirstOrDefaultAsync();
         }
+
+        // 🔴 C7b — CUA 2 trong HAI cua (cua kia o nhanh OTP phia tren).
+        // Sot mot cua la mo duong lach. Cung luat, cung loi bao.
+        if (!adminReauth && !await _hoSo.CoLoiVaoAsync(sdt, model.MaCoSo))
+        {
+            if (!laQrHis)
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "Số điện thoại chưa có hồ sơ tại cơ sở y tế. Vui lòng liên hệ phòng khám/bệnh viện để được đăng ký.",
+                    dichDen = "/"
+                });
+            }
+
+            taiKhoan = await TaoTaiKhoanVaHoSoTuQrAsync(sdt, model.MaCoSo, model.Cccd, model.DanhTinhQuet!);
+        }
+
 
         if (string.IsNullOrWhiteSpace(model.Cccd))
         {

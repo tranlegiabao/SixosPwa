@@ -587,14 +587,19 @@ public sealed class AdminStoredProcedureService
         ExecuteNoResultAsync("dbo.HT_ThongBao_DanhDauDaDoc", command =>
             AddParameter(command, "@IDNguoiNhan", DbType.Int64, idNguoiNhan));
 
+    /// <summary>
+    /// 🔴 Dot 1B: tham so la <c>@IDBenhNhan</c> (tro <c>DM_BenhNhan</c>), KHONG con
+    /// <c>@IDTaiKhoan</c> — C15/PA-2a. Sai ten o day thi BUILD VAN XANH va chi no
+    /// luc chay: da bat duoc bang phep doi chieu tham so C# vs stored that (§10 muc 3).
+    /// </summary>
     public Task<(AdminStoredProcedureResult KetQua, long Id)> SavePushDangKyAsync(
-        long idTaiKhoan,
+        long idBenhNhan,
         string endpoint,
         string p256dh,
         string auth) =>
         ExecuteWithIdAsync("dbo.HT_PushDangKy_Save", "@IDDangKy", command =>
         {
-            AddParameter(command, "@IDTaiKhoan", DbType.Int64, idTaiKhoan);
+            AddParameter(command, "@IDBenhNhan", DbType.Int64, idBenhNhan);
             AddParameter(command, "@Endpoint", DbType.String, endpoint, 2000);
             AddParameter(command, "@P256dh", DbType.String, p256dh, 1000);
             AddParameter(command, "@Auth", DbType.String, auth, 400);
