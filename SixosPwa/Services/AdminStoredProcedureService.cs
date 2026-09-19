@@ -105,10 +105,16 @@ public sealed class AdminStoredProcedureService
                     Id = Convert.ToInt64(reader["ID"]),
                     SDT = reader["SDT"]?.ToString() ?? "",
                     Email = reader["Email"] != DBNull.Value ? reader["Email"]?.ToString() : null,
-                    Role = reader["Role"]?.ToString() ?? "BenhNhan",
-                    MatKhauNoiBo = reader["MatKhauNoiBo"] != DBNull.Value ? reader["MatKhauNoiBo"]?.ToString() : null,
-                    // Cot IDBenhNhan da bi xoa khoi HT_TaiKhoan (ADR 0019); ho so cua
-                    // tai khoan nam o Result Set 2 duoi day, quan he 1-N.
+                    Role = reader["Role"]?.ToString() ?? "Admin",
+                    // 🔴 Stored tra CoMatKhau (bit) chu KHONG tra MatKhauNoiBo: mot man
+                    // DANH SACH khong duoc keo mat khau ra khoi CSDL. Doc nham ten cot
+                    // o day la IndexOutOfRangeException => man bao "Loi tai danh sach
+                    // tai khoan tu may chu" ma khong noi vi sao.
+                    // Gan mot cho-giu de cho nao chi hoi "co mat khau chua" van dung.
+                    MatKhauNoiBo = (reader["CoMatKhau"] != DBNull.Value
+                                    && Convert.ToBoolean(reader["CoMatKhau"])) ? "***" : null,
+                    // Tu dot 1B benh nhan KHONG con tai khoan (ADR 0036) nen khong con
+                    // Result Set 2 "ho so theo tai khoan"; tu dien duoi day luon rong.
                     NgayTao = Convert.ToDateTime(reader["NgayTao"])
                 };
                 items.Add(tk);
