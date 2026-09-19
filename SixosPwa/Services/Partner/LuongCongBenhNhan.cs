@@ -184,13 +184,11 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
             return new KetQuaBuoc(false, "Cơ sở này đang tạm ngưng tiếp nhận đăng ký trực tuyến.", null);
         }
 
-        var taiKhoan = await TaoHoSoNoiBoAsync(maCoSo, cccd, dinhDanh, hoTen, ct: ct);
+        _ = await TaoHoSoNoiBoAsync(maCoSo, cccd, dinhDanh, hoTen, ct: ct);
 
-        // 🔴 Dot A: khong con mo tai khoan "ben doi tac" nua. Co so co cua rieng
-        // thi benh nhan duoc chuyen huong sang trang cua ho o ChonDichDenAsync,
-        // khong bao gio di qua day. Mat khau noi bo ghi vao HT_TaiKhoan
-        // (bang lien ket HT_TaiKhoanDoiTac da bi xoa).
-        await GhiMatKhauNoiBoAsync(taiKhoan, matKhau);
+        // 🔴 Dot 1B: KHONG con ghi mat khau noi bo cho benh nhan — ho khong co
+        // tai khoan nua, dang nhap bang OTP (ADR 0036). Cot HT_TaiKhoan.MatKhauNoiBo
+        // chi con phuc vu Admin.
 
         // Cung luat voi ChonDichDenAsync — hai loi vao (dang nhap / dang ky) phai
         // di cung mot duong, neu khong nguoi dung thay hai hanh vi khac nhau cho
@@ -241,24 +239,13 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
             return new KetQuaThaoTac(false, "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
         }
 
-        var taiKhoan = await TimTaiKhoanAsync(cccd, ct);
-        if (taiKhoan is null)
-        {
-            return new KetQuaThaoTac(false, "Không tìm thấy tài khoản của bạn");
-        }
-
-        // Co so co cua rieng: mat khau la CUA HO, ta khong duoc ghi de. Benh nhan
-        // doi mat khau tren trang cua co so. Day la chot chan cuoi — man nay da
-        // duoc an khoi menu cho nhom co so do.
-        var idCoSo = await LayIdCoSoAsync(maCoSo, ct);
-        if (idCoSo is not null && await _cua.CoChuyenHuongAsync(idCoSo.Value))
-        {
-            return new KetQuaThaoTac(false,
-                "Mật khẩu của bạn do cơ sở quản lý. Vui lòng đổi mật khẩu trên trang của cơ sở.");
-        }
-
-        await GhiMatKhauNoiBoAsync(taiKhoan, matKhauMoi);
-        return new KetQuaThaoTac(true, "Đã đổi mật khẩu");
+        // 🔴 Dot 1B: benh nhan KHONG CON tai khoan, nen cung khong con mat khau
+        // noi bo de doi (HT_TaiKhoan chi con Admin — ADR 0036). Ban trung gian cua
+        // dot nay tra "Khong tim thay tai khoan cua ban" — DUNG ket qua nhung SAI
+        // nguyen nhan, nguoi dung se di tim lai tai khoan khong ton tai.
+        // Man nay dang la no cua dot A (§7): hoac bo han, hoac cho no dung that.
+        return new KetQuaThaoTac(false,
+            "Cổng không còn dùng mật khẩu cho bệnh nhân — bạn đăng nhập bằng mã OTP gửi tới số điện thoại.");
     }
 
 
@@ -311,7 +298,14 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
             select h.Id).CountAsync(ct);
     }
 
-    private async Task<TaiKhoan> TaoHoSoNoiBoAsync(string maCoSo, string cccd, string dinhDanh, string hoTen,
+    /// <summary>
+    /// 🔴 Tu dot 1B KHONG tra <c>TaiKhoan</c> nua. Ban trung gian ket thuc bang
+    /// <c>_db.TaiKhoans.FirstAsync(...)</c>, ma <c>HT_TaiKhoan_Save</c> nay no-op
+    /// voi vai tro khac Admin nen <c>idTaiKhoan</c> = 0 =>
+    /// <c>InvalidOperationException: Sequence contains no elements</c> ngay cuoi
+    /// buoc xac nhan OTP. Tra ID HO SO vua dung.
+    /// </summary>
+    private async Task<long> TaoHoSoNoiBoAsync(string maCoSo, string cccd, string dinhDanh, string hoTen,
                                                    DanhTinhQuet? quet = null, CancellationToken ct = default)
     {
         var laEmail = dinhDanh.Contains('@');
@@ -383,7 +377,7 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
         // khong con, va "ho so thuoc ve ai" nay la cap (SDT x co so) cua chinh
         // dong do. Xem ADR 0034 va CONTEXT.md muc *Loi vao*.
 
-        return await _db.TaiKhoans.FirstAsync(x => x.Id == idTaiKhoan, ct);
+        return luuNguoi.Id;
     }
 
     /// <summary>

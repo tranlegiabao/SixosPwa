@@ -184,20 +184,10 @@ public class TaiLieuApiController : ControllerBase
         var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
         var dinhDanh = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? string.Empty;
 
-        // 🔴 Lay luon MaBN cua HO SO tu DM_BenhNhanCoSo: cot QL_TaiLieuBenhNhan.MaBN
-        // da bi xoa (no chi la ban sao cua ho so, de lech). Cung mot cau, khong them
-        // luot hoi CSDL nao.
-        // 🔴 Chu so huu ho so noi bang DM_BenhNhan.IdTaiKhoan (ADR 0019), KHONG
-        // bang so dien thoai. Ban cu chi so `p.SDT == dinhDanh`, ma SDT cua HO SO
-        // thuong KHAC SDT cua TAI KHOAN — mot tai khoan giu nhieu ho so (me + con),
-        // moi ho so mang so dien thoai rieng cua nguoi do. Hau qua do duoc that:
-        // Cong tai lieu LIET KE duoc tai lieu, nhung bam vao lai 404 vi chot quyen
-        // soi bang khoa khac voi cau liet ke.
-        // Van giu nhanh so SDT/Email lam DU PHONG cho ho so cu chua noi IdTaiKhoan.
-        var idTaiKhoan = await _db.TaiKhoans.AsNoTracking()
-            .Where(t => t.SDT == dinhDanh || t.Email == dinhDanh)
-            .Select(t => (long?)t.Id)
-            .FirstOrDefaultAsync();
+        // 🔴 Dot 1B: khong con tra HT_TaiKhoan o day. Quyen doc tai lieu duoc
+        // quyet bang chinh dong DM_BenhNhan: dung dinh danh phien (SDT hoac Email)
+        // VA dung co so VA cua tai lieu da mo (ADR 0036). Bien idTaiKhoan cu nam
+        // lai mot vong goi DB chet va mot khoi chu thich noi sai ve phep kiem.
 
         // Dot 1B: mot dong DA LA "con nguoi + ho so tai co so" (luat C2).
         var hoSo = await (

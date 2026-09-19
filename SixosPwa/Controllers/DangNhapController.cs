@@ -336,6 +336,21 @@ public class DangNhapController : Controller
 
         bool laQrHis = model.DanhTinhQuet != null && (model.DanhTinhQuet.LaNguonHis || !string.IsNullOrWhiteSpace(model.DanhTinhQuet.MaBN));
 
+        // 🔴 Cung luat thu tu voi hai cua kia: MaCoSo phai duoc chot TRUOC khi hoi
+        // CoLoiVaoAsync. GuiOtp khong co khoi dien mac dinh nhu XacNhanOtp, nen
+        // phien mo /DangNhap/Login khong kem ?coSo= se co MaCoSo rong => bi chan
+        // ngay o buoc gui OTP, trong khi XacNhanOtp thi lai cho qua. Hai cua noi
+        // hai kieu cho cung mot nguoi la loi kho lan nhat.
+        if (string.IsNullOrWhiteSpace(model.MaCoSo))
+        {
+            model.MaCoSo = await _dbContext.DMCSKCBs
+                .AsNoTracking()
+                .Where(x => x.HienThiCongKhai)
+                .OrderBy(x => x.Id)
+                .Select(x => x.MaCoSo)
+                .FirstOrDefaultAsync();
+        }
+
         // 🔴 C7b — CUA 3, o buoc GUI OTP. PLAN §7.1 KHONG LIET KE CUA NAY (no chi
         // neu hai cua :476 va :708). Bo sot thi benh nhan chet ngay tu buoc gui
         // OTP, truoc khi cham toi hai cua kia: sau dot 1B `taiKhoan` LUON null

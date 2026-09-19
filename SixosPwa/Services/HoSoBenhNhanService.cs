@@ -139,8 +139,12 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
         var idCoSo = await LayIdCoSoAsync(maCoSo);
         if (idCoSo is null) return false;
 
+        // 🔴 Khop ca Email: moi cau doc khac trong cong (man tai lieu, DemHoSoTaiCoSo,
+        // TaiLieuApiController) deu khop `SDT == dinhDanh || Email == dinhDanh`.
+        // Chi khop SDT o rieng cong chan nay la nguoi dang nhap bang EMAIL bi tu
+        // choi o cua, trong khi cac man khac van hien du lieu cua ho.
         return await _db.BenhNhans.AsNoTracking()
-            .AnyAsync(p => p.SDT == sdt && p.IdCoSo == idCoSo.Value);
+            .AnyAsync(p => (p.SDT == sdt || p.Email == sdt) && p.IdCoSo == idCoSo.Value);
     }
 
     /// <summary>
@@ -170,7 +174,7 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
         if (idCoSo is null) return new List<HoSoCuaToi>();
 
         var nguoi = await _db.BenhNhans.AsNoTracking()
-            .Where(p => p.SDT == sdt && p.IdCoSo == idCoSo.Value)
+            .Where(p => (p.SDT == sdt || p.Email == sdt) && p.IdCoSo == idCoSo.Value)
             .OrderBy(p => p.Id)
             .ToListAsync();
 

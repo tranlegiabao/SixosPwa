@@ -44,15 +44,41 @@ public class HomeController : Controller
     }
 
     /// <summary>
-    /// Thong bao / thiet bi / push nay khoa theo IDTaiKhoan chu khong con theo chuoi
-    /// so dien thoai. Cac API JSON van GIU nguyen ten khoa cu (nguoiGui/nguoiNhan la
-    /// so dien thoai) vi JS phia trinh duyet dang doc theo do.
+    /// 🔴 TU DOT 1B PHAI TACH HAI NGHIA — truoc day chung mot ham vi ca hai deu
+    /// tro <c>HT_TaiKhoan</c>:
+    ///   * NGUOI GUI thong bao la ADMIN  -> <see cref="LayIdTaiKhoanAdminAsync"/>,
+    ///     van doc <c>HT_TaiKhoan</c> (cot <c>HT_ThongBao.IDNguoiGui</c>).
+    ///   * NGUOI NHAN la BENH NHAN       -> <see cref="LayIdHoSoAsync"/>,
+    ///     doc <c>DM_BenhNhan</c> theo CO SO (cot <c>IDNguoiNhan</c> va
+    ///     <c>HT_PushDangKy.IDBenhNhan</c> nay tro sang bang do — ADR 0037).
+    /// Dung nham ham la cau tra ve RONG ma khong bao loi gi.
+    /// Cac API JSON van GIU nguyen ten khoa cu vi JS trinh duyet dang doc theo do.
     /// </summary>
-    private Task<long?> LayIdBenhNhanAsync(string sdt) =>
+    private Task<long?> LayIdTaiKhoanAdminAsync(string sdt) =>
         _db.TaiKhoans.AsNoTracking()
             .Where(t => t.SDT == sdt)
             .Select(t => (long?)t.Id)
             .FirstOrDefaultAsync();
+
+    /// <summary>
+    /// Ho so benh nhan mang so nay TAI CO SO cua phien (ADR 0036).
+    /// 🔴 Loc <c>IdCoSo != null</c>: dong neo khong duoc nhan thong bao/push.
+    /// Khop ca Email vi moi cau doc khac trong cong deu khop ca hai.
+    /// </summary>
+    private async Task<long?> LayIdHoSoAsync(string dinhDanh)
+    {
+        if (string.IsNullOrWhiteSpace(dinhDanh)) return null;
+
+        var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
+
+        var q = _db.BenhNhans.AsNoTracking()
+            .Where(b => b.IdCoSo != null && (b.SDT == dinhDanh || b.Email == dinhDanh));
+
+        if (!string.IsNullOrWhiteSpace(maCoSo))
+            q = q.Where(b => _db.DMCSKCBs.Any(c => c.Id == b.IdCoSo && c.MaCoSo == maCoSo));
+
+        return await q.OrderBy(b => b.Id).Select(b => (long?)b.Id).FirstOrDefaultAsync();
+    }
 
 
     /// <summary>
@@ -1027,7 +1053,8 @@ public class HomeController : Controller
         if (string.IsNullOrEmpty(sdt) || string.IsNullOrEmpty(model.Endpoint))
             return Json(new { success = false });
 
-        var idTaiKhoan = await LayIdBenhNhanAsync(sdt);
+        // Push neo vao DM_BenhNhan tu dot 1B (ADR 0037).
+        var idTaiKhoan = await LayIdHoSoAsync(sdt);
         if (idTaiKhoan is null)
             return Json(new { success = false });
 
@@ -1065,19 +1092,29 @@ public class HomeController : Controller
 
         var now = DateTime.Now;
 
-        var idNguoiGui = await LayIdBenhNhanAsync(nguoiGui);
+        var idNguoiGui = await LayIdTaiKhoanAdminAsync(nguoiGui);   // nguoi gui = Admin
         if (idNguoiGui is null)
             return Json(new { success = false, message = "Không tìm thấy tài khoản người gửi!" });
 
         // 1) Luu ThongBao — moi dong mot lan goi thu tuc (ADR 0008).
-        var idTheoSdt = await _db.TaiKhoans.AsNoTracking()
-            .Where(t => danhSachNhan.Contains(t.SDT))
-            .ToDictionaryAsync(t => t.SDT, t => t.Id);
+        // 🔴 Nguoi NHAN nay la DM_BenhNhan (FK_HT_ThongBao_NguoiNhan — ADR 0037),
+        // khong con HT_TaiKhoan. Tra nham bang la tu dien RONG => khong dong thong
+        // bao nao duoc ghi ma endpoint van bao thanh cong.
+        // Mot so co the ung NHIEU ho so (nhieu co so) => gui cho tat ca.
+        var hoSoTheoSdt = await _db.BenhNhans.AsNoTracking()
+            .Where(b => b.IdCoSo != null && b.SDT != null && danhSachNhan.Contains(b.SDT))
+            .Select(b => new { Sdt = b.SDT!, b.Id })
+            .ToListAsync();
+
+        var idTheoSdt = hoSoTheoSdt
+            .GroupBy(x => x.Sdt)
+            .ToDictionary(g => g.Key, g => g.Select(x => x.Id).ToList());
 
         foreach (var sdtNhan in danhSachNhan)
         {
-            if (idTheoSdt.TryGetValue(sdtNhan, out var idNhan))
-                await _thuTuc.SaveThongBaoAsync(idNguoiGui.Value, idNhan, smsMessage);
+            if (idTheoSdt.TryGetValue(sdtNhan, out var dsIdNhan))
+                foreach (var idNhan in dsIdNhan)
+                    await _thuTuc.SaveThongBaoAsync(idNguoiGui.Value, idNhan, smsMessage);
         }
 
         // 2) Gửi Web Push tới tất cả thiết bị đã đăng ký của từng bệnh nhân
@@ -1088,11 +1125,14 @@ public class HomeController : Controller
         var webPushClient = new WebPushClient();
         webPushClient.SetVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
 
+        // 🔴 HT_PushDangKy.IDBenhNhan tro DM_BenhNhan tu dot 1B (ADR 0037).
+        // Join sang HT_TaiKhoan la khong ra gi, va co the trung nham mot Admin
+        // neu hai day ID tinh co gap nhau.
         var danhSachSubscription = await (
             from p in _db.PushDangKys.AsNoTracking()
-            join t in _db.TaiKhoans.AsNoTracking() on p.IdBenhNhan equals t.Id
-            where danhSachNhan.Contains(t.SDT)
-            select new { Sub = p, t.SDT }).ToListAsync();
+            join b in _db.BenhNhans.AsNoTracking() on p.IdBenhNhan equals b.Id
+            where b.SDT != null && danhSachNhan.Contains(b.SDT)
+            select new { Sub = p, SDT = b.SDT! }).ToListAsync();
 
         int pushOk = 0, pushFail = 0;
         foreach (var item in danhSachSubscription)
@@ -1179,7 +1219,7 @@ public class HomeController : Controller
         if (string.IsNullOrEmpty(sdt))
             return Json(new { success = false });
 
-        var idNhan = await LayIdBenhNhanAsync(sdt);
+        var idNhan = await LayIdHoSoAsync(sdt);
         if (idNhan is null) return Json(new { success = false });
 
         await _thuTuc.DanhDauThongBaoDaDocAsync(idNhan.Value);
@@ -1202,8 +1242,8 @@ public class HomeController : Controller
         var now = DateTime.Now;
         var noiDungTraLoi = model.Message.Trim();
 
-        var idGui = await LayIdBenhNhanAsync(nguoiGui);
-        var idNhanTraLoi = await LayIdBenhNhanAsync(model.NguoiNhan);
+        var idGui = await LayIdTaiKhoanAdminAsync(nguoiGui);    // Admin tra loi
+        var idNhanTraLoi = await LayIdHoSoAsync(model.NguoiNhan); // benh nhan nhan
         if (idGui is null || idNhanTraLoi is null)
             return Json(new { success = false, message = "Không tìm thấy tài khoản." });
 
@@ -1272,8 +1312,8 @@ public class HomeController : Controller
         if (string.IsNullOrEmpty(adminId) || string.IsNullOrEmpty(sdtBenhNhan))
             return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
 
-        var idAdmin = await LayIdBenhNhanAsync(adminId);
-        var idBenhNhan = await LayIdBenhNhanAsync(sdtBenhNhan);
+        var idAdmin = await LayIdTaiKhoanAdminAsync(adminId);
+        var idBenhNhan = await LayIdHoSoAsync(sdtBenhNhan);
         if (idAdmin is null || idBenhNhan is null)
             return Json(new { success = true, data = Array.Empty<object>() });
 
@@ -1304,8 +1344,9 @@ public class HomeController : Controller
         if (string.IsNullOrEmpty(me) || string.IsNullOrEmpty(doiTac))
             return Json(new { success = false });
 
-        var idToi = await LayIdBenhNhanAsync(me);
-        var idDoiTac = await LayIdBenhNhanAsync(doiTac);
+        // Man *Lich su tin nhan* cua benh nhan: minh la HO SO, ben kia la ADMIN.
+        var idToi = await LayIdHoSoAsync(me);
+        var idDoiTac = await LayIdTaiKhoanAdminAsync(doiTac);
         if (idToi is null || idDoiTac is null)
             return Json(new { success = true, messages = Array.Empty<object>() });
 
