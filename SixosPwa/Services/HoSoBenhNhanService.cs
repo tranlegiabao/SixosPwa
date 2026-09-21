@@ -69,6 +69,24 @@ public interface IHoSoBenhNhanService
 
     Task<List<HoSoCuaToi>> LayDanhSachAsync(string sdt, string? maCoSo, string? cccdPhien, long? idDangChon);
 
+    /// <summary>
+    /// CHI DUNG CHO LUONG QUET QR PHIEU KHAM. Khi <c>MOT_HO_SO</c> bat ma quet xong
+    /// van chua truy ra ho so (khong co MaBN o co so, CCCD khong khop), tra ve ho so
+    /// ma man *Ho so cua toi* se hien — de mo san bang claim <c>HoSoDangChon</c> va
+    /// vao thang <c>/benh-nhan</c>, khong bat nguoi quet chon lai.
+    ///
+    /// <para>
+    /// Tra <c>null</c> khi <c>MOT_HO_SO</c> TAT: luc do tai khoan duoc phep giu nhieu
+    /// ho so nen phai de nguoi dung tu chon — lay bua mot cai la bug tham lang.
+    /// </para>
+    /// <para>
+    /// Dung DUNG MOT luat chon voi <see cref="LayDanhSachAsync"/>: hai noi lech luat
+    /// thi man *Ho so cua toi* hien mot nguoi con <c>/benh-nhan</c> doc du lieu cua
+    /// nguoi khac.
+    /// </para>
+    /// </summary>
+    Task<long?> LayIdHoSoMoSanKhiQuetAsync(string? sdt, string? maCoSo, string? cccdPhien);
+
     Task<bool> HoSoThuocTaiKhoanAsync(long idBenhNhan, string sdt, string? maCoSo);
 
     Task<(bool ThanhCong, string ThongBao)> XoaAsync(long idBenhNhan, string sdt, string? maCoSo);
@@ -190,12 +208,7 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
             // dang dung; (2) bam *Chon* sang ho so khac thi PhatLaiClaimAsync chi thay
             // claim HoSoDangChon va GIU NGUYEN claim Cccd cu => man nay hien mot ho so
             // trong khi /benh-nhan doc du lieu cua ho so khac.
-            var giu = nguoi.FirstOrDefault(p => idDangChon != null && p.Id == idDangChon.Value)
-                      ?? nguoi.FirstOrDefault(
-                          p => !string.IsNullOrWhiteSpace(cccdPhien)
-                            && string.Equals(p.CCCD, cccdPhien, StringComparison.Ordinal))
-                      ?? nguoi[0];
-            nguoi = new List<BenhNhan> { giu };
+            nguoi = new List<BenhNhan> { ChonMotHoSo(nguoi, cccdPhien, idDangChon) };
         }
 
         var id = nguoi.Select(p => p.Id).ToList();
@@ -630,6 +643,44 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
         _logger.LogInformation("Khong gan duoc ma {MaBN} vao ho so {IdBenhNhan}: {ThongDiep}",
                                ma, idBenhNhan, ketQua.Message);
         return 0;
+    }
+
+    /// <summary>
+    /// Luat chon MOT ho so khi <c>MOT_HO_SO</c> bat — dung o CA HAI noi
+    /// (<see cref="LayDanhSachAsync"/> va <see cref="LayIdHoSoMoSanKhiQuetAsync"/>)
+    /// nen chi duoc viet MOT lan o day.
+    ///
+    /// <para>
+    /// Thu tu: ho so DANG CHON -> CCCD cua phien -> dong dau. Ho so dang chon phai di
+    /// truoc vi bam *Chon* khong doi claim Cccd (HoSoController.PhatLaiClaimAsync),
+    /// lay CCCD lam tieu chi dau la tra ve nguoi vua bi chuyen khoi.
+    /// </para>
+    /// </summary>
+    private static BenhNhan ChonMotHoSo(List<BenhNhan> nguoi, string? cccdPhien, long? idDangChon) =>
+        nguoi.FirstOrDefault(p => idDangChon != null && p.Id == idDangChon.Value)
+        ?? nguoi.FirstOrDefault(p => !string.IsNullOrWhiteSpace(cccdPhien)
+                                  && string.Equals(p.CCCD, cccdPhien, StringComparison.Ordinal))
+        ?? nguoi[0];
+
+    /// <inheritdoc />
+    public async Task<long?> LayIdHoSoMoSanKhiQuetAsync(string? sdt, string? maCoSo, string? cccdPhien)
+    {
+        if (string.IsNullOrWhiteSpace(sdt)) return null;
+
+        // MOT_HO_SO tat => tai khoan duoc giu nhieu ho so, phai de nguoi dung tu chon.
+        if (!await _config.KiemTraHieuLucAsync("MOT_HO_SO")) return null;
+
+        var idCoSo = await LayIdCoSoAsync(maCoSo);
+        if (idCoSo is null) return null;
+
+        var nguoi = await _db.BenhNhans.AsNoTracking()
+            .Where(p => (p.SDT == sdt || p.Email == sdt) && p.IdCoSo == idCoSo.Value)
+            .OrderBy(p => p.Id)
+            .ToListAsync();
+
+        // Phien vua quet xong thi chua co claim HoSoDangChon => truyen null, luat lui
+        // ve CCCD cua phieu vua quet.
+        return nguoi.Count == 0 ? null : ChonMotHoSo(nguoi, cccdPhien, null).Id;
     }
 
     private Task<long?> LayIdCoSoAsync(string? maCoSo) =>

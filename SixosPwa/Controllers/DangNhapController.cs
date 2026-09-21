@@ -688,6 +688,11 @@ public class DangNhapController : Controller
                         .FirstOrDefaultAsync();
                     if (idBn != null && idBn > 0) idHoSoQuet = idBn;
                 }
+
+                // CHI luong QUET PHIEU: MOT_HO_SO bat thi mo san dung ho so ma man
+                // *Ho so cua toi* se hien, roi vao thang /benh-nhan — nguoi vua quet
+                // phieu khong phai chon lai mot danh sach chi co mot dong.
+                idHoSoQuet ??= await _hoSo.LayIdHoSoMoSanKhiQuetAsync(input, model.MaCoSo, cccdQuet);
             }
 
             if (idHoSoQuet != null && idHoSoQuet > 0)
@@ -880,6 +885,11 @@ public class DangNhapController : Controller
                     .FirstOrDefaultAsync();
                 if (idBn != null && idBn > 0) idHoSoQuet = idBn;
             }
+
+            // CHI luong QUET PHIEU: MOT_HO_SO bat thi mo san dung ho so ma man
+            // *Ho so cua toi* se hien, roi vao thang /benh-nhan — nguoi vua quet
+            // phieu khong phai chon lai mot danh sach chi co mot dong.
+            idHoSoQuet ??= await _hoSo.LayIdHoSoMoSanKhiQuetAsync(sdt, model.MaCoSo, cccdQuet);
         }
 
         if (idHoSoQuet != null && idHoSoQuet > 0)
