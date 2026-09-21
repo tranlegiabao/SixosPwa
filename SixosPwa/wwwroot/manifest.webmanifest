@@ -5,7 +5,7 @@
   "description": "Phần mềm quản lý phòng khám / bệnh viện HisSoft của Sixos.",
   "lang": "vi",
   "dir": "ltr",
-  "start_url": "/qr-otp",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",

@@ -54,7 +54,14 @@ public class DangNhapController : Controller
     [HttpGet("/qr-kham")]
     public async Task<IActionResult> QrKham(string? mabn = null, string? coSo = null)
     {
-        var maBnTraCuu = string.IsNullOrWhiteSpace(mabn) ? "145703" : mabn.Trim();
+        // 🔴 Duong nay dang nhap THANG, khong qua OTP. Khong co ma tren duong dan ma
+        // van di tiep thi mo '/qr' tay khong la duoc cap phien cua mot benh nhan bat ky.
+        if (string.IsNullOrWhiteSpace(mabn))
+        {
+            return Redirect("/DangNhap/Login?ReturnUrl=%2Fbenh-nhan");
+        }
+
+        var maBnTraCuu = mabn.Trim();
         var maCoSoTraCuu = string.IsNullOrWhiteSpace(coSo) ? "77121" : coSo.Trim();
 
         // Dot 1B: mot dong DA LA "con nguoi + ho so tai co so" nen khong con tu noi.
@@ -116,10 +123,18 @@ public class DangNhapController : Controller
     [HttpGet("/qr-otp")]
     public async Task<IActionResult> QrOtp(string? mabn = null, string? coSo = null, string? sdt = null)
     {
+        // 🔴 Khong co ma tren duong dan thi KHONG phai luong quet — di tiep la dang
+        // nhap ho mot benh nhan bat ky. Tra ve man Login truoc khi SignOut, de mo
+        // nham '/qr-otp' khong danh bay phien dang co.
+        if (string.IsNullOrWhiteSpace(mabn))
+        {
+            return Redirect("/DangNhap/Login?ReturnUrl=%2Fbenh-nhan");
+        }
+
         // Luôn xóa phiên cookie cũ để đảm bảo hiển thị đúng màn hình OTP
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
-        var maBnTraCuu = string.IsNullOrWhiteSpace(mabn) ? "145703" : mabn.Trim();
+        var maBnTraCuu = mabn.Trim();
         var maCoSoTraCuu = string.IsNullOrWhiteSpace(coSo) ? "77121" : coSo.Trim();
 
         // Dot 1B: mot dong DA LA "con nguoi + ho so tai co so" nen khong con tu noi.
@@ -137,12 +152,23 @@ public class DangNhapController : Controller
         }
 
         var slug = hoSo != null && !string.IsNullOrWhiteSpace(hoSo.CoSo.Slug) ? hoSo.CoSo.Slug : "pkdk-thien-nam";
-        var sdtBn = !string.IsNullOrWhiteSpace(sdt) ? sdt : (hoSo?.BenhNhan.SDT ?? "0773746879");
-        var cccd = hoSo?.BenhNhan.CCCD ?? "044071000792";
 
-        // Lưu trước OTP 123456 vào cache
-        _cache.Set($"OTP_{sdtBn}", "123456", TimeSpan.FromMinutes(30));
-        _cache.Set($"OTP_{cccd}", "123456", TimeSpan.FromMinutes(30));
+        // 🔴 Khong doan bua khi tra khong ra ho so: so/CCCD cung cu o day tung lam
+        // nguoi quet nhin thay tai khoan cua nguoi khac. Khong co gi that thi de rong,
+        // man Login se hoi so dien thoai nhu binh thuong.
+        var sdtBn = !string.IsNullOrWhiteSpace(sdt) ? sdt : (hoSo?.BenhNhan.SDT ?? "");
+        var cccd = hoSo?.BenhNhan.CCCD ?? "";
+
+        // Lưu trước OTP 123456 vào cache. Bo qua khoa rong: "OTP_" la khoa dung chung
+        // cho MOI nguoi khong tra ra danh tinh — dat vao do la mo cua cho ca phien khac.
+        if (!string.IsNullOrWhiteSpace(sdtBn))
+        {
+            _cache.Set($"OTP_{sdtBn}", "123456", TimeSpan.FromMinutes(30));
+        }
+        if (!string.IsNullOrWhiteSpace(cccd))
+        {
+            _cache.Set($"OTP_{cccd}", "123456", TimeSpan.FromMinutes(30));
+        }
 
         // Lưu thông tin quét QR vào cookie qr_data (không giới hạn thời gian - 365 ngày)
         var qrData = new DanhTinhQuet

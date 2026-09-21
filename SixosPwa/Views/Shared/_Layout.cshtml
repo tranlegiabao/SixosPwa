@@ -50,8 +50,15 @@
 
             var pwaPatient = localStorage.getItem('pwa_patient_cache');
             var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            // 🔴 TUYET DOI khong nem sang '/qr-otp' o day. '/qr-otp' KHONG co tham so
+            // thi server roi vao benh nhan mac dinh, va man Login lai GHI DE
+            // pwa_patient_cache bang chinh so mac dinh do (Login.cshtml muc 1) — mo app
+            // tu icon la thay ho so nguoi la, cang mo cang ket. Them nua '/qr-otp' bat
+            // dau bang SignOut, nen moi lan mo app la dang xuat phien dang co.
+            // Di thang '/benh-nhan': con phien thi vao luon, het phien thi bi day sang
+            // Login va chinh man Login doc pwa_patient_cache de hien o OTP.
             if (isStandalone && pwaPatient && (currentPath === '/' || currentPath === '/Home')) {
-                window.location.replace('/qr-otp');
+                window.location.replace('/benh-nhan');
                 return;
             }
 
