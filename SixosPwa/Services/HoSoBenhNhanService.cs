@@ -160,9 +160,11 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
     /// duoc hien o man nao (tieu chi nghiem thu §10 muc 10).
     /// </para>
     /// <para>
-    /// Toggle <c>MOT_HO_SO</c> (C4/C5-R2): bat thi chi tra DUNG MOT ho so, chon
-    /// theo CCCD cua phien. Phien khong mang CCCD thi tra dong dau — khong chan,
-    /// vi chan o day la khoa chet nguoi dung that.
+    /// Toggle <c>MOT_HO_SO</c> (C4/C5-R2): bat thi chi tra DUNG MOT ho so, chon theo
+    /// thu tu <c>idDangChon</c> -> CCCD cua phien -> dong dau. Khong con dung dau o
+    /// CCCD: dang nhap OTP thuong khong mang CCCD, va bam *Chon* cung khong doi claim
+    /// Cccd, nen lay CCCD lam tieu chi dau la tra sai nguoi. Van khong CHAN khi ca ba
+    /// deu truot — chan o day la khoa chet nguoi dung that.
     /// </para>
     /// </summary>
     public async Task<List<HoSoCuaToi>> LayDanhSachAsync(
@@ -182,7 +184,14 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
 
         if (await _config.KiemTraHieuLucAsync("MOT_HO_SO") && nguoi.Count > 1)
         {
-            var giu = nguoi.FirstOrDefault(
+            // 🔴 Ho so DANG CHON di truoc CCCD cua phien. Thieu ve nay thi hai duong
+            // vao deu tra sai nguoi: (1) dang nhap OTP thuong khong mang CCCD => roi
+            // xuong nguoi[0] tuc ho so co Id nho nhat, khong lien quan gi toi nguoi
+            // dang dung; (2) bam *Chon* sang ho so khac thi PhatLaiClaimAsync chi thay
+            // claim HoSoDangChon va GIU NGUYEN claim Cccd cu => man nay hien mot ho so
+            // trong khi /benh-nhan doc du lieu cua ho so khac.
+            var giu = nguoi.FirstOrDefault(p => idDangChon != null && p.Id == idDangChon.Value)
+                      ?? nguoi.FirstOrDefault(
                           p => !string.IsNullOrWhiteSpace(cccdPhien)
                             && string.Equals(p.CCCD, cccdPhien, StringComparison.Ordinal))
                       ?? nguoi[0];
