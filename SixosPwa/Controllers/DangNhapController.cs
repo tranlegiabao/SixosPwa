@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -375,7 +375,7 @@ public class DangNhapController : Controller
             {
                 var coSoMa = await (from cs in _dbContext.BenhNhans.AsNoTracking()
                                     join kcb in _dbContext.DMCSKCBs.AsNoTracking() on cs.IdCoSo equals (long?)kcb.Id
-                                    where cs.MaBN == model.DanhTinhQuet.MaBN && kcb.HienThiCongKhai
+                                    where cs.MaBN == model.DanhTinhQuet.MaBN
                                     select kcb.MaCoSo).FirstOrDefaultAsync();
                 if (!string.IsNullOrWhiteSpace(coSoMa))
                 {
@@ -544,7 +544,7 @@ public class DangNhapController : Controller
         {
             var coSoMa = await (from cs in _dbContext.BenhNhans.AsNoTracking()
                                 join kcb in _dbContext.DMCSKCBs.AsNoTracking() on cs.IdCoSo equals (long?)kcb.Id
-                                where cs.MaBN == model.DanhTinhQuet.MaBN && kcb.HienThiCongKhai
+                                where cs.MaBN == model.DanhTinhQuet.MaBN
                                 select kcb.MaCoSo).FirstOrDefaultAsync();
             if (!string.IsNullOrWhiteSpace(coSoMa))
             {
@@ -785,7 +785,7 @@ public class DangNhapController : Controller
         {
             var coSoMa = await (from cs in _dbContext.BenhNhans.AsNoTracking()
                                 join kcb in _dbContext.DMCSKCBs.AsNoTracking() on cs.IdCoSo equals (long?)kcb.Id
-                                where cs.MaBN == model.DanhTinhQuet.MaBN && kcb.HienThiCongKhai
+                                where cs.MaBN == model.DanhTinhQuet.MaBN
                                 select kcb.MaCoSo).FirstOrDefaultAsync();
             if (!string.IsNullOrWhiteSpace(coSoMa))
             {
@@ -1155,13 +1155,6 @@ public class DangNhapController : Controller
                     .Select(cs => (long?)cs.Id).FirstOrDefaultAsync();
             }
 
-            // 1c. Nếu vẫn chưa có, thử tìm hồ sơ theo SDT tại đúng cơ sở này
-            if (existingBnId == null && !string.IsNullOrWhiteSpace(sdt))
-            {
-                existingBnId = await _dbContext.BenhNhans.AsNoTracking()
-                    .Where(cs => cs.IdCoSo == idCoSoQuet.Value && cs.SDT == sdt)
-                    .Select(cs => (long?)cs.Id).FirstOrDefaultAsync();
-            }
         }
 
         if (idCoSo == null)
