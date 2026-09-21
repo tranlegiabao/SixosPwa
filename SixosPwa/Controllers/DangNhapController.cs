@@ -196,7 +196,14 @@ public class DangNhapController : Controller
             PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
         };
         var qrJson = System.Text.Json.JsonSerializer.Serialize(qrData, jsonOpt);
-        Response.Cookies.Append("qr_data", Uri.EscapeDataString(qrJson), new CookieOptions
+        // 🔴 KHONG Uri.EscapeDataString o day: Response.Cookies.Append DA tu URL-encode
+        // gia tri. Boc hai lop thi JS chi go duoc mot (decodeURIComponent), JSON.parse
+        // vo, qrCookieData = null => window.danhTinhQuet rong => POST XacNhanOtp khong
+        // mang DanhTinhQuet => khong ai dat claim HoSoDangChon => /benh-nhan roi ve ho
+        // so DAU TIEN. Do dung la trieu chung "quet ca 3 QR deu vao mot nguoi".
+        // Duong quet bang camera (quet-qr.js) ghi cookie bang encodeURIComponent MOT
+        // lop — de mot lop o day la hai duong khop nhau.
+        Response.Cookies.Append("qr_data", qrJson, new CookieOptions
         {
             Path = "/",
             Expires = DateTimeOffset.UtcNow.AddYears(1),
