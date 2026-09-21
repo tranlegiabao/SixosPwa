@@ -153,6 +153,15 @@ public class DangNhapController : Controller
 
         var slug = hoSo != null && !string.IsNullOrWhiteSpace(hoSo.CoSo.Slug) ? hoSo.CoSo.Slug : "pkdk-thien-nam";
 
+        // Nho co so ngay tu day, khong doi man Login ghi ho: quet xong la cai app luon
+        // thi lan mo tu icon dau tien da phai ra dung logo/ten co so.
+        Response.Cookies.Append("pwa_co_so", slug, new CookieOptions
+        {
+            Path = "/",
+            Expires = DateTimeOffset.UtcNow.AddYears(1),
+            SameSite = SameSiteMode.Lax
+        });
+
         // 🔴 Khong doan bua khi tra khong ra ho so: so/CCCD cung cu o day tung lam
         // nguoi quet nhin thay tai khoan cua nguoi khac. Khong co gi that thi de rong,
         // man Login se hoi so dien thoai nhu binh thuong.
@@ -231,6 +240,22 @@ public class DangNhapController : Controller
     {
         var adminReauth = AdminAuthentication.IsAdminReturnUrl(returnUrl) && Url.IsLocalUrl(returnUrl);
 
+        // 🔴 App da cai mo tu icon thi khong ai gan duoc ?coSo= vao duong dan: PWA vao
+        // thang '/' roi bi day sang day. Thieu slug la man dang nhap tut ve logo/ten
+        // HisSoft chung, nguoi benh dang o cua Thien Nam nhin thay thuong hieu khac.
+        // Cookie nay do chinh man dang nhap ghi (Login.cshtml) nen chi la GOI Y khoi
+        // phuc — slug rac thi bo qua, KHONG ve "/" nhu nhanh ?coSo= sai o duoi.
+        var laGoiYTuCookie = false;
+        if (string.IsNullOrWhiteSpace(coSo))
+        {
+            var slugNho = Request.Cookies["pwa_co_so"];
+            if (!string.IsNullOrWhiteSpace(slugNho))
+            {
+                coSo = slugNho.Trim();
+                laGoiYTuCookie = true;
+            }
+        }
+
         // ?coSo=slug den tu hai nut ben trang co so. Do ra ViewBag de man dang
         // nhap hien o "Ma CSKCB" khoa cung, va de JS gui kem khi goi OTP.
         string? maCoSoTuUrl = null;
@@ -244,14 +269,24 @@ public class DangNhapController : Controller
             // Chan ngay o day thay vi de benh nhan go het OTP roi moi bi tu choi
             // (va ton mot tin nhan OTP vo ich). Entity da nam trong tay, khong ton
             // them truy van. Xem ADR 0013.
-            if (thongTin is not null && !thongTin.HienThiCongKhai) return Redirect("/");
+            if (thongTin is not null && !thongTin.HienThiCongKhai)
+            {
+                if (laGoiYTuCookie) { Response.Cookies.Delete("pwa_co_so", new CookieOptions { Path = "/" }); return Redirect("/DangNhap/Login"); }
+                return Redirect("/");
+            }
 
             // 🔴 ?coSo= chi nhan SLUG. Go vao mot gia tri khong tra ra co so nao
             // (hay gap nhat: go MA co so, vd 77121) truoc day tut lang le xuong che
             // do khong-co-so: van cho go OTP, van cap cookie, roi tha vao /benh-nhan
             // ma khong tao noi tai khoan. Da ve "/" giong het nhanh HienThiCongKhai = 0 ngay
             // tren — sai cua thi phai biet ngay, dung sau khi go xong OTP. ADR 0027.
-            if (thongTin is null) return Redirect("/");
+            if (thongTin is null)
+            {
+                // Slug tu cookie khong con tra ra co so nao (doi slug, co so bi xoa):
+                // don cookie roi hien man dang nhap chung, dung nem nguoi dung ve "/".
+                if (laGoiYTuCookie) { Response.Cookies.Delete("pwa_co_so", new CookieOptions { Path = "/" }); return Redirect("/DangNhap/Login"); }
+                return Redirect("/");
+            }
 
             maCoSoTuUrl = thongTin?.MaCoSo;
             idCoSoTuUrl = thongTin?.Id;
