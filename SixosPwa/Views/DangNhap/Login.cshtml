@@ -1012,22 +1012,35 @@
             }
         });
 
-        // Bắt sự kiện đóng tab hoặc rời trang
-        window.addEventListener('pagehide', function (e) {
-            const step2 = document.querySelector('.step-2');
-            if (step2 && getComputedStyle(step2).display !== 'none' && !window._isSubmittingOtp) {
-                deleteCookie('qr_data');
-                sessionStorage.removeItem('on_otp_step');
-                try {
-                    const payload = JSON.stringify({ soDienThoai: currentSdt, cccd: currentCccd });
-                    const blob = new Blob([payload], { type: 'application/json' });
-                    navigator.sendBeacon('/DangNhap/HuyOtp', blob);
-                } catch (err) { }
-            }
-        });
+        // 🔴 KHONG huy OTP o 'pagehide'. Nghiep vu "roi man OTP thi xoa dau vet quet"
+        // van giu nguyen, nhung phai bat dung luc NGUOI DUNG CHU DONG BO DI (khoi
+        // 'click' ben tren, nut Doi so dien thoai, dang nhap xong) — 'pagehide' tren
+        // Chrome Android con ban khi chi chuyen app hay tat man hinh, tuc ban NHAM
+        // giua luc nguoi ta dang doc tin nhan OTP.
+        //
+        // Do that tren may that (nhat ky 17:01:52 -> 17:01:54): '/qr-otp' dat cookie
+        // xong, hai giay sau cookie da bi xoa trong khi nguoi dung VAN o man OTP; toi
+        // luc bam Dang nhap thi khong con gi de biet vua quet phieu cua ai, nen ho bi
+        // nem vao ho so DAU TIEN cua tai khoan.
+        //
+        // Doi lai: dong tab dot ngot thi ma OTP con song trong cache toi 30 phut. Chap
+        // nhan duoc — OTP van phai go dung, va cookie qr_mabn cung het han cung luc.
 
         document.addEventListener('DOMContentLoaded', function () {
             const urlParams = new URLSearchParams(window.location.search);
+
+            // 🔴 Vua dang xuat thi phai QUEN nguoi cu. 'pwa_patient_cache' giu sdt/cccd
+            // de mo app tu icon khong phai go lai — nhung server khong xoa duoc no, nen
+            // dang xuat xong man nay van nhan ra so cu va nhay thang vao o OTP cua chinh
+            // nguoi vua roi di: dang xuat nhu khong. Don o day, truoc moi doan doc cache.
+            if (urlParams.get('vuaDangXuat') === '1') {
+                try {
+                    localStorage.removeItem('pwa_patient_cache');
+                    sessionStorage.removeItem('on_otp_step');
+                } catch (e) { }
+                deleteCookie('qr_data');
+            }
+
             const sdtParam = urlParams.get('sdt') || urlParams.get('phone');
             const cccdParam = urlParams.get('cccd');
             const hienOtp = urlParams.get('hienOtp');
@@ -1057,6 +1070,22 @@
                 if (typeof veTheQuet === 'function') {
                     veTheQuet(qrCookieData);
                 }
+            }
+
+            // 🔴 Luoi do cuoi cung: dung lai danh tinh quet tu URL khi cookie qr_data
+            // da mat. Cookie do bi xoa ngay tai trang nay o 'pagehide' va o click roi
+            // trang — tren Chrome Android pagehide ban ca khi chuyen app / tat man hinh,
+            // va tab bi thu hoi roi nap lai thi window.danhTinhQuet cung mat. Thieu lai
+            // do nay thi POST XacNhanOtp di tay khong, khong ai dat claim HoSoDangChon,
+            // va nguoi vua quet phieu bi nem vao ho so DAU TIEN cua tai khoan.
+            var mabnTuUrl = urlParams.get('mabn');
+            if (!window.danhTinhQuet && mabnTuUrl) {
+                window.danhTinhQuet = {
+                    maBN: mabnTuUrl,
+                    cccd: cccdParam || '',
+                    dienThoai: sdtParam || '',
+                    nguon: 'his'
+                };
             }
 
             // Nếu vào trang bình thường (không phải màn OTP) và không phải là reload: dọn sạch qr_data cũ nếu còn sót

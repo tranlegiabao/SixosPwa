@@ -153,6 +153,22 @@ public class DangNhapController : Controller
 
         var slug = hoSo != null && !string.IsNullOrWhiteSpace(hoSo.CoSo.Slug) ? hoSo.CoSo.Slug : "pkdk-thien-nam";
 
+        // 🔴 MA QUET PHAI DUOC SERVER GIU, khong the giao cho trang Login giu ho.
+        // Do that tren may that: sau khi '/qr-otp' chuyen sang Login?...&mabn=...,
+        // trang bi nap lai roi di tiep sang '/benh-nhan', bi day ve Login voi moi
+        // '?ReturnUrl=%2Fbenh-nhan' — mat sach query. Cookie qr_data thi chinh man
+        // Login xoa o 'pagehide'/'click roi trang'. Ket qua: luc bam Dang nhap khong
+        // con gi de biet vua quet ai, nguoi dung roi vao ho so DAU TIEN cua tai khoan.
+        //
+        // Cookie nay HttpOnly nen JS khong xoa duoc, va song 30 phut du de go OTP.
+        Response.Cookies.Append("qr_mabn", maBnTraCuu, new CookieOptions
+        {
+            Path = "/",
+            HttpOnly = true,
+            Expires = DateTimeOffset.UtcNow.AddMinutes(30),
+            SameSite = SameSiteMode.Lax
+        });
+
         // Nho co so ngay tu day, khong doi man Login ghi ho: quet xong la cai app luon
         // thi lan mo tu icon dau tien da phai ra dung logo/ten co so.
         Response.Cookies.Append("pwa_co_so", slug, new CookieOptions
@@ -177,6 +193,19 @@ public class DangNhapController : Controller
         if (!string.IsNullOrWhiteSpace(cccd))
         {
             _cache.Set($"OTP_{cccd}", "123456", TimeSpan.FromMinutes(30));
+        }
+
+        // 🔴 NHO THEO SO DIEN THOAI, khong chi nho bang cookie. Do that tren may that:
+        // nguoi benh quet QR o trinh duyet nhung bam Dang nhap trong APP DA CAI — hai
+        // ngu canh giu cookie RIENG, nen cookie dat o ben nay ben kia khong thay. Luc
+        // do ca qr_data, qr_mabn lan query string deu vo nghia.
+        //
+        // Cache theo SDT la dung mo hinh ma OTP dang dung ("OTP_{sdt}"), va vong doi
+        // cung 30 phut. Xoa o HuyOtp de giu nguyen nghiep vu "roi man OTP thi khong de
+        // lai dau vet".
+        if (!string.IsNullOrWhiteSpace(sdtBn))
+        {
+            _cache.Set($"QR_MABN_{sdtBn}", maBnTraCuu, TimeSpan.FromMinutes(30));
         }
 
         // Lưu thông tin quét QR vào cookie qr_data (không giới hạn thời gian - 365 ngày)
@@ -211,7 +240,13 @@ public class DangNhapController : Controller
             SameSite = SameSiteMode.Lax
         });
 
-        return Redirect($"/DangNhap/Login?coSo={slug}&sdt={sdtBn}&cccd={cccd}&hienOtp=1&tuQr=1&returnUrl=%2Fbenh-nhan");
+        // 🔴 mabn phai nam tren URL, khong duoc chi nam trong cookie qr_data. Cookie do
+        // bi chinh man Login xoa o 'pagehide'/'click roi trang' — tren Chrome Android
+        // pagehide ban ca khi chuyen app hay tat man hinh, va tab co the bi he dieu hanh
+        // thu hoi roi nap lai. Luc do cookie mat, bien window.danhTinhQuet cung mat theo
+        // => POST XacNhanOtp khong mang DanhTinhQuet => khong ai dat claim HoSoDangChon.
+        // URL thi song qua reload, nen day la duong ben nhat de man Login biet ma quet.
+        return Redirect($"/DangNhap/Login?coSo={slug}&sdt={sdtBn}&cccd={cccd}&mabn={Uri.EscapeDataString(maBnTraCuu)}&hienOtp=1&tuQr=1&returnUrl=%2Fbenh-nhan");
     }
 
     /// <summary>
@@ -238,7 +273,17 @@ public class DangNhapController : Controller
             _cache.Remove($"OTP_{cccd.Trim()}");
         }
 
+        if (!string.IsNullOrWhiteSpace(sdt))
+        {
+            _cache.Remove($"QR_MABN_{sdt.Trim()}");
+        }
+
         Response.Cookies.Delete("qr_data", new CookieOptions { Path = "/" });
+
+        // 🔴 Phai xoa CA qr_mabn. Nghiep vu: roi man OTP ma chua xac thuc thi khong
+        // duoc de lai dau vet cua phieu vua quet. qr_mabn la HttpOnly nen JS khong tu
+        // xoa duoc — chi co cua nay don duoc no.
+        Response.Cookies.Delete("qr_mabn", new CookieOptions { Path = "/" });
         return Json(new { success = true });
     }
 
@@ -763,6 +808,8 @@ public class DangNhapController : Controller
                 idHoSoQuet ??= await _hoSo.LayIdHoSoMoSanKhiQuetAsync(input, model.MaCoSo, cccdQuet);
             }
 
+            idHoSoQuet ??= await HoSoTheoMaQuetDaNhoAsync(model.MaCoSo, input);
+
             if (idHoSoQuet != null && idHoSoQuet > 0)
             {
                 // 🔴 Cua 3 "nhan chu so huu" da chet o dot 1B: cot
@@ -817,6 +864,8 @@ public class DangNhapController : Controller
 
             // Xóa cookie QR đã quét khi đăng nhập thành công
             Response.Cookies.Delete("qr_data", new CookieOptions { Path = "/" });
+            Response.Cookies.Delete("qr_mabn", new CookieOptions { Path = "/" });
+            if (!string.IsNullOrWhiteSpace(input)) _cache.Remove($"QR_MABN_{input.Trim()}");
 
             return Json(new { success = true, redirectUrl });
     }
@@ -960,6 +1009,8 @@ public class DangNhapController : Controller
             idHoSoQuet ??= await _hoSo.LayIdHoSoMoSanKhiQuetAsync(sdt, model.MaCoSo, cccdQuet);
         }
 
+        idHoSoQuet ??= await HoSoTheoMaQuetDaNhoAsync(model.MaCoSo, sdt);
+
         if (idHoSoQuet != null && idHoSoQuet > 0)
         {
             if (taiKhoan != null && taiKhoan.Id > 0)
@@ -1011,6 +1062,8 @@ public class DangNhapController : Controller
 
         // Xóa cookie QR đã quét khi đăng nhập thành công
         Response.Cookies.Delete("qr_data", new CookieOptions { Path = "/" });
+        Response.Cookies.Delete("qr_mabn", new CookieOptions { Path = "/" });
+        if (!string.IsNullOrWhiteSpace(sdt)) _cache.Remove($"QR_MABN_{sdt.Trim()}");
 
         return Json(new { success = true, redirectUrl = dichDen });
     }
@@ -1377,21 +1430,38 @@ public class DangNhapController : Controller
                 .Select(x => x.Slug)
                 .FirstOrDefaultAsync();
 
+        // 🔴 Don dau vet phieu vua quet TRUOC khi mat claim. Thieu buoc nay thi dang
+        // xuat roi dang nhap lai bang so dien thoai (khong quet gi ca) van bi mo san
+        // ho so cua lan quet truoc — vua sai y nguoi dung, vua la dau vet con sot lai
+        // cua mot phien da ket thuc.
+        var sdtDangXuat = User.FindFirst(System.Security.Claims.ClaimTypes.MobilePhone)?.Value
+                          ?? User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
+        if (!string.IsNullOrWhiteSpace(sdtDangXuat))
+        {
+            _cache.Remove($"QR_MABN_{sdtDangXuat.Trim()}");
+        }
+        Response.Cookies.Delete("qr_mabn", new CookieOptions { Path = "/" });
+        Response.Cookies.Delete("qr_data", new CookieOptions { Path = "/" });
+
         await HttpContext.SignOutAsync(AdminAuthentication.Scheme);
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
+        // 🔴 'vuaDangXuat=1' la tin hieu cho TRINH DUYET tu don localStorage
+        // 'pwa_patient_cache'. So dien thoai + CCCD cua nguoi vua dung nam o do, server
+        // khong voi toi duoc; khong don thi dang xuat xong man dang nhap van nhan ra so
+        // cu va nhay thang vao o OTP cua chinh nguoi do — dang xuat nhu khong.
         if (!string.IsNullOrWhiteSpace(denCoSo))
         {
             var yDinh = !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl) ? returnUrl : "/";
-            return Redirect($"/DangNhap/Login?coSo={denCoSo}&returnUrl={Uri.EscapeDataString(yDinh)}");
+            return Redirect($"/DangNhap/Login?coSo={denCoSo}&vuaDangXuat=1&returnUrl={Uri.EscapeDataString(yDinh)}");
         }
 
         if (!string.IsNullOrWhiteSpace(slug))
         {
-            return Redirect($"/DangKyOnline/{slug}");
+            return Redirect($"/DangKyOnline/{slug}?vuaDangXuat=1");
         }
 
-        return RedirectToAction(nameof(Login));
+        return Redirect("/DangNhap/Login?vuaDangXuat=1");
     }
 
     /// <summary>
@@ -1417,6 +1487,40 @@ public class DangNhapController : Controller
                       join co in _dbContext.DMCSKCBs.AsNoTracking() on cs.IdCoSo equals (long?)co.Id
                       where cs.MaBN == ma && (co.MaCoSo == maCs || co.Slug == maCs)
                       select (long?)cs.Id).FirstOrDefaultAsync();
+    }
+
+    /// <summary>
+    /// Ma benh nhan cua phieu vua quet, khi man Login khong mang duoc danh tinh quet
+    /// toi cua xac thuc.
+    ///
+    /// <para>
+    /// 🔴 Vi sao phai co: do that tren may that cho thay query string rung sau vai lan
+    /// chuyen trang (Login?...&mabn=... -> Login?ReturnUrl=%2Fbenh-nhan), con cookie thi
+    /// khong song qua duoc ranh gioi TRINH DUYET <-> APP DA CAI (hai kho cookie rieng:
+    /// quet QR o Chrome roi bam Dang nhap trong app la mat sach).
+    /// </para>
+    /// <para>
+    /// Nen ban nho theo SO DIEN THOAI (cache server) di truoc, cookie chi la duong lui.
+    /// Vong doi 30 phut, giong ma OTP. Bi don o: HuyOtp (roi man OTP), dang nhap xong,
+    /// va DangXuat — de khong con dau vet cua phien da ket thuc.
+    /// </para>
+    /// </summary>
+    private async Task<long?> HoSoTheoMaQuetDaNhoAsync(string? maCoSo, string? sdt)
+    {
+        // Uu tien ban nho theo SDT: no song duoc ca khi nguoi benh quet o trinh duyet
+        // roi bam Dang nhap trong app da cai (hai ngu canh cookie khac nhau).
+        if (!string.IsNullOrWhiteSpace(sdt)
+            && _cache.TryGetValue($"QR_MABN_{sdt.Trim()}", out string? maTuCache)
+            && !string.IsNullOrWhiteSpace(maTuCache))
+        {
+            var id = await TimHoSoTheoMaBnTaiCoSoAsync(maTuCache.Trim(), maCoSo);
+            if (id != null && id > 0) return id;
+        }
+
+        var maBn = Request.Cookies["qr_mabn"];
+        if (string.IsNullOrWhiteSpace(maBn)) return null;
+
+        return await TimHoSoTheoMaBnTaiCoSoAsync(maBn.Trim(), maCoSo);
     }
 
     /// <summary>

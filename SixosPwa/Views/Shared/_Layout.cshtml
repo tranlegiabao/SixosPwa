@@ -17,6 +17,21 @@
         // PWA Last Page Restore Feature (run immediately to prevent flash)
         (function() {
             var currentPath = window.location.pathname;
+
+            // 🔴 Vua dang xuat => QUEN nguoi cu, tren MOI trang dich (DangXuat co ba
+            // duong ra: Login?coSo=, /DangKyOnline/{slug}, Login tran). Server khong
+            // xoa duoc localStorage, ma 'pwa_patient_cache' giu sdt/cccd nguoi vua dung:
+            // khong don thi man dang nhap nhan ra so cu roi nhay thang vao o OTP cua
+            // chinh ho — dang xuat nhu khong. 'lastVisitedUrl' cung phai di theo, khong
+            // thi lan mo app sau lai nem ve trang trong cua phien da ket thuc.
+            if (/[?&]vuaDangXuat=1(&|$)/.test(window.location.search)) {
+                try {
+                    localStorage.removeItem('pwa_patient_cache');
+                    localStorage.removeItem('lastVisitedUrl');
+                    sessionStorage.removeItem('on_otp_step');
+                } catch (e) { }
+                document.cookie = 'qr_data=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax';
+            }
             var isIgnored = /^\/(DangNhap|Admin)/i.test(currentPath);
             var isRootPage = currentPath === '/' || currentPath === '/Home' || currentPath === '/benh-nhan';
 
