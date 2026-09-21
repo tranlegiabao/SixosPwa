@@ -363,3 +363,5 @@ MigrationBackup/
 FodyWeavers.xsd
 .codex/
 .agents/
+temp_qr.json
+
