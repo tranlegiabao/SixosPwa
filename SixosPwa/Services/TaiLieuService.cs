@@ -118,7 +118,7 @@ public class TaiLieuService : ITaiLieuService
         // byte bệnh án nào của người chưa phải người dùng của nó.
         var maBNSach = request.MaBenhNhan.Trim();
 
-        var hoSo = await _db.BenhNhanCoSos
+        var hoSo = await _db.BenhNhans
             .AsNoTracking()
             .FirstOrDefaultAsync(b => b.IdCoSo == cskcb.Id && b.MaBN == maBNSach);
 
@@ -158,12 +158,16 @@ public class TaiLieuService : ITaiLieuService
             return new TiepNhanTaiLieuResponseData
             {
                 Id = banDangCo.Id,
-                IdBenhNhanCoSo = banDangCo.IdBenhNhanCoSo,
-                MaBN = banDangCo.MaBN,
+                IdBenhNhan = banDangCo.IdBenhNhan,
+                // Cot MaBN da bi bo khoi QL_TaiLieuBenhNhan — ma benh nhan suy ra
+                // qua DM_BenhNhanCoSo. O day chinh la ma vua duoc lam sach ben tren.
+                MaBN = maBNSach,
                 LoaiTaiLieu = banDangCo.LoaiTaiLieu,
                 TenTaiLieu = banDangCo.TenTaiLieu,
                 DuongDan = $"/api/v1/tai-lieu/xem/{banDangCo.Id}",
-                DungLuongByte = banDangCo.DungLuongByte,
+                // Cot DungLuongByte da bi bo; ban cu khong doi noi dung nen kich thuoc
+                // dung bang tep vua nhan.
+                DungLuongByte = pdfBytes.Length,
                 NgayTao = banDangCo.NgayTao,
                 NoiDungKhongDoi = true
             };
@@ -187,7 +191,7 @@ public class TaiLieuService : ITaiLieuService
         var (ketQua, idTaiLieu) = await _spService.SaveTaiLieuBenhNhanAsync(
             id: 0,
             idCoSo: cskcb.Id,
-            idBenhNhanCoSo: hoSo.Id,
+            idBenhNhan: hoSo.Id,
             maBN: maBNSach,
             loaiTaiLieu: loaiTaiLieu.Trim(),
             tenTaiLieu: tenTaiLieu,
@@ -207,7 +211,7 @@ public class TaiLieuService : ITaiLieuService
         return new TiepNhanTaiLieuResponseData
         {
             Id = idTaiLieu,
-            IdBenhNhanCoSo = hoSo.Id,
+            IdBenhNhan = hoSo.Id,
             MaBN = maBNSach,
             LoaiTaiLieu = loaiTaiLieu.Trim(),
             TenTaiLieu = tenTaiLieu,

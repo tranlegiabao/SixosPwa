@@ -15,11 +15,16 @@ public sealed class DangNhapController : Controller
 {
     private readonly IMemoryCache _cache;
     private readonly ITaiKhoanService _taiKhoanService;
+    private readonly SixosPwa.Data.ApplicationDbContext _db;
 
-    public DangNhapController(IMemoryCache cache, ITaiKhoanService taiKhoanService)
+    public DangNhapController(
+        IMemoryCache cache,
+        ITaiKhoanService taiKhoanService,
+        SixosPwa.Data.ApplicationDbContext db)
     {
         _cache = cache;
         _taiKhoanService = taiKhoanService;
+        _db = db;
     }
 
     [HttpGet]
@@ -53,7 +58,7 @@ public sealed class DangNhapController : Controller
         // Kiểm tra xem tài khoản có tồn tại và là Admin hay không
         var taiKhoan = await _taiKhoanService.DangNhapAsync(input, "");
 
-        if (taiKhoan == null || (!string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase) && !string.Equals(taiKhoan.Role, "DoiTac", StringComparison.OrdinalIgnoreCase)))
+        if (taiKhoan == null || (!string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase)))
         {
             return Json(new { success = false, message = "Tài khoản không có quyền truy cập khu vực Admin." });
         }
@@ -75,7 +80,7 @@ public sealed class DangNhapController : Controller
         var otpInput = model.Otp.Trim();
 
         var taiKhoan = await _taiKhoanService.DangNhapAsync(input, "");
-        if (taiKhoan == null || (!string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase) && !string.Equals(taiKhoan.Role, "DoiTac", StringComparison.OrdinalIgnoreCase)))
+        if (taiKhoan == null || (!string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase)))
         {
             return Json(new
             {
@@ -153,6 +158,52 @@ public sealed class DangNhapController : Controller
             return false;
         }
     }
+
+    [HttpPost]
+    [Authorize(Roles = "Admin", AuthenticationSchemes = AdminAuthentication.Scheme)]
+    public async Task<IActionResult> DoiMatKhau([FromBody] AdminDoiMatKhauRequest model)
+    {
+        if (model == null || string.IsNullOrWhiteSpace(model.MatKhauCu) || string.IsNullOrWhiteSpace(model.MatKhauMoi))
+        {
+            return Json(new { success = false, message = "Vui lòng nhập đầy đủ mật khẩu cũ và mật khẩu mới." });
+        }
+
+        var currentUsername = User.Identity?.Name;
+        if (string.IsNullOrWhiteSpace(currentUsername))
+        {
+            return Json(new { success = false, message = "Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại." });
+        }
+
+        var taiKhoan = await _taiKhoanService.DangNhapAsync(currentUsername, "");
+        if (taiKhoan == null || !string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+        {
+            return Json(new { success = false, message = "Không tìm thấy tài khoản quản trị viên." });
+        }
+
+        if (string.IsNullOrEmpty(taiKhoan.MatKhauNoiBo)
+            || !string.Equals(taiKhoan.MatKhauNoiBo, model.MatKhauCu.Trim(), StringComparison.Ordinal))
+        {
+            return Json(new { success = false, message = "Mật khẩu hiện tại không chính xác." });
+        }
+
+        var matKhauMoi = model.MatKhauMoi.Trim();
+        if (matKhauMoi.Length < 4)
+        {
+            return Json(new { success = false, message = "Mật khẩu mới phải có ít nhất 4 ký tự." });
+        }
+
+        taiKhoan.MatKhauNoiBo = matKhauMoi;
+        _db.TaiKhoans.Update(taiKhoan);
+        await _db.SaveChangesAsync();
+
+        return Json(new { success = true, message = "Đổi mật khẩu quản trị thành công." });
+    }
+}
+
+public sealed class AdminDoiMatKhauRequest
+{
+    public string MatKhauCu { get; set; } = string.Empty;
+    public string MatKhauMoi { get; set; } = string.Empty;
 }
 
 public sealed class AdminGuiOtpRequest

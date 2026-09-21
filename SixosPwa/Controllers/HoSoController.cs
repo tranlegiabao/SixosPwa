@@ -66,16 +66,17 @@ public class HoSoController : Controller
         return dem > nguong;
     }
 
-    /// <summary>Chan do cho mot action: dem theo tai khoan va theo IP.</summary>
-    private bool BiChanDo(string viec, long? idTaiKhoan)
+    /// <summary>Chan do cho mot action: dem theo SO DIEN THOAI cua phien va theo IP.</summary>
+    private bool BiChanDo(string viec, string? khoaPhien)
     {
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "?";
-        var quaTaiKhoan = idTaiKhoan is not null && QuaNhanh(viec, $"tk{idTaiKhoan}", NguongTaiKhoan);
+        var quaTaiKhoan = !string.IsNullOrWhiteSpace(khoaPhien)
+                          && QuaNhanh(viec, $"tk{khoaPhien}", NguongTaiKhoan);
         var quaIp = QuaNhanh(viec, $"ip{ip}", NguongIp);
 
         if (quaTaiKhoan || quaIp)
         {
-            _logger.LogWarning("Chan do {Viec}: tai khoan {IdTaiKhoan} / IP {Ip}", viec, idTaiKhoan, ip);
+            _logger.LogWarning("Chan do {Viec}: so {Sdt} / IP {Ip}", viec, khoaPhien, ip);
             return true;
         }
 
@@ -88,20 +89,24 @@ public class HoSoController : Controller
     [HttpGet("/benh-nhan/ho-so")]
     public async Task<IActionResult> Index(string? loi = null, string? xong = null)
     {
-        var dinhDanh = User.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;
-        var idTaiKhoan = await _hoSo.LayIdTaiKhoanAsync(dinhDanh);
+        var dinhDanh = SdtPhien();
+        var maCoSoPhien = MaCoSoPhien();
+        var coLoiVao = await _hoSo.CoLoiVaoAsync(dinhDanh, maCoSoPhien);
 
-        ViewBag.MaCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
+        ViewBag.MaCoSo = maCoSoPhien;
         ViewBag.Loi = loi;
         ViewBag.Xong = xong;
 
-        if (idTaiKhoan is null)
+        if (!coLoiVao)
         {
             return View(new List<HoSoCuaToi>());
         }
 
         var idDangChon = LayIdDangChon();
-        return View(await _hoSo.LayDanhSachAsync(idTaiKhoan.Value, idDangChon));
+        return View(await _hoSo.LayDanhSachAsync(
+            dinhDanh, maCoSoPhien,
+            User.FindFirst(LuongCongBenhNhan.ClaimCccd)?.Value,
+            idDangChon));
     }
 
     /// <summary>Doi ho so dang xem.</summary>
@@ -109,21 +114,21 @@ public class HoSoController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Chon(long id)
     {
-        var dinhDanh = User.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;
-        var idTaiKhoan = await _hoSo.LayIdTaiKhoanAsync(dinhDanh);
+        var dinhDanh = SdtPhien();
+        var coLoiVao = await CoLoiVaoAsync();
 
-        if (idTaiKhoan is null)
+        if (!coLoiVao)
         {
             return RedirectToAction(nameof(Index), new { loi = "Không tìm thấy tài khoản." });
         }
 
         // 🔴 Cong chan. Thieu phep kiem nay thi go ID ho so nguoi khac vao la xem
         // duoc benh an cua ho — dung loai lo hong ma duong doc tai lieu tung mac.
-        if (!await _hoSo.HoSoThuocTaiKhoanAsync(id, idTaiKhoan.Value))
+        if (!await _hoSo.HoSoThuocTaiKhoanAsync(id, dinhDanh, MaCoSoPhien()))
         {
             _logger.LogWarning(
-                "Tai khoan {IdTaiKhoan} thu chon ho so {IdHoSo} khong thuoc ve minh.",
-                idTaiKhoan.Value, id);
+                "Tai khoan {Sdt} thu chon ho so {IdHoSo} khong thuoc ve minh.",
+                dinhDanh, id);
 
             return RedirectToAction(nameof(Index), new { loi = "Hồ sơ này không thuộc tài khoản của bạn." });
         }
@@ -155,21 +160,21 @@ public class HoSoController : Controller
         await Task.CompletedTask;
         return RedirectToAction(nameof(Index));
         /*
-        var idTaiKhoan = await LayIdTaiKhoanAsync();
+        var coLoiVao = await CoLoiVaoAsync();
 
-        if (idTaiKhoan is null)
+        if (!coLoiVao)
         {
             return RedirectToAction(nameof(Index), new { loi = "Không tìm thấy tài khoản." });
         }
 
-        if (BiChanDo("them-ho-so", idTaiKhoan))
+        if (BiChanDo("them-ho-so", SdtPhien()))
         {
             return RedirectToAction(nameof(Them), new { loi = LoiChanDo });
         }
 
         var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
 
-        var ketQua = await _hoSo.TaoAsync(idTaiKhoan.Value, maCoSo, cccd, hoTen, ngaySinh, sdt, gioiTinh);
+        var ketQua = await _hoSo.TaoAsync(SdtPhien(), maCoSo, cccd, hoTen, ngaySinh, sdt, gioiTinh);
 
         if (!ketQua.ThanhCong)
         {
@@ -204,9 +209,9 @@ public class HoSoController : Controller
     [HttpGet("/benh-nhan/ho-so/sua")]
     public async Task<IActionResult> Sua(long id, string? loi = null, string? xong = null)
     {
-        var idTaiKhoan = await LayIdTaiKhoanAsync();
+        var coLoiVao = await CoLoiVaoAsync();
 
-        if (idTaiKhoan is null)
+        if (!coLoiVao)
         {
             return RedirectToAction(nameof(Index), new { loi = "Không tìm thấy tài khoản." });
         }
@@ -215,12 +220,12 @@ public class HoSoController : Controller
 
         // 🔴 Cong chan — service loc theo ca ID lan chu so huu, tra null khi ho so
         // khong phai cua tai khoan nay.
-        var hoSo = await _hoSo.LayDeSuaAsync(id, idTaiKhoan.Value, maCoSo);
+        var hoSo = await _hoSo.LayDeSuaAsync(id, SdtPhien(), maCoSo);
 
         if (hoSo is null)
         {
-            _logger.LogWarning("Tai khoan {IdTaiKhoan} thu sua ho so {IdHoSo} khong thuoc ve minh.",
-                idTaiKhoan.Value, id);
+            _logger.LogWarning("So {Sdt} thu sua ho so {IdHoSo} khong thuoc ve minh.",
+                SdtPhien(), id);
 
             return RedirectToAction(nameof(Index), new { loi = "Hồ sơ này không thuộc tài khoản của bạn." });
         }
@@ -248,9 +253,9 @@ public class HoSoController : Controller
     public async Task<IActionResult> Sua(long id, string cccd, string hoTen, DateTime? ngaySinh,
                                          string? sdt, string? gioiTinh)
     {
-        var idTaiKhoan = await LayIdTaiKhoanAsync();
+        var coLoiVao = await CoLoiVaoAsync();
 
-        if (idTaiKhoan is null)
+        if (!coLoiVao)
         {
             return RedirectToAction(nameof(Index), new { loi = "Không tìm thấy tài khoản." });
         }
@@ -258,7 +263,7 @@ public class HoSoController : Controller
         var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
 
         // 🔴 Chặn bệnh nhân sửa thông tin khi hồ sơ đang có mã nối. Phải gỡ nối trước.
-        var hoSoHienTai = await _hoSo.LayDeSuaAsync(id, idTaiKhoan.Value, maCoSo);
+        var hoSoHienTai = await _hoSo.LayDeSuaAsync(id, SdtPhien(), maCoSo);
         if (hoSoHienTai is null)
         {
             return RedirectToAction(nameof(Index), new { loi = "Hồ sơ không hợp lệ hoặc không thuộc tài khoản của bạn." });
@@ -269,7 +274,7 @@ public class HoSoController : Controller
             return RedirectToAction(nameof(Sua), new { id, loi = "Hồ sơ đang liên kết mã bệnh nhân. Vui lòng bấm 'Gỡ đồng bộ' trước khi chỉnh sửa thông tin." });
         }
 
-        var ketQua = await _hoSo.SuaAsync(id, idTaiKhoan.Value, maCoSo, cccd, hoTen,
+        var ketQua = await _hoSo.SuaAsync(id, SdtPhien(), maCoSo, cccd, hoTen,
                                           ngaySinh, sdt, gioiTinh);
 
         if (!ketQua.ThanhCong)
@@ -300,14 +305,14 @@ public class HoSoController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> XacNhanNoi(long id, string? maBN)
     {
-        var idTaiKhoan = await LayIdTaiKhoanAsync();
+        var coLoiVao = await CoLoiVaoAsync();
 
-        if (idTaiKhoan is null)
+        if (!coLoiVao)
         {
             return RedirectToAction(nameof(Index), new { loi = "Không tìm thấy tài khoản." });
         }
 
-        if (BiChanDo("xac-nhan-noi", idTaiKhoan))
+        if (BiChanDo("xac-nhan-noi", SdtPhien()))
         {
             return RedirectToAction(nameof(Sua), new { id, loi = LoiChanDo });
         }
@@ -315,7 +320,7 @@ public class HoSoController : Controller
         var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
 
         var (thanhCong, thongBao, soMa) = await _hoSo.XacNhanNoiAsync(
-            id, idTaiKhoan.Value, maCoSo, maBN);
+            id, SdtPhien(), maCoSo, maBN);
 
         XoaUngVienDaGiu(id);
 
@@ -341,14 +346,14 @@ public class HoSoController : Controller
             return RedirectToAction(nameof(Sua), new { id, loi = "Chức năng gỡ đồng bộ hiện đang tạm khóa." });
         }
 
-        var idTaiKhoan = await LayIdTaiKhoanAsync();
+        var coLoiVao = await CoLoiVaoAsync();
 
-        if (idTaiKhoan is null)
+        if (!coLoiVao)
         {
             return RedirectToAction(nameof(Index), new { loi = "Không tìm thấy tài khoản." });
         }
 
-        var (thanhCong, thongBao) = await _hoSo.GoNoiAsync(idHoSoCoSo, idTaiKhoan.Value);
+        var (thanhCong, thongBao) = await _hoSo.GoNoiAsync(idHoSoCoSo, SdtPhien(), MaCoSoPhien());
 
         return thanhCong
             ? RedirectToAction(nameof(Sua), new { id, xong = "da-go" })
@@ -359,15 +364,15 @@ public class HoSoController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Xoa(long id)
     {
-        var dinhDanh = User.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;
-        var idTaiKhoan = await _hoSo.LayIdTaiKhoanAsync(dinhDanh);
+        var dinhDanh = SdtPhien();
+        var coLoiVao = await CoLoiVaoAsync();
 
-        if (idTaiKhoan is null)
+        if (!coLoiVao)
         {
             return RedirectToAction(nameof(Index), new { loi = "Không tìm thấy tài khoản." });
         }
 
-        var (thanhCong, thongBao) = await _hoSo.XoaAsync(id, idTaiKhoan.Value);
+        var (thanhCong, thongBao) = await _hoSo.XoaAsync(id, dinhDanh, MaCoSoPhien());
 
         if (!thanhCong)
         {
@@ -384,8 +389,18 @@ public class HoSoController : Controller
         return RedirectToAction(nameof(Index), new { xong = "1" });
     }
 
-    private Task<long?> LayIdTaiKhoanAsync() =>
-        _hoSo.LayIdTaiKhoanAsync(User.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty);
+    /// <summary>So dien thoai cua phien — tu dot 1B day la danh tinh dang nhap.</summary>
+    private string SdtPhien() => User.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;
+
+    /// <summary>Ma co so cua phien.</summary>
+    private string? MaCoSoPhien() => User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
+
+    /// <summary>
+    /// 🔴 C7a — GAC ROUTE theo dung luat man dang nhap (C7b). Nut *Them ho so* da
+    /// an o Views/HoSo/Index.cshtml nhung ROUTE van song; thieu cong nay thi go
+    /// thang URL la tao duoc ho so o co so minh chua tung kham.
+    /// </summary>
+    private Task<bool> CoLoiVaoAsync() => _hoSo.CoLoiVaoAsync(SdtPhien(), MaCoSoPhien());
 
     /// <summary>Ma trang thai cho man doc, khong phai cau chu — cau chu nam o view.</summary>
     private static string MaKetCuc(KetQuaLuuHoSo ketQua) => ketQua.KetCuc switch

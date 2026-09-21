@@ -1,4 +1,4 @@
-@model List<SixosPwa.Models.DoiTac>
+@model List<string>
 @{
 ViewData["Title"] = "Gửi Tin Nhắn Bệnh Nhân";
 }
@@ -147,40 +147,22 @@ background-color: #eff6ff;
 @if (Model != null && Model.Any())
 {
 var isFirst = true;
-foreach (var dt in Model)
+foreach (var ten in Model)
 {
-if (isFirst)
-{
-<option value="@dt.MaDT" data-brandname="@dt.BrandName" data-password="@dt.MatKhauDoiTac" selected>@dt.TenDT</option>
+<option value="@ten" data-brandname="@ten" selected="@(isFirst)">@ten</option>
 isFirst = false;
 }
-else
-{
-<option value="@dt.MaDT" data-brandname="@dt.BrandName" data-password="@dt.MatKhauDoiTac">@dt.TenDT</option>
-}
-}
 }
 else
 {
-<option value="HisSoft SMS Gateway" selected>HisSoft SMS Gateway (Không có dữ liệu)</option>
+<option value="" selected>(Chưa cơ sở nào khai công ty)</option>
 }
 <option value="custom">Tự cấu hình đối tác khác...</option>
 </select></div>
 <input type="text" class="form-control mt-2 d-none" id="customPartnerInput" placeholder="Nhập tên đối tác SMS tùy chỉnh" />
 </div>
-<!-- Mật khẩu -->
-<div class="col-md-4">
-<label for="smsPassword" class="form-label fw-bold text-secondary small">MẬT KHẨU API / ĐỐI TÁC</label>
-<div class="input-group">
-<span class="input-group-text bg-light text-secondary border-end-0">🔑</span>
-<input type="password" class="form-control border-start-0 border-end-0 ps-1" id="smsPassword" placeholder="Nhập mật khẩu" required value="123456@demo" />
-<button class="btn btn-outline-secondary border-start-0" type="button" onclick="togglePasswordVisibility()">
-<span id="togglePasswordIcon">👁️</span>
-</button>
-</div>
-</div>
 <!-- Nút Gửi -->
-<div class="col-md-4">
+<div class="col-md-8">
 <button type="submit" class="btn btn-brand-sms w-100 py-2 fw-bold rounded-3 hover-lift shadow-sm d-flex align-items-center justify-content-center gap-2" id="btnSendSms">
 <span class="spinner-border spinner-border-sm d-none" role="status" id="sendSpinner"></span>
 <span id="sendIcon">✈️</span>

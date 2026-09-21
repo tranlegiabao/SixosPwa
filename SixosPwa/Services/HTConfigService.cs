@@ -41,18 +41,26 @@ public class HTConfigService : IHTConfigService
             return cached;
         }
 
+        // 🔴 SingleOrDefault chứ không FirstOrDefault: sau bước A8 thì HT_Config có
+        // UNIQUE(MaChucNang). Trùng mã phải NỔ ra chứ không im lặng lấy dòng đầu —
+        // im lặng thì một mã bị nhân đôi sẽ bật/tắt tính năng theo dòng nào tuỳ plan.
         var config = await _db.HTConfigs
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.MaChucNang == trimmed);
+            .SingleOrDefaultAsync(x => x.MaChucNang == trimmed);
 
         _cache.Set(cacheKey, config, CacheTtl);
         return config;
     }
 
+    /// <summary>
+    /// 🔴 Cột <c>HT_Config.SoLuong</c> đã được gộp vào <c>GiaTri</c> (dữ liệu thật: cả hai
+    /// đang NULL, chỉ <c>HieuLuc</c> được dùng ⇒ gộp an toàn). Giữ tên phương thức để
+    /// không vỡ nơi gọi, nhưng nay đọc <c>GiaTri</c>.
+    /// </summary>
     public async Task<int?> LaySoLuongAsync(string maChucNang)
     {
         var config = await LayConfigAsync(maChucNang);
-        return config?.SoLuong;
+        return config?.GiaTri;
     }
 
     public async Task<int?> LayGiaTriAsync(string maChucNang)

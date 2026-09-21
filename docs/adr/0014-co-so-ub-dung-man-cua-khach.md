@@ -1,6 +1,12 @@
 # 0014 — Cơ sở Ung Bướu dùng bộ màn của khách, không dùng OTP của SixosPwa
 
-- **Trạng thái:** Đã chấp nhận
+> 🔴 **ĐÃ BỊ THAY THẾ bởi ADR 0038** (2026-09-19).
+> Đợt A xoá hẳn bộ màn UB dựng-lại-trong-cổng; nay cơ sở có `KetNoi_UrlChuyenHuong` thì
+> **chuyển hướng thẳng** sang trang của họ. Xem [0038](0038-co-so-co-cua-rieng-thi-chuyen-huong-thang.md).
+> Giữ file này để đọc lại bối cảnh cũ (vì sao từng phải dựng lại màn của khách).
+
+
+- **Trạng thái:** Đã bị thay thế (ADR 0038)
 - **Ngày:** 2026-08-26
 - **Thay:** [0003](0003-vao-ub-qua-cua-an-danh.md) — bản đó chuyển sang *Bị thay thế*
 - **Bối cảnh liên quan:** [0005](0005-luu-mat-khau-khong-bam.md) ·

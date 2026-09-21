@@ -68,8 +68,8 @@ public interface IKhoCoSoService
 }
 
 /// <summary>
-/// Thông số một kho, tách khỏi <see cref="Models.KhoFtpCoSo"/> để thử được cấu hình
-/// <b>chưa lưu</b>. Không mang <c>Active</c>: đang thử thì cờ bật chưa có nghĩa gì.
+/// Thông số một kho, tách khỏi dòng đang lưu trong <c>DM_CSKCB</c> để thử được cấu hình
+/// <b>chưa lưu</b>. Không mang <c>Ftp_Active</c>: đang thử thì cờ bật chưa có nghĩa gì.
 /// </summary>
 public sealed record ThongSoKho(string Host, string TaiKhoan, string MatKhau, string? ThuMucGoc);
 
@@ -96,10 +96,10 @@ public sealed class KhoCoSoService : IKhoCoSoService
 
     public async Task<Stream> TaiVeAsync(long idCoSo, string duongDan, CancellationToken ct = default)
     {
-        var (kho, maCoSo) = await LayKhoAsync(idCoSo, ct);
+        var kho = await LayKhoAsync(idCoSo, ct);
 
-        var thongSo = new ThongSoKho(kho.Host, kho.TaiKhoan, kho.MatKhau, kho.ThuMucGoc);
-        var duongDayDu = QuyDuong(kho.ThuMucGoc, maCoSo, duongDan);
+        var thongSo = new ThongSoKho(kho.Host!, kho.TaiKhoan ?? "", kho.MatKhau ?? "", kho.ThuMucGoc);
+        var duongDayDu = QuyDuong(kho.ThuMucGoc, kho.MaCoSo, duongDan);
         if (duongDayDu == null)
         {
             // Không mở phiên FTP nào. Coi như không có tệp — nói "có nhưng chặn" là
@@ -164,21 +164,66 @@ public sealed class KhoCoSoService : IKhoCoSoService
 
     // ------------------------------------------------------------------ nội bộ
 
-    private async Task<(KhoFtpCoSo Kho, string MaCoSo)> LayKhoAsync(long idCoSo, CancellationToken ct)
-    {
-        var dong = await (
-            from k in _db.KhoFtpCoSos.AsNoTracking()
-            join cs in _db.DMCSKCBs.AsNoTracking() on k.IdCoSo equals cs.Id
-            where k.IdCoSo == idCoSo
-            select new { Kho = k, cs.MaCoSo }).FirstOrDefaultAsync(ct);
+    /// <summary>Một dòng cấu hình kho, đọc thẳng từ <c>DM_CSKCB</c>.</summary>
+    private sealed record DongKho(
+        string MaCoSo, string? Host, string? TaiKhoan, string? MatKhau,
+        string? ThuMucGoc, bool Active, DateTime? NgayThuDat);
 
-        if (dong == null)
+    /// <summary>
+    /// Đọc cấu hình kho của một cơ sở bằng <b>CÂU SQL RIÊNG</b> (ADO thuần), <b>cố ý
+    /// không qua EF</b>.
+    ///
+    /// <para>
+    /// Lý do: sau đợt gộp, <c>HT_KhoFtpCoSo</c> bị xoá và 6 cột kho dồn vào
+    /// <c>DM_CSKCB</c>. Trong đó <c>Ftp_TaiKhoan</c> và <c>Ftp_MatKhau</c> (lưu thô, cố ý
+    /// — FTP cần đăng nhập lại được) là <b>cột bí mật</b>, KHÔNG được khai trong thực thể
+    /// EF <see cref="Models.DMCSKCB"/>: có 59 chỗ đọc <c>DM_CSKCB</c> qua EF và trang công
+    /// khai nạp trọn thực thể mọi cơ sở. Khai vào thực thể là lộ mật khẩu ở 59 chỗ; đọc
+    /// SQL riêng là <b>sửa 3 chỗ thay vì 59</b>.
+    /// </para>
+    /// <para>Chỉ SELECT đúng cột cần — không bao giờ <c>SELECT *</c>.</para>
+    /// </summary>
+    private async Task<DongKho> LayKhoAsync(long idCoSo, CancellationToken ct)
+    {
+        var conn = _db.Database.GetDbConnection();
+        if (conn.State != System.Data.ConnectionState.Open)
+            await conn.OpenAsync(ct);
+
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = @"
+SELECT MaCoSo, Ftp_Host, Ftp_TaiKhoan, Ftp_MatKhau, Ftp_ThuMucGoc, Ftp_Active, Ftp_NgayThuDat
+FROM dbo.DM_CSKCB
+WHERE ID = @idCoSo;";
+
+        var p = cmd.CreateParameter();
+        p.ParameterName = "@idCoSo";
+        p.DbType = System.Data.DbType.Int64;
+        p.Value = idCoSo;
+        cmd.Parameters.Add(p);
+
+        await using var reader = await cmd.ExecuteReaderAsync(ct);
+
+        if (!await reader.ReadAsync(ct))
             throw new KhoCoSoKhongNoiDuocException("Cơ sở chưa khai báo kho phiếu.");
 
-        if (!dong.Kho.Active)
+        var dong = new DongKho(
+            MaCoSo:     reader.GetString(0),
+            Host:       reader.IsDBNull(1) ? null : reader.GetString(1),
+            TaiKhoan:   reader.IsDBNull(2) ? null : reader.GetString(2),
+            MatKhau:    reader.IsDBNull(3) ? null : reader.GetString(3),
+            ThuMucGoc:  reader.IsDBNull(4) ? null : reader.GetString(4),
+            Active:     !reader.IsDBNull(5) && reader.GetBoolean(5),
+            NgayThuDat: reader.IsDBNull(6) ? null : reader.GetDateTime(6));
+
+        // Cơ sở có dòng nhưng chưa khai kho: y hệt "chưa khai báo kho phiếu" thời còn
+        // bảng riêng — trước đây không có dòng nào trong HT_KhoFtpCoSo thì rơi vào đây.
+        if (string.IsNullOrWhiteSpace(dong.Host))
+            throw new KhoCoSoKhongNoiDuocException("Cơ sở chưa khai báo kho phiếu.");
+
+        if (!dong.Active)
             throw new KhoCoSoKhongNoiDuocException("Kho phiếu của cơ sở đang tắt.");
 
-        return (dong.Kho, dong.MaCoSo);
+        return dong;
     }
 
     /// <summary>

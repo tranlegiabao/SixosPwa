@@ -65,7 +65,7 @@ public class DotKhamService : IDotKhamService
         // Khoa tra cuu la (co so, ma benh nhan) — dung rang buoc that cua
         // DM_BenhNhanCoSo. Khong tra theo con nguoi, vi mot nguoi tai MOT co so
         // van co the co nhieu ho so (17,3% o Thien Nam).
-        var hoSo = await _db.BenhNhanCoSos.AsNoTracking()
+        var hoSo = await _db.BenhNhans.AsNoTracking()
             .FirstOrDefaultAsync(b => b.IdCoSo == coSo.Id && b.MaBN == maBN);
 
         if (hoSo == null)
@@ -104,7 +104,7 @@ public class DotKhamService : IDotKhamService
 
             var (kq, _) = await _thuTuc.SaveDotKhamAsync(
                 idCoSo: coSo.Id,
-                idBenhNhanCoSo: hoSo.Id,
+                idBenhNhan: hoSo.Id,
                 maVaoVien: maVaoVien,
                 maBN: maBN,
                 ngayGioVao: dong.NgayGioVao,
@@ -143,7 +143,7 @@ public class DotKhamService : IDotKhamService
         // cho phep NULL, con du lieu thi chua dong nao NULL — viec don 18/21 ma
         // tu bia di cung dot xoa SinhMaBenhNhan(). Doi model sang string? phai
         // doi cung luc voi dot do.
-        return await _db.BenhNhanCoSos.AsNoTracking()
+        return await _db.BenhNhans.AsNoTracking()
             .Where(b => b.IdCoSo == idCoSo && ma.Contains(b.MaBN))
             .Select(b => b.MaBN)
             .Distinct()

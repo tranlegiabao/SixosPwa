@@ -69,8 +69,6 @@ const partnerSelect = document.getElementById("partnerSelect");
 if (partnerSelect && partnerSelect.value !== "custom") { 
 const selectedOption = partnerSelect.options[partnerSelect.selectedIndex]; 
 if (selectedOption) { 
-const dbPassword = selectedOption.getAttribute("data-password") || ""; 
-document.getElementById("smsPassword").value = dbPassword; 
 const brandname = selectedOption.getAttribute("data-brandname") || selectedOption.text; 
 document.getElementById("previewSender").innerHTML = `Từ: <strong>${brandname}</strong>`; 
 } 
@@ -81,12 +79,10 @@ updateLivePreview();
 function togglePartnerInput() { 
 const partnerSelect = document.getElementById("partnerSelect"); 
 const customInput = document.getElementById("customPartnerInput"); 
-const passwordInput = document.getElementById("smsPassword"); 
 if (partnerSelect.value === "custom") { 
 customInput.classList.remove("d-none"); 
 customInput.required = true; 
 customInput.value = ""; 
-passwordInput.value = "";
 document.getElementById("previewSender").innerHTML = "Từ: <strong>SMS Brandname</strong>"; 
 } else { 
 customInput.classList.add("d-none"); 
@@ -94,38 +90,21 @@ customInput.required = false;
 // Cập nhật mật khẩu tự động từ database 
 const selectedOption = partnerSelect.options[partnerSelect.selectedIndex]; 
 if (selectedOption) { 
-const dbPassword = selectedOption.getAttribute("data-password") || ""; 
-passwordInput.value = dbPassword; 
 const brandname = selectedOption.getAttribute("data-brandname") || selectedOption.text; 
 document.getElementById("previewSender").innerHTML = `Từ: <strong>${brandname}</strong>`; 
 } 
 } 
 updateLivePreview(); 
 } 
-// Hiện/ẩn mật khẩu API 
-function togglePasswordVisibility() { 
-const passwordInput = document.getElementById("smsPassword"); 
-const toggleIcon = document.getElementById("togglePasswordIcon"); 
-if (passwordInput.type === "password") { 
-passwordInput.type = "text"; 
-toggleIcon.innerText = "🙈"; 
-} else { 
-passwordInput.type = "password";
-toggleIcon.innerText = "👁️"; 
-} 
-} 
 // ─── GỌI STORED PROCEDURE LỌC DANH SÁCH BỆNH NHÂN ─────────────── 
 async function locDanhSachBN() { 
 const partnerSelect = document.getElementById("partnerSelect"); 
 const selectedOption = partnerSelect.options[partnerSelect.selectedIndex]; 
-const tenDT = selectedOption ? selectedOption.text : ""; 
-const password = document.getElementById("smsPassword").value.trim(); 
-if (!tenDT || tenDT === "-- Tự cấu hình đối tác khác..." || partnerSelect.value === "custom") { 
- showToast("Vui lòng chọn một đối tác từ danh sách trước khi lọc bệnh nhân!", 'warning');
-return; 
-} 
-if (!password) { 
- showToast("Vui lòng nhập mật khẩu đối tác!", 'warning');
+// Dot 1B: loc theo TEN CONG TY (cot phang DM_CSKCB.TenCongTy), khong con
+// ma/mat khau doi tac. Man da [Authorize(Roles="Admin")] nen do moi la cua that.
+const tenCongTy = partnerSelect.value || ""; 
+if (!tenCongTy || partnerSelect.value === "custom") { 
+ showToast("Vui lòng chọn một công ty từ danh sách trước khi lọc bệnh nhân!", 'warning');
 return; 
 } 
 // Hiển thị spinner trên nút 
@@ -143,7 +122,7 @@ headers: {
 "Content-Type": "application/json", 
 "X-Requested-With": "XMLHttpRequest" 
 }, 
-body: JSON.stringify({ tenDT, password }) 
+body: JSON.stringify({ tenCongTy }) 
 }); 
 const result = await resp.json(); 
 if (!result.success) { 
@@ -151,7 +130,7 @@ if (!result.success) {
 return; 
 } 
 if (!result.data || result.data.length === 0) { 
- showToast("Không tìm thấy bệnh nhân nào thuộc đối tác này.", 'info');
+ showToast("Không tìm thấy bệnh nhân nào thuộc công ty này.", 'info');
 // Xoá bảng cũ 
 mockPatients = []; 
 refreshPatientSearch();

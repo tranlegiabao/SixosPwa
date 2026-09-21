@@ -21,6 +21,7 @@ public class HomeController : Controller
     private readonly ILuongCongBenhNhan _luong;
     private readonly IHoSoBenhNhanService _hoSo;
     private readonly Services.His.IHisDocService _his;
+    private readonly Services.Partner.CuaCoSoService _cuaCoSo;
 
     public HomeController(
         ILogger<HomeController> logger,
@@ -29,7 +30,8 @@ public class HomeController : Controller
         AdminStoredProcedureService thuTuc,
         ILuongCongBenhNhan luong,
         IHoSoBenhNhanService hoSo,
-        Services.His.IHisDocService his)
+        Services.His.IHisDocService his,
+        Services.Partner.CuaCoSoService cuaCoSo)
     {
         _logger = logger;
         _db = db;
@@ -38,18 +40,45 @@ public class HomeController : Controller
         _luong = luong;
         _hoSo = hoSo;
         _his = his;
+        _cuaCoSo = cuaCoSo;
     }
 
     /// <summary>
-    /// Thong bao / thiet bi / push nay khoa theo IDTaiKhoan chu khong con theo chuoi
-    /// so dien thoai. Cac API JSON van GIU nguyen ten khoa cu (nguoiGui/nguoiNhan la
-    /// so dien thoai) vi JS phia trinh duyet dang doc theo do.
+    /// 🔴 TU DOT 1B PHAI TACH HAI NGHIA — truoc day chung mot ham vi ca hai deu
+    /// tro <c>HT_TaiKhoan</c>:
+    ///   * NGUOI GUI thong bao la ADMIN  -> <see cref="LayIdTaiKhoanAdminAsync"/>,
+    ///     van doc <c>HT_TaiKhoan</c> (cot <c>HT_ThongBao.IDNguoiGui</c>).
+    ///   * NGUOI NHAN la BENH NHAN       -> <see cref="LayIdHoSoAsync"/>,
+    ///     doc <c>DM_BenhNhan</c> theo CO SO (cot <c>IDNguoiNhan</c> va
+    ///     <c>HT_PushDangKy.IDBenhNhan</c> nay tro sang bang do — ADR 0037).
+    /// Dung nham ham la cau tra ve RONG ma khong bao loi gi.
+    /// Cac API JSON van GIU nguyen ten khoa cu vi JS trinh duyet dang doc theo do.
     /// </summary>
-    private Task<long?> LayIdTaiKhoanAsync(string sdt) =>
+    private Task<long?> LayIdTaiKhoanAdminAsync(string sdt) =>
         _db.TaiKhoans.AsNoTracking()
             .Where(t => t.SDT == sdt)
             .Select(t => (long?)t.Id)
             .FirstOrDefaultAsync();
+
+    /// <summary>
+    /// Ho so benh nhan mang so nay TAI CO SO cua phien (ADR 0036).
+    /// 🔴 Loc <c>IdCoSo != null</c>: dong neo khong duoc nhan thong bao/push.
+    /// Khop ca Email vi moi cau doc khac trong cong deu khop ca hai.
+    /// </summary>
+    private async Task<long?> LayIdHoSoAsync(string dinhDanh)
+    {
+        if (string.IsNullOrWhiteSpace(dinhDanh)) return null;
+
+        var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
+
+        var q = _db.BenhNhans.AsNoTracking()
+            .Where(b => b.IdCoSo != null && (b.SDT == dinhDanh || b.Email == dinhDanh));
+
+        if (!string.IsNullOrWhiteSpace(maCoSo))
+            q = q.Where(b => _db.DMCSKCBs.Any(c => c.Id == b.IdCoSo && c.MaCoSo == maCoSo));
+
+        return await q.OrderBy(b => b.Id).Select(b => (long?)b.Id).FirstOrDefaultAsync();
+    }
 
 
     /// <summary>
@@ -84,28 +113,21 @@ public class HomeController : Controller
             return null;
         }
 
-        // Mot tai khoan quan NHIEU con nguoi (ADR 0019), nen phai bat dau tu tai
-        // khoan chu khong tu so dien thoai cua tung con nguoi: ho so cua me do
-        // con tao mang so cua me, loc theo so dien thoai la no bien mat.
-        var idTaiKhoan = await _hoSo.LayIdTaiKhoanAsync(dinhDanh);
-
         // 🔴 KHONG khop bang CCCD (V5). CCCD go luc dang nhap khong duoc xac
         // thuc — OTP chi xac thuc so dien thoai (A6 dot 1). Khop bang CCCD
         // nghia la go CCCD nguoi khac la xem duoc tai lieu cua ho.
         //
-        // Nhanh thu hai (p.SDT == dinhDanh) la duong LUI cho du lieu chua kip do
-        // sang cot IdTaiKhoan. Script 09 do het mot lan, nhung phien dang song
-        // van phai chay dung.
+        // Dot 1B: pham vi la cap (SDT x co so) — luat C2. Mot dong DA LA
+        // "con nguoi + ho so tai co so" nen khong con tu noi.
+        // 🔴 h.IdCoSo != null la BAT BUOC: dong neo khong duoc hien o man nao.
         var danhSach = await (
-            from p in _db.BenhNhans.AsNoTracking()
-            join h in _db.BenhNhanCoSos.AsNoTracking() on p.Id equals h.IdBenhNhan
-            join cs in _db.DMCSKCBs.AsNoTracking() on h.IdCoSo equals cs.Id
-            where ((idTaiKhoan != null && p.IdTaiKhoan == idTaiKhoan)
-                   || (p.IdTaiKhoan == null && (p.SDT == dinhDanh || p.Email == dinhDanh)))
+            from h in _db.BenhNhans.AsNoTracking()
+            join cs in _db.DMCSKCBs.AsNoTracking() on h.IdCoSo equals (long?)cs.Id
+            where (h.SDT == dinhDanh || h.Email == dinhDanh)
                   && cs.MaCoSo == maCoSo
                   && h.DaMoTaiLieu
             orderby h.Id
-            select new HoSoDangDung(p, h)).ToListAsync();
+            select new HoSoDangDung(h)).ToListAsync();
 
         ViewBag.SoHoSo = danhSach.Count;
 
@@ -185,8 +207,9 @@ public class HomeController : Controller
             .FirstOrDefaultAsync();
 
         var dsCoso = await _db.DMCSKCBs
-            .Where(x => x.IdNhomCS == idNhom && x.Active)
-            .OrderByDescending(x => x.QuangCao)
+            .Where(x => x.IdNhomCS == idNhom && x.HienThiCongKhai)
+            // QcSoTienDaTra = SO TIEN DA TRA, va la khoa xep hang quang cao (ten cu: QuangCao).
+            .OrderByDescending(x => x.QcSoTienDaTra)
             .ToListAsync();
 
         return View(dsCoso);
@@ -203,7 +226,7 @@ public class HomeController : Controller
         var coSo = await _db.DMCSKCBs.FirstOrDefaultAsync(x => x.Slug == slug);
 
         if (coSo == null) return NotFound();
-        if (!coSo.Active) return await DayDiKhiCoSoAnAsync(coSo);
+        if (!coSo.HienThiCongKhai) return await DayDiKhiCoSoAnAsync(coSo);
 
         await DoDuLieuCoSoAsync(coSo);
         await DoDoiChieuPhienCoSoAsync(coSo.MaCoSo, canhBao == "1");
@@ -230,7 +253,7 @@ public class HomeController : Controller
             {
                 // Chan o day chu khong doi nhanh 301 phia duoi lo ho: co so CHUA co
                 // slug se render thang o :142-144, khong di qua /DangKyOnline/{slug}.
-                if (!matchedCS.Active) return await DayDiKhiCoSoAnAsync(matchedCS);
+                if (!matchedCS.HienThiCongKhai) return await DayDiKhiCoSoAnAsync(matchedCS);
 
                 // Nam sua 2026-08-24: tra lai 301 sang /DangKyOnline/{slug}. Render thang o day
                 // thi ViewData thieu Slug/MaCoSo, keo theo hai nut ben trang co so mat
@@ -286,9 +309,9 @@ public class HomeController : Controller
         {
             // Chi dem ban MOI NHAT: ket qua bi sua/ky lai giu lai ban cu lam doi
             // chung nhung khong duoc dem hai lan. Bo nhanh so theo MaBN — tu dot 2
-            // IdBenhNhanCoSo da NOT NULL nen no chi la duong vong.
+            // IdBenhNhan da NOT NULL nen no chi la duong vong.
             var queryTl = _db.TaiLieuBenhNhans.AsNoTracking()
-                .Where(t => t.IdCoSo == coSo.Id && t.IdBenhNhanCoSo == hoSoCoSo.Id && t.LaBanMoiNhat);
+                .Where(t => t.IdCoSo == coSo.Id && t.IdBenhNhan == hoSoCoSo.Id && t.LaBanMoiNhat);
 
             // V9 — dem theo THANH VIEN TAP, khong phai "khac DON_THUOC". Ma la
             // (du lieu cu, hoac HIS go sai truoc khi cua API siet) khong duoc
@@ -358,8 +381,9 @@ public class HomeController : Controller
 
         // Co so dung bo man cua doi tac: mat khau la CUA HO, benh nhan doi tren
         // trang cua co so. An muc "Doi mat khau" di cho khoi dan toi ngo cut. ADR 0014.
-        var cuaCoSo = await _luong.LayCuaAsync(maCoSo);
-        ViewBag.DungManDoiTac = cuaCoSo?.DungManDoiTac == true;
+        // Sau dot A, "dung bo man cua doi tac" khong con la KIEU ban cai ma la DU LIEU:
+        // co KetNoi_UrlChuyenHuong (va KetNoi_Active) thi co so co cua rieng.
+        ViewBag.DungManDoiTac = coSo != null && await _cuaCoSo.CoChuyenHuongAsync(coSo.Id);
 
         // ── CAI VAN cua o *Lich kham cua toi* (ADR 0025) ───────────────────
         // 🔴 Co so CHUA NOI thi o BIEN MAT khoi trang, khong hien roi bao loi:
@@ -467,7 +491,7 @@ public class HomeController : Controller
     private IQueryable<TaiLieuBenhNhan> LocTaiLieu(long idCoSo, long idBnCoSo, string nhomChuan)
     {
         var q = _db.TaiLieuBenhNhans.AsNoTracking()
-            .Where(t => t.IdCoSo == idCoSo && t.IdBenhNhanCoSo == idBnCoSo && t.LaBanMoiNhat);
+            .Where(t => t.IdCoSo == idCoSo && t.IdBenhNhan == idBnCoSo && t.LaBanMoiNhat);
 
         // Lọc chính xác theo nhóm tài liệu
         if (nhomChuan == LoaiTaiLieu.NhomDonThuoc)
@@ -489,7 +513,7 @@ public class HomeController : Controller
     [HttpGet("/benh-nhan/tai-lieu/me")]
     public async Task<IActionResult> MeTaiLieu(string? nhom, int boQua, long mocId)
     {
-        // Tu dung lai danh tinh — KHONG nhan idBenhNhanCoSo tu trinh duyet.
+        // Tu dung lai danh tinh — KHONG nhan idBenhNhan tu trinh duyet.
         var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
         var dinhDanh = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? string.Empty;
 
@@ -531,7 +555,7 @@ public class HomeController : Controller
 
         var idBnCoSo = hoSoInfo.HoSo.Id;
         var danhSach = await _db.TaiLieuBenhNhans.AsNoTracking()
-            .Where(t => t.IdCoSo == coSo.Id && t.IdBenhNhanCoSo == idBnCoSo && t.LaBanMoiNhat
+            .Where(t => t.IdCoSo == coSo.Id && t.IdBenhNhan == idBnCoSo && t.LaBanMoiNhat
                         && t.LoaiTaiLieu == loai)
             .OrderByDescending(t => t.NgayKham ?? t.NgayTao)
             .ThenByDescending(t => t.Id)
@@ -667,7 +691,7 @@ public class HomeController : Controller
                 .Where(x => x.ID == coSo.IdNhomCS)
                 .Select(x => x.MaNhom)
                 .FirstOrDefaultAsync()) ?? "benhvien";
-        ViewData["Img"] = coSo.Img ?? AnhCoSoMacDinh;
+        ViewData["Img"] = coSo.AnhBia ?? AnhCoSoMacDinh;
         ViewData["Logo"] = coSo.Logo ?? LogoCoSoMacDinh;
         ViewData["TGLamViec"] = await GetOperatingHoursValueAsync(coSo);
         ViewData["NoiDungCskcb"] = await LoadNoiDungAsync(coSo);
@@ -695,7 +719,7 @@ public class HomeController : Controller
     }
 
     /// <summary>
-    /// Co so dang AN (DM_CSKCB.Active = 0) thi day khach ve danh sach cong khai cua
+    /// Co so dang AN (DM_CSKCB.HienThiCongKhai = 0) thi day khach ve danh sach cong khai cua
     /// nhom no — 302 tran, khong bang thong bao. Khong suy duoc nhom (IdNhomCS rong,
     /// vi du co so ID=11) thi ve trang chu. Xem ADR 0013.
     /// </summary>
@@ -804,12 +828,20 @@ public class HomeController : Controller
             //
             // SUA ADR 0016 muc 5 ngay 2026-08-27: truoc do MOI phien mo nguoi deu ve
             // /benh-nhan, ke ca phien cua co so doi tac.
+            //
+            // 🔴 Dot A: dieu kien "phien co dau an ClaimDoiTacXacThuc" da bi bo. Dot A
+            // go het cho phat claim do (danh sach claim trong Login va
+            // CapPhienBenhNhanAsync), nen giu no lai la khoa chet ca nhanh nay: co so
+            // co KetNoi_UrlChuyenHuong van bi dem ve /benh-nhan. Quyet dinh nay nay
+            // di bang DU LIEU (V10) — chi hoi CuaCoSoService.
             var maCoSoPhien = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
-            if (!string.IsNullOrWhiteSpace(maCoSoPhien)
-                && User.FindFirst(LuongCongBenhNhan.ClaimDoiTacXacThuc) is not null)
+            if (!string.IsNullOrWhiteSpace(maCoSoPhien))
             {
-                var cuaPhien = await _luong.LayCuaAsync(maCoSoPhien);
-                if (cuaPhien?.DungManDoiTac == true)
+                var idCoSoPhien = await _db.DMCSKCBs.AsNoTracking()
+                    .Where(x => x.MaCoSo == maCoSoPhien)
+                    .Select(x => (long?)x.Id)
+                    .FirstOrDefaultAsync();
+                if (idCoSoPhien is > 0 && await _cuaCoSo.CoChuyenHuongAsync(idCoSoPhien.Value))
                 {
                     return Redirect("/DangNhap/DiTiep");
                 }
@@ -890,61 +922,51 @@ public class HomeController : Controller
             return View(new List<DotKham>());
         }
 
-        ViewData["MaBN"] = await _db.BenhNhanCoSos
-            .Where(h => h.IdBenhNhan == benhNhan.Id)
-            .OrderBy(h => h.Id)
-            .Select(h => h.MaBN)
-            .FirstOrDefaultAsync() ?? "";
+        // Dot 1B: ma nam ngay tren chinh dong ho so (ADR 0032 — mot ho so mot ma).
+        ViewData["MaBN"] = benhNhan.MaBN ?? "";
         ViewData["TenBN"] = benhNhan.TenBN;
         ViewData["DiaChi"] = benhNhan.DiaChi ?? "";
         ViewData["Email"] = benhNhan.Email ?? "";
 
-        // Lich su kham nay treo vao HO SO TAI MOT CO SO — bang PhongKham da bi
-        // xoa o dot tai kien truc (W-05).
-        //
-        // Gom theo CON NGUOI (IdBenhNhan) chu khong theo mot ho so: mot nguoi tai
-        // MOT co so van co the co nhieu ho so — 17,3% benh nhan Thien Nam co >=2
-        // MaBN. Loc theo mot ho so se giau mat lich su cua chinh ho.
-        var dotKham = await (
-            from dk in _db.DotKhams
-            join h in _db.BenhNhanCoSos on dk.IdBenhNhanCoSo equals h.Id
-            where h.IdBenhNhan == benhNhan.Id
-            orderby dk.NgayGioVao descending
-            select dk).ToListAsync();
+        // Dot 1B: mot dong = mot ho so tai mot co so, giu DUNG MOT ma
+        // (ADR 0032), nen dot kham treo thang vao dong do.
+        var dotKham = await _db.DotKhams
+            .Where(dk => dk.IdBenhNhan == benhNhan.Id)
+            .OrderByDescending(dk => dk.NgayGioVao)
+            .ToListAsync();
 
         return View(dotKham);
     }
 
     [HttpGet]
     [Authorize(AuthenticationSchemes = AdminAuthentication.Scheme, Roles = "Admin")]
-    public IActionResult GuiTinNhan()
+    public async Task<IActionResult> GuiTinNhan()
     {
-        var doiTacs = _db.DoiTacs.ToList();
-        return View(doiTacs);
+        // Dot 1B (C16/PA-1): bang DM_DoiTac da bo, "cong ty" nay la mot cot phang
+        // tren DM_CSKCB. Man chi con can danh sach TEN CONG TY de loc.
+        var congTy = await _db.DMCSKCBs.AsNoTracking()
+            .Where(x => x.TenCongTy != null && x.TenCongTy != "")
+            .Select(x => x.TenCongTy!)
+            .Distinct()
+            .OrderBy(x => x)
+            .ToListAsync();
+
+        return View(congTy);
     }
 
     [HttpPost]
     [Authorize(AuthenticationSchemes = AdminAuthentication.Scheme, Roles = "Admin")]
     public IActionResult LocDanhSachBN([FromBody] LocBNRequest model)
     {
-        if (string.IsNullOrWhiteSpace(model.TenDT) || string.IsNullOrWhiteSpace(model.Password))
-            return Json(new { success = false, message = "Vui lòng nhập đủ thông tin đối tác và mật khẩu." });
+        if (string.IsNullOrWhiteSpace(model.TenCongTy))
+            return Json(new { success = false, message = "Vui lòng chọn công ty." });
 
         try
         {
-            // Thu tuc cu LocDanhSachBN vua xac thuc doi tac vua loc benh nhan theo
-            // chuoi MaDT. Cot MaDT do lan HAI he ma (ma co so + ma doi tac) cong rac
-            // nen da bi bo (C-01). Nay tach doi: xac thuc o day, loc o DM_BenhNhan_Loc.
-            var doiTac = _db.DoiTacs.AsNoTracking()
-                .FirstOrDefault(x => x.TenDT == model.TenDT);
-
-            if (doiTac is null || !string.Equals(doiTac.MatKhauDoiTac, model.Password, StringComparison.Ordinal))
-                return Json(new { success = false, message = "Tên đối tác hoặc mật khẩu không đúng." });
-
-            // Loc theo DOI TAC qua cot DM_CSKCB.IDDoiTac (V010 + ADR 0011).
-            // Truoc V010 hai bang khong co duong noi nao nen cho nay buoc phai
-            // tra MOI co so — bo loc chet am tham. Nay di dung duong:
-            // doi tac -> cac co so cua doi tac -> ho so benh nhan.
+            // 🔴 Dot 1B da BO han phep "xac thuc doi tac" o day. No khong xac thuc gi
+            // ca: trang tu dien mat khau vao o (data-password in thang ra HTML), roi
+            // controller so lai dung chuoi vua tu dien. Man nay von da
+            // [Authorize(Roles = "Admin")], do moi la cua that.
             var conn = _db.Database.GetDbConnection();
             if (conn.State != System.Data.ConnectionState.Open)
                 conn.Open();
@@ -954,7 +976,7 @@ public class HomeController : Controller
             cmd.CommandText = "DM_BenhNhan_Loc";
 
             foreach (var (ten, giaTri) in new (string, object?)[]
-                     { ("@TuKhoa", null), ("@IDCoSo", null), ("@IDDoiTac", doiTac.Id),
+                     { ("@TuKhoa", null), ("@IDCoSo", null), ("@TenCongTy", model.TenCongTy),
                        ("@Trang", 1), ("@CoTrang", 1000) })
             {
                 var p = cmd.CreateParameter();
@@ -965,10 +987,6 @@ public class HomeController : Controller
 
             using var reader = cmd.ExecuteReader();
 
-            // Khoa JSON doi ten maDT -> maCoSo. Day la NGOAI LE co chu y cua luat
-            // "giu nguyen ten khoa": gia tri o day la MA CO SO (ho so benh nhan
-            // treo vao co so), nen khoa cu dang NOI DOI ve nghia. gui-tin-nhan.js
-            // da sua theo.
             var list = new List<object>();
             while (reader.Read())
             {
@@ -1035,7 +1053,8 @@ public class HomeController : Controller
         if (string.IsNullOrEmpty(sdt) || string.IsNullOrEmpty(model.Endpoint))
             return Json(new { success = false });
 
-        var idTaiKhoan = await LayIdTaiKhoanAsync(sdt);
+        // Push neo vao DM_BenhNhan tu dot 1B (ADR 0037).
+        var idTaiKhoan = await LayIdHoSoAsync(sdt);
         if (idTaiKhoan is null)
             return Json(new { success = false });
 
@@ -1044,8 +1063,9 @@ public class HomeController : Controller
             idTaiKhoan.Value,
             model.Endpoint,
             model.P256dh ?? "",
-            model.Auth ?? "",
-            model.DeviceId);
+            // model.DeviceId khong con duoc luu: cot HT_PushDangKy.IDThietBi va bang
+            // HT_ThietBi da bi xoa o dot A. Khoa tu nhien cua mot dang ky la Endpoint.
+            model.Auth ?? "");
 
         if (!ketQua.KetQua.Succeeded)
             return Json(new { success = false, message = ketQua.KetQua.Message });
@@ -1072,19 +1092,29 @@ public class HomeController : Controller
 
         var now = DateTime.Now;
 
-        var idNguoiGui = await LayIdTaiKhoanAsync(nguoiGui);
+        var idNguoiGui = await LayIdTaiKhoanAdminAsync(nguoiGui);   // nguoi gui = Admin
         if (idNguoiGui is null)
             return Json(new { success = false, message = "Không tìm thấy tài khoản người gửi!" });
 
         // 1) Luu ThongBao — moi dong mot lan goi thu tuc (ADR 0008).
-        var idTheoSdt = await _db.TaiKhoans.AsNoTracking()
-            .Where(t => danhSachNhan.Contains(t.SDT))
-            .ToDictionaryAsync(t => t.SDT, t => t.Id);
+        // 🔴 Nguoi NHAN nay la DM_BenhNhan (FK_HT_ThongBao_NguoiNhan — ADR 0037),
+        // khong con HT_TaiKhoan. Tra nham bang la tu dien RONG => khong dong thong
+        // bao nao duoc ghi ma endpoint van bao thanh cong.
+        // Mot so co the ung NHIEU ho so (nhieu co so) => gui cho tat ca.
+        var hoSoTheoSdt = await _db.BenhNhans.AsNoTracking()
+            .Where(b => b.IdCoSo != null && b.SDT != null && danhSachNhan.Contains(b.SDT))
+            .Select(b => new { Sdt = b.SDT!, b.Id })
+            .ToListAsync();
+
+        var idTheoSdt = hoSoTheoSdt
+            .GroupBy(x => x.Sdt)
+            .ToDictionary(g => g.Key, g => g.Select(x => x.Id).ToList());
 
         foreach (var sdtNhan in danhSachNhan)
         {
-            if (idTheoSdt.TryGetValue(sdtNhan, out var idNhan))
-                await _thuTuc.SaveThongBaoAsync(idNguoiGui.Value, idNhan, smsMessage);
+            if (idTheoSdt.TryGetValue(sdtNhan, out var dsIdNhan))
+                foreach (var idNhan in dsIdNhan)
+                    await _thuTuc.SaveThongBaoAsync(idNguoiGui.Value, idNhan, smsMessage);
         }
 
         // 2) Gửi Web Push tới tất cả thiết bị đã đăng ký của từng bệnh nhân
@@ -1095,11 +1125,14 @@ public class HomeController : Controller
         var webPushClient = new WebPushClient();
         webPushClient.SetVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
 
+        // 🔴 HT_PushDangKy.IDBenhNhan tro DM_BenhNhan tu dot 1B (ADR 0037).
+        // Join sang HT_TaiKhoan la khong ra gi, va co the trung nham mot Admin
+        // neu hai day ID tinh co gap nhau.
         var danhSachSubscription = await (
             from p in _db.PushDangKys.AsNoTracking()
-            join t in _db.TaiKhoans.AsNoTracking() on p.IdTaiKhoan equals t.Id
-            where danhSachNhan.Contains(t.SDT)
-            select new { Sub = p, t.SDT }).ToListAsync();
+            join b in _db.BenhNhans.AsNoTracking() on p.IdBenhNhan equals b.Id
+            where b.SDT != null && danhSachNhan.Contains(b.SDT)
+            select new { Sub = p, SDT = b.SDT! }).ToListAsync();
 
         int pushOk = 0, pushFail = 0;
         foreach (var item in danhSachSubscription)
@@ -1186,7 +1219,7 @@ public class HomeController : Controller
         if (string.IsNullOrEmpty(sdt))
             return Json(new { success = false });
 
-        var idNhan = await LayIdTaiKhoanAsync(sdt);
+        var idNhan = await LayIdHoSoAsync(sdt);
         if (idNhan is null) return Json(new { success = false });
 
         await _thuTuc.DanhDauThongBaoDaDocAsync(idNhan.Value);
@@ -1209,8 +1242,8 @@ public class HomeController : Controller
         var now = DateTime.Now;
         var noiDungTraLoi = model.Message.Trim();
 
-        var idGui = await LayIdTaiKhoanAsync(nguoiGui);
-        var idNhanTraLoi = await LayIdTaiKhoanAsync(model.NguoiNhan);
+        var idGui = await LayIdTaiKhoanAdminAsync(nguoiGui);    // Admin tra loi
+        var idNhanTraLoi = await LayIdHoSoAsync(model.NguoiNhan); // benh nhan nhan
         if (idGui is null || idNhanTraLoi is null)
             return Json(new { success = false, message = "Không tìm thấy tài khoản." });
 
@@ -1230,7 +1263,7 @@ public class HomeController : Controller
         }
 
         var danhSachSubscription = await _db.PushDangKys.AsNoTracking()
-            .Where(p => p.IdTaiKhoan == idNhanTraLoi.Value)
+            .Where(p => p.IdBenhNhan == idNhanTraLoi.Value)
             .ToListAsync();
 
         foreach (var sub in danhSachSubscription)
@@ -1279,8 +1312,8 @@ public class HomeController : Controller
         if (string.IsNullOrEmpty(adminId) || string.IsNullOrEmpty(sdtBenhNhan))
             return Json(new { success = false, message = "Dữ liệu không hợp lệ." });
 
-        var idAdmin = await LayIdTaiKhoanAsync(adminId);
-        var idBenhNhan = await LayIdTaiKhoanAsync(sdtBenhNhan);
+        var idAdmin = await LayIdTaiKhoanAdminAsync(adminId);
+        var idBenhNhan = await LayIdHoSoAsync(sdtBenhNhan);
         if (idAdmin is null || idBenhNhan is null)
             return Json(new { success = true, data = Array.Empty<object>() });
 
@@ -1311,8 +1344,9 @@ public class HomeController : Controller
         if (string.IsNullOrEmpty(me) || string.IsNullOrEmpty(doiTac))
             return Json(new { success = false });
 
-        var idToi = await LayIdTaiKhoanAsync(me);
-        var idDoiTac = await LayIdTaiKhoanAsync(doiTac);
+        // Man *Lich su tin nhan* cua benh nhan: minh la HO SO, ben kia la ADMIN.
+        var idToi = await LayIdHoSoAsync(me);
+        var idDoiTac = await LayIdTaiKhoanAdminAsync(doiTac);
         if (idToi is null || idDoiTac is null)
             return Json(new { success = true, messages = Array.Empty<object>() });
 
@@ -1352,8 +1386,12 @@ public class PushSubscriptionRequest
 
 public class LocBNRequest
 {
-    public string TenDT { get; set; } = string.Empty;
-    public string Password { get; set; } = string.Empty;
+    /// <summary>
+    /// Ten cong ty — cot phang <c>DM_CSKCB.TenCongTy</c> tu dot 1B (C16/PA-1).
+    /// 🔴 Khong con truong Password: phep "xac thuc doi tac" cu la do trang tu
+    /// dien roi tu so lai chinh no. Cua that la [Authorize(Roles = "Admin")].
+    /// </summary>
+    public string TenCongTy { get; set; } = string.Empty;
 }
 
 public class ReplyRequest

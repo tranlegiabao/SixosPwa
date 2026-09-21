@@ -71,7 +71,7 @@ public sealed class LichKhamController : Controller
 
         // ── Da kham: CSDL cong, luon co ────────────────────────────────────
         var dotKham = await _db.DotKhams.AsNoTracking()
-            .Where(d => idHoSoCoSo.Contains(d.IdBenhNhanCoSo))
+            .Where(d => idHoSoCoSo.Contains(d.IdBenhNhan))
             .OrderByDescending(d => d.NgayGioVao)
             .Take(50)
             .ToListAsync(ct);
@@ -79,8 +79,8 @@ public sealed class LichKhamController : Controller
         // Dem tai lieu theo tung dot de the noi duoc "da co N tai lieu" — con so
         // do la thu keo nguoi ta bam vao, khong phai trang tri.
         var soTaiLieu = await _db.TaiLieuBenhNhans.AsNoTracking()
-            .Where(t => t.IdBenhNhanCoSo != null
-                        && idHoSoCoSo.Contains(t.IdBenhNhanCoSo.Value)
+            .Where(t => t.IdBenhNhan != null
+                        && idHoSoCoSo.Contains(t.IdBenhNhan.Value)
                         && t.LaBanMoiNhat
                         && t.NgayKham != null)
             .GroupBy(t => t.NgayKham!.Value.Date)
@@ -170,13 +170,12 @@ public sealed class LichKhamController : Controller
 
         var (idBenhNhan, idCoSo, _, _, _) = boi.Value;
 
-        var idTaiKhoan = await _hoSo.LayIdTaiKhoanAsync(
-            User.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty);
+        var sdtPhien = User.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;
 
-        if (idTaiKhoan is null) return Json(new { xong = false });
+        if (string.IsNullOrWhiteSpace(sdtPhien)) return Json(new { xong = false });
 
-        // Thu tuc tu kiem ho so thuoc tai khoan nao truoc khi ghi.
-        var ketQua = await _thuTuc.DoiMocXemLichAsync(idBenhNhan, idCoSo, idTaiKhoan.Value);
+        // Thu tuc tu kiem ho so co thuoc ve (SDT x co so) cua phien khong.
+        var ketQua = await _thuTuc.DoiMocXemLichAsync(idBenhNhan, idCoSo, sdtPhien);
 
         return Json(new { xong = ketQua.Succeeded });
     }
@@ -203,24 +202,23 @@ public sealed class LichKhamController : Controller
 
         if (idCoSo is null) return null;
 
-        var idTaiKhoan = await _hoSo.LayIdTaiKhoanAsync(dinhDanh);
-        if (idTaiKhoan is null) return null;
+        if (string.IsNullOrWhiteSpace(dinhDanh)) return null;
 
-        // *Ho so dang chon* (ADR 0019). Claim CHI duoc phat sau khi da kiem ho so
-        // thuoc tai khoan, nhung van loc lai theo IdTaiKhoan o day chu khong tra
-        // cuu thang theo claim.
+        // *Ho so dang chon*. Claim CHI duoc phat sau khi da kiem ho so thuoc ve
+        // phien, nhung van loc lai theo (SDT x co so) o day chu khong tra cuu
+        // thang theo claim.
         long.TryParse(User.FindFirst(LuongCongBenhNhan.ClaimHoSoDangChon)?.Value, out var idChon);
 
         var idBenhNhan = await _db.BenhNhans.AsNoTracking()
-            .Where(p => p.IdTaiKhoan == idTaiKhoan.Value && (idChon == 0 || p.Id == idChon))
+            .Where(p => p.SDT == dinhDanh && p.IdCoSo == idCoSo.Value && (idChon == 0 || p.Id == idChon))
             .OrderBy(p => p.Id)
             .Select(p => (long?)p.Id)
             .FirstOrDefaultAsync(ct);
 
         if (idBenhNhan is null) return null;
 
-        var dong = await _db.BenhNhanCoSos.AsNoTracking()
-            .Where(h => h.IdBenhNhan == idBenhNhan.Value && h.IdCoSo == idCoSo.Value)
+        var dong = await _db.BenhNhans.AsNoTracking()
+            .Where(h => h.Id == idBenhNhan.Value && h.IdCoSo == idCoSo.Value)
             .ToListAsync(ct);
 
         if (dong.Count == 0) return null;

@@ -6,10 +6,11 @@ public class PushDangKy
     public long Id { get; set; }
 
     /// <summary>Khoa ngoai sang HT_TaiKhoan — truoc day la chuoi so dien thoai.</summary>
-    public long IdTaiKhoan { get; set; }
+    /// <summary>Ho so nhan push. Tu 1B tro toi <c>DM_BenhNhan(ID)</c>, khong con la tai khoan (C15/PA-2a).</summary>
+    public long IdBenhNhan { get; set; }
 
     /// <summary>Khoa ngoai sang HT_ThietBi. Co the rong neu chua nhan dien duoc thiet bi.</summary>
-    public long? IdThietBi { get; set; }
+    // 🔴 Cot HT_PushDangKy.IDThietBi da BI BO cung voi bang HT_ThietBi (dot A, §3).
 
     /// <summary>Push endpoint URL do browser cung cap.</summary>
     public string Endpoint { get; set; } = "";

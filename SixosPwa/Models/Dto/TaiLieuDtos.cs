@@ -36,6 +36,10 @@ public class TiepNhanTaiLieuRequest
     [JsonPropertyName("ngayKham")]
     public DateTime? NgayKham { get; set; }
 
+    /// <summary>
+    /// 🔴 GIỮ NGUYÊN dù cột <c>QL_TaiLieuBenhNhan.GhiChu</c> đã bị bỏ ở đợt A:
+    /// HIS đang gửi lên, bỏ tham số là vỡ bên HIS (tiền lệ V14). Nhận rồi BỎ.
+    /// </summary>
     [JsonPropertyName("ghiChu")]
     public string? GhiChu { get; set; }
 }
@@ -48,8 +52,8 @@ public class TiepNhanTaiLieuResponseData
     [JsonPropertyName("id")]
     public long Id { get; set; }
 
-    [JsonPropertyName("idBenhNhanCoSo")]
-    public long? IdBenhNhanCoSo { get; set; }
+    [JsonPropertyName("idBenhNhan")]
+    public long? IdBenhNhan { get; set; }
 
     /// <summary>
     /// true = noi dung y het ban dang co nen cong GIU NGUYEN ban do: khong them

@@ -87,7 +87,7 @@ public sealed class DonAnhService : IDonAnhService
     }
 
     /// <summary>
-    /// Do cheo ca ba bang co the tro toi mot tep anh.
+    /// Do cheo moi bang co the tro toi mot tep anh.
     ///
     /// KHONG can tru dong vua luu: dich vu nay chi chay SAU KHI thu tuc luu da
     /// thanh cong, nen dong do trong DB da mang gia tri MOI roi — anh cu tu no
@@ -108,13 +108,13 @@ public sealed class DonAnhService : IDonAnhService
 
         foreach (var ten in dang)
         {
+            // Sau dot A chi con HAI bang: anh bia + logo + anh quang cao deu nam
+            // thang tren DM_CSKCB (bang DM_CSKCB_QuangCao da bi xoa, cot Img doi
+            // ten thanh AnhBia).
             if (await _db.DMCSKCBs.AsNoTracking()
                     .AnyAsync(x => (x.Logo != null && x.Logo.Contains(ten))
-                                || (x.Img != null && x.Img.Contains(ten))))
-                return true;
-
-            if (await _db.QCKCBs.AsNoTracking()
-                    .AnyAsync(x => x.Img != null && x.Img.Contains(ten)))
+                                || (x.AnhBia != null && x.AnhBia.Contains(ten))
+                                || (x.QcAnh != null && x.QcAnh.Contains(ten))))
                 return true;
 
             if (await _db.NDCSKCBs.AsNoTracking()

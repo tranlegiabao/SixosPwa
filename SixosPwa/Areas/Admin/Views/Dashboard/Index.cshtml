@@ -84,7 +84,7 @@
                                                     @foreach(var p in f.PatientAccounts)
                                                     {
                                                         <tr>
-                                                            <td>#@p.Id</td>
+                                                            <td>@(p.Id.HasValue ? $"#{p.Id.Value}" : "—")</td>
                                                             <td>@p.SDT</td>
                                                             <td>@(string.IsNullOrEmpty(p.CCCD) ? "-" : p.CCCD)</td>
                                                         </tr>

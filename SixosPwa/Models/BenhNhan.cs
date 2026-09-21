@@ -1,9 +1,10 @@
 namespace SixosPwa.Models;
 
 /// <summary>
-/// Mot CON NGUOI, khoa dinh danh la CCCD.
-/// Ho so tai tung co so nam o <see cref="BenhNhanCoSo"/> — truoc dot tai kien truc
-/// hai khai niem nay bi tron chung trong mot bang DMBenhNhan.
+/// Mot HO SO = mot CON NGUOI TAI MOT CO SO (dot 1B).
+/// Truoc 1B khai niem nay tach lam hai bang; nay gop lai, va mot nguoi kham o
+/// N co so thi co N dong — do la "chap nhan lap dong" cua C12.
+/// Xem CONTEXT.md muc *Dong neo* / *Thang cap* / *Nhan ban*.
 /// </summary>
 public class BenhNhan
 {
@@ -15,12 +16,36 @@ public class BenhNhan
     public string? DiaChi { get; set; }
 
     /// <summary>
-    /// Tai khoan dang quan ho so nay (ADR 0019). Quan he 1-N: mot tai khoan
-    /// quan nhieu con nguoi — con dat kham cho me, me theo doi ket qua cho con.
-    /// Truoc day chieu nguoc lai, <c>HT_TaiKhoan.IDBenhNhan</c>, la 1-1.
-    /// Cot cu VAN CON vi khu Admin doc no; cot nay moi la nguon su that cua cong.
+    /// Co so ma ho so nay thuoc ve. <b>NULL = DONG NEO</b> — trang thai qua do
+    /// giua *cua 1* va *cua 4* cua luong HIS day sang (PA-C1).
+    ///
+    /// <para>
+    /// 🔴 MOI cau doc phuc vu giao dien PHAI loc <c>IdCoSo != null</c>. Dong neo
+    /// khong duoc hien o man nao va khong dang nhap duoc. Xem ADR 0034.
+    /// </para>
     /// </summary>
-    public long? IdTaiKhoan { get; set; }
+    public long? IdCoSo { get; set; }
+
+    /// <summary>
+    /// Ma do CO SO cap, duy nhat trong pham vi co so (khong duy nhat toan he).
+    /// RONG khi ho so con la *tu khai* — cong khong tu bia ma (chot 12 dot 1).
+    /// </summary>
+    public string? MaBN { get; set; }
+
+    /// <summary>
+    /// *Cua tai lieu* (chot 9 dot 1, ADR 0020): ho so nay da duoc phep mo ket
+    /// qua can lam sang / don thuoc chua. Doc no la "co so da ghi ban la dau moi
+    /// lien lac cua nguoi nay", KHONG phai "ban chinh la nguoi nay" — CCCD go
+    /// luc dang nhap KHONG duoc xac thuc, OTP chi xac thuc so dien thoai.
+    /// </summary>
+    public bool DaMoTaiLieu { get; set; }
+
+    /// <summary>
+    /// *Moc xem lich* (ADR 0025) — lan gan nhat nguoi dung mo o *Lich kham cua toi*.
+    /// MOT COT, khong phai bang "da doc tung muc": lich hen la TRANG THAI xem di
+    /// xem lai. NULL = chua mo lan nao => moi muc deu la moi.
+    /// </summary>
+    public DateTime? NgayXemLichCuoi { get; set; }
 
     /// <summary>Mot trong BON o cua luat gop ho so (ADR 0018, ban sua doi 2026-09-09).</summary>
     public DateTime? NgaySinh { get; set; }
@@ -48,6 +73,12 @@ public class BenhNhan
     public DateTime NgayTao { get; set; } = DateTime.Now;
 }
 
+/// <summary>
+/// Giới tính. 🔴 Đợt A đã XOÁ bảng <c>DM_GioiTinh</c> — đây KHÔNG còn là thực thể EF
+/// (không có DbSet, không có mapping). Ba giá trị <c>1=Nam · 2=Nữ · 3=Không xác định</c>
+/// nay là HẰNG trong C# + <c>CHECK</c> trên <c>DM_BenhNhan.GioiTinh</c>.
+/// Lớp này giữ lại chỉ để các màn đang dựng danh mục tại chỗ không phải viết lại kiểu.
+/// </summary>
 public class DMGioiTinh
 {
     public string MaGioiTinh { get; set; } = "";

@@ -179,39 +179,71 @@ public sealed class HisDocService : IHisDocService
     /// <summary>
     /// Cau hinh de goi sang HIS cua mot co so, hoac <c>null</c> khi co so nay
     /// khong di duong nay. Cac dieu kien deu la "chua noi", khong phai loi:
-    /// khong co dong <c>DM_DoiTacApi</c> · <c>Active = 0</c> · khong cau hinh <c>BaseUrl</c>.
-    /// Thieu <c>BaseUrl</c> hay <c>KhoaGoiHIS</c> khi dang mo cong thi ghi canh bao vi
-    /// gan nhu chac chan la seed thieu.
+    /// <c>KetNoi_Active = 0</c> · khong cau hinh <c>KetNoi_BaseUrlHIS</c>.
+    /// Thieu <c>KetNoi_BaseUrlHIS</c> hay <c>KetNoi_KhoaGoiHIS</c> khi dang mo cong thi
+    /// ghi canh bao vi gan nhu chac chan la seed thieu.
+    ///
+    /// <para>
+    /// 🔴 <b>Doc bang CAU SQL RIENG (ADO thuan), co y khong qua EF.</b> Bang
+    /// <c>DM_DoiTacApi</c> da bi xoa, cau hinh don vao <c>DM_CSKCB</c>; trong do
+    /// <c>KetNoi_KhoaGoiHIS</c> la <b>cot bi mat</b> — KHONG duoc khai trong thuc the EF
+    /// <see cref="Models.DMCSKCB"/> vi co 59 cho doc <c>DM_CSKCB</c> qua EF va trang cong
+    /// khai nap TRON thuc the moi co so. Doc SQL rieng la sua 3 cho thay vi 59.
+    /// Chi SELECT dung cot can, khong <c>SELECT *</c>.
+    /// </para>
     /// </summary>
     private async Task<CuaHis?> LayCuaAsync(long idCoSo, CancellationToken ct)
     {
-        var cauHinh = await _db.DoiTacApis.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.IdCoSo == idCoSo, ct);
+        var conn = _db.Database.GetDbConnection();
+        if (conn.State != System.Data.ConnectionState.Open)
+            await conn.OpenAsync(ct);
 
-        if (cauHinh is null || !cauHinh.Active) return null;
-        if (string.IsNullOrWhiteSpace(cauHinh.BaseUrl) && string.IsNullOrWhiteSpace(cauHinh.KhoaGoiHIS)) return null;
+        string maCoSo;
+        string? baseUrl;
+        string? khoaGoiHis;
+        bool active;
 
-        if (string.IsNullOrWhiteSpace(cauHinh.BaseUrl) || string.IsNullOrWhiteSpace(cauHinh.KhoaGoiHIS))
+        await using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = @"
+SELECT MaCoSo, KetNoi_BaseUrlHIS, KetNoi_KhoaGoiHIS, KetNoi_Active
+FROM dbo.DM_CSKCB
+WHERE ID = @idCoSo;";
+
+            var p = cmd.CreateParameter();
+            p.ParameterName = "@idCoSo";
+            p.DbType = System.Data.DbType.Int64;
+            p.Value = idCoSo;
+            cmd.Parameters.Add(p);
+
+            await using var reader = await cmd.ExecuteReaderAsync(ct);
+            if (!await reader.ReadAsync(ct)) return null;
+
+            maCoSo     = reader.IsDBNull(0) ? string.Empty : reader.GetString(0);
+            baseUrl    = reader.IsDBNull(1) ? null : reader.GetString(1);
+            khoaGoiHis = reader.IsDBNull(2) ? null : reader.GetString(2);
+            active     = !reader.IsDBNull(3) && reader.GetBoolean(3);
+        }
+
+        if (!active) return null;
+        if (string.IsNullOrWhiteSpace(baseUrl) && string.IsNullOrWhiteSpace(khoaGoiHis)) return null;
+
+        if (string.IsNullOrWhiteSpace(baseUrl) || string.IsNullOrWhiteSpace(khoaGoiHis))
         {
             _logger.LogWarning(
                 "Co so {IdCoSo} mo cong ket noi HIS nhung thieu {Thieu} — duong doc sang HIS dang tat.",
                 idCoSo,
-                string.IsNullOrWhiteSpace(cauHinh.BaseUrl) ? "BaseUrl" : "KhoaGoiHIS");
+                string.IsNullOrWhiteSpace(baseUrl) ? "KetNoi_BaseUrlHIS" : "KetNoi_KhoaGoiHIS");
             return null;
         }
 
-        if (!Uri.TryCreate(cauHinh.BaseUrl.TrimEnd('/') + "/", UriKind.Absolute, out var goc))
+        if (!Uri.TryCreate(baseUrl.TrimEnd('/') + "/", UriKind.Absolute, out var goc))
         {
-            _logger.LogWarning("Co so {IdCoSo} co BaseUrl khong hop le: {BaseUrl}", idCoSo, cauHinh.BaseUrl);
+            _logger.LogWarning("Co so {IdCoSo} co KetNoi_BaseUrlHIS khong hop le: {BaseUrl}", idCoSo, baseUrl);
             return null;
         }
 
-        var maCoSo = await _db.DMCSKCBs.AsNoTracking()
-            .Where(x => x.Id == idCoSo)
-            .Select(x => x.MaCoSo)
-            .FirstOrDefaultAsync(ct);
-
-        return new CuaHis(goc, cauHinh.KhoaGoiHIS!, maCoSo ?? string.Empty);
+        return new CuaHis(goc, khoaGoiHis!, maCoSo);
     }
 
     /// <summary>Phong bi cua HIS: <c>{ statusCode, success, data: [...] }</c>.</summary>

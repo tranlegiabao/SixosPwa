@@ -37,13 +37,12 @@ public class HoSoApiController : ControllerBase
     public async Task<IActionResult> KiemTraNhan([FromBody] KiemTraNhanRequest yeuCau)
     {
         var coSo = HttpContext.CoSoDaXacThuc();
-        var idKhoa = HttpContext.IdKhoaDaXacThuc();
         var duong = HttpContext.Request.Path.Value ?? "";
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
 
         if (yeuCau?.MaBenhNhan == null || yeuCau.MaBenhNhan.Count == 0)
         {
-            await _nhatKy.GhiAsync(duong, KetQuaApi.TuChoi, coSo.Id, idKhoa,
+            await _nhatKy.GhiAsync(duong, KetQuaApi.TuChoi, coSo.Id,
                 lyDo: LyDoApi.DuLieuSai, ipGoi: ip);
             return BadRequest(ApiResponse<KiemTraNhanResponseData>.Fail(
                 "Danh sách mã bệnh nhân (maBenhNhan) không được rỗng."));
@@ -51,7 +50,7 @@ public class HoSoApiController : ControllerBase
 
         if (yeuCau.MaBenhNhan.Count > ToiDaMoiLanHoi)
         {
-            await _nhatKy.GhiAsync(duong, KetQuaApi.TuChoi, coSo.Id, idKhoa,
+            await _nhatKy.GhiAsync(duong, KetQuaApi.TuChoi, coSo.Id,
                 lyDo: LyDoApi.DuLieuSai, soLuong: yeuCau.MaBenhNhan.Count, ipGoi: ip);
             return BadRequest(ApiResponse<KiemTraNhanResponseData>.Fail(
                 $"Một lần hỏi tối đa {ToiDaMoiLanHoi} mã, lần này có {yeuCau.MaBenhNhan.Count}."));
@@ -61,7 +60,7 @@ public class HoSoApiController : ControllerBase
         // bao gio hoi duoc ho so cua co so khac.
         var daCo = await _dotKham.LocMaDaCoNguoiNhanAsync(coSo.Id, yeuCau.MaBenhNhan);
 
-        await _nhatKy.GhiAsync(duong, KetQuaApi.Nhan, coSo.Id, idKhoa,
+        await _nhatKy.GhiAsync(duong, KetQuaApi.Nhan, coSo.Id,
             soLuong: yeuCau.MaBenhNhan.Count, ipGoi: ip);
 
         return Ok(ApiResponse<KiemTraNhanResponseData>.Ok(new KiemTraNhanResponseData

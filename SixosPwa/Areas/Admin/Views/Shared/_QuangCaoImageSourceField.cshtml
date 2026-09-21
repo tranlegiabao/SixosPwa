@@ -1,6 +1,6 @@
 @model CoSoYTeEditViewModel
 @{
-    var existingImage = Model.QuangCaoImg?.Trim();
+    var existingImage = Model.QcAnh?.Trim();
 }
 
 <div class="image-source-control" data-image-source data-existing-image="@existingImage">
@@ -20,10 +20,10 @@
         </div>
         <div class="image-url-divider"><span>HOẶC</span></div>
         <div class="image-url-row">
-            <input asp-for="QuangCaoImgUrlInput" class="form-control" type="text" placeholder="Dán đường dẫn ảnh quảng cáo" data-image-url autocomplete="off" />
+            <input asp-for="QcAnhUrlInput" class="form-control" type="text" placeholder="Dán đường dẫn ảnh quảng cáo" data-image-url autocomplete="off" />
             <button type="button" class="image-url-button" data-image-url-button>Tìm kiếm</button>
         </div>
-        <span asp-validation-for="QuangCaoImgUrlInput" class="text-danger field-error"></span>
+        <span asp-validation-for="QcAnhUrlInput" class="text-danger field-error"></span>
         <span asp-validation-for="QuangCaoImageFile" class="text-danger field-error"></span>
         <img class="image-preview d-none" alt="Ảnh quảng cáo xem trước" data-image-preview />
     </div>

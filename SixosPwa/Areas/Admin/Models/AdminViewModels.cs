@@ -18,7 +18,6 @@ public sealed class DashboardViewModel
     public int UnreadNotificationCount { get; init; }
     public IReadOnlyList<ThongBao> RecentNotifications { get; init; } = Array.Empty<ThongBao>();
     public IReadOnlyList<TaiKhoan> RecentAccounts { get; init; } = Array.Empty<TaiKhoan>();
-    public IReadOnlyList<DoiTac> RecentPartners { get; init; } = Array.Empty<DoiTac>();
     public IReadOnlyList<DMCSKCB> RecentFacilities { get; init; } = Array.Empty<DMCSKCB>();
     public IReadOnlyList<DMNhomCS> NhomCSList { get; init; } = Array.Empty<DMNhomCS>();
     public IReadOnlyList<DMChuDe> ChuDeList { get; init; } = Array.Empty<DMChuDe>();
@@ -138,46 +137,7 @@ public sealed class TaiKhoanEditViewModel
     public string SDT { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Vui lòng chọn vai trò.")]
-    public string Role { get; set; } = "BenhNhan";
-}
-
-public sealed class DoiTacListViewModel
-{
-    public IReadOnlyList<DoiTac> Items { get; init; } = Array.Empty<DoiTac>();
-    public string? Query { get; init; }
-    public int Page { get; init; }
-    public int PageSize { get; init; }
-    public int TotalItems { get; init; }
-    public int TotalPages => Math.Max(1, (int)Math.Ceiling(TotalItems / (double)PageSize));
-}
-
-public sealed class DoiTacEditViewModel
-{
-    public long Id { get; set; }
-
-    [Required(ErrorMessage = "Vui lòng nhập mã đối tác.")]
-    [StringLength(20, ErrorMessage = "Mã đối tác tối đa 20 ký tự.")]
-    public string MaDT { get; set; } = string.Empty;
-
-    [Required(ErrorMessage = "Vui lòng nhập tên đối tác.")]
-    [StringLength(100, ErrorMessage = "Tên đối tác tối đa 100 ký tự.")]
-    public string TenDT { get; set; } = string.Empty;
-
-    [StringLength(255)]
-    public string? DiaChi { get; set; }
-
-    [StringLength(20)]
-    public string? SDT { get; set; }
-
-    [EmailAddress(ErrorMessage = "Email không hợp lệ.")]
-    [StringLength(100)]
-    public string? Email { get; set; }
-
-    [StringLength(100)]
-    public string? BrandName { get; set; }
-
-    [StringLength(255, ErrorMessage = "Mật khẩu đối tác tối đa 255 ký tự.")]
-    public string? MatKhauDoiTac { get; set; }
+    public string Role { get; set; } = "Admin";
 }
 
 public sealed class CoSoYTeListViewModel
@@ -213,9 +173,6 @@ public sealed class CoSoYTeEditViewModel
     [StringLength(255)]
     public string? DiaChi { get; set; }
 
-    [StringLength(100)]
-    public string? SoToaNha { get; set; }
-
     public int? Tinh { get; set; }
 
     public int? PhuongXa { get; set; }
@@ -234,28 +191,53 @@ public sealed class CoSoYTeEditViewModel
     public string? GioDongCua { get; set; }
 
 
-    public bool Active { get; set; }
+    /// <summary>Cột <c>DM_CSKCB.HienThiCongKhai</c> — tên cũ là <c>Active</c>.</summary>
+    public bool HienThiCongKhai { get; set; }
+
+    /// <summary>Công ty (đối tác) sở hữu cơ sở — cột <c>DM_CSKCB.TenCongTy</c>, tên cũ <c>IDDoiTac</c>.</summary>
+    public string? TenCongTy { get; set; }
+
+    // ---- Kết nối HIS: gộp từ bảng 1:1 DM_DoiTacApi vào thẳng DM_CSKCB ----------
+
+    [StringLength(255, ErrorMessage = "Đường dẫn chuyển hướng tối đa 255 ký tự.")]
+    public string? KetNoi_UrlChuyenHuong { get; set; }
+
+    [StringLength(255, ErrorMessage = "Base URL của HIS tối đa 255 ký tự.")]
+    public string? KetNoi_BaseUrlHIS { get; set; }
+
+    /// <summary>
+    /// 🔴 Ô BÍ MẬT. Màn Sửa KHÔNG đổ giá trị cũ ra đây (để trống + placeholder);
+    /// gửi NULL lên <c>DM_CSKCB_Save</c> nghĩa là GIỮ NGUYÊN khóa cũ.
+    /// </summary>
+    [StringLength(500, ErrorMessage = "Khóa gọi HIS tối đa 500 ký tự.")]
+    public string? KetNoi_KhoaGoiHIS { get; set; }
+
+    public bool KetNoi_Active { get; set; } = true;
 
     // ---- Kho phiếu cơ sở: FTP của phòng khám, cổng CHỈ ĐỌC (ADR 0030) ----------
-    // Mỗi cơ sở đúng một kho ⇒ nằm thẳng trong màn Sửa cơ sở, không phải bảng con.
+    // Mỗi cơ sở đúng một kho ⇒ nằm thẳng cột trên DM_CSKCB, không còn bảng con.
 
     [StringLength(200, ErrorMessage = "Máy chủ kho tối đa 200 ký tự.")]
-    public string? KhoHost { get; set; }
+    public string? Ftp_Host { get; set; }
 
+    /// <summary>🔴 Ô BÍ MẬT — không đổ giá trị cũ ra màn hình, để trống là GIỮ NGUYÊN.</summary>
     [StringLength(100, ErrorMessage = "Tài khoản kho tối đa 100 ký tự.")]
-    public string? KhoTaiKhoan { get; set; }
+    public string? Ftp_TaiKhoan { get; set; }
 
-    /// <summary>🔴 Lưu THÔ theo chốt 36 (tiền lệ ADR 0005) — FTP cần đăng nhập.</summary>
+    /// <summary>
+    /// 🔴 Ô BÍ MẬT, lưu THÔ theo chốt 36 (tiền lệ ADR 0005) — FTP cần đăng nhập.
+    /// Để trống là GIỮ NGUYÊN mật khẩu cũ (stored nhận NULL thì không ghi đè).
+    /// </summary>
     [StringLength(200, ErrorMessage = "Mật khẩu kho tối đa 200 ký tự.")]
-    public string? KhoMatKhau { get; set; }
+    public string? Ftp_MatKhau { get; set; }
 
     [StringLength(200, ErrorMessage = "Thư mục gốc tối đa 200 ký tự.")]
-    public string? KhoThuMucGoc { get; set; }
+    public string? Ftp_ThuMucGoc { get; set; }
 
-    public bool KhoActive { get; set; }
+    public bool Ftp_Active { get; set; }
 
     /// <summary>Chỉ để hiện trạng thái — chưa có mốc thì ô bật bị khóa (chốt 41).</summary>
-    public DateTime? KhoNgayThuDat { get; set; }
+    public DateTime? Ftp_NgayThuDat { get; set; }
 
     [StringLength(20)]
     public string? SDT { get; set; }
@@ -264,11 +246,9 @@ public sealed class CoSoYTeEditViewModel
     [StringLength(100)]
     public string? Email { get; set; }
 
-    [StringLength(100)]
-    public string? TenTM { get; set; }
-
+    /// <summary>Cột <c>DM_CSKCB.AnhBia</c> — tên cũ là <c>Img</c>.</summary>
     [StringLength(500)]
-    public string? Img { get; set; }
+    public string? AnhBia { get; set; }
 
     public IFormFile? ImageFile { get; set; }
 
@@ -282,18 +262,22 @@ public sealed class CoSoYTeEditViewModel
     [StringLength(2000)]
     public string? LogoUrlInput { get; set; }
 
+    /// <summary>Cột <c>DM_CSKCB.QcSoTienDaTra</c> — tên cũ là <c>QuangCao</c>. Khóa xếp hạng quảng cáo.</summary>
     [Range(0, 999999999999999, ErrorMessage = "Số tiền quảng cáo không hợp lệ.")]
-    public decimal? QuangCao { get; set; }
+    public decimal? QcSoTienDaTra { get; set; }
 
-    public string? NoiDungQuangCao { get; set; }
+    /// <summary>Gộp từ <c>DM_CSKCB_QuangCao.NoiDung</c> vào thẳng <c>DM_CSKCB.QcNoiDung</c>.</summary>
+    public string? QcNoiDung { get; set; }
 
+    /// <summary>Gộp từ <c>DM_CSKCB_QuangCao.Img</c> vào thẳng <c>DM_CSKCB.QcAnh</c>.</summary>
     [StringLength(2000)]
-    public string? QuangCaoImg { get; set; }
+    public string? QcAnh { get; set; }
 
     public IFormFile? QuangCaoImageFile { get; set; }
 
+    /// <summary>O dan duong dan anh quang cao — ghi vao cot <c>DM_CSKCB.QcAnh</c>.</summary>
     [StringLength(2000)]
-    public string? QuangCaoImgUrlInput { get; set; }
+    public string? QcAnhUrlInput { get; set; }
 
     public IReadOnlyList<DMNhomCS> NhomCSList { get; set; } = Array.Empty<DMNhomCS>();
     public IReadOnlyList<DMChuDe> ChuDeList { get; set; } = Array.Empty<DMChuDe>();
@@ -313,24 +297,29 @@ public sealed class CoSoYTeEditViewModel
     public string? NoiDungLienHe { get; set; }
 }
 
+public sealed class BenhNhanNhomItemViewModel
+{
+    public long Id { get; set; }
+    public string SDT { get; set; } = "";
+    public int SoLuongHoSo => DanhSachHoSo?.Count ?? 0;
+    public List<HoSoBenhNhanItemViewModel> DanhSachHoSo { get; set; } = new();
+}
+
 public sealed class BenhNhanListViewModel
 {
-    /// <summary>Ma co so cua tung ho so benh nhan — ho so nay nam o DM_BenhNhanCoSo.</summary>
-    public IReadOnlyDictionary<long, string> MaCoSoTheoBenhNhan { get; init; } = new Dictionary<long, string>();
-
-    /// <summary>Ma ho so (MaBN) cua tung benh nhan — cung nam o DM_BenhNhanCoSo.</summary>
-    public IReadOnlyDictionary<long, string> MaBNTheoBenhNhan { get; init; } = new Dictionary<long, string>();
-    public IReadOnlyList<BenhNhan> Items { get; init; } = Array.Empty<BenhNhan>();
+    public IReadOnlyList<BenhNhanNhomItemViewModel> Items { get; init; } = Array.Empty<BenhNhanNhomItemViewModel>();
+    public IReadOnlyList<DMCSKCB> DanhSachCoSo { get; init; } = Array.Empty<DMCSKCB>();
+    public IReadOnlyList<DMGioiTinh> DanhMucGioiTinh { get; init; } = Array.Empty<DMGioiTinh>();
     public string? Query { get; init; }
-    /// <summary>
-    /// Bo loc theo MA CO SO. Truoc day ten la MaDT nhung than ham van loc theo
-    /// DM_CSKCB.MaCoSo — ten cu NOI DOI ve nghia. Doi ten o Dot 3.
-    /// </summary>
-    public string? MaCoSo { get; init; }
-    public int Page { get; init; }
+    public string? LoaiCS { get; init; }
+    public string? CCCD { get; init; }
+    public string? SDT { get; init; }
+    public string? MaBN { get; init; }
+    public int Page { get; init; } = 1;
     public int PageSize { get; init; } = 50;
     public int TotalItems { get; init; }
     public int TotalPages => Math.Max(1, (int)Math.Ceiling(TotalItems / (double)(PageSize > 0 ? PageSize : 50)));
+    public bool DaLoc { get; init; }
 }
 
 public sealed class PaginationViewModel
@@ -369,7 +358,12 @@ public sealed class FacilityStat
 
 public sealed class PatientAccountStat
 {
-    public long Id { get; set; }
+    /// <summary>
+    /// ID tài khoản đăng nhập, <b>null khi hồ sơ chưa gắn tài khoản nào</b> (hồ sơ do
+    /// HIS đẩy sang / cơ sở tự khai). Trước đây kiểu <c>long</c> nên các hồ sơ này in ra
+    /// <c>#0</c> — cơ sở nào toàn hồ sơ từ HIS thì cả bảng là một cột <c>#0</c> vô nghĩa.
+    /// </summary>
+    public long? Id { get; set; }
     public string SDT { get; set; } = "";
     public string CCCD { get; set; } = "";
 }
