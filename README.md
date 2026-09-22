@@ -51,7 +51,7 @@ SixosPwa/                               (thư mục gốc repo)
 ├── CONTEXT.md                          từ vựng dự án (~80 mục)
 ├── global.json                         ghim SDK 7.0.410 — xem ADR 0001
 ├── docs/
-│   ├── adr/                            42 quyết định đã chốt, chỉ THÊM không SỬA
+│   ├── adr/                            43 quyết định đã chốt, chỉ THÊM không SỬA
 │   └── dung-csdl.md                    CSDL nào, 13 bảng, đường ghi nào
 ├── Database/                           script CSDL — CỐ Ý không lên git (ADR 0041)
 └── SixosPwa/                           (project ASP.NET Core)
@@ -62,6 +62,7 @@ SixosPwa/                               (thư mục gốc repo)
     │   ├── HoSoController.cs           hồ sơ bệnh nhân: thêm/sửa/nối/gỡ nối/xoá
     │   ├── LichKhamController.cs       "Lịch khám của tôi" (ADR 0025)
     │   ├── AnhController.cs            phục vụ ảnh lấy từ kho dùng chung (ADR 0012)
+    │   ├── PwaController.cs            manifest + icon sinh động theo cơ sở (ADR 0043)
     │   └── Api/                        api/v1/{ho-so, tai-lieu, dot-kham} — HIS gọi vào
     ├── Areas/Admin/                    màn quản trị: cơ sở y tế, bệnh nhân, cấu hình, dashboard
     ├── Services/
@@ -75,7 +76,6 @@ SixosPwa/                               (thư mục gốc repo)
     ├── Security/                       khoá cơ sở, xác thực lại cho màn quản trị
     ├── Views/ · Areas/Admin/Views/     giao diện Razor
     └── wwwroot/
-        ├── manifest.webmanifest        tên, màu, 3 icon
         ├── sw.js                       service worker — KHÔNG cache, xem ADR 0002
         ├── offline.html                trang mất kết nối, tự chứa hoàn toàn
         ├── js/<nhóm>/ · css/<nhóm>/    code nhà, tách theo màn
@@ -119,6 +119,15 @@ thiếu chốt này là ai gõ `/qr` cũng được cấp phiên của một b�
 - Hồ sơ không có căn cước thì không nối sang bệnh án
   ([ADR 0028](docs/adr/0028-ho-so-khong-co-can-cuoc-thi-khong-noi-benh-an.md)).
 
+### Cài đặt PWA mang tên và logo của cơ sở
+
+`_PwaHead.cshtml` gắn `?coSo=<slug>` vào `<link rel="manifest">`, `<link rel="icon">` và
+`<link rel="apple-touch-icon">`; `PwaController` trả manifest JSON và icon PNG dựng từ
+`DM_CSKCB.TenCoSo` + `DM_CSKCB.Logo` ([ADR 0043](docs/adr/0043-manifest-pwa-sinh-dong-theo-co-so.md),
+chi tiết ở [`docs/pwa-ten-va-logo-theo-co-so.md`](docs/pwa-ten-va-logo-theo-co-so.md)).
+
+Không phân giải được cơ sở, hoặc logo hỏng ⇒ rơi về tên và icon mặc định HisSoft, vẫn cài được.
+
 ## Những chỗ đừng đụng nếu chưa đọc ADR
 
 - **`wwwroot/sw.js` không cache nội dung ứng dụng** — cố ý, xem
@@ -132,6 +141,9 @@ thiếu chốt này là ai gõ `/qr` cũng được cấp phiên của một b�
   (đó là `start_url`). Nhóm thẻ `apple-*` là thứ duy nhất làm iPhone mở app không kèm thanh Safari.
 - **`.webmanifest` phải được khai kiểu nội dung trong `Program.cs`.** Thiếu dòng đó thì trình duyệt bỏ
   qua manifest và không bao giờ cho cài — đây là lỗi phổ biến nhất khi làm PWA trên ASP.NET.
+- **Đừng tạo lại `wwwroot/manifest.webmanifest`.** Manifest và icon do `PwaController` sinh động theo
+  cơ sở ([ADR 0043](docs/adr/0043-manifest-pwa-sinh-dong-theo-co-so.md)); đặt lại file tĩnh ở đó là
+  chặn mất route, cả 12 cơ sở cài xong đều hiện tên "HisSoft" với logo Sixos.
 - **Mọi đường ghi đi qua stored procedure**
   ([ADR 0008](docs/adr/0008-moi-duong-ghi-qua-stored-procedure.md)). Đừng thêm chỗ ghi thẳng bảng.
 - **`DM_CSKCB.Active` là cổng hiển thị duy nhất**
