@@ -8,8 +8,7 @@ Tài liệu này ghi lại chi tiết toàn bộ quá trình khảo sát, giải
 >
 > **Khác với bản gốc `loky_6` ba chỗ:** ① file này chuyển từ `wwwroot/` sang `docs/` — nằm trong
 > `wwwroot` là ai cũng mở được bằng URL; ② bỏ biến `maCoSo` không dùng trong `_PwaHead.cshtml`;
-> ③ chặn `OperatingSystem.IsWindows()` trước khi dựng icon (`System.Drawing` chỉ chạy trên Windows
-> từ .NET 6) — hết cảnh báo build CA1416, về đúng mức nền 19 warning.
+> ③ **bỏ hẳn `System.Drawing`, đổi sang `SkiaSharp` 3.119.0** — xem mục 6.
 
 ---
 
@@ -195,3 +194,45 @@ Chạy `dotnet run --launch-profile http` trên `http://localhost:5015`, CSDL `H
 của mạch này: đường `/anh/...` cũ (`AnhController`) cũng trả **404** cho đúng tệp đó. Cổng ghi
 `LogWarning` rồi rơi về icon HisSoft — cài vẫn được, chỉ mất nhận diện. Muốn sửa phải nạp lại tệp logo
 lên kho hoặc cập nhật cột `DM_CSKCB.Logo`.
+
+---
+
+## 6. Đổi `System.Drawing` → `SkiaSharp` (22/09, sau khi grill)
+
+Bản `loky_6` dựng icon bằng `System.Drawing.Common`. Đo lại **toàn bộ 11 cơ sở** có logo thì lộ ra
+mạch này hỏng nặng hơn báo cáo gốc ghi: **4/11 cơ sở không ra logo riêng**, và chỉ **một** ca là lỗi
+dữ liệu.
+
+| Cơ sở | Nguyên nhân | Loại |
+|---|---|---|
+| `nha-khoa-tam-duc` | FTP **550**, tệp không còn trên kho | dữ liệu |
+| `benh-vien-ung-buou-cs1` · `benh-vien-mat` · `benh-vien-hung-vuong` | `System.ArgumentException: Parameter is not valid` | **code** |
+
+Truy ba ca sau: URL trả **HTTP 200 `image/webp`** (cơ sở `benh-vien-dhyd` cùng host Bing nhưng trả
+`image/jpeg` nên chạy được). `System.Drawing.Image.FromStream` **không đọc được WebP** → ném lỗi →
+`catch` nuốt → rơi về icon HisSoft, không dấu vết phía khách.
+
+Đổi sang **SkiaSharp 3.119.0** (MIT, trùng bản `master_3`; ImageSharp 3.x có ràng buộc giấy phép
+thương mại nên không chọn cho repo bàn giao). Lấy mẫu dùng **Mitchell cubic** vì logo gần như luôn bị
+thu nhỏ (512 → 192/180px); để mặc định là viền chữ răng cưa rõ ở cỡ icon.
+
+**Kết quả đo lại (cùng lệnh, cùng DB), cỡ tệp `/pwa/icon/192.png`:**
+
+| Cơ sở | Trước | Sau |
+|---|---:|---:|
+| benh-vien-mat | 21.485 *(mặc định)* | **52.264** |
+| benh-vien-hung-vuong | 21.485 *(mặc định)* | **40.851** |
+| benh-vien-ung-buou-cs1 | 21.485 *(mặc định)* | **26.038** |
+| nha-khoa-kim | 55.588 | 46.492 |
+| bv-pham-ngoc-thach | 53.036 | 44.938 |
+| benh-vien-cho-ray | 53.105 | 48.845 |
+| benh-vien-dhyd | 66.406 | 59.106 |
+| pkdk-hoang-dung · pwtest | 20.443 | 18.655 |
+| pkdk-thien-nam | 20.360 | 20.360 *(lấy từ tệp dựng sẵn, không qua đường dựng động)* |
+| **nha-khoa-tam-duc** | 21.485 | **21.485** — vẫn mặc định, đúng: lỗi dữ liệu |
+
+⇒ **10/11 cơ sở ra logo riêng.** Ảnh trả về đã mở kiểm bằng mắt: PNG hợp lệ 512×512, logo nét, canh
+giữa trên nền trắng. Build **0 lỗi, 19 warning** (hết 2 cảnh báo CA1416 vì SkiaSharp đa nền tảng).
+
+🔴 **Còn một định dạng chưa dựng được: SVG.** SkiaSharp không raster hoá vector. Cơ sở nào để
+`DM_CSKCB.Logo` trỏ `.svg` sẽ rơi về icon mặc định, lặng lẽ.

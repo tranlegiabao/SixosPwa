@@ -52,10 +52,19 @@ khi logo trong CSDL cho ra icon xấu, không phải đường chính. Hiện ch
 
 ## Cái giá đã biết trước
 
-- **`System.Drawing.Common` chỉ chạy trên Windows** kể từ .NET 6. Đã chặn bằng
-  `OperatingSystem.IsWindows()` ở chỗ gọi: chạy trên Linux thì bỏ qua việc dựng icon và rơi về icon
-  mặc định, **không** ném lỗi. Muốn bỏ ràng buộc Windows thì phải đổi sang ImageSharp/SkiaSharp — đó
-  là một ADR khác.
+- **Dựng ảnh bằng `SkiaSharp` 3.119.0, KHÔNG dùng `System.Drawing`.** Bản đầu của mạch này dùng
+  `System.Drawing.Common` và trả giá ngay: (a) chỉ chạy Windows kể từ .NET 6, (b) **không đọc nổi
+  WebP**. Đo 22/09 trên `HIS_CSKH`: **3/11 cơ sở** (`benh-vien-ung-buou-cs1`, `benh-vien-mat`,
+  `benh-vien-hung-vuong`) mất logo riêng chỉ vì nguồn trả `image/webp` — `Image.FromStream` ném
+  `ArgumentException`, `catch` nuốt, rơi về icon HisSoft, **không ai biết**. Repo này vốn đã tự lưu
+  `.webp` (`wwwroot/static/img_cs/*.webp`) nên đây không phải ca hiếm.
+  SkiaSharp đọc WebP sẵn, chạy mọi nền tảng (hết luôn cảnh báo CA1416), giấy phép **MIT** — quan
+  trọng với một repo sắp bàn giao: ImageSharp từ 3.x đổi sang Six Labors Split License, **buộc mua
+  giấy phép thương mại** trên ngưỡng doanh thu. `master_3` cũng đã ghim đúng SkiaSharp 3.119.0.
+- **Vẫn còn định dạng không dựng được: SVG.** SkiaSharp đọc raster, không raster hoá SVG (cần
+  `Svg.Skia` hoặc Magick.NET). Cơ sở nào để `DM_CSKCB.Logo` trỏ tệp `.svg` sẽ rơi về icon mặc định.
+  `SKBitmap.Decode` trả `null` trong ca đó và `TaoIconVuong` trả `null` — im lặng theo đúng thiết kế
+  fallback, không ném lỗi.
 - **Icon dựng từ logo được giữ trong `IMemoryCache` 24 giờ.** Đổi logo của cơ sở trong màn quản trị
   thì icon mới chỉ ra sau khi cache hết hạn hoặc ứng dụng khởi động lại. Chấp nhận: việc đổi logo hiếm,
   còn dựng lại ảnh mỗi lượt là tốn.
@@ -65,7 +74,8 @@ khi logo trong CSDL cho ra icon xấu, không phải đường chính. Hiện ch
   của cổng.
 - **Logo hỏng/thiếu trên FTP làm mất nhận diện, im lặng phía khách.** Đo 22/09: `nha-khoa-tam-duc`
   (`/anh/87989/logo/a5287cac564e43dc8f0c10c143855ae5.png`) trả FTP 550 — file không còn trên kho, nên
-  cơ sở này rơi về icon HisSoft. Đây là **lỗi dữ liệu có sẵn** (đường `/anh/...` cũ cũng trả 404), cổng
+  cơ sở này rơi về icon HisSoft. Sau khi đổi sang SkiaSharp thì đây là **ca duy nhất còn lại** trong
+  11 cơ sở, và là ca **dữ liệu** thật sự. Đây là **lỗi dữ liệu có sẵn** (đường `/anh/...` cũ cũng trả 404), cổng
   chỉ ghi `LogWarning` rồi đi tiếp. Muốn người vận hành thấy thì cần đưa vào mạch cảnh báo của
   [ADR 0039](0039-loi-cua-phai-ve-toi-nguoi-van-hanh.md) — chưa làm.
 
@@ -75,5 +85,5 @@ khi logo trong CSDL cho ra icon xấu, không phải đường chính. Hiện ch
   `PwaController` (static file middleware chạy trước MVC).
 - Khai báo kiểu nội dung `.webmanifest` trong `Program.cs` vẫn giữ — nó phục vụ cả đường tĩnh lẫn
   chuỗi `Content-Type` trả về.
-- Thêm phụ thuộc `System.Drawing.Common` 7.0.0 vào `SixosPwa.csproj`.
+- Thêm phụ thuộc `SkiaSharp` 3.119.0 vào `SixosPwa.csproj` (trùng bản `master_3` đang dùng).
 - Chi tiết triển khai và kết quả đo: [`docs/pwa-ten-va-logo-theo-co-so.md`](../pwa-ten-va-logo-theo-co-so.md).

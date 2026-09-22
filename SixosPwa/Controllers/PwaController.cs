@@ -1,12 +1,10 @@
-using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
 using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using SkiaSharp;
 using SixosPwa.Data;
 using SixosPwa.Models;
 using SixosPwa.Services;
@@ -209,10 +207,7 @@ public class PwaController : Controller
                 var logoUrl = Uri.UnescapeDataString(clinic.Logo.Trim());
                 byte[]? rawLogoBytes = await LayBytesAnhLogoAsync(logoUrl);
 
-                // System.Drawing chỉ chạy trên Windows kể từ .NET 6. Chặn ở đây thay vì
-                // để ném PlatformNotSupportedException rồi bắt lại: rơi thẳng xuống icon
-                // mặc định vẫn cài được app, chỉ mất logo riêng của cơ sở.
-                if (rawLogoBytes != null && rawLogoBytes.Length > 0 && OperatingSystem.IsWindows())
+                if (rawLogoBytes != null && rawLogoBytes.Length > 0)
                 {
                     try
                     {
@@ -332,39 +327,48 @@ public class PwaController : Controller
         return null;
     }
 
-    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    // Dùng SkiaSharp chứ KHÔNG phải System.Drawing: System.Drawing chỉ chạy trên Windows
+    // kể từ .NET 6, và không đọc nổi WebP — đo 22/09 thấy 3/11 cơ sở mất logo riêng chỉ vì
+    // nguồn ảnh trả về `image/webp` (ADR 0043). SkiaSharp đọc WebP sẵn và chạy mọi nền tảng.
     private static byte[]? TaoIconVuong(byte[] rawBytes, int size, bool isMaskable)
     {
-        using var srcMs = new MemoryStream(rawBytes);
-        using var srcImg = Image.FromStream(srcMs);
-
-        using var destBmp = new Bitmap(size, size, PixelFormat.Format32bppArgb);
-        using (var g = Graphics.FromImage(destBmp))
+        using var srcBmp = SKBitmap.Decode(rawBytes);
+        // Decode trả null khi byte không phải ảnh nhận ra được (trang chặn hotlink trả HTML
+        // với HTTP 200, SVG, định dạng lạ). Trả null để chỗ gọi rơi về icon mặc định.
+        if (srcBmp == null || srcBmp.Width <= 0 || srcBmp.Height <= 0)
         {
-            g.Clear(Color.White);
-            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-            g.SmoothingMode = SmoothingMode.HighQuality;
-            g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-            g.CompositingQuality = CompositingQuality.HighQuality;
-
-            // Tỷ lệ lề an toàn:
-            // maskable icon cần padding 15-20% quanh logo để tránh bị bo tròn / cắt xén
-            double marginFactor = isMaskable ? 0.20 : 0.06;
-            int availW = (int)(size * (1.0 - 2 * marginFactor));
-            int availH = (int)(size * (1.0 - 2 * marginFactor));
-
-            double ratio = Math.Min((double)availW / srcImg.Width, (double)availH / srcImg.Height);
-            int drawW = (int)(srcImg.Width * ratio);
-            int drawH = (int)(srcImg.Height * ratio);
-
-            int offsetX = (size - drawW) / 2;
-            int offsetY = (size - drawH) / 2;
-
-            g.DrawImage(srcImg, new Rectangle(offsetX, offsetY, drawW, drawH));
+            return null;
         }
 
-        using var outMs = new MemoryStream();
-        destBmp.Save(outMs, ImageFormat.Png);
-        return outMs.ToArray();
+        using var surface = SKSurface.Create(new SKImageInfo(size, size, SKColorType.Rgba8888, SKAlphaType.Premul));
+        var canvas = surface.Canvas;
+        canvas.Clear(SKColors.White);
+
+        // Tỷ lệ lề an toàn:
+        // maskable icon cần padding 15-20% quanh logo để tránh bị bo tròn / cắt xén
+        double marginFactor = isMaskable ? 0.20 : 0.06;
+        int availW = (int)(size * (1.0 - 2 * marginFactor));
+        int availH = (int)(size * (1.0 - 2 * marginFactor));
+
+        double ratio = Math.Min((double)availW / srcBmp.Width, (double)availH / srcBmp.Height);
+        int drawW = (int)(srcBmp.Width * ratio);
+        int drawH = (int)(srcBmp.Height * ratio);
+
+        int offsetX = (size - drawW) / 2;
+        int offsetY = (size - drawH) / 2;
+
+        // Mitchell cubic — logo gần như luôn bị THU NHỎ (512px xuống 192/180px); lấy mẫu
+        // kiểu điểm gần nhất làm viền chữ trong logo răng cưa thấy rõ ở cỡ icon.
+        var sampling = new SKSamplingOptions(SKCubicResampler.Mitchell);
+        using var srcImg = SKImage.FromBitmap(srcBmp);
+        canvas.DrawImage(
+            srcImg,
+            new SKRect(offsetX, offsetY, offsetX + drawW, offsetY + drawH),
+            sampling);
+        canvas.Flush();
+
+        using var img = surface.Snapshot();
+        using var data = img.Encode(SKEncodedImageFormat.Png, 100);
+        return data?.ToArray();
     }
 }
