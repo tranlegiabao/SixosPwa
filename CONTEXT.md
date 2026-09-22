@@ -7,15 +7,6 @@ còn là khuôn mẫu/bản nháp để nhân bản — đây là sản phẩm �
 
 ## Language
 
-**Khuôn mẫu**:
-Chính project `SixosPwa` trong thư mục này. Nó không phải sản phẩm giao khách; nó là bản gốc để sao ra.
-_Tránh_: bản demo, bản mẫu, POC
-
-**Bản nhân**:
-Một phần mềm thật được sao ra từ khuôn mẫu rồi phát triển tiếp. Mỗi bản nhân có tên, tên miền và vòng
-đời riêng, không đồng bộ ngược về khuôn mẫu.
-_Tránh_: bản sao, fork, clone
-
 **Cài đặt**:
 Việc khách bấm nút để đưa phần mềm thành biểu tượng ngoài màn hình chính. Không có gì được tải về máy
 theo nghĩa tệp cài đặt — đây vẫn là web.
@@ -44,9 +35,6 @@ giữ một địa chỉ đường hầm, nên cứ dựng lại đường hầm
 _Tránh_: tunnel, ngrok link
 
 ### Cổng bệnh nhân (chốt 2026-08-22)
-
-> Lưu ý: phần **Khuôn mẫu** ở trên mô tả bản gốc chưa có nghiệp vụ. Nhánh `19_Bao-Hieu` đã là một
-> **bản nhân** thật, mang nghiệp vụ cổng bệnh nhân mô tả dưới đây.
 
 **Cơ sở**:
 Một dòng `DMCSKCB` — một địa điểm khám chữa bệnh có trang giới thiệu và URL cố định riêng.
@@ -491,7 +479,7 @@ _Tránh_: ngày khám (trần — sẽ hiểu nhầm là chỉ `NgayKham`), ngà
 
 ## Quyết định
 
-Xem [`docs/adr/`](docs/adr/). Hai quyết định định hình khuôn mẫu này:
+Xem [`docs/adr/`](docs/adr/). Hai quyết định định hình cổng này:
 
 **Kho ảnh**:
 Máy chủ FTP dùng chung với HisSoft, nơi đặt mọi ảnh của phần mềm. Không phải ổ đĩa của máy đang chạy —

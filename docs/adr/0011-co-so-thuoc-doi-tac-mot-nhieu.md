@@ -6,8 +6,6 @@
 > Bảng `DM_DoiTac` đã bị bỏ ở đợt 1B; khái niệm còn lại là cột phẳng `DM_CSKCB.TenCongTy`.
 > Xem [0036](0036-ho-so-la-cap-nguoi-x-co-so.md). Giữ file này để đọc lại bối cảnh cũ.
 
-- **Trạng thái:** Đã bị thay thế (ADR 0036)
-- **Ngày:** 2026-08-25
 - **Bối cảnh liên quan:** [0008](0008-moi-duong-ghi-qua-stored-procedure.md) ·
   [0010](0010-doi-ten-lan-toi-javascript.md)
 

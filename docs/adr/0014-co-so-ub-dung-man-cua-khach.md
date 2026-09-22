@@ -8,8 +8,6 @@
 > Giữ file này để đọc lại bối cảnh cũ (vì sao từng phải dựng lại màn của khách).
 
 
-- **Trạng thái:** Đã bị thay thế (ADR 0038)
-- **Ngày:** 2026-08-26
 - **Thay:** [0003](0003-vao-ub-qua-cua-an-danh.md) — bản đó chuyển sang *Bị thay thế*
 - **Bối cảnh liên quan:** [0005](0005-luu-mat-khau-khong-bam.md) ·
   [0006](0006-chan-dang-nhap-cheo-co-so.md) · [0013](0013-active-la-cong-hien-thi-duy-nhat.md)

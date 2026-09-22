@@ -920,13 +920,13 @@ public sealed class CoSoYTeController : AdminControllerBase
         if (id <= 0)
             return Json(new { success = true, luuTruoc = true, message = "Kết nối đạt. Bấm Lưu cơ sở để ghi nhận, rồi mới bật được kho." });
 
-        // 🔴 Chố "thử đạt một đằng rồi lưu một đằng khác" phải bịt NGAY Ở ĐÂY, không giao
+        // 🔴 Chỗ "thử đạt một đằng rồi lưu một đằng khác" phải bịt NGAY Ở ĐÂY, không giao
         // được cho tầng stored. Lý do: DM_CSKCB_Save nhận @Ftp_TaiKhoan/@Ftp_MatKhau = NULL
         // theo nghĩa "giữ nguyên giá trị cũ" (màn Admin không hiện lại mật khẩu nên không gửi
         // lại) ⇒ nó KHÔNG phân biệt được "không đổi" với "đổi rồi nhưng chưa lưu".
         // Hậu quả nếu đóng dấu vô điều kiện: admin gõ host/tài khoản/mật khẩu mới → Thử đạt
         // → Ftp_NgayThuDat ghi ngay → admin bỏ trang (hoặc xoá ô mật khẩu rồi Lưu) ⇒ Ftp_Active
-        // bật được với bộ thông số CHƯA TẮNG thử; tệ hơn, cơ sở chưa lưu lần nào thì Ftp_Host
+        // bật được với bộ thông số CHƯA TỪNG thử; tệ hơn, cơ sở chưa lưu lần nào thì Ftp_Host
         // vẫn NULL ⇒ KhoCoSoService.LayKhoAsync ném "Cơ sở chưa khai báo kho phiếu" cho MỌI
         // tài liệu bệnh nhân. Đây chính là ý của guard `trungVoiBanLuu` cũ, khôi phục lại.
         if (!await TrungVoiKhoDangLuuAsync(id, host, taiKhoan, matKhau, thuMucGoc))

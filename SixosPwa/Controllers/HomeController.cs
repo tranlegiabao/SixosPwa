@@ -1203,7 +1203,8 @@ public class HomeController : Controller
     }
 
     // -------------------------------------------------------------------------
-    // Gửi tin nhắn trả lời (Patient -> Admin/DoiTac, hoặc ngược lại)
+    // Admin/đối tác trả lời tin nhắn của bệnh nhân. MỘT CHIỀU: người gửi luôn lấy qua
+    // LayIdTaiKhoanAdminAsync, người nhận luôn là hồ sơ bệnh nhân — không có nhánh ngược lại.
     // -------------------------------------------------------------------------
     [HttpPost]
     public async Task<IActionResult> TraLoiTinNhan([FromBody] ReplyRequest model)

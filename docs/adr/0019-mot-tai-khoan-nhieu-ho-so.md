@@ -6,8 +6,6 @@
 > Vế 1 chuyển sang cặp (SĐT × cơ sở) + toggle `HT_Config.MOT_HO_SO`; vế 2 *"ai khai trước giữ CCCD"* **bị bỏ** cùng `UK_DM_BenhNhan_CCCD`.
 > Xem [0036](0036-ho-so-la-cap-nguoi-x-co-so.md). Giữ file này để đọc lại bối cảnh cũ.
 
-- **Trạng thái:** Đã bị thay thế (ADR 0036)
-- **Ngày:** 2026-09-08
 - **Bối cảnh liên quan:** [0014](0014-co-so-ub-dung-man-cua-khach.md) — nhánh bàn giao.
   [0016](0016-phien-con-song-di-thang-va-dau-an-doi-tac.md) — bàn giao đòi dấu ấn đối tác.
   [0018](0018-luat-gop-ho-so-cccd-ten-ngaysinh.md) — luật gộp hồ sơ.
