@@ -4,17 +4,42 @@
     vì đó chính là start_url khai trong manifest.
 *@
 
-<link rel="manifest" href="~/manifest.webmanifest" />
+@{
+    string? slugCoSo = ViewBag.SlugCoSo as string ?? ViewData["Slug"] as string;
+    string? maCoSo = ViewBag.MaCoSo as string ?? ViewData["MaCoSo"] as string;
+    string? tenCoSo = ViewBag.TenCoSo as string ?? ViewData["TenCoSo"] as string;
+
+    if (string.IsNullOrWhiteSpace(slugCoSo))
+    {
+        slugCoSo = Context.Request.Query["coSo"].FirstOrDefault();
+    }
+    if (string.IsNullOrWhiteSpace(slugCoSo))
+    {
+        slugCoSo = Context.Request.Cookies["pwa_co_so"];
+    }
+    if (string.IsNullOrWhiteSpace(slugCoSo))
+    {
+        slugCoSo = User.FindFirst(SixosPwa.Services.Partner.LuongCongBenhNhan.ClaimMaCoSo)?.Value;
+    }
+
+    var coSoQuery = !string.IsNullOrWhiteSpace(slugCoSo) ? $"?coSo={Uri.EscapeDataString(slugCoSo)}" : "";
+    var manifestUrl = $"/manifest.webmanifest{coSoQuery}";
+    var appTitle = !string.IsNullOrWhiteSpace(tenCoSo) ? tenCoSo : "HisSoft";
+    var iconUrl = !string.IsNullOrWhiteSpace(slugCoSo) ? $"/pwa/icon/192.png{coSoQuery}" : "/static/icon-192.png";
+    var appleIconUrl = !string.IsNullOrWhiteSpace(slugCoSo) ? $"/pwa/icon/180.png{coSoQuery}" : "/static/apple-touch-icon-180.png";
+}
+
+<link rel="manifest" href="@manifestUrl" />
 <meta name="theme-color" content="#3854A4" />
-<link rel="icon" type="image/png" href="~/static/icon-192.png" />
+<link rel="icon" type="image/png" href="@iconUrl" />
 
 @*
     iOS KHÔNG đọc manifest — Safari có bộ khai báo riêng của Apple.
     Thiếu nhóm dưới đây thì trên iPhone shortcut vẫn mở kèm thanh Safari,
     tức là hỏng đúng thứ khách cần (mở ra phải giống app).
 *@
-<link rel="apple-touch-icon" href="~/static/apple-touch-icon-180.png" />
+<link rel="apple-touch-icon" href="@appleIconUrl" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta name="apple-mobile-web-app-title" content="HisSoft" />
+<meta name="apple-mobile-web-app-title" content="@appTitle" />
