@@ -101,6 +101,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<DMCSKCB>().Property(e => e.Id).HasColumnName("ID");
         modelBuilder.Entity<DMCSKCB>().Property(e => e.MaCoSo).HasMaxLength(10).IsRequired();
         modelBuilder.Entity<DMCSKCB>().Property(e => e.TenCoSo).HasMaxLength(200).IsRequired();
+        modelBuilder.Entity<DMCSKCB>().Property(e => e.TenVietTat).HasMaxLength(50);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.Slug).HasMaxLength(100).IsRequired();
         modelBuilder.Entity<DMCSKCB>().Property(e => e.TenCongTy).HasMaxLength(200);
         modelBuilder.Entity<DMCSKCB>().Property(e => e.IdNhomCS).HasColumnName("IDNhomCS");

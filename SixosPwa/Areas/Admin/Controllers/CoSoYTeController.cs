@@ -672,6 +672,7 @@ public sealed class CoSoYTeController : AdminControllerBase
             ? null
             : model.Slug.Trim().ToLowerInvariant();
         model.TenCoSo = model.TenCoSo?.Trim();
+        model.TenVietTat = model.TenVietTat?.Trim();
         model.DiaChi = model.DiaChi?.Trim();
         model.LoaiCS = model.LoaiCS?.Trim().ToLowerInvariant();
         model.TGLamViec = model.TGLamViec?.Trim();
@@ -1154,6 +1155,7 @@ WHERE ID = @idCoSo;";
             MaCoSo = entity.MaCoSo,
             Slug = entity.Slug,
             TenCoSo = entity.TenCoSo,
+            TenVietTat = entity.TenVietTat,
             DiaChi = entity.DiaChi,
             Tinh = entity.Tinh,
             PhuongXa = entity.PhuongXa,

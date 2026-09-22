@@ -1,6 +1,6 @@
 @model CoSoYTeEditViewModel
 
-<div class="col-md-8">
+<div class="col-md-3">
     <label asp-for="NgayLamViec" class="form-label">Ngày hoạt động</label>
     <select asp-for="NgayLamViec" class="form-select">
         <option value="">Chọn ngày hoạt động</option>
@@ -11,7 +11,7 @@
     </select>
     <span asp-validation-for="NgayLamViec" class="text-danger field-error"></span>
 </div>
-<div class="col-md-4">
+<div class="col-md-2">
     <label asp-for="GioMoCua" class="form-label">Giờ mở cửa</label>
     @* KHONG dat step tren input type="time": jQuery Validate doc thang thuoc tinh
        step cua HTML5 lam mot luat kiem, ma phuong thuc step cua no chi nhan
@@ -21,7 +21,7 @@
     <input asp-for="GioMoCua" class="form-control" type="time" />
     <span asp-validation-for="GioMoCua" class="text-danger field-error"></span>
 </div>
-<div class="col-md-4">
+<div class="col-md-2">
     <label asp-for="GioDongCua" class="form-label">Giờ đóng cửa</label>
     <input asp-for="GioDongCua" class="form-control" type="time" />
     <span asp-validation-for="GioDongCua" class="text-danger field-error"></span>

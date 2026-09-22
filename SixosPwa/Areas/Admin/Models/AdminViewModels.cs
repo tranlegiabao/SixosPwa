@@ -169,6 +169,9 @@ public sealed class CoSoYTeEditViewModel
     [StringLength(100, ErrorMessage = "Tên cơ sở tối đa 100 ký tự.")]
     public string? TenCoSo { get; set; }
 
+    [StringLength(50, ErrorMessage = "Tên cơ sở viết tắt tối đa 50 ký tự.")]
+    public string? TenVietTat { get; set; }
+
     [StringLength(255)]
     public string? DiaChi { get; set; }
 

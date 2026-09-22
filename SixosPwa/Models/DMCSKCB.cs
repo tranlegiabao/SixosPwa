@@ -27,6 +27,7 @@ public class DMCSKCB
     public long Id { get; set; }
     public string MaCoSo { get; set; } = "";
     public string TenCoSo { get; set; } = "";
+    public string? TenVietTat { get; set; }
 
     /// <summary>Đoạn chữ quản trị viên đặt tay, làm nền URL cố định /DangKyOnline/{Slug}.
     /// KHÔNG tự sinh từ tên, nên đổi tên cơ sở không gãy URL.</summary>
