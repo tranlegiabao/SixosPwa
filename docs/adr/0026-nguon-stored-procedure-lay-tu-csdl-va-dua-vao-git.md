@@ -1,5 +1,7 @@
 # Nguồn stored procedure lấy từ CSDL đang chạy, và từ nay nằm trong git
 
+- **Tác giả:** Nam · **Ngày:** 2026-09-10 · **Trạng thái:** Đã bị thay thế bởi 0041
+
 Ngày 10/09/2026, khi nghiệm thu luật *một `MaBN` không xuất hiện hai lần*, phát hiện **5 thủ tục trong
 `HIS_CSKH` mang chuỗi tiếng Việt hỏng ngay trong thân** (`sys.sql_modules`): `DM_BenhNhan_Save`,
 `DM_BenhNhan_SuaHoSo`, `DM_BenhNhanCoSo_GoNoi`, `DM_BenhNhanCoSo_DoiMocXemLich`,

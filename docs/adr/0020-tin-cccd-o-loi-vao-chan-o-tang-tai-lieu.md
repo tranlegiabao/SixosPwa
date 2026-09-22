@@ -1,7 +1,6 @@
 # 0020 — Tin CCCD ở lối vào, đặt cửa chắn ở tầng tài liệu
 
-- **Trạng thái:** Đã chấp nhận
-- **Ngày:** 2026-09-08
+- **Tác giả:** Nam · **Ngày:** 2026-09-08 · **Trạng thái:** Đã chấp nhận
 - **Bối cảnh liên quan:** [0018](0018-luat-gop-ho-so-cccd-ten-ngaysinh.md) — gộp sai là lộ hồ sơ y tế.
   [0019](0019-mot-tai-khoan-nhieu-ho-so.md) — một tài khoản nhiều hồ sơ.
   [0017](0017-hai-chieu-theo-loai-du-lieu.md) — chia theo loại dữ liệu.

@@ -8,16 +8,16 @@ public class TaiKhoan
     public string Role { get; set; } = "";
 
     /// <summary>
-    /// Mat khau dang nhap noi bo. Dot A da xoa bang <c>HT_TaiKhoanDoiTac</c> nen
-    /// day la cho DUY NHAT con giu mat khau (ADR 0009).
-    /// Sau migration cot nay dang NULL: phan BAM chua duoc thi hanh (xem muc Dinh chinh
-    /// cua ADR 0009), nen hai tai khoan Admin/DoiTac tam thoi khong dang nhap duoc.
+    /// Mật khẩu đăng nhập nội bộ. Đợt A đã xóa bảng <c>HT_TaiKhoanDoiTac</c> nên
+    /// đây là chỗ DUY NHẤT còn giữ mật khẩu (ADR 0009).
+    /// Sau migration cột này đang NULL: phần BĂM chưa được thi hành (xem mục Đính chính
+    /// của ADR 0009), nên hai tài khoản Admin/DoiTac tạm thời không đăng nhập được.
     /// </summary>
     public string? MatKhauNoiBo { get; set; }
 
-    // 🔴 Tu dot 1B bang nay CHI CON ADMIN: CK_HT_TaiKhoan_Role CHECK (Role='Admin').
-    //    Benh nhan khong con tai khoan — "loi vao" cua ho la dong DM_BenhNhan co
-    //    dung SDT tai dung co so (luat C7b). Xem ADR 0027 (da dao) va ADR 0034.
+    // 🔴 Từ đợt 1B bảng này CHỈ CÒN ADMIN: CK_HT_TaiKhoan_Role CHECK (Role='Admin').
+    //    Bệnh nhân không còn tài khoản — "lối vào" của họ là dòng DM_BenhNhan có
+    //    đúng SDT tại đúng cơ sở (luật C7b). Xem ADR 0027 (đã đảo) và ADR 0040.
 
     public DateTime NgayTao { get; set; } = DateTime.Now;
 }

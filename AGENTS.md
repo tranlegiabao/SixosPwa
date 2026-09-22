@@ -1,10 +1,12 @@
-# Repository Agent Instructions
+# Luật của repo SixosPwa
 
-The canonical instructions are in `.agents/AGENTS.md`.
-
-Before making changes:
-
-1. Read `.agents/AGENTS.md`.
-2. Read `.agents/context/QUICK_REFERENCE.md` and `.agents/context/AUTO_DISCOVERY.md`.
-3. Use the closest `.agents/skills/*/SKILL.md` workflow.
-4. Prefer repository-specific conventions and verified specifications over generic examples.
+- `Database/` KHÔNG lên git. Cách dựng CSDL: `docs/dung-csdl.md`
+- ADR trong `docs/adr/` đã chốt thì CHỈ THÊM, KHÔNG SỬA.
+  Đổi ý ⇒ viết ADR mới ghi "Thay thế ADR xxxx"
+- Đụng code ⇒ chạy `graphify update .` trước khi trả lời (5,8 giây, 0 token)
+- Comment: ngắn, tiếng Việt CÓ DẤU, chỉ giải thích "vì sao",
+  không nói lại điều code đã nói
+- Toast: dùng `showToast(msg, statusCode)` — KHÔNG dùng `toastr`
+- Code nhà ở `wwwroot/js|css/<nhóm>/`; thư viện ngoài ở `wwwroot/dist/` — đừng trộn
+- Mọi đường ghi đi qua stored procedure (ADR 0008)
+- Thuật ngữ dùng đúng `CONTEXT.md`

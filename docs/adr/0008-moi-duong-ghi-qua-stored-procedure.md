@@ -1,5 +1,7 @@
 # Mọi đường ghi đi qua stored procedure, EF chỉ còn đọc
 
+- **Tác giả:** Nam · **Ngày:** 2026-08-25 · **Trạng thái:** Đã chốt
+
 Trước đợt 2026-08-24, `HIS_CSKH` có **hai** lối ghi song song vào cùng những bảng: khu Admin ghi qua 5
 thủ tục `Admin_*_Save`, phần cổng bệnh nhân ghi qua EF (`SaveChanges` ở 12 chỗ). Hai lối không thi hành
 cùng một bộ luật.

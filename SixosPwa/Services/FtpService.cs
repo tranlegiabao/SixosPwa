@@ -42,7 +42,6 @@ namespace SixosPwa.Services
                 ? originalFileName
                 : $"{remoteDirectory}/{originalFileName}";
 
-            // Kiểm tra trùng tên và thêm (1), (2), ...
             int counter = 1;
             while (await FileExistsAsync("/" + remoteFilePath))
             {
@@ -57,13 +56,11 @@ namespace SixosPwa.Services
 
             try
             {
-                // Tạo thư mục nếu chưa tồn tại
                 if (!string.IsNullOrEmpty(remoteDirectory))
                 {
                     await CreateDirectoryIfNotExistsAsync(remoteDirectory);
                 }
 
-                // Upload file
                 FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpUrl);
                 request.Method = WebRequestMethods.Ftp.UploadFile;
                 request.Credentials = new NetworkCredential(_ftpSettings.FtpUsername, _ftpSettings.FtpPassword);
@@ -100,7 +97,6 @@ namespace SixosPwa.Services
                 ? originalFileName
                 : $"{remoteDirectory}/{originalFileName}";
 
-            // Kiểm tra trùng tên và thêm (1), (2), ...
             int counter = 1;
             while (await FileExistsAsync("/" + remoteFilePath))
             {
@@ -115,13 +111,11 @@ namespace SixosPwa.Services
 
             try
             {
-                // Tạo thư mục nếu chưa tồn tại
                 if (!string.IsNullOrEmpty(remoteDirectory))
                 {
                     await CreateDirectoryIfNotExistsAsync(remoteDirectory);
                 }
 
-                // Upload bytes
                 FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpUrl);
                 request.Method = WebRequestMethods.Ftp.UploadFile;
                 request.Credentials = new NetworkCredential(_ftpSettings.FtpUsername, _ftpSettings.FtpPassword);
@@ -168,7 +162,6 @@ namespace SixosPwa.Services
             }
         }
 
-        // Thêm method tạo thư mục
         private async Task CreateDirectoryIfNotExistsAsync(string remoteDirectory)
         {
             var directories = remoteDirectory.Split('/');
@@ -195,7 +188,6 @@ namespace SixosPwa.Services
                 }
                 catch (WebException ex) when (ex.Response is FtpWebResponse response)
                 {
-                    // Thư mục đã tồn tại - bỏ qua lỗi
                     if (response.StatusCode == FtpStatusCode.ActionNotTakenFileUnavailable)
                     {
                         _logger.LogInformation($"Directory already exists: {currentPath}");
@@ -208,7 +200,6 @@ namespace SixosPwa.Services
             }
         }
 
-        // Thêm method test connection
         public async Task<bool> TestConnectionAsync()
         {
             try
@@ -386,7 +377,6 @@ namespace SixosPwa.Services
                     FileType = isDirectory ? "directory" : Path.GetExtension(fileName).ToLowerInvariant().TrimStart('.')
                 };
 
-                // Parse modified date
                 if (DateTime.TryParse($"{parts[5]} {parts[6]} {parts[7]}", out var modDate))
                 {
                     fileInfo.ModifiedDate = modDate;
@@ -417,7 +407,6 @@ namespace SixosPwa.Services
 
                 if (!isDirectory)
                 {
-                    // Là file - phần thứ 3 là kích thước
                     if (long.TryParse(parts[2], out var fileSize))
                     {
                         size = fileSize;
@@ -434,7 +423,6 @@ namespace SixosPwa.Services
                 if (string.IsNullOrEmpty(fileName) || fileName == "." || fileName == "..")
                     return null;
 
-                // Parse date
                 DateTime? modDate = null;
                 if (DateTime.TryParse($"{parts[0]} {parts[1]}", out var parsedDate))
                 {
@@ -461,7 +449,6 @@ namespace SixosPwa.Services
         {
             try
             {
-                // Đảm bảo đường dẫn bắt đầu bằng /
                 if (!sourceFilePath.StartsWith("/"))
                     sourceFilePath = "/" + sourceFilePath;
                 if (!destinationFilePath.StartsWith("/"))
@@ -472,28 +459,24 @@ namespace SixosPwa.Services
 
                 _logger.LogInformation($"Attempting to move file: {sourceFtpUrl} -> {destFtpUrl}");
 
-                // KIỂM TRA FILE NGUỒN CÓ TỒN TẠI KHÔNG
                 if (!await FileExistsAsync(sourceFilePath))
                 {
                     _logger.LogError($"Source file does not exist: {sourceFilePath}");
                     return false;
                 }
 
-                // Tạo thư mục đích nếu chưa tồn tại
                 var destDirectory = Path.GetDirectoryName(destinationFilePath)?.Replace("\\", "/");
                 if (!string.IsNullOrEmpty(destDirectory))
                 {
                     await CreateDirectoryIfNotExistsAsync(destDirectory.TrimStart('/'));
                 }
 
-                // KIỂM TRA THƯ MỤC ĐÍCH CÓ TỒN TẠI KHÔNG
                 if (!await DirectoryExistsAsync(destDirectory.TrimStart('/')))
                 {
                     _logger.LogError($"Destination directory does not exist: {destDirectory}");
                     return false;
                 }
 
-                // Rename file (FTP Rename method)
                 FtpWebRequest request = (FtpWebRequest)WebRequest.Create(sourceFtpUrl);
                 request.Method = WebRequestMethods.Ftp.Rename;
                 request.Credentials = new NetworkCredential(_ftpSettings.FtpUsername, _ftpSettings.FtpPassword);
@@ -519,28 +502,23 @@ namespace SixosPwa.Services
             }
         }
 
-        // Method CopyFileAsync vào FtpService
         public async Task<bool> CopyFileAsync(string sourceFilePath, string destinationFilePath)
         {
             try
             {
-                // Đảm bảo đường dẫn bắt đầu bằng /
                 if (!sourceFilePath.StartsWith("/"))
                     sourceFilePath = "/" + sourceFilePath;
                 if (!destinationFilePath.StartsWith("/"))
                     destinationFilePath = "/" + destinationFilePath;
 
-                // Tải file từ nguồn
                 using (var sourceStream = await DownloadAsync(sourceFilePath))
                 {
-                    // Tạo thư mục đích nếu chưa tồn tại
                     var destDirectory = Path.GetDirectoryName(destinationFilePath)?.Replace("\\", "/");
                     if (!string.IsNullOrEmpty(destDirectory))
                     {
                         await CreateDirectoryIfNotExistsAsync(destDirectory.TrimStart('/'));
                     }
 
-                    // Upload lên đích
                     var destFtpUrl = $"ftp://{_ftpSettings.FtpHost}{destinationFilePath}";
 
                     FtpWebRequest request = (FtpWebRequest)WebRequest.Create(destFtpUrl);
@@ -566,12 +544,10 @@ namespace SixosPwa.Services
             }
         }
 
-        // Method xóa file theo URL
         public async Task<bool> DeleteFileByUrlAsync(string fileUrl)
         {
             try
             {
-                // Chuyển URL thành đường dẫn FTP
                 var uri = new Uri(fileUrl);
                 var ftpPath = uri.AbsolutePath;
 
@@ -584,7 +560,6 @@ namespace SixosPwa.Services
             }
         }
 
-        // Method kiểm tra file tồn tại
         private async Task<bool> FileExistsAsync(string filePath)
         {
             try
@@ -608,7 +583,6 @@ namespace SixosPwa.Services
             }
         }
 
-        // Method kiểm tra thư mục tồn tại
         private async Task<bool> DirectoryExistsAsync(string directoryPath)
         {
             try

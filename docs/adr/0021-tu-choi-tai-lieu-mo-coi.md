@@ -1,7 +1,6 @@
 # 0021 — Từ chối tài liệu mồ côi, bù bằng đường hỏi lại theo lô
 
-- **Trạng thái:** Đã chấp nhận
-- **Ngày:** 2026-09-08
+- **Tác giả:** Nam · **Ngày:** 2026-09-08 · **Trạng thái:** Đã chấp nhận
 - **Bối cảnh liên quan:** [0008](0008-moi-duong-ghi-qua-stored-procedure.md) ·
   [0012](0012-anh-luu-tren-ftp-dung-chung.md) · [0017](0017-hai-chieu-theo-loai-du-lieu.md) ·
   [0018](0018-luat-gop-ho-so-cccd-ten-ngaysinh.md) · [0020](0020-tin-cccd-o-loi-vao-chan-o-tang-tai-lieu.md)

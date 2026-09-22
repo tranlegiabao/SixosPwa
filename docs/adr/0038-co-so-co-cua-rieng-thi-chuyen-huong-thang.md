@@ -1,7 +1,6 @@
 # 0038 — Cơ sở có cửa riêng thì chuyển hướng thẳng, không dựng lại màn của họ
 
-- **Trạng thái:** Đề xuất
-- **Ngày:** 2026-09-19
+- **Tác giả:** Nam · **Ngày:** 2026-09-19 · **Trạng thái:** Đề xuất
 - **Thay thế:** [0014](0014-co-so-ub-dung-man-cua-khach.md)
 - **Bối cảnh liên quan:** [0006](0006-chan-dang-nhap-cheo-co-so.md) ·
   [0013](0013-active-la-cong-hien-thi-duy-nhat.md) ·

@@ -1,5 +1,7 @@
 # Dựng môi trường thử thật bằng Cloudflare tunnel thay vì mạng nội bộ
 
+- **Tác giả:** Nam · **Ngày:** 2026-08-24 · **Trạng thái:** Đã chốt
+
 Luồng bàn giao sang Ung Bướu chỉ chứng minh được là chạy khi **ba** thành phần cùng nói chuyện với
 nhau qua HTTPS công khai: SixosPwa, `DangKyOnlineUB`, và `SixOSDatKhamAPI`. Chạy tất cả trên
 `localhost` thì không thử được, vì cookie `DKOnline_auth` của đối tác là `SameSite=Lax` — hành vi của

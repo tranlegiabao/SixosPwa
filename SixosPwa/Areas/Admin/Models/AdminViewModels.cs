@@ -53,10 +53,10 @@ public sealed class HoSoBenhNhanItemViewModel
     public string? MaBN { get; set; }
     public string? TenCoSo { get; set; }
 
-    /// <summary>ID dong <c>DM_BenhNhanCoSo</c> — thu ma <c>DM_BenhNhanCoSo_GoNoi</c> nhan vao.</summary>
+    /// <summary>ID dòng <c>DM_BenhNhanCoSo</c> — thứ mã <c>DM_BenhNhanCoSo_GoNoi</c> nhận vào.</summary>
     public long? IdHoSoCoSo { get; set; }
 
-    /// <summary>Co so cua chinh dong tren. Khong duoc suy ra tu danh sach co so.</summary>
+    /// <summary>Cơ sở của chính dòng trên. Không được suy ra từ danh sách cơ sở.</summary>
     public long? IdCoSo { get; set; }
 
     public int SoCoSo { get; set; }
@@ -75,19 +75,18 @@ public sealed class CapNhatHoSoAdminRequest
     public string? MaBN { get; set; }
 
     /// <summary>
-    /// Co so de gan <see cref="MaBN"/> vao. 🔴 BAT BUOC khi ho so chua co dong
-    /// <c>DM_BenhNhanCoSo</c> nao: khong co so nay thi may chu KHONG duoc doan, vi
-    /// doan la noi ma vao nham co so ma khong ai thay.
+    /// Cơ sở để gán <see cref="MaBN"/> vào. 🔴 BẮT BUỘC khi hồ sơ chưa có dòng
+    /// <c>DM_BenhNhanCoSo</c> nào: không có cơ sở này thì máy chủ KHÔNG được đoán, vì
+    /// đoán là nơi mã vào nhầm cơ sở mà không ai thấy.
     /// </summary>
     public long? IdCoSo { get; set; }
 }
 
 /// <summary>
-/// *Go noi* mot ma khoi mot ho so, do ADMIN bam (ADR 0024 ve 3 — cua benh nhan da dong).
+/// *Gỡ nối* một mã khỏi một hồ sơ, do ADMIN bấm (ADR 0024 vế 3 — cửa bệnh nhân đã đóng).
 /// </summary>
 public sealed class GoNoiHoSoAdminRequest
 {
-    /// <summary>ID dong <c>DM_BenhNhanCoSo</c> can thao.</summary>
     public long IdHoSoCoSo { get; set; }
 }
 
@@ -144,7 +143,7 @@ public sealed class CoSoYTeListViewModel
 {
     public IReadOnlyList<DMCSKCB> Items { get; init; } = Array.Empty<DMCSKCB>();
 
-    /// <summary>Ma nhom co so tra cuu theo IDNhomCS — nhom nay la khoa ngoai, khong con la chuoi tren bang co so.</summary>
+    /// <summary>Mã nhóm cơ sở tra cứu theo IDNhomCS — nhóm này là khóa ngoại, không còn là chuỗi trên bảng cơ sở.</summary>
     public IReadOnlyDictionary<long, string> MaNhomTheoId { get; init; } = new Dictionary<long, string>();
     public string? Query { get; init; }
     public string? LoaiCS { get; init; }
@@ -275,7 +274,7 @@ public sealed class CoSoYTeEditViewModel
 
     public IFormFile? QuangCaoImageFile { get; set; }
 
-    /// <summary>O dan duong dan anh quang cao — ghi vao cot <c>DM_CSKCB.QcAnh</c>.</summary>
+    /// <summary>Ô dán đường dẫn ảnh quảng cáo — ghi vào cột <c>DM_CSKCB.QcAnh</c>.</summary>
     [StringLength(2000)]
     public string? QcAnhUrlInput { get; set; }
 

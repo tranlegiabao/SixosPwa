@@ -1,7 +1,6 @@
 # 0030 — Tài liệu nằm ở hai kho, cổng giữ đường chứ không giữ byte
 
-- **Trạng thái:** Đề xuất
-- **Ngày:** 2026-09-12
+- **Tác giả:** Nam · **Ngày:** 2026-09-12 · **Trạng thái:** Đề xuất
 - **Bối cảnh liên quan:** [0005](0005-luu-mat-khau-khong-bam.md) ·
   [0008](0008-moi-duong-ghi-qua-stored-procedure.md) · [0012](0012-anh-luu-tren-ftp-dung-chung.md) ·
   [0017](0017-hai-chieu-theo-loai-du-lieu.md) · [0021](0021-tu-choi-tai-lieu-mo-coi.md) ·

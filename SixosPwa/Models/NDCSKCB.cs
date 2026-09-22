@@ -2,7 +2,7 @@ namespace SixosPwa.Models;
 
 public sealed class NDCSKCB
 {
-    /// <summary>Ma chu de — nay la DM_ChuDe.MaChuDe, truoc day la chuoi LoaiND.</summary>
+    /// <summary>Mã chủ đề — nay là DM_ChuDe.MaChuDe, trước đây là chuỗi LoaiND.</summary>
     public const string GioiThieu = "gioithieu";
     public const string DichVu = "dichvu";
     public const string DoiNgu = "doingu";

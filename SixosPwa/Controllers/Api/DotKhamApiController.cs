@@ -6,12 +6,12 @@ using SixosPwa.Services;
 namespace SixosPwa.Controllers.Api;
 
 /// <summary>
-/// Cua nhan LICH SU KHAM tu HIS cua co so. Chi may goi — xac thuc bang khoa co
-/// so, khong co cookie nao o day.
+/// Cửa nhận LỊCH SỬ KHÁM từ HIS của cơ sở. Chỉ máy gọi — xác thực bằng khóa cơ
+/// sở, không có cookie nào ở đây.
 ///
 /// <para>
-/// Day theo LO, mot cuoc goi = mot benh nhan nhieu dot. Luc benh nhan vua noi
-/// ho so, HIS keo tron qua khu ve trong mot cuoc goi thay vi vai chuc cuoc.
+/// Đẩy theo LÔ, một cuộc gọi = một bệnh nhân nhiều đợt. Lúc bệnh nhân vừa nối
+/// hồ sơ, HIS kéo trọn quá khứ về trong một cuộc gọi thay vì vài chục cuộc.
 /// </para>
 /// </summary>
 [ApiController]
@@ -53,10 +53,10 @@ public class DotKhamApiController : ControllerBase
 
             if (!coHoSo)
             {
-                // 🔴 Chot 3: chua ai noi ho so thi TU CHOI ca lo, cong khong luu
-                // gi. Ma may LyDoApi.ChuaCoNguoiNhan nam trong errors de hang doi
-                // ben HIS phan biet duoc voi loi ky thuat — dung doc message
-                // tieng Viet de quyet dinh.
+                // 🔴 Chốt 3: chưa ai nối hồ sơ thì TỪ CHỐI cả lô, cổng không lưu
+                // gì. Mã máy LyDoApi.ChuaCoNguoiNhan nằm trong errors để hàng đợi
+                // bên HIS phân biệt được với lỗi kỹ thuật — đừng đọc message
+                // tiếng Việt để quyết định.
                 await _nhatKy.GhiAsync(duong, KetQuaApi.TuChoi, coSo.Id,
                     maBN: duLieu.MaBenhNhan, lyDo: LyDoApi.ChuaCoNguoiNhan,
                     soLuong: yeuCau.DotKham?.Count, ipGoi: ip);

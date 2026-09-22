@@ -29,9 +29,9 @@ public class DbTaiKhoanService : ITaiKhoanService
                 .FirstOrDefaultAsync(tk => tk.SDT == term);
             if (tk != null) return tk;
 
-            // 🔴 Dot 1B: benh nhan KHONG CON tai khoan (HT_TaiKhoan chi con Admin,
-            // CK_HT_TaiKhoan_Role CHECK Role='Admin'), nen khong con duong nao di
-            // tu CCCD sang tai khoan. Xem ADR 0027 (da dao) va ADR 0034.
+            // 🔴 Đợt 1B: bệnh nhân KHÔNG CÒN tài khoản (HT_TaiKhoan chỉ còn Admin,
+            // CK_HT_TaiKhoan_Role CHECK Role='Admin'), nên không còn đường nào đi
+            // từ CCCD sang tài khoản. Xem ADR 0027 (đã đảo) và ADR 0040.
             return null;
         }
     }

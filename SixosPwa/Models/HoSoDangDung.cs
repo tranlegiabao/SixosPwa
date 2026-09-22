@@ -1,16 +1,16 @@
 namespace SixosPwa.Models;
 
 /// <summary>
-/// Ho so dang dung cua phien: tu dot 1B mot dong <see cref="BenhNhan"/> DA LA
-/// "con nguoi + ho so tai co so", nen ban ghi nay chi con boc dung mot manh.
+/// Hồ sơ đang dùng của phiên: từ đợt 1B một dòng <see cref="BenhNhan"/> ĐÃ LÀ
+/// "con người + hồ sơ tại cơ sở", nên bản ghi này chỉ còn bọc đúng một mảnh.
 ///
 /// <para>
-/// Giu lai lop (thay vi tra thang <c>BenhNhan</c>) de khong phai sua chu ky o
-/// hang chuc cho goi; va de sau nay con cho gan them du lieu phien.
+/// Giữ lại lớp (thay vì trả thẳng <c>BenhNhan</c>) để không phải sửa chữ ký ở
+/// hàng chục chỗ gọi; và để sau này còn chỗ gắn thêm dữ liệu phiên.
 /// </para>
 /// </summary>
 public sealed record HoSoDangDung(BenhNhan BenhNhan)
 {
-    /// <summary>Tuong thich nguoc: truoc 1B day la manh <c>BenhNhanCoSo</c>.</summary>
+    /// <summary>Tương thích ngược: trước 1B đây là mảnh <c>BenhNhanCoSo</c>.</summary>
     public BenhNhan HoSo => BenhNhan;
 }

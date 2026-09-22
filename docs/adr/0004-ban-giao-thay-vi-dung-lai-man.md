@@ -1,5 +1,7 @@
 # Bàn giao sang trang Ung Bướu thay vì dựng lại màn trong PWA
 
+- **Tác giả:** Nam · **Ngày:** 2026-08-22 · **Trạng thái:** Đã chốt
+
 `SixOSDatKhamAPI` đã có đủ endpoint để SixosPwa tự dựng hai màn *Lịch sử hẹn khám* và *Tra cứu hồ sơ
 khám bệnh* (`api/LichSuDatHen/*`, `api/LichSuKhamBenh/*`, kể cả đường lấy JWT 24h bằng OTP mà không
 cần mật khẩu). Chúng ta vẫn chọn **bàn giao phiên sang `kcg.bvungbuou.vn`** thay vì dựng lại, để

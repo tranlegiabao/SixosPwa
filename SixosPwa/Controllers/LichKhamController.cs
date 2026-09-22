@@ -10,22 +10,22 @@ using SixosPwa.Services.Partner;
 namespace SixosPwa.Controllers;
 
 /// <summary>
-/// O *Lich kham cua toi* tren *Trang benh nhan noi bo* (ADR 0025 — dong no ADR 0023).
+/// Ở *Lịch khám của tôi* trên *Trang bệnh nhân nội bộ* (ADR 0025 — dòng nợ ADR 0023).
 ///
 /// <para>
-/// Tron HAI nguon di HAI duong khac nhau:
+/// Trộn HAI nguồn đi HAI đường khác nhau:
 /// <list type="bullet">
-///   <item><b>Sap toi</b> — hen tai kham bac si da ghi, <i>goi thang</i> HIS, khong
-///   giu ban sao. Nguon that la <c>QL_ToaThuoc.NgayTaiKham</c> (7.566 hen tuong lai
-///   o Thien Nam), KHONG phai bang giay hen (4 dong — gan chet).</item>
-///   <item><b>Da kham</b> — *Dot kham* da nam san trong CSDL cong tu Dot 3. Khong
-///   goi HIS: mo modal la co ngay, va HIS chet thi phan nay van hien.</item>
+///   <item><b>Sắp tới</b> — hẹn tái khám bác sĩ đã ghi, <i>gọi thẳng</i> HIS, không
+///   giữ bản sao. Nguồn thật là <c>QL_ToaThuoc.NgayTaiKham</c> (7.566 hẹn tương lai
+///   ở Thiện Nam), KHÔNG phải bảng giấy hẹn (4 dòng — gần chết).</item>
+///   <item><b>Đã khám</b> — *Đợt khám* đã nằm sẵn trong CSDL cổng từ Đợt 3. Không
+///   gọi HIS: mở modal là có ngay, và HIS chết thì phần này vẫn hiện.</item>
 /// </list>
 /// </para>
 /// <para>
-/// 🔴 Hoi HIS o day chu khong o luc render trang: chi hoi KHI NGUOI DUNG BAM mo o.
-/// Render trang chi quyet dinh CAI VAN (o hien hay an) — do la truy van CSDL cong,
-/// khong ton mot cuoc goi nao sang may khach.
+/// 🔴 Hỏi HIS ở đây chứ không ở lúc render trang: chỉ hỏi KHI NGƯỜI DÙNG BẤM mở ô.
+/// Render trang chỉ quyết định CÁI VỎ (ô hiện hay ẩn) — đó là truy vấn CSDL cổng,
+/// không tốn một cuộc gọi nào sang máy khách.
 /// </para>
 /// </summary>
 [Authorize]
@@ -47,7 +47,7 @@ public sealed class LichKhamController : Controller
         _thuTuc = thuTuc;
     }
 
-    /// <summary>Mot the tren danh sach. <c>nhom</c> = SAP_TOI | DA_KHAM.</summary>
+    /// <summary>Một thẻ trên danh sách. <c>nhom</c> = SAP_TOI | DA_KHAM.</summary>
     public sealed record TheLich(
         string NgayIso,
         string NgayHienThi,
@@ -56,9 +56,6 @@ public sealed class LichKhamController : Controller
         string? ChuyenKhoa,
         bool Moi);
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // GET /benh-nhan/lich
-    // ─────────────────────────────────────────────────────────────────────────
     [HttpGet("/benh-nhan/lich")]
     public async Task<IActionResult> DanhSach(CancellationToken ct)
     {
@@ -69,15 +66,15 @@ public sealed class LichKhamController : Controller
 
         var (idBenhNhan, idCoSo, idHoSoCoSo, maBN, moc) = boi.Value;
 
-        // ── Da kham: CSDL cong, luon co ────────────────────────────────────
+        // ── Đã khám: CSDL công, luôn có ────────────────────────────────────
         var dotKham = await _db.DotKhams.AsNoTracking()
             .Where(d => idHoSoCoSo.Contains(d.IdBenhNhan))
             .OrderByDescending(d => d.NgayGioVao)
             .Take(50)
             .ToListAsync(ct);
 
-        // Dem tai lieu theo tung dot de the noi duoc "da co N tai lieu" — con so
-        // do la thu keo nguoi ta bam vao, khong phai trang tri.
+        // Đếm tài liệu theo từng đợt để thẻ nói được "đã có N tài liệu" — con số
+        // đó là thứ kéo người ta bấm vào, không phải trang trí.
         var soTaiLieu = await _db.TaiLieuBenhNhans.AsNoTracking()
             .Where(t => t.IdBenhNhan != null
                         && idHoSoCoSo.Contains(t.IdBenhNhan.Value)
@@ -106,18 +103,18 @@ public sealed class LichKhamController : Controller
                 Nhom: "DA_KHAM",
                 NoiDung: noiDung,
                 ChuyenKhoa: d.TenKhoa,
-                // Moc dua tren NgayCapNhat: dot kham duoc HIS day lai (sua chan
-                // doan, bo sung ngay ra) thi no bat lai MOI — dung y do cua *Moc
-                // xem lich*, khong phai tac dung phu.
+                // Mốc dựa trên NgayCapNhat: đợt khám được HIS đẩy lại (sửa chẩn
+                // đoán, bổ sung ngày ra) thì nó bật lại MỚI — đúng ý đồ của *Mốc
+                // xem lịch*, không phải tác dụng phụ.
                 Moi: moc is null || (d.NgayCapNhat ?? d.NgayTao) > moc.Value));
         }
 
-        // ── Sap toi: goi thang HIS ─────────────────────────────────────────
+        // ── Sắp tới: gọi thẳng HIS ─────────────────────────────────────────
         var traLoi = await _his.LayLichHenAsync(idCoSo, maBN, ct);
 
-        // 🔴 BA trang thai tach bac. Dich im lang thanh "ban khong co hen" la loi
-        // da can mot lan o Dot 3 — benh nhan co hen tai kham that se tin la minh
-        // khong co, va khong mot dau hieu nao bao hong.
+        // 🔴 BA trạng thái tách bạch. Dịch im lặng thành "bạn không có hẹn" là lỗi
+        // đã cắn một lần ở Đợt 3 — bệnh nhân có hẹn tái khám thật sẽ tin là mình
+        // không có, và không một dấu hiệu nào báo hỏng.
         if (traLoi.Xong)
         {
             foreach (var h in traLoi.DuLieu ?? new List<LichHenHis>())
@@ -132,8 +129,8 @@ public sealed class LichKhamController : Controller
                     NgayIso: ngay.ToString("yyyy-MM-dd"),
                     NgayHienThi: ngay.ToString("dd/MM/yyyy"),
                     Nhom: "SAP_TOI",
-                    // KHONG co gio: nguon ben HIS kieu date. Bia mot gio ra man la
-                    // bao benh nhan den sai luc.
+                    // KHÔNG có giờ: nguồn bên HIS kiểu date. Bịa một giờ ra màn là
+                    // báo bệnh nhân đến sai lúc.
                     NoiDung: $"Bác sĩ hẹn tái khám ngày {ngay:dd/MM/yyyy}.",
                     ChuyenKhoa: chan.Count > 0 ? string.Join(" · ", chan) : null,
                     Moi: moc is null || (h.NgayTao ?? DateTime.MinValue) > moc.Value));
@@ -148,7 +145,7 @@ public sealed class LichKhamController : Controller
                 TrangThaiHoiHis.KhongHoiDuoc  => "CHUA_HOI_DUOC",
                 _                             => "CHUA_NOI"
             },
-            // Sap toi len truoc va gan nhat truoc; da kham thi moi nhat truoc.
+            // Sắp tới lên trước và gần nhất trước; đã khám thì mới nhất trước.
             the = the
                 .OrderBy(x => x.Nhom == "SAP_TOI" ? 0 : 1)
                 .ThenBy(x => x.Nhom == "SAP_TOI" ? x.NgayIso : string.Empty)
@@ -158,7 +155,7 @@ public sealed class LichKhamController : Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // POST /benh-nhan/lich/da-xem — doi *Moc xem lich*
+    // POST /benh-nhan/lich/da-xem — đổi *Mốc xem lịch*
     // ─────────────────────────────────────────────────────────────────────────
     [HttpPost("/benh-nhan/lich/da-xem")]
     [ValidateAntiForgeryToken]
@@ -174,7 +171,7 @@ public sealed class LichKhamController : Controller
 
         if (string.IsNullOrWhiteSpace(sdtPhien)) return Json(new { xong = false });
 
-        // Thu tuc tu kiem ho so co thuoc ve (SDT x co so) cua phien khong.
+        // Thủ tục tự kiểm hồ sơ có thuộc về (SDT x cơ sở) của phiên không.
         var ketQua = await _thuTuc.DoiMocXemLichAsync(idBenhNhan, idCoSo, sdtPhien);
 
         return Json(new { xong = ketQua.Succeeded });
@@ -183,8 +180,8 @@ public sealed class LichKhamController : Controller
     // ─────────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Ho so dang xem + cac ma cua no tai co so dang xem + *Moc xem lich*.
-    /// <c>null</c> khi khong du dieu kien de o nay ton tai.
+    /// Hồ sơ đang xem + các mã của nó tại cơ sở đang xem + *Mốc xem lịch*.
+    /// <c>null</c> khi không đủ điều kiện để ô này tồn tại.
     /// </summary>
     private async Task<(long IdBenhNhan, long IdCoSo, List<long> IdHoSoCoSo,
                         List<string> MaBN, DateTime? Moc)?> LayBoiCanhAsync(CancellationToken ct)
@@ -204,9 +201,9 @@ public sealed class LichKhamController : Controller
 
         if (string.IsNullOrWhiteSpace(dinhDanh)) return null;
 
-        // *Ho so dang chon*. Claim CHI duoc phat sau khi da kiem ho so thuoc ve
-        // phien, nhung van loc lai theo (SDT x co so) o day chu khong tra cuu
-        // thang theo claim.
+        // *Hồ sơ đang chọn*. Claim CHỈ được phát sau khi đã kiểm hồ sơ thuộc về
+        // phiên, nhưng vẫn lọc lại theo (SDT x cơ sở) ở đây chứ không tra cứu
+        // thẳng theo claim.
         long.TryParse(User.FindFirst(LuongCongBenhNhan.ClaimHoSoDangChon)?.Value, out var idChon);
 
         var idBenhNhan = await _db.BenhNhans.AsNoTracking()
@@ -223,9 +220,9 @@ public sealed class LichKhamController : Controller
 
         if (dong.Count == 0) return null;
 
-        // Moc SOM NHAT trong cac dong: mot dong moi duoc noi them (chua tung xem)
-        // phai keo ca danh sach ve trang thai "co cai moi", khong thi ma vua noi
-        // mang tai lieu vao ma khong ai bao.
+        // Mốc SỚM NHẤT trong các dòng: một dòng mới được nối thêm (chưa từng xem)
+        // phải kéo cả danh sách về trạng thái "có cái mới", không thì mã vừa nối
+        // mang tài liệu vào mà không ai báo.
         var moc = dong.Any(h => h.NgayXemLichCuoi is null)
             ? (DateTime?)null
             : dong.Min(h => h.NgayXemLichCuoi);

@@ -55,7 +55,6 @@ public sealed class DangNhapController : Controller
             return Json(new { success = false, message = "Số điện thoại không hợp lệ." });
         }
 
-        // Kiểm tra xem tài khoản có tồn tại và là Admin hay không
         var taiKhoan = await _taiKhoanService.DangNhapAsync(input, "");
 
         if (taiKhoan == null || (!string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase)))
@@ -89,9 +88,9 @@ public sealed class DangNhapController : Controller
             });
         }
 
-        // Cot nay la MatKhauNoiBo (ADR 0009). Sau migration no dang NULL vi phan
-        // BAM chua duoc thi hanh — xem muc Dinh chinh cua ADR 0009. Tai khoan
-        // Admin/DoiTac vi vay tam thoi khong dang nhap duoc, va roi vao nhanh duoi.
+        // Cột này là MatKhauNoiBo (ADR 0009). Sau migration nó đang NULL vì phần
+        // BĂM chưa được thi hành — xem mục Đính chính của ADR 0009. Tài khoản
+        // Admin/Đối tác vì vậy tạm thời không đăng nhập được, và rơi vào nhánh dưới.
         if (string.IsNullOrEmpty(taiKhoan.MatKhauNoiBo)
             || !string.Equals(taiKhoan.MatKhauNoiBo, otpInput, StringComparison.Ordinal))
         {

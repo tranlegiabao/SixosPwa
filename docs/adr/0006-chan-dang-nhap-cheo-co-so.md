@@ -1,5 +1,7 @@
 # Chặn đăng nhập chéo cơ sở bằng modal, không đổi claim âm thầm
 
+- **Tác giả:** Nam · **Ngày:** 2026-08-24 · **Trạng thái:** Đã chốt
+
 Trước đây, bệnh nhân đang có phiên ở cơ sở A mà bấm "Đăng nhập"/"Đăng ký khám" trên trang cơ sở B thì
 `DangNhapController.DiTiep` **âm thầm đổi claim `MaCoSo`** sang B (`DoiCoSoTrongPhienAsync`) — bệnh
 nhân không được hỏi, không biết mình vừa "rời" cơ sở A. Với luồng bàn giao sang hệ đối tác (Ung Bướu…)

@@ -1,7 +1,6 @@
 # 0023 — Ô Lịch hẹn lên trunk ở dạng vỏ giao diện, dữ liệu mẫu nằm trong view
 
-- **Trạng thái:** Đã chấp nhận
-- **Ngày:** 2026-09-09
+- **Tác giả:** Nam · **Ngày:** 2026-09-09 · **Trạng thái:** Đã chấp nhận
 - **Bối cảnh liên quan:** [0017](0017-hai-chieu-theo-loai-du-lieu.md) — lịch hẹn thì *gọi thẳng* HIS,
   không giữ bản sao. ADR này **không thay thế** 0017; nó ghi lại một khoảng nợ có thời hạn nằm
   trước 0017.

@@ -1,7 +1,6 @@
 # 0024 — Nối hồ sơ xảy ra khi LƯU, chia hai tầng, và bắt buộc có đường gỡ
 
-- **Trạng thái:** Đã chấp nhận
-- **Ngày:** 2026-09-09
+- **Tác giả:** Nam · **Ngày:** 2026-09-09 · **Trạng thái:** Đã chấp nhận
 - **Bối cảnh liên quan:** [0018](0018-luat-gop-ho-so-cccd-ten-ngaysinh.md) — *Luật gộp hồ sơ*, bản
   bốn ô. [0019](0019-mot-tai-khoan-nhieu-ho-so.md) — một tài khoản nhiều hồ sơ.
   [0020](0020-tin-cccd-o-loi-vao-chan-o-tang-tai-lieu.md) — *Cửa tài liệu*.

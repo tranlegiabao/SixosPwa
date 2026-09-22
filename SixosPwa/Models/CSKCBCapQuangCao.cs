@@ -1,6 +1,6 @@
 namespace SixosPwa.Models;
 
-/// <summary>Cap quang cao mot co so dang mua. Thay cho ba cot QC_Cap1/2/3 cu.</summary>
+/// <summary>Cấp quảng cáo một cơ sở đang mua. Thay cho ba cột QC_Cap1/2/3 cũ.</summary>
 public class CSKCBCapQuangCao
 {
     public long Id { get; set; }

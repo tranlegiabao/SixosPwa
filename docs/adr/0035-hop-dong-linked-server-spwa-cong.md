@@ -1,12 +1,11 @@
 # 0035 — Hợp đồng linked server `SPWA_CONG`: bảy đối tượng, chỉ được thêm tham số có mặc định
 
-- **Trạng thái:** Đề xuất
-- **Ngày:** 2026-09-19
+- **Tác giả:** Nam · **Ngày:** 2026-09-19 · **Trạng thái:** Đề xuất
 - **Bối cảnh liên quan:** [0008](0008-moi-duong-ghi-qua-stored-procedure.md) ·
   [0021](0021-tu-choi-tai-lieu-mo-coi.md) ·
   [0031](0031-his-tu-dung-ho-so-ben-cong.md) ·
   [0032](0032-mot-ho-so-giu-dung-mot-ma.md) ·
-  [0034](0034-idtaikhoantheosdt-soi-guong-idbenhnhan.md)
+  [0040](0040-idtaikhoantheosdt-soi-guong-idbenhnhan.md)
 
 ## Bối cảnh
 
@@ -20,7 +19,7 @@ thường:
 3. **Sửa đầu HIS = đi từng khách hàng.** Nên trên thực tế chỉ có đầu cổng được phép nhúc nhích.
 
 Đợt A đã đạp một lần: bớt một tham số làm chết màn *Gửi cho bệnh nhân* bên HIS mà không ai phát hiện
-được bằng cách đọc code cổng. Đợt 1B suýt đạp lần thứ hai ở một chỗ khác — xem ADR 0034.
+được bằng cách đọc code cổng. Đợt 1B suýt đạp lần thứ hai ở một chỗ khác — xem ADR 0040.
 
 ## Quyết định
 

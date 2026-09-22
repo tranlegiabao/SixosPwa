@@ -1,5 +1,7 @@
 # Đổi tên lan tới tận JavaScript, chấp nhận phá hợp đồng JSON
 
+- **Tác giả:** Nam · **Ngày:** 2026-08-25 · **Trạng thái:** Đã chốt
+
 Đợt tái kiến trúc `HIS_CSKH` (2026-08-24) đổi tên gần như toàn bộ bảng và cột sang khuôn HisSoft
 (`DM_`/`QL_`/`HT_`, cột khoá chính `ID`, khoá ngoại `ID<ThựcThể>`). Làn sóng đổi tên **không dừng ở tầng
 EF hay ở ranh giới JSON** — nó đi tiếp vào tên thuộc tính C#, vào key của JSON trả về, và vào cả biến

@@ -1,7 +1,6 @@
 # 0031 — HIS tự dựng tài khoản và hồ sơ bên cổng (đảo một vế của 0021)
 
-- **Trạng thái:** Đề xuất
-- **Ngày:** 2026-09-16
+- **Tác giả:** Nam · **Ngày:** 2026-09-16 · **Trạng thái:** Đề xuất
 - **Bối cảnh liên quan:** [0005](0005-luu-mat-khau-khong-bam.md) ·
   [0008](0008-moi-duong-ghi-qua-stored-procedure.md) ·
   [0021](0021-tu-choi-tai-lieu-mo-coi.md) ·

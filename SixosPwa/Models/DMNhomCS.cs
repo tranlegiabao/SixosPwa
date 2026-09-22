@@ -9,7 +9,7 @@ public class DMNhomCS
     [Key]
     public long ID { get; set; }
 
-    /// <summary>Ma nhom co so — truoc day nam rai rac duoi ten LoaiCS.</summary>
+    /// <summary>Mã nhóm cơ sở — trước đây nằm rải rác dưới tên LoaiCS.</summary>
     [StringLength(10)]
     public string MaNhom { get; set; } = "";
 

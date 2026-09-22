@@ -1,15 +1,15 @@
 namespace SixosPwa.Models;
 
 /// <summary>
-/// Gio lam viec cua mot co so theo TUNG THU. Thay cho cap cot TGLamViec/NgayLamViec
-/// cu — hai cot do noi dung nguoc voi ten cot.
+/// Giờ làm việc của một cơ sở theo TỪNG THỨ. Thay cho cặp cột TGLamViec/NgayLamViec
+/// cũ — hai cột đó nội dung ngược với tên cột.
 /// </summary>
 public class CSKCBGioLamViec
 {
     public long Id { get; set; }
     public long IdCoSo { get; set; }
 
-    /// <summary>Thu trong tuan: 0 = Chu nhat, 1..6 = Thu 2..Thu 7.</summary>
+    /// <summary>Thứ trong tuần: 0 = Chủ nhật, 1..6 = Thứ 2..Thứ 7.</summary>
     public byte Thu { get; set; }
 
     public TimeSpan GioMoCua { get; set; }

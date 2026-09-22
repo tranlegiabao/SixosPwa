@@ -11,31 +11,31 @@ using SixosPwa.Services;
 namespace SixosPwa.Security;
 
 /// <summary>
-/// Cua cho MAY vao: xac thuc mot cuoc goi tu HIS cua mot co so bang khoa cap
-/// rieng cho co so do. Bam khuon <c>[LisAccessKey]</c> ben HisSoft dang chay
-/// that (<c>C0307_LIS_IntegrationController</c>).
+/// Cửa cho MÁY vào: xác thực một cuộc gọi từ HIS của một cơ sở bằng khóa cấp
+/// riêng cho cơ sở đó. Bám khuôn <c>[LisAccessKey]</c> bên HisSoft đang chạy
+/// thật (<c>C0307_LIS_IntegrationController</c>).
 ///
 /// <para>
-/// 🔴 Dat attribute nay len TUNG controller cua khu <c>api/v1</c>. Khu do CHI
-/// danh cho may. Duong cho NGUOI xem tai lieu nam ben <c>HomeController</c> voi
-/// cookie va <c>[Authorize]</c> — hai loai nguoi goi, hai khu rieng. Gop chung
-/// mot controller roi danh dau <c>[AllowAnonymous]</c> o muc lop chinh la cach
-/// duong doc tai lieu tung bi ho cho ca the gioi.
+/// 🔴 Đặt attribute này lên TỪNG controller của khu <c>api/v1</c>. Khu đó CHỈ
+/// dành cho máy. Đường cho NGƯỜI xem tài liệu nằm bên <c>HomeController</c> với
+/// cookie và <c>[Authorize]</c> — hai loại người gọi, hai khu riêng. Gộp chung
+/// một controller rồi đánh dấu <c>[AllowAnonymous]</c> ở mức lớp chính là cách
+/// đường đọc tài liệu từng bị hở cho cả thế giới.
 /// </para>
 /// <para>
-/// KHONG kiem <c>DM_CSKCB.HienThiCongKhai</c> o day. Theo ADR 0013 co ay chi
-/// quyet dinh co so co hien o cong cong khai va co nhan dang nhap moi khong.
-/// Mot co so tam an di de sua noi dung ma bi ngung nhan ket qua xet nghiem la
-/// loi im lang. Sau dot gop, cong tat duong API la <c>Khoa_NgayHetHan</c>
-/// (het han) va <c>KhoaBam IS NULL</c> (thu hoi khoa) tren chinh <c>DM_CSKCB</c>.
+/// KHÔNG kiểm <c>DM_CSKCB.HienThiCongKhai</c> ở đây. Theo ADR 0013 cờ ấy chỉ
+/// quyết định cơ sở có hiện ở cổng công khai và có nhận đăng nhập mới không.
+/// Một cơ sở tạm ẩn đi để sửa nội dung mà bị ngưng nhận kết quả xét nghiệm là
+/// lỗi im lặng. Sau đợt gộp, công tắc đường API là <c>Khoa_NgayHetHan</c>
+/// (hết hạn) và <c>KhoaBam IS NULL</c> (thu hồi khóa) trên chính <c>DM_CSKCB</c>.
 /// </para>
 /// <para>
-/// 🔴 <b>Doc <c>KhoaBam</c> bang CAU SQL RIENG, co y khong qua EF.</b> Bon cot bi
-/// mat (<c>KhoaBam</c> · <c>Ftp_TaiKhoan</c> · <c>Ftp_MatKhau</c> ·
-/// <c>KetNoi_KhoaGoiHIS</c>) KHONG duoc khai trong thuc the <see cref="DMCSKCB"/>:
-/// co 59 cho doc <c>DM_CSKCB</c> qua EF va trang cong khai nap TRON thuc the moi
-/// co so. Khai vao thuc the la lo bi mat o 59 cho; doc SQL rieng la sua 3 cho.
-/// Chi SELECT dung cot can, khong bao gio <c>SELECT *</c>.
+/// 🔴 <b>Đọc <c>KhoaBam</c> bằng CÂU SQL RIÊNG, cố ý không qua EF.</b> Bốn cột bí
+/// mật (<c>KhoaBam</c> · <c>Ftp_TaiKhoan</c> · <c>Ftp_MatKhau</c> ·
+/// <c>KetNoi_KhoaGoiHIS</c>) KHÔNG được khai trong thực thể <see cref="DMCSKCB"/>:
+/// có 59 chỗ đọc <c>DM_CSKCB</c> qua EF và trang công khai nạp TRỌN thực thể mọi
+/// cơ sở. Khai vào thực thể là lộ bí mật ở 59 chỗ; đọc SQL riêng là sửa 3 chỗ.
+/// Chỉ SELECT đúng cột cần, không bao giờ <c>SELECT *</c>.
 /// </para>
 /// </summary>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
@@ -44,7 +44,7 @@ public class KhoaCoSoAttribute : Attribute, IAsyncAuthorizationFilter
     public const string HeaderKhoa = "X-API-Key";
     public const string HeaderMaCoSo = "X-Ma-CSKCB";
 
-    /// <summary>Khoa doc co so da xac thuc ra khoi <c>HttpContext.Items</c>.</summary>
+    /// <summary>Khóa đọc cơ sở đã xác thực ra khỏi <c>HttpContext.Items</c>.</summary>
     public const string ItemCoSo = "KhoaCoSo.CoSo";
 
     public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
@@ -66,28 +66,28 @@ public class KhoaCoSoAttribute : Attribute, IAsyncAuthorizationFilter
             return;
         }
 
-        // Tra cuu bang BAM, khong bao gio so khoa tho voi gia tri trong CSDL —
-        // CSDL khong giu khoa tho. Bam theo byte UTF-8 de khop voi
-        // HASHBYTES('SHA2_256', CONVERT(varchar, ...)) ma script chuyen khoa cu
-        // dung. Bam nham nvarchar la ra byte UTF-16 va hai ben khong bao gio gap.
+        // Tra cứu bằng BĂM, không bao giờ so khóa thô với giá trị trong CSDL —
+        // CSDL không giữ khóa thô. Băm theo byte UTF-8 để khớp với
+        // HASHBYTES('SHA2_256', CONVERT(varchar, ...)) mà script chuyển khóa cũ
+        // dùng. Băm nhầm nvarchar là ra byte UTF-16 và hai bên không bao giờ gặp.
         var bam = SHA256.HashData(Encoding.UTF8.GetBytes(khoaTho));
 
         var khoa = await TimCoSoTheoKhoaBamAsync(db, bam, http.RequestAborted);
 
         if (khoa is null)
         {
-            // Sau dot gop, ba ca "khong co khoa" / "khoa da thu hoi (KhoaBam NULL)"
-            // / "khoa het han" deu roi ve mot cau tra loi: khong tim thay dong.
-            // Cau WHERE da loc Khoa_NgayHetHan nen khong con phan biet duoc nua —
-            // co y, de khong noi cho ben goi biet khoa cua ho tung ton tai.
+            // Sau đợt gộp, ba ca "không có khóa" / "khóa đã thu hồi (KhoaBam NULL)"
+            // / "khóa hết hạn" đều rơi về một câu trả lời: không tìm thấy dòng.
+            // Câu WHERE đã lọc Khoa_NgayHetHan nên không còn phân biệt được nữa —
+            // cố ý, để không nói cho bên gọi biết khóa của họ từng tồn tại.
             await ChanAsync(context, nhatKy, endpoint, LyDoApi.KhoaSai, ip,
                 "Xác thực thất bại: khóa không đúng, đã bị thu hồi hoặc đã hết hạn.");
             return;
         }
 
-        // Khoa dung nhung go nham ma co so: chan lai thay vi lang le lay co so
-        // theo khoa. Neu khong, mot co so go nham ma se day du lieu cua minh
-        // sang ho so cua co so khac ma khong ai biet.
+        // Khóa đúng nhưng gõ nhầm mã cơ sở: chặn lại thay vì lặng lẽ lấy cơ sở
+        // theo khóa. Nếu không, một cơ sở gõ nhầm mã sẽ đẩy dữ liệu của mình
+        // sang hồ sơ của cơ sở khác mà không ai biết.
         if (!string.Equals(khoa.Value.MaCoSo, maCoSo, StringComparison.OrdinalIgnoreCase))
         {
             await ChanAsync(context, nhatKy, endpoint, LyDoApi.KhoaKhacCoSo, ip,
@@ -109,14 +109,14 @@ public class KhoaCoSoAttribute : Attribute, IAsyncAuthorizationFilter
     }
 
     /// <summary>
-    /// Doc <c>KhoaBam</c> — mot trong 4 cot bi mat — bang CAU SQL RIENG (ADO thuan),
-    /// KHONG qua EF, vi cot nay co y khong nam trong thuc the <see cref="DMCSKCB"/>.
-    /// Chi lay dung <c>ID</c> + <c>MaCoSo</c>, khong <c>SELECT *</c>.
+    /// Đọc <c>KhoaBam</c> — một trong 4 cột bí mật — bằng CÂU SQL RIÊNG (ADO thuần),
+    /// KHÔNG qua EF, vì cột này cố ý không nằm trong thực thể <see cref="DMCSKCB"/>.
+    /// Chỉ lấy đúng <c>ID</c> + <c>MaCoSo</c>, không <c>SELECT *</c>.
     ///
-    /// 🔴 Dung <b>mot dong duy nhat</b> theo nghia <c>SingleOrDefault</c>: sau dot gop,
-    /// <c>KhoaBam</c> la DUY NHAT toan he (index loc <c>UK_DM_CSKCB_KhoaBam</c> tren
-    /// <c>IS NOT NULL</c>). Doc duoc hai dong nghia la rang buoc do da vo — phai NO ra
-    /// chu khong duoc im lang chon dong dau nhu <c>FirstOrDefault</c> cu.
+    /// 🔴 Đúng <b>một dòng duy nhất</b> theo nghĩa <c>SingleOrDefault</c>: sau đợt gộp,
+    /// <c>KhoaBam</c> là DUY NHẤT toàn hệ (index lọc <c>UK_DM_CSKCB_KhoaBam</c> trên
+    /// <c>IS NOT NULL</c>). Đọc được hai dòng nghĩa là ràng buộc đó đã vỡ — phải NỔ ra
+    /// chứ không được im lặng chọn dòng đầu như <c>FirstOrDefault</c> cũ.
     /// </summary>
     private static async Task<(long Id, string MaCoSo)?> TimCoSoTheoKhoaBamAsync(
         ApplicationDbContext db, byte[] bam, CancellationToken ct)
@@ -161,8 +161,8 @@ WHERE KhoaBam = @bam
         string thongBao,
         long? idCoSo = null)
     {
-        // Cot HT_LogApiCoSo.IDKhoa da bi xoa va tham so @IDKhoa da go khoi stored
-        // HT_LogApiCoSo_Ghi — con truyen idKhoa vao day la nhat ky chet im lang.
+        // Cột HT_LogApiCoSo.IDKhoa đã bị xóa và tham số @IDKhoa đã gỡ khỏi stored
+        // HT_LogApiCoSo_Ghi — còn truyền idKhoa vào đây là nhật ký chết im lặng.
         await nhatKy.GhiAsync(endpoint, KetQuaApi.TuChoi,
             idCoSo: idCoSo, lyDo: lyDo, ipGoi: ip);
 
@@ -170,7 +170,7 @@ WHERE KhoaBam = @bam
     }
 }
 
-/// <summary>Doc ket qua cua <see cref="KhoaCoSoAttribute"/> trong controller.</summary>
+/// <summary>Đọc kết quả của <see cref="KhoaCoSoAttribute"/> trong controller.</summary>
 public static class KhoaCoSoExtensions
 {
     public static DMCSKCB CoSoDaXacThuc(this HttpContext http) =>

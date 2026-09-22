@@ -7,11 +7,11 @@ using SixosPwa.Models.Dto;
 namespace SixosPwa.Services;
 
 /// <summary>
-/// Ma benh nhan chua co ho so nao nhan ben cong => tu choi ca goi tin
-/// (chot 3, ADR 0021). Tach thanh ngoai le RIENG chu khong dung
-/// InvalidOperationException chung, de controller tra dung 409 kem ma may doc
-/// duoc thay vi 500 — hang doi ben HIS phai phan biet duoc "chua co nguoi nhan"
-/// voi "loi ky thuat", neu khong thi no thu lai vo ich mai.
+/// Mã bệnh nhân chưa có hồ sơ nào nhận bên cổng => từ chối cả gói tin
+/// (chốt 3, ADR 0021). Tách thành ngoại lệ RIÊNG chứ không dùng
+/// InvalidOperationException chung, để controller trả đúng 409 kèm mã máy đọc
+/// được thay vì 500 — hàng đợi bên HIS phải phân biệt được "chưa có người nhận"
+/// với "lỗi kỹ thuật", nếu không thì nó thử lại vô ích mãi.
 /// </summary>
 public class ChuaCoNguoiNhanException : Exception
 {
@@ -61,7 +61,6 @@ public class TaiLieuService : ITaiLieuService
         if (string.IsNullOrWhiteSpace(request.FilePdf))
             throw new ArgumentException("Dữ liệu tệp PDF mã hóa Base64 (filePdf) không được để trống.");
 
-        // 1. Tách phần tiền tố Data URL nếu có (ví dụ: data:application/pdf;base64,...)
         var base64 = request.FilePdf.Trim();
         var commaIndex = base64.IndexOf(',');
         if (commaIndex >= 0 && base64[..commaIndex].Contains("base64", StringComparison.OrdinalIgnoreCase))
@@ -69,7 +68,6 @@ public class TaiLieuService : ITaiLieuService
             base64 = base64[(commaIndex + 1)..].Trim();
         }
 
-        // 2. Giải mã Base64 sang mảng byte
         byte[] pdfBytes;
         try
         {
@@ -80,7 +78,6 @@ public class TaiLieuService : ITaiLieuService
             throw new ArgumentException("Dữ liệu tệp PDF không đúng định dạng Base64 hợp lệ.");
         }
 
-        // 3. Kiểm tra kích thước file
         if (pdfBytes.Length == 0)
         {
             throw new ArgumentException("Tệp PDF có kích thước rỗng (0 byte).");
@@ -91,7 +88,6 @@ public class TaiLieuService : ITaiLieuService
             throw new ArgumentException($"Dung lượng tệp PDF ({pdfBytes.Length / (1024 * 1024.0):F2}MB) vượt quá giới hạn cho phép (tối đa {MaxPdfSizeBytes / (1024 * 1024)}MB).");
         }
 
-        // 4. Kiểm tra magic bytes của định dạng PDF (%PDF-)
         if (pdfBytes.Length < 4 ||
             pdfBytes[0] != 0x25 || // %
             pdfBytes[1] != 0x50 || // P
@@ -159,21 +155,20 @@ public class TaiLieuService : ITaiLieuService
             {
                 Id = banDangCo.Id,
                 IdBenhNhan = banDangCo.IdBenhNhan,
-                // Cot MaBN da bi bo khoi QL_TaiLieuBenhNhan — ma benh nhan suy ra
-                // qua DM_BenhNhanCoSo. O day chinh la ma vua duoc lam sach ben tren.
+                // Cột MaBN đã bị bỏ khỏi QL_TaiLieuBenhNhan — mã bệnh nhân suy ra
+                // qua DM_BenhNhanCoSo. Ở đây chính là mã vừa được làm sạch bên trên.
                 MaBN = maBNSach,
                 LoaiTaiLieu = banDangCo.LoaiTaiLieu,
                 TenTaiLieu = banDangCo.TenTaiLieu,
                 DuongDan = $"/api/v1/tai-lieu/xem/{banDangCo.Id}",
-                // Cot DungLuongByte da bi bo; ban cu khong doi noi dung nen kich thuoc
-                // dung bang tep vua nhan.
+                // Cột DungLuongByte đã bị bỏ; bản cũ không đổi nội dung nên kích thước
+                // đúng bằng tệp vừa nhận.
                 DungLuongByte = pdfBytes.Length,
                 NgayTao = banDangCo.NgayTao,
                 NoiDungKhongDoi = true
             };
         }
 
-        // 6. Upload lên máy chủ FTP dùng chung theo cấu trúc: 1 bệnh nhân 1 thư mục
         var now = DateTime.Now;
         var safeMaBN = Regex.Replace(maBNSach, @"[^a-zA-Z0-9_\-]", "_");
         var safeLoaiTL = Regex.Replace(loaiTaiLieu.Trim(), @"[^a-zA-Z0-9_\-]", "_");
@@ -182,7 +177,6 @@ public class TaiLieuService : ITaiLieuService
 
         var remoteFilePath = await _ftpService.UploadBytesAsync(pdfBytes, fileName, remoteDir);
 
-        // 7. Xác định tên tài liệu
         var tenTaiLieu = string.IsNullOrWhiteSpace(request.TenTaiLieu)
             ? $"{loaiTaiLieu.Trim()} - BN {maBNSach} - {now:dd/MM/yyyy HH:mm}"
             : request.TenTaiLieu.Trim();

@@ -9,7 +9,7 @@ public class DMChuDe
     [Key]
     public long ID { get; set; }
 
-    /// <summary>Ma chu de — truoc day nam rai rac duoi ten LoaiND.</summary>
+    /// <summary>Mã chủ đề — trước đây nằm rải rác dưới tên LoaiND.</summary>
     [StringLength(20)]
     public string MaChuDe { get; set; } = "";
 

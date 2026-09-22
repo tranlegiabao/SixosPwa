@@ -1,5 +1,7 @@
 # Đăng nhập được thì phải có tài khoản — chặn OTP khi chưa biết cơ sở
 
+- **Tác giả:** Nam · **Ngày:** 2026-09-10 · **Trạng thái:** Đã bị thay thế bởi ADR 0036
+
 > 🔴 **ĐÃ BỊ THAY THẾ bởi ADR 0036** (2026-09-19, đợt 1B).
 > Bất biến giữ nguyên hình dạng nhưng đổi bảng neo: `HT_TaiKhoan` → dòng `DM_BenhNhan` tại cơ sở.
 > Xem [0036](0036-ho-so-la-cap-nguoi-x-co-so.md). Giữ file này để đọc lại bối cảnh cũ.

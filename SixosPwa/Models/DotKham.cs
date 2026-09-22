@@ -1,17 +1,17 @@
 namespace SixosPwa.Models;
 
 /// <summary>
-/// Mot dong = MOT LAN DEN kham. Thay cho <c>QL_LichSuKham</c> cu (bang 4 cot
-/// dem, da khai tu) — ba so dem do suy thang tu bang nay bang MIN/MAX/COUNT.
+/// Một dòng = MỘT LẦN ĐẾN khám. Thay cho <c>QL_LichSuKham</c> cũ (bảng 4 cột
+/// đếm, đã khai tử) — ba số đếm đó suy thẳng từ bảng này bằng MIN/MAX/COUNT.
 ///
 /// <para>
-/// Khoa tu nhien la <c>(IdCoSo, MaVaoVien)</c>: HIS day lai ca lo cung khong de
-/// dong trung. Do that ben Thien Nam: 142.895 dot kham nam 2026 tren 142.542
-/// cap (benh nhan, ngay) — mot dot xap xi mot ngay, chi 353 ca trung.
+/// Khóa tự nhiên là <c>(IdCoSo, MaVaoVien)</c>: HIS đẩy lại cả lô cũng không để
+/// dòng trùng. Đo thật bên Thiên Nam: 142.895 đợt khám năm 2026 trên 142.542
+/// cặp (bệnh nhân, ngày) — một đợt xấp xỉ một ngày, chỉ 353 ca trùng.
 /// </para>
 /// <para>
-/// Khoa va bac si luu bang TEN chu khong bang ID: ID cua HIS khong co nghia gi
-/// ben cong, va moi co so danh so mot kieu.
+/// Khoa và bác sĩ lưu bằng TÊN chứ không bằng ID: ID của HIS không có nghĩa gì
+/// bên cổng, và mỗi cơ sở đánh số một kiểu.
 /// </para>
 /// </summary>
 public class DotKham
@@ -22,12 +22,12 @@ public class DotKham
 
     public long IdBenhNhan { get; set; }
 
-    /// <summary>Dinh danh dot kham ben HIS — nua con lai cua khoa tu nhien.</summary>
+    /// <summary>Định danh đợt khám bên HIS — nửa còn lại của khóa tự nhiên.</summary>
     public string MaVaoVien { get; set; } = "";
 
-    // 🔴 Ba cot MaBN / NgayGioRa / ChanDoan da BI BO khoi QL_DotKham (dot A, §3).
-    //    MaBN suy duoc qua IDBenhNhanCoSo -> DM_BenhNhanCoSo.MaBN, khong can chep lai.
-    //    DTO `DotKhamDtos` VAN GIU ba truong nay vi HIS dang gui len — nhan roi BO.
+    // 🔴 Ba cột MaBN / NgayGioRa / ChanDoan đã BỊ BỎ khỏi QL_DotKham (đợt A, §3).
+    //    MaBN suy được qua IDBenhNhanCoSo -> DM_BenhNhanCoSo.MaBN, không cần chép lại.
+    //    DTO `DotKhamDtos` VẪN GIỮ ba trường này vì HIS đang gửi lên — nhận rồi BỎ.
 
     public DateTime NgayGioVao { get; set; }
 

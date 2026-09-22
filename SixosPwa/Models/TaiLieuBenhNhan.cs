@@ -42,21 +42,21 @@ public class TaiLieuBenhNhan
     /// <summary>Ngày khám / ngày phát hành tài liệu.</summary>
     public DateTime? NgayKham { get; set; }
 
-    /// <summary>Dinh danh phieu ben HIS — nua kia cua khoa tu nhien chong trung.</summary>
+    /// <summary>Định danh phiếu bên HIS — nửa kia của khóa tự nhiên chống trùng.</summary>
     public string? MaNguonHIS { get; set; }
 
     /// <summary>
-    /// Bam SHA-256 (hex chu thuong) cua chinh noi dung PDF. NULL = dong cu chua
-    /// biet bam => khong so duoc, cu day nhu cu. Them 08/09 de day lai cung noi
-    /// dung khong de phien ban moi va khong bo lai file thua tren FTP.
+    /// Băm SHA-256 (hex chữ thường) của chính nội dung PDF. NULL = dòng cũ chưa
+    /// biết băm => không so được, cứ đẩy như cũ. Thêm 08/09 để đẩy lại cùng nội
+    /// dung không đẻ phiên bản mới và không bỏ lại file thừa trên FTP.
     /// </summary>
     public string? BamNoiDung { get; set; }
 
     public int PhienBan { get; set; } = 1;
 
     /// <summary>
-    /// Ket qua bi sua/ky lai thi day them mot phien ban moi; chi ban mang co
-    /// nay duoc hien cho benh nhan. Cac ban cu giu lai lam doi chung.
+    /// Kết quả bị sửa/ký lại thì đẩy thêm một phiên bản mới; chỉ bản mang cờ
+    /// này được hiện cho bệnh nhân. Các bản cũ giữ lại làm đối chứng.
     /// </summary>
     public bool LaBanMoiNhat { get; set; } = true;
 

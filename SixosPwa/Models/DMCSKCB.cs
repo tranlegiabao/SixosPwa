@@ -28,11 +28,11 @@ public class DMCSKCB
     public string MaCoSo { get; set; } = "";
     public string TenCoSo { get; set; } = "";
 
-    /// <summary>Doan chu quan tri vien dat tay, lam nen URL co dinh /DangKyOnline/{Slug}.
-    /// KHONG tu sinh tu ten, nen doi ten co so khong gay URL.</summary>
+    /// <summary>Đoạn chữ quản trị viên đặt tay, làm nền URL cố định /DangKyOnline/{Slug}.
+    /// KHÔNG tự sinh từ tên, nên đổi tên cơ sở không gãy URL.</summary>
     public string Slug { get; set; } = "";
 
-    /// <summary>Khoa ngoai sang <see cref="DMNhomCS"/> — truoc day la chuoi LoaiCS.</summary>
+    /// <summary>Khóa ngoại sang <see cref="DMNhomCS"/> — trước đây là chuỗi LoaiCS.</summary>
     public long? IdNhomCS { get; set; }
 
     public string? DiaChi { get; set; }
@@ -41,68 +41,68 @@ public class DMCSKCB
     public string? SDT { get; set; }
     public string? Email { get; set; }
 
-    /// <summary>Anh bia trang co so — ten cu la <c>Img</c>.</summary>
+    /// <summary>Ảnh bìa trang cơ sở — tên cũ là <c>Img</c>.</summary>
     public string? AnhBia { get; set; }
 
     public string? Logo { get; set; }
 
     /// <summary>
-    /// Co so co hien tren trang cong khai / co nhan dang ky moi khong — ten cu la
-    /// <c>Active</c>. ADR 0013. Dung nham voi <see cref="KetNoi_Active"/>.
+    /// Cơ sở có hiện trên trang công khai / có nhận đăng ký mới không — tên cũ là
+    /// <c>Active</c>. ADR 0013. Đừng nhầm với <see cref="KetNoi_Active"/>.
     /// </summary>
     public bool HienThiCongKhai { get; set; }
 
     /// <summary>
-    /// SO TIEN QUANG CAO DA TRA (ten cu la <c>QuangCao</c>) — khoa xep hang o
-    /// <c>DM_CSKCB_TopQuangCao</c>. So nguyen VND, decimal(15,0) la CO Y.
+    /// SỐ TIỀN QUẢNG CÁO ĐÃ TRẢ (tên cũ là <c>QuangCao</c>) — khóa xếp hạng ở
+    /// <c>DM_CSKCB_TopQuangCao</c>. Số nguyên VND, decimal(15,0) là CỐ Ý.
     /// </summary>
     public decimal? QcSoTienDaTra { get; set; }
 
-    /// <summary>Noi dung quang cao — tu <c>DM_CSKCB_QuangCao.NoiDung</c>.</summary>
+    /// <summary>Nội dung quảng cáo — từ <c>DM_CSKCB_QuangCao.NoiDung</c>.</summary>
     public string? QcNoiDung { get; set; }
 
-    /// <summary>Anh quang cao — tu <c>DM_CSKCB_QuangCao.Img</c>.</summary>
+    /// <summary>Ảnh quảng cáo — từ <c>DM_CSKCB_QuangCao.Img</c>.</summary>
     public string? QcAnh { get; set; }
 
     public DateTime NgayTao { get; set; } = DateTime.Now;
     public DateTime? NgayCapNhat { get; set; }
 
     /// <summary>
-    /// Ten cong ty chu quan — cot phang <c>DM_CSKCB.TenCongTy</c>.
-    /// 🔴 Dot 1B (C16/PA-1) bo bang <c>DM_DoiTac</c> va khoa ngoai <c>IDCongTy</c>:
-    /// chi 1/12 co so tung co gia tri, khong dang mot bang rieng. Dao ADR 0011.
+    /// Tên công ty chủ quản — cột phẳng <c>DM_CSKCB.TenCongTy</c>.
+    /// 🔴 Đợt 1B (C16/PA-1) bỏ bảng <c>DM_DoiTac</c> và khóa ngoại <c>IDCongTy</c>:
+    /// chỉ 1/12 cơ sở từng có giá trị, không đáng một bảng riêng. Đảo ADR 0011.
     /// </summary>
     public string? TenCongTy { get; set; }
 
-    // --- Ket noi sang he HIS cua co so (tu DM_DoiTacApi) --------------------
+    // --- Kết nối sang hệ HIS của cơ sở (từ DM_DoiTacApi) --------------------
 
     /// <summary>
-    /// Trang rieng cua co so. CO gia tri = co so co "cua rieng", benh nhan duoc
-    /// chuyen huong sang day thay vi o lai trang noi bo. Day la CHO DUY NHAT
-    /// quyet dinh dieu do (cot <c>KieuApi</c> da bi bo) — xem
+    /// Trang riêng của cơ sở. CÓ giá trị = cơ sở có "cửa riêng", bệnh nhân được
+    /// chuyển hướng sang đây thay vì ở lại trang nội bộ. Đây là CHỖ DUY NHẤT
+    /// quyết định điều đó (cột <c>KieuApi</c> đã bị bỏ) — xem
     /// <c>Services/Partner/CuaCoSoService.cs</c>.
     /// </summary>
     public string? KetNoi_UrlChuyenHuong { get; set; }
 
-    /// <summary>Goc dia chi API cua HIS ben co so — tu <c>DM_DoiTacApi.BaseUrl</c>.</summary>
+    /// <summary>Gốc địa chỉ API của HIS bên cơ sở — từ <c>DM_DoiTacApi.BaseUrl</c>.</summary>
     public string? KetNoi_BaseUrlHIS { get; set; }
 
-    /// <summary>Cong tat duong ket noi HIS. Dung nham voi <see cref="HienThiCongKhai"/>.</summary>
+    /// <summary>Công tắc đường kết nối HIS. Đừng nhầm với <see cref="HienThiCongKhai"/>.</summary>
     public bool KetNoi_Active { get; set; }
 
-    // --- Khoa API cua co so (tu HT_KhoaApiCoSo) -----------------------------
-    //  🔴 Chinh cai khoa (KhoaBam) KHONG co o day — xem chu thich dau lop.
+    // --- Khóa API của cơ sở (từ HT_KhoaApiCoSo) -----------------------------
+    //  🔴 Chính cái khóa (KhoaBam) KHÔNG có ở đây — xem chú thích đầu lớp.
 
     public DateTime? Khoa_NgayCap { get; set; }
     public DateTime? Khoa_NgayHetHan { get; set; }
 
-    // --- Kho FTP cua co so (tu HT_KhoFtpCoSo, ADR 0030) ---------------------
-    //  🔴 Ftp_TaiKhoan / Ftp_MatKhau KHONG co o day — xem chu thich dau lop.
+    // --- Kho FTP của cơ sở (từ HT_KhoFtpCoSo, ADR 0030) ---------------------
+    //  🔴 Ftp_TaiKhoan / Ftp_MatKhau KHÔNG có ở đây — xem chú thích đầu lớp.
 
     public string? Ftp_Host { get; set; }
     public string? Ftp_ThuMucGoc { get; set; }
     public bool Ftp_Active { get; set; }
 
-    /// <summary>Moc "Thu ket noi dat" gan nhat. Doi thong so kho thi stored tu xoa moc nay.</summary>
+    /// <summary>Mốc "Thử kết nối đạt" gần nhất. Đổi thông số kho thì stored tự xóa mốc này.</summary>
     public DateTime? Ftp_NgayThuDat { get; set; }
 }

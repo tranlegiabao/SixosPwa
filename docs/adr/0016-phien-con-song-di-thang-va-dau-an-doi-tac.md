@@ -1,7 +1,6 @@
 # 0016 — Phiên còn sống thì đi thẳng, và bàn giao đòi dấu ấn của đối tác
 
-- **Trạng thái:** Đã chấp nhận
-- **Ngày:** 2026-08-27
+- **Tác giả:** Nam · **Ngày:** 2026-08-27 · **Trạng thái:** Đã chấp nhận
 - **Bối cảnh liên quan:** [0014](0014-co-so-ub-dung-man-cua-khach.md) — quyết định này gỡ hai ngõ cụt mà
   0014 để lại. [0015](0015-phan-hoi-doi-tac-phai-co-statuscode-200.md) — đường tự động dưới đây **chỉ an
   toàn khi có 0015**; thiếu nó thì một trang HTML kèm HTTP 200 sẽ bị đọc thành "mật khẩu đúng".

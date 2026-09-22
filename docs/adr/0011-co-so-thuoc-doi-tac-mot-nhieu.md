@@ -1,5 +1,7 @@
 # 0011 — Cơ sở thuộc đối tác theo quan hệ một–nhiều
 
+- **Tác giả:** Nam · **Ngày:** 2026-08-25 · **Trạng thái:** Đã bị thay thế bởi ADR 0036
+
 > 🔴 **ĐÃ BỊ THAY THẾ bởi ADR 0036** (2026-09-19, đợt 1B).
 > Bảng `DM_DoiTac` đã bị bỏ ở đợt 1B; khái niệm còn lại là cột phẳng `DM_CSKCB.TenCongTy`.
 > Xem [0036](0036-ho-so-la-cap-nguoi-x-co-so.md). Giữ file này để đọc lại bối cảnh cũ.

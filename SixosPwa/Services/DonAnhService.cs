@@ -6,24 +6,24 @@ namespace SixosPwa.Services;
 
 public interface IDonAnhService
 {
-    /// <summary>Anh cu bi thay bang anh moi (logo, anh quang cao).</summary>
+    /// <summary>Ảnh cũ bị thay bằng ảnh mới (logo, ảnh quảng cáo).</summary>
     Task DonAsync(string? urlCu, string? urlMoi);
 
-    /// <summary>Anh bien mat khoi mot ban HTML sau khi admin sua noi dung.</summary>
+    /// <summary>Ảnh biến mất khỏi một bản HTML sau khi admin sửa nội dung.</summary>
     Task DonTheoHtmlAsync(string? htmlCu, string? htmlMoi);
 }
 
 /// <summary>
-/// Xoa anh khong con ai dung tren kho FTP.
+/// Xóa ảnh không còn ai dùng trên kho FTP.
 ///
-/// BA HANG RAO, khong co ngoai le nao:
-///  1. Chi xoa duong dan quy duoc ra kho cua minh (KhoAnh.DuongDanFtpTuUrl tra
-///     null cho link http(s) admin dan vao, cho duong dan /static/... cu, va cho
-///     moi thu cua HisSoft tren FTP dung chung).
-///  2. Chi xoa khi khong con dong nao trong ba bang tro toi tep do.
-///  3. Chi duoc goi SAU KHI thu tuc luu da thanh cong — xem ghi chu ConAiDungAsync.
+/// BA HÀNG RÀO, không có ngoại lệ nào:
+///  1. Chỉ xóa đường dẫn quy được ra kho của mình (KhoAnh.DuongDanFtpTuUrl trả
+///     null cho link http(s) admin dán vào, cho đường dẫn /static/... cũ, và cho
+///     mọi thứ của HisSoft trên FTP dùng chung).
+///  2. Chỉ xóa khi không còn dòng nào trong ba bảng trỏ tới tệp đó.
+///  3. Chỉ được gọi SAU KHI thủ tục lưu đã thành công — xem ghi chú ConAiDungAsync.
 ///
-/// FTP hong thi chi ghi log: DB da dung roi, cai con lai chi la mot tep mo coi.
+/// FTP hỏng thì chỉ ghi log: DB đã đúng rồi, cái còn lại chỉ là một tệp mồ côi.
 /// </summary>
 public sealed class DonAnhService : IDonAnhService
 {
@@ -67,12 +67,12 @@ public sealed class DonAnhService : IDonAnhService
 
     private async Task XoaNeuKhongAiDungAsync(string url)
     {
-        // Hang rao 1.
+        // Hàng rào 1.
         var duongDanFtp = KhoAnh.DuongDanFtpTuUrl(url);
         var tenTep = KhoAnh.TenTepTuUrl(url);
         if (duongDanFtp == null || tenTep == null) return;
 
-        // Hang rao 2.
+        // Hàng rào 2.
         if (await ConAiDungAsync(tenTep))
         {
             _logger.LogInformation("Giu lai {Url}: van con dong khac tro toi tep nay.", url);
@@ -87,17 +87,16 @@ public sealed class DonAnhService : IDonAnhService
     }
 
     /// <summary>
-    /// Do cheo moi bang co the tro toi mot tep anh.
+    /// Dò chéo mọi bảng có thể trỏ tới một tệp ảnh.
     ///
-    /// KHONG can tru dong vua luu: dich vu nay chi chay SAU KHI thu tuc luu da
-    /// thanh cong, nen dong do trong DB da mang gia tri MOI roi — anh cu tu no
-    /// khong con khop nua.
+    /// KHÔNG cần trừ dòng vừa lưu: dịch vụ này chỉ chạy SAU KHI thủ tục lưu đã
+    /// thành công, nên dòng đó trong DB đã mang giá trị MỚI rồi — ảnh cũ tự nó
+    /// không còn khớp nữa.
     ///
-    /// Do theo TEN TEP chu khong theo ca URL, va do ca dang da ma hoa: neu
-    /// TinyMCE co ma hoa khoang trang thanh %20 khi ghi lai HTML thi so theo URL
-    /// tho se truot, ma truot o day nghia la XOA NHAM tep con nguoi khac dung.
-    /// Do theo ten thi cung lam nhieu nhat la giu lai mot tep thua — huong sai
-    /// an toan.
+    /// Dò theo TÊN TỆP chứ không theo cả URL, và dò cả dạng đã mã hóa: nếu
+    /// TinyMCE có mã hóa khoảng trắng thành %20 khi ghi lại HTML thì so theo URL
+    /// thô sẽ trượt, mà trượt ở đây nghĩa là XÓA NHẦM tệp còn người khác dùng.
+    /// Dò theo tên thì cùng lắm là giữ lại một tệp thừa — hướng sai an toàn.
     /// </summary>
     private async Task<bool> ConAiDungAsync(string tenTep)
     {
@@ -108,9 +107,9 @@ public sealed class DonAnhService : IDonAnhService
 
         foreach (var ten in dang)
         {
-            // Sau dot A chi con HAI bang: anh bia + logo + anh quang cao deu nam
-            // thang tren DM_CSKCB (bang DM_CSKCB_QuangCao da bi xoa, cot Img doi
-            // ten thanh AnhBia).
+            // Sau đợt A chỉ còn HAI bảng: ảnh bìa + logo + ảnh quảng cáo đều nằm
+            // thẳng trên DM_CSKCB (bảng DM_CSKCB_QuangCao đã bị xóa, cột Img đổi
+            // tên thành AnhBia).
             if (await _db.DMCSKCBs.AsNoTracking()
                     .AnyAsync(x => (x.Logo != null && x.Logo.Contains(ten))
                                 || (x.AnhBia != null && x.AnhBia.Contains(ten))
@@ -134,11 +133,11 @@ public sealed class DonAnhService : IDonAnhService
         {
             var nguon = System.Net.WebUtility.HtmlDecode(khop.Groups[1].Value).Trim();
 
-            // Go ma hoa URL: TinyMCE co the ghi lai src thanh /anh/img_nd/a%20b.jpg.
-            // Khong go thi duong dan FTP dung sai ten va lenh xoa truot im lang.
+            // Gỡ mã hóa URL: TinyMCE có thể ghi lại src thành /anh/img_nd/a%20b.jpg.
+            // Không gỡ thì đường dẫn FTP dùng sai tên và lệnh xóa trượt im lặng.
             if (nguon.Contains('%')) nguon = Uri.UnescapeDataString(nguon);
 
-            // Chi giu thu quy duoc ra kho cua minh; con lai bo qua tu day cho re.
+            // Chỉ giữ thứ quy được ra kho của mình; còn lại bỏ qua từ đây cho rẻ.
             if (KhoAnh.DuongDanFtpTuUrl(nguon) != null)
                 ket.Add(nguon);
         }

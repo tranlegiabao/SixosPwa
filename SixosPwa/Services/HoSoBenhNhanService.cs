@@ -4,7 +4,7 @@ using SixosPwa.Models;
 
 namespace SixosPwa.Services;
 
-/// <summary>Mot dong o man *Ho so cua toi*.</summary>
+/// <summary>Một dòng ở màn *Hồ sơ của tôi*.</summary>
 public sealed record HoSoCuaToi(
     long IdBenhNhan,
     string TenBN,
@@ -17,10 +17,10 @@ public sealed record HoSoCuaToi(
     string? GioiTinh = null,
     int SoMaDaNoi = 0);
 
-/// <summary>Mot ma da noi, hien trong man *Sua ho so* kem nut *Go noi*.</summary>
+/// <summary>Một mã đã nối, hiện trong màn *Sửa hồ sơ* kèm nút *Gỡ nối*.</summary>
 public sealed record MaDaNoi(long IdBenhNhan, string MaBN, DateTime? LanKhamCuoi);
 
-/// <summary>Du lieu do vao man *Sua ho so*.</summary>
+/// <summary>Dữ liệu đổ vào màn *Sửa hồ sơ*.</summary>
 public sealed record HoSoDeSua(
     long IdBenhNhan,
     string TenBN,
@@ -32,21 +32,21 @@ public sealed record HoSoDeSua(
     List<MaDaNoi> DanhSachMa);
 
 /// <summary>
-/// Ket cuc cua mot lan LUU ho so — *Noi ho so* xay ra ngay trong do (ADR 0024).
-/// Ba loi ra, va man phai noi duoc ca ba:
+/// Kết cục của một lần LƯU hồ sơ — *Nối hồ sơ* xảy ra ngay trong đó (ADR 0024).
+/// Ba lối ra, và màn phải nói được cả ba:
 /// </summary>
 public enum KetCucNoi
 {
-    /// <summary>Khong hoi HIS (co so chua noi), hoac hoi roi ma khong ai khop.</summary>
+    /// <summary>Không hỏi HIS (cơ sở chưa nối), hoặc hỏi rồi mà không ai khớp.</summary>
     KhongCoGi,
 
-    /// <summary>*Tang 1* — khop du bon o voi CCCD hop le => da gan im lang.</summary>
+    /// <summary>*Tầng 1* — khớp đủ bốn ô với CCCD hợp lệ => đã gán im lặng.</summary>
     DaGanImLang,
 
-    /// <summary>*Tang 2* — co ung vien nhung chua chac => cho benh nhan xac nhan tay.</summary>
+    /// <summary>*Tầng 2* — có ứng viên nhưng chưa chắc => chờ bệnh nhân xác nhận tay.</summary>
     ChoXacNhan,
 
-    /// <summary>Da noi nhung HIS khong tra loi luc nay.</summary>
+    /// <summary>Đã nối nhưng HIS không trả lời lúc này.</summary>
     ChuaHoiDuocCoSo
 }
 
@@ -61,28 +61,28 @@ public sealed record KetQuaLuuHoSo(
 public interface IHoSoBenhNhanService
 {
     /// <summary>
-    /// 🔴 Tu dot 1B khong con tra ID tai khoan (benh nhan khong con tai khoan).
-    /// Tra <c>true</c> khi so nay CO LOI VAO tai co so dang xem — dung luat C7b,
-    /// cung cau hoi ma man dang nhap hoi. Xem ADR 0027 (da dao) va ADR 0034.
+    /// 🔴 Từ đợt 1B không còn trả ID tài khoản (bệnh nhân không còn tài khoản).
+    /// Trả <c>true</c> khi số này CÓ LỐI VÀO tại cơ sở đang xem — đúng luật C7b,
+    /// cùng câu hỏi mà màn đăng nhập hỏi. Xem ADR 0027 (đã đảo) và ADR 0040.
     /// </summary>
     Task<bool> CoLoiVaoAsync(string sdt, string? maCoSo);
 
     Task<List<HoSoCuaToi>> LayDanhSachAsync(string sdt, string? maCoSo, string? cccdPhien, long? idDangChon);
 
     /// <summary>
-    /// CHI DUNG CHO LUONG QUET QR PHIEU KHAM. Khi <c>MOT_HO_SO</c> bat ma quet xong
-    /// van chua truy ra ho so (khong co MaBN o co so, CCCD khong khop), tra ve ho so
-    /// ma man *Ho so cua toi* se hien — de mo san bang claim <c>HoSoDangChon</c> va
-    /// vao thang <c>/benh-nhan</c>, khong bat nguoi quet chon lai.
+    /// CHỈ DÙNG CHO LUỒNG QUÉT QR PHIẾU KHÁM. Khi <c>MOT_HO_SO</c> bật mà quét xong
+    /// vẫn chưa truy ra hồ sơ (không có MaBN ở cơ sở, CCCD không khớp), trả về hồ sơ
+    /// mà màn *Hồ sơ của tôi* sẽ hiện — để mở sẵn bằng claim <c>HoSoDangChon</c> và
+    /// vào thẳng <c>/benh-nhan</c>, không bắt người quét chọn lại.
     ///
     /// <para>
-    /// Tra <c>null</c> khi <c>MOT_HO_SO</c> TAT: luc do tai khoan duoc phep giu nhieu
-    /// ho so nen phai de nguoi dung tu chon — lay bua mot cai la bug tham lang.
+    /// Trả <c>null</c> khi <c>MOT_HO_SO</c> TẮT: lúc đó tài khoản được phép giữ nhiều
+    /// hồ sơ nên phải để người dùng tự chọn — lấy bừa một cái là bug thầm lặng.
     /// </para>
     /// <para>
-    /// Dung DUNG MOT luat chon voi <see cref="LayDanhSachAsync"/>: hai noi lech luat
-    /// thi man *Ho so cua toi* hien mot nguoi con <c>/benh-nhan</c> doc du lieu cua
-    /// nguoi khac.
+    /// Dùng ĐÚNG MỘT luật chọn với <see cref="LayDanhSachAsync"/>: hai nơi lệch luật
+    /// thì màn *Hồ sơ của tôi* hiện một người còn <c>/benh-nhan</c> đọc dữ liệu của
+    /// người khác.
     /// </para>
     /// </summary>
     Task<long?> LayIdHoSoMoSanKhiQuetAsync(string? sdt, string? maCoSo, string? cccdPhien);
@@ -95,21 +95,21 @@ public interface IHoSoBenhNhanService
         string sdtPhien, string? maCoSo, string cccd, string hoTen, DateTime? ngaySinh,
         string? sdt, string? gioiTinh);
 
-    /// <summary>Do du lieu vao man *Sua ho so*; <c>null</c> khi ho so khong thuoc tai khoan.</summary>
+    /// <summary>Đổ dữ liệu vào màn *Sửa hồ sơ*; <c>null</c> khi hồ sơ không thuộc tài khoản.</summary>
     Task<HoSoDeSua?> LayDeSuaAsync(long idBenhNhan, string sdt, string? maCoSo);
 
     Task<KetQuaLuuHoSo> SuaAsync(
         long idBenhNhan, string sdtPhien, string? maCoSo, string cccd, string hoTen,
         DateTime? ngaySinh, string? sdt, string? gioiTinh);
 
-    /// <summary>*Tang 2* — benh nhan chon DUNG MOT ma la cua minh roi bam nhan.</summary>
+    /// <summary>*Tầng 2* — bệnh nhân chọn ĐÚNG MỘT mã là của mình rồi bấm nhận.</summary>
     Task<(bool ThanhCong, string ThongBao, int SoMaVuaGan)> XacNhanNoiAsync(
         long idBenhNhan, string sdtPhien, string? maCoSo, string? maBN);
 
     /// <summary>
-    /// Trong danh sach ma dua vao, ma nao DA co ho so khac tai co so nay nhan.
-    /// Man *Sua ho so* dung de KHOA nhung ma do lai: nhan lai la doi benh an cua
-    /// nguoi khac, phai qua Support thao ra truoc.
+    /// Trong danh sách mã đưa vào, mã nào ĐÃ có hồ sơ khác tại cơ sở này nhận.
+    /// Màn *Sửa hồ sơ* dùng để KHÓA những mã đó lại: nhận lại là đổi bệnh án của
+    /// người khác, phải qua Support tháo ra trước.
     /// </summary>
     Task<List<string>> LayMaDaCoChuAsync(
         long idBenhNhan, string? maCoSo, IEnumerable<string> maBN);
@@ -118,11 +118,11 @@ public interface IHoSoBenhNhanService
 }
 
 /// <summary>
-/// *Ho so cua toi* — mot tai khoan quan nhieu con nguoi (ADR 0019).
+/// *Hồ sơ của tôi* — một tài khoản quản nhiều con người (ADR 0019).
 ///
 /// <para>
-/// Bam khuon <c>DangKyOnlineUB/QL_HoSoBenhNhanServices</c> dang chay that: liet
-/// ke ho so cua tai khoan, cho tu tao, va doi ho so bang cach PHAT LAI claim.
+/// Bám khuôn <c>DangKyOnlineUB/QL_HoSoBenhNhanServices</c> đang chạy thật: liệt
+/// kê hồ sơ của tài khoản, cho tự tạo, và đổi hồ sơ bằng cách PHÁT LẠI claim.
 /// </para>
 /// </summary>
 public class HoSoBenhNhanService : IHoSoBenhNhanService
@@ -147,8 +147,8 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
     }
 
     /// <summary>
-    /// Luat C7b: co loi vao = co dong <c>DM_BenhNhan</c> mang so nay TAI CO SO NAY.
-    /// Thay cho phep hoi <c>HT_TaiKhoan</c> cu (ADR 0027 da dao).
+    /// Luật C7b: có lối vào = có dòng <c>DM_BenhNhan</c> mang số này TẠI CƠ SỞ NÀY.
+    /// Thay cho phép hỏi <c>HT_TaiKhoan</c> cũ (ADR 0027 đã đảo).
     /// </summary>
     public async Task<bool> CoLoiVaoAsync(string sdt, string? maCoSo)
     {
@@ -157,32 +157,32 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
         var idCoSo = await LayIdCoSoAsync(maCoSo);
         if (idCoSo is null) return false;
 
-        // 🔴 Khop ca Email: moi cau doc khac trong cong (man tai lieu, DemHoSoTaiCoSo,
-        // TaiLieuApiController) deu khop `SDT == dinhDanh || Email == dinhDanh`.
-        // Chi khop SDT o rieng cong chan nay la nguoi dang nhap bang EMAIL bi tu
-        // choi o cua, trong khi cac man khac van hien du lieu cua ho.
+        // 🔴 Khớp cả Email: mọi câu đọc khác trong cổng (màn tài liệu, DemHoSoTaiCoSo,
+        // TaiLieuApiController) đều khớp `SDT == dinhDanh || Email == dinhDanh`.
+        // Chỉ khớp SDT ở riêng cổng chặn này là người đăng nhập bằng EMAIL bị từ
+        // chối ở cửa, trong khi các màn khác vẫn hiện dữ liệu của họ.
         return await _db.BenhNhans.AsNoTracking()
             .AnyAsync(p => (p.SDT == sdt || p.Email == sdt) && p.IdCoSo == idCoSo.Value);
     }
 
     /// <summary>
-    /// Cac ho so ma so dien thoai nay dang giu TAI CO SO DANG XEM (luat C2).
+    /// Các hồ sơ mà số điện thoại này đang giữ TẠI CƠ SỞ ĐANG XEM (luật C2).
     ///
     /// <para>
-    /// 🔴 Pham vi la cap <c>(SDT, IdCoSo)</c>, khong con la <c>IdTaiKhoan</c>.
-    /// Moi nguoi hien dung MOT lan — truoc 1B mot nguoi kham N co so thi ra N dong
-    /// trung ten.
+    /// 🔴 Phạm vi là cặp <c>(SDT, IdCoSo)</c>, không còn là <c>IdTaiKhoan</c>.
+    /// Mỗi người hiện đúng MỘT lần — trước 1B một người khám N cơ sở thì ra N dòng
+    /// trùng tên.
     /// </para>
     /// <para>
-    /// 🔴 Luon loc <c>IdCoSo != null</c>: dong neo la trang thai qua do, khong
-    /// duoc hien o man nao (tieu chi nghiem thu §10 muc 10).
+    /// 🔴 Luôn lọc <c>IdCoSo != null</c>: dòng neo là trạng thái quá độ, không
+    /// được hiện ở màn nào (tiêu chí nghiệm thu §10 mục 10).
     /// </para>
     /// <para>
-    /// Toggle <c>MOT_HO_SO</c> (C4/C5-R2): bat thi chi tra DUNG MOT ho so, chon theo
-    /// thu tu <c>idDangChon</c> -> CCCD cua phien -> dong dau. Khong con dung dau o
-    /// CCCD: dang nhap OTP thuong khong mang CCCD, va bam *Chon* cung khong doi claim
-    /// Cccd, nen lay CCCD lam tieu chi dau la tra sai nguoi. Van khong CHAN khi ca ba
-    /// deu truot — chan o day la khoa chet nguoi dung that.
+    /// Toggle <c>MOT_HO_SO</c> (C4/C5-R2): bật thì chỉ trả ĐÚNG MỘT hồ sơ, chọn theo
+    /// thứ tự <c>idDangChon</c> -> CCCD của phiên -> dòng đầu. Không còn dừng đầu ở
+    /// CCCD: đăng nhập OTP thường không mang CCCD, và bấm *Chọn* cũng không đổi claim
+    /// Cccd, nên lấy CCCD làm tiêu chí đầu là trả sai người. Vẫn không CHẶN khi cả ba
+    /// đều trượt — chặn ở đây là khóa chết người dùng thật.
     /// </para>
     /// </summary>
     public async Task<List<HoSoCuaToi>> LayDanhSachAsync(
@@ -202,18 +202,18 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
 
         if (await _config.KiemTraHieuLucAsync("MOT_HO_SO") && nguoi.Count > 1)
         {
-            // 🔴 Ho so DANG CHON di truoc CCCD cua phien. Thieu ve nay thi hai duong
-            // vao deu tra sai nguoi: (1) dang nhap OTP thuong khong mang CCCD => roi
-            // xuong nguoi[0] tuc ho so co Id nho nhat, khong lien quan gi toi nguoi
-            // dang dung; (2) bam *Chon* sang ho so khac thi PhatLaiClaimAsync chi thay
-            // claim HoSoDangChon va GIU NGUYEN claim Cccd cu => man nay hien mot ho so
-            // trong khi /benh-nhan doc du lieu cua ho so khac.
+            // 🔴 Hồ sơ ĐANG CHỌN đi trước CCCD của phiên. Thiếu vế này thì hai đường
+            // vào đều trả sai người: (1) đăng nhập OTP thường không mang CCCD => rơi
+            // xuống nguoi[0] tức hồ sơ có Id nhỏ nhất, không liên quan gì tới người
+            // đang dùng; (2) bấm *Chọn* sang hồ sơ khác thì PhatLaiClaimAsync chỉ thay
+            // claim HoSoDangChon và GIỮ NGUYÊN claim Cccd cũ => màn này hiện một hồ sơ
+            // trong khi /benh-nhan đọc dữ liệu của hồ sơ khác.
             nguoi = new List<BenhNhan> { ChonMotHoSo(nguoi, cccdPhien, idDangChon) };
         }
 
         var id = nguoi.Select(p => p.Id).ToList();
 
-        // Co du lieu kham roi thi khong cho xoa — xoa la mat du lieu y te that.
+        // Có dữ liệu khám rồi thì không cho xóa — xóa là mất dữ liệu y tế thật.
         var coTaiLieu = await _db.TaiLieuBenhNhans.AsNoTracking()
             .Where(t => t.IdBenhNhan != null && id.Contains(t.IdBenhNhan.Value))
             .Select(t => t.IdBenhNhan!.Value).Distinct().ToListAsync();
@@ -234,14 +234,14 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
                      && !coTaiLieu.Contains(p.Id)
                      && !coDotKham.Contains(p.Id),
             GioiTinh: p.GioiTinh,
-            // Mot dong = mot ho so tai mot co so => nhieu nhat mot ma (ADR 0032).
+            // Một dòng = một hồ sơ tại một cơ sở => nhiều nhất một mã (ADR 0032).
             SoMaDaNoi: p.MaBN != null ? 1 : 0)).ToList();
     }
 
     /// <summary>
-    /// 🔴 Cong chan truoc khi phat lai claim *ho so dang chon*. Thieu phep kiem
-    /// nay thi go ID ho so nguoi khac vao la xem duoc benh an cua ho — dung loai
-    /// lo hong ma duong doc tai lieu tung mac.
+    /// 🔴 Cổng chặn trước khi phát lại claim *hồ sơ đang chọn*. Thiếu phép kiểm
+    /// này thì gõ ID hồ sơ người khác vào là xem được bệnh án của họ — đúng loại
+    /// lỗ hổng mà đường đọc tài liệu từng mắc.
     /// </summary>
     public async Task<bool> HoSoThuocTaiKhoanAsync(long idBenhNhan, string sdt, string? maCoSo)
     {
@@ -253,18 +253,18 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
     }
 
     /// <summary>
-    /// Nguoi dung TU GO tao mot ho so moi (ADR 0019 muc 1) — con dang ky ho me,
-    /// khong doi co so phai co san nguoi do.
+    /// Người dùng TỰ GÕ tạo một hồ sơ mới (ADR 0019 mục 1) — con đăng ký hộ mẹ,
+    /// không đòi cơ sở phải có sẵn người đó.
     ///
     /// <para>
-    /// 🔴 Tu Dot 4, LUU LA NOI (ADR 0024 ve 1): khong con nut *Noi ho so* nao tren
-    /// giao dien. Benh nhan khong phai tu biet minh da tung kham o co so nay hay
-    /// chua — do la cau chi HIS tra loi duoc.
+    /// 🔴 Từ Đợt 4, LƯU LÀ NỐI (ADR 0024 vế 1): không còn nút *Nối hồ sơ* nào trên
+    /// giao diện. Bệnh nhân không phải tự biết mình đã từng khám ở cơ sở này hay
+    /// chưa — đó là câu chỉ HIS trả lời được.
     /// </para>
     /// <para>
-    /// "Ai khai truoc giu CCCD": thu tuc tra <c>ResultCode 3</c> kem duong ra khi
-    /// CCCD da thuoc tai khoan khac. Loi do hien nguyen van cho nguoi dung —
-    /// no la loi CO ICH, khong duoc nuot.
+    /// "Ai khai trước giữ CCCD": thủ tục trả <c>ResultCode 3</c> kèm đường ra khi
+    /// CCCD đã thuộc tài khoản khác. Lỗi đó hiện nguyên văn cho người dùng —
+    /// nó là lỗi CÓ ÍCH, không được nuốt.
     /// </para>
     /// </summary>
     public async Task<KetQuaLuuHoSo> TaoAsync(
@@ -280,9 +280,9 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
         if (string.IsNullOrWhiteSpace(hoTen))
             return new KetQuaLuuHoSo(false, "Chưa nhập họ tên.", 0);
 
-        // 🔴 Cung luat voi SuaAsync: SDT la thu dung de DANG NHAP nen BAT BUOC. Bat
-        // o mot cua ma tha o cua kia thi khong phai la bat buoc — nguoi dung tao ho
-        // so khong so, roi den lan sua dau tien moi bi chan.
+        // 🔴 Cùng luật với SuaAsync: SDT là thứ dùng để ĐĂNG NHẬP nên BẮT BUỘC. Bắt
+        // ở một cửa mà thả ở cửa kia thì không phải là bắt buộc — người dùng tạo hồ
+        // sơ không số, rồi đến lần sửa đầu tiên mới bị chặn.
         if (string.IsNullOrWhiteSpace(sdt))
             return new KetQuaLuuHoSo(false, "Chưa nhập số điện thoại.", 0);
 
@@ -303,9 +303,9 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
         if (!luu.Succeeded)
             return new KetQuaLuuHoSo(false, luu.Message ?? "Không tạo được hồ sơ.", 0);
 
-        // Gan ho so vao co so cua phien de no hien ngay o trang benh nhan. Khong
-        // co ma co so (phien la thuong) thi van tao duoc CON NGUOI — ho so tai co
-        // so se sinh khi nguoi dung mo trang cua co so do.
+        // Gán hồ sơ vào cơ sở của phiên để nó hiện ngay ở trang bệnh nhân. Không
+        // có mã cơ sở (phiên lạ thường) thì vẫn tạo được CON NGƯỜI — hồ sơ tại cơ
+        // sở sẽ sinh khi người dùng mở trang của cơ sở đó.
         var idCoSo = await LayIdCoSoAsync(maCoSo);
 
         if (idCoSo is not null)
@@ -325,11 +325,11 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
 
         if (nguoi is null) return null;
 
-        // Chi liet ke ma TAI CO SO DANG XEM. Ma o co so khac khong hien o day: man
-        // nay noi ve quan he giua nguoi nay va CO SO NAY, tron vao la nguoi dung
-        // khong hieu minh dang go cai gi.
-        // Mot dong = mot ho so tai mot co so => nhieu nhat MOT ma (ADR 0032).
-        // Giu kieu danh sach de man *Sua ho so* khong phai viet lai.
+        // Chỉ liệt kê mã TẠI CƠ SỞ ĐANG XEM. Mã ở cơ sở khác không hiện ở đây: màn
+        // này nói về quan hệ giữa người này và CƠ SỞ NÀY, trộn vào là người dùng
+        // không hiểu mình đang gõ cái gì.
+        // Một dòng = một hồ sơ tại một cơ sở => nhiều nhất MỘT mã (ADR 0032).
+        // Giữ kiểu danh sách để màn *Sửa hồ sơ* không phải viết lại.
         var danhSachMa = nguoi.MaBN is null
             ? new List<MaDaNoi>()
             : new List<MaDaNoi>
@@ -352,9 +352,9 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
     }
 
     /// <summary>
-    /// Man *Sua ho so* — thu duy nhat cuu duoc nhom ho so CHINH CHU (14/19 tai
-    /// khoan dang mang ten la SO DIEN THOAI): ho so cua ho tu de ra luc dang ky
-    /// bang OTP, khong bao gio di qua man *Them ho so*.
+    /// Màn *Sửa hồ sơ* — thứ duy nhất cứu được nhóm hồ sơ CHÍNH CHỦ (14/19 tài
+    /// khoản đang mang tên là SỐ ĐIỆN THOẠI): hồ sơ của họ tự đẻ ra lúc đăng ký
+    /// bằng OTP, không bao giờ đi qua màn *Thêm hồ sơ*.
     /// </summary>
     public async Task<KetQuaLuuHoSo> SuaAsync(
         long idBenhNhan, string sdtPhien, string? maCoSo, string cccd, string hoTen,
@@ -369,9 +369,9 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
         if (string.IsNullOrWhiteSpace(hoTen))
             return new KetQuaLuuHoSo(false, "Chưa nhập họ tên.", idBenhNhan);
 
-        // 🔴 SDT BAT BUOC: no la thu dung de DANG NHAP vao cong. Ho so khong co so
-        // thi den luc can vao lai la khong con duong nao. Chan o day chu khong chi
-        // dat `required` tren o input — thuoc tinh do go bang DevTools la xong.
+        // 🔴 SDT BẮT BUỘC: nó là thứ dùng để ĐĂNG NHẬP vào cổng. Hồ sơ không có số
+        // thì đến lúc cần vào lại là không còn đường nào. Chặn ở đây chứ không chỉ
+        // đặt `required` trên ô input — thuộc tính đó gỡ bằng DevTools là xong.
         if (string.IsNullOrWhiteSpace(sdt))
             return new KetQuaLuuHoSo(false, "Chưa nhập số điện thoại.", idBenhNhan);
 
@@ -396,8 +396,8 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
         if (!ketQua.Succeeded)
             return new KetQuaLuuHoSo(false, ketQua.Message ?? "Không lưu được hồ sơ.", idBenhNhan);
 
-        // Dong da la ho so TAI CO SO roi (KEEP-ID, dot 1B) nen khong con buoc
-        // "tao dong tu khai" nao o day nua.
+        // Dòng đã là hồ sơ TẠI CƠ SỞ rồi (KEEP-ID, đợt 1B) nên không còn bước
+        // "tạo dòng tự khai" nào ở đây nữa.
         var idCoSo = idCoSoPhien;
 
         var noi = await NoiKhiLuuAsync(idBenhNhan, idCoSo, cccd, hoTen, ngaySinh, gioiTinh);
@@ -406,24 +406,24 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // *Noi ho so* — hai tang (ADR 0024 ve 2)
+    // *Nối hồ sơ* — hai tầng (ADR 0024 vế 2)
     // ─────────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Hoi HIS mot lan roi chia hai loi ra:
+    /// Hỏi HIS một lần rồi chia hai lối ra:
     /// <list type="bullet">
-    ///   <item><b>Tang 1</b> — dong co <c>cccdKhop</c> (HIS da xac nhan CCCD ben goi
-    ///   HOP LE va TRUNG KHIT) => gan im lang.</item>
-    ///   <item><b>Tang 2</b> — con lai => tra ve cho man hien danh sach, KHONG gan
-    ///   gi cho toi khi co nguoi bam.</item>
+    ///   <item><b>Tầng 1</b> — dòng có <c>cccdKhop</c> (HIS đã xác nhận CCCD bên gọi
+    ///   HỢP LỆ và TRÙNG KHỚP) => gán im lặng.</item>
+    ///   <item><b>Tầng 2</b> — còn lại => trả về cho màn hiện danh sách, KHÔNG gán
+    ///   gì cho tới khi có người bấm.</item>
     /// </list>
-    /// Ranh gioi dat dung cho <b>348 nhom</b> trung ho ten + ngay sinh + gioi tinh
-    /// ma CCCD hop le KHAC NHAU: moi ca ay roi tang 2.
+    /// Ranh giới đặt đúng cho <b>348 nhóm</b> trùng họ tên + ngày sinh + giới tính
+    /// mà CCCD hợp lệ KHÁC NHAU: mọi ca ấy rơi tầng 2.
     ///
     /// <para>
-    /// 🔴 Khong bao gio lam that bai ca lan LUU. Ho so da luu xong roi; noi duoc
-    /// hay khong la chuyen sau do. HIS chet ma keo theo "khong sua duoc ten" thi
-    /// dung la lay cai phu de pha cai chinh.
+    /// 🔴 Không bao giờ làm thất bại cả lần LƯU. Hồ sơ đã lưu xong rồi; nối được
+    /// hay không là chuyện sau đó. HIS chết mà kéo theo "không sửa được tên" thì
+    /// đúng là lấy cái phụ để phá cái chính.
     /// </para>
     /// </summary>
     private async Task<KetQuaLuuHoSo> NoiKhiLuuAsync(
@@ -433,12 +433,12 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
         if (idCoSo is null || ngaySinh is null || string.IsNullOrWhiteSpace(gioiTinh))
             return new KetQuaLuuHoSo(true, "OK", idBenhNhan, KetCucNoi.KhongCoGi);
 
-        // 🔴 DA NOI ROI THI DUNG LAI — khong hoi HIS, khong doi gi. Mot ho so giu
-        // DUNG MOT ma (luat nghiep vu chot 09/09: MaBN la danh tinh cua benh nhan
-        // tai co so, nhieu ma cung mot nguoi la du lieu nhap lon). Truoc day moi
-        // lan LUU deu tra lai roi ghi de, nen ma dang noi TU DOI sang ma khac ma
-        // khong mot dau hieu nao — do la doi benh an cua nguoi ta sau lung ho.
-        // Muon doi thi bam *Go noi* truoc, dung nhu man *Sua ho so* dang huong dan.
+        // 🔴 ĐÃ NỐI RỒI THÌ DỪNG LẠI — không hỏi HIS, không đổi gì. Một hồ sơ giữ
+        // ĐÚNG MỘT mã (luật nghiệp vụ chốt 09/09: MaBN là danh tính của bệnh nhân
+        // tại cơ sở, nhiều mã cùng một người là dữ liệu nhập lộn). Trước đây mỗi
+        // lần LƯU đều tra lại rồi ghi đè, nên mã đang nối TỰ ĐỔI sang mã khác mà
+        // không một dấu hiệu nào — đó là đổi bệnh án của người ta sau lưng họ.
+        // Muốn đổi thì bấm *Gỡ nối* trước, đúng như màn *Sửa hồ sơ* đang hướng dẫn.
         var daNoiMa = await _db.BenhNhans.AsNoTracking()
             .AnyAsync(h => h.Id == idBenhNhan
                         && h.IdCoSo == idCoSo.Value
@@ -447,17 +447,17 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
         if (daNoiMa)
             return new KetQuaLuuHoSo(true, "OK", idBenhNhan, KetCucNoi.KhongCoGi);
 
-        // 🔴 CHAN HAN duong noi cho ho so mang ma gia "khong co can cuoc" (chot user
-        // 10/09, ADR 0028). Thoat TRUOC khi hoi HIS, co y:
-        //   * khong hoi thi khong co danh sach ung vien nao de lo. Ke go ho ten +
-        //     ngay sinh + gioi tinh cua nguoi khac se khong thay gi het — ba o do in
-        //     tren moi toa thuoc nen chung KHONG phai bang chung danh tinh.
-        //   * do that tren PKDK_ThienNam: 11.533 ho so khong co can cuoc, trong do
-        //     2.717 nam trong 1.203 nhom trung ca ho ten + ngay sinh + gioi tinh.
-        //     Noi theo ba o do la giao benh an cho nguoi trung ten.
-        // Cai gia da biet va CHAP NHAN: nhom nay khong keo duoc benh an ve cong.
-        // Muon mo lai thi phai co duong "go dung Ma BN" (SPWA_TraCuuTheoMaBN ben HIS
-        // da san sang, co chan do 20 lan/15 phut) — chua lam.
+        // 🔴 CHẶN HẲN đường nối cho hồ sơ mang mã giả "không có căn cước" (chốt user
+        // 10/09, ADR 0028). Thoát TRƯỚC khi hỏi HIS, cố ý:
+        //   * không hỏi thì không có danh sách ứng viên nào để lộ. Kẻ gõ họ tên +
+        //     ngày sinh + giới tính của người khác sẽ không thấy gì hết — ba ô đó in
+        //     trên mọi toa thuốc nên chúng KHÔNG phải bằng chứng danh tính.
+        //   * đo thật trên PKDK_ThienNam: 11.533 hồ sơ không có căn cước, trong đó
+        //     2.717 nằm trong 1.203 nhóm trùng cả họ tên + ngày sinh + giới tính.
+        //     Nối theo ba ô đó là giao bệnh án cho người trùng tên.
+        // Cái giá đã biết và CHẤP NHẬN: nhóm này không kéo được bệnh án về cổng.
+        // Muốn mở lại thì phải có đường "gõ đúng Mã BN" (SPWA_TraCuuTheoMaBN bên HIS
+        // đã sẵn sàng, có chặn dồ 20 lần/15 phút) — chưa làm.
         if (LaMaGia(cccd))
             return new KetQuaLuuHoSo(true, "OK", idBenhNhan, KetCucNoi.KhongCoGi);
 
@@ -476,24 +476,24 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
         if (ungVien.Count == 0)
             return new KetQuaLuuHoSo(true, "OK", idBenhNhan, KetCucNoi.KhongCoGi);
 
-        // *Tang 1* chi con DUNG MOT truong hop: co so cap dung MOT ma, CCCD trung
-        // khit, va ma do CHUA co ho so nao khac nhan. Ra tu HAI ma tro len la KHONG
-        // duoc tu quyet, du CCCD khop het.
-        // 🔴 Nhanh "ma gia cung duoc tu gan" (them 10/09) DA BI GO: ho so mang ma gia
-        // khong con di toi day nua — bi chan tu tren, truoc ca luc hoi HIS.
+        // *Tầng 1* chỉ còn ĐÚNG MỘT trường hợp: cơ sở cấp đúng MỘT mã, CCCD trùng
+        // khớp, và mã đó CHƯA có hồ sơ nào khác nhận. Ra từ HAI mã trở lên là KHÔNG
+        // được tự quyết, dù CCCD khớp hết.
+        // 🔴 Nhánh "mã giả cũng được tự gán" (thêm 10/09) ĐÃ BỊ GỠ: hồ sơ mang mã giả
+        // không còn đi tới đây nữa — bị chặn từ trên, trước cả lúc hỏi HIS.
         if (ungVien.Count == 1 && ungVien[0].CccdKhop)
         {
-            // 🔴 CHI CCCD trung khit moi la yeu to xac thuc. Nhanh ma gia
-            // (11111111111 / 111111111111) noi duoc nho khop ba o danh tinh CONG KHAI,
-            // nen no KHONG duoc mo cua tai lieu: ai biet ho ten + ngay sinh + gioi tinh
-            // cua nguoi khac cung go ra duoc. Ho van xem duoc tom tat dot kham (tang 1
-            // cua ADR 0020), chi don thuoc + ket qua CLS la con dong.
+            // 🔴 CHỈ CCCD trùng khớp mới là yếu tố xác thực. Nhánh mã giả
+            // (11111111111 / 111111111111) nối được nhờ khớp ba ô danh tính CÔNG KHAI,
+            // nên nó KHÔNG được mở cửa tài liệu: ai biết họ tên + ngày sinh + giới tính
+            // của người khác cũng gõ ra được. Họ vẫn xem được tóm tắt đợt khám (tầng 1
+            // của ADR 0020), chỉ đơn thuốc + kết quả CLS là còn đóng.
             var so = await GanMotMaAsync(idBenhNhan, idCoSo.Value, ungVien[0].MaBN!,
                                          daXacThuc: ungVien[0].CccdKhop);
 
-            // so = 0 nghia la ma da co chu. KHONG duoc bao "da noi" (man se in ra o
-            // ma rong), cung KHONG duoc im lang: day xuong tang 2 de man khoa ma lai
-            // va chi duong sang Support.
+            // so = 0 nghĩa là mã đã có chủ. KHÔNG được báo "đã nối" (màn sẽ in ra ô
+            // mã rỗng), cũng KHÔNG được im lặng: đẩy xuống tầng 2 để màn khóa mã lại
+            // và chỉ đường sang Support.
             if (so > 0)
                 return new KetQuaLuuHoSo(true, "OK", idBenhNhan, KetCucNoi.DaGanImLang, so);
         }
@@ -504,8 +504,8 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
     public async Task<(bool ThanhCong, string ThongBao, int SoMaVuaGan)> XacNhanNoiAsync(
         long idBenhNhan, string sdtPhien, string? maCoSo, string? maBN)
     {
-        // 🔴 Cong chan. Ma di qua trinh duyet nen khong tin duoc: thieu phep nay
-        // thi go ID ho so nguoi khac vao la gan ma vao ho so cua ho.
+        // 🔴 Cổng chặn. Mã đi qua trình duyệt nên không tin được: thiếu phép này
+        // thì gõ ID hồ sơ người khác vào là gán mã vào hồ sơ của họ.
         if (!await HoSoThuocTaiKhoanAsync(idBenhNhan, sdtPhien, maCoSo))
             return (false, "Hồ sơ này không thuộc tài khoản của bạn.", 0);
 
@@ -517,10 +517,10 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
 
         if (ma.Length == 0) return (true, "OK", 0);
 
-        // 🔴 Cong chan thu hai cua luat "ma gia thi khong noi" (ADR 0028). NoiKhiLuuAsync
-        // da chan tu tren nen binh thuong khong ai toi day duoc voi ma gia — nhung
-        // action nay POST tran duoc: giu lai mot form cu, hoac doi CCCD ho so thanh ma
-        // gia sau khi danh sach ung vien da nam trong tay, la di vong duoc cong tren.
+        // 🔴 Cổng chặn thứ hai của luật "mã giả thì không nối" (ADR 0028). NoiKhiLuuAsync
+        // đã chặn từ trên nên bình thường không ai tới đây được với mã giả — nhưng
+        // action này POST trần được: giữ lại một form cũ, hoặc đổi CCCD hồ sơ thành mã
+        // giả sau khi danh sách ứng viên đã nằm trong tay, là đi vòng được cổng trên.
         var cccdHoSo = await _db.BenhNhans.AsNoTracking()
             .Where(x => x.Id == idBenhNhan)
             .Select(x => x.CCCD)
@@ -529,8 +529,8 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
         if (LaMaGia(cccdHoSo))
             return (false, "Hồ sơ chưa có số căn cước nên không nối được bệnh án. Bạn vui lòng bổ sung số căn cước, hoặc liên hệ bộ phận hỗ trợ của cơ sở.", 0);
 
-        // Cung cong chan voi NoiKhiLuuAsync: mot ho so DUNG MOT ma. Gui lai form
-        // cu (nut Back, bam hai lan) khong duoc de doi ma dang noi.
+        // Cùng cổng chặn với NoiKhiLuuAsync: một hồ sơ ĐÚNG MỘT mã. Gửi lại form
+        // cũ (nút Back, bấm hai lần) không được để đổi mã đang nối.
         var daNoiMa = await _db.BenhNhans.AsNoTracking()
             .AnyAsync(h => h.Id == idBenhNhan
                         && h.IdCoSo == idCoSo.Value
@@ -539,14 +539,14 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
         if (daNoiMa)
             return (false, "Hồ sơ này đã nối một mã rồi. Muốn đổi thì gỡ nối trước.", 0);
 
-        // Tang 2 giu nguyen hanh vi cu (mo cua) — siet cho nay la doi ca luong,
-        // phai co duong "go dung Ma BN de mo" cua ADR 0020 truoc, khong thi khoa
-        // chet nguoi dung that. Xem ADR 0028 muc "Con thieu".
+        // Tầng 2 giữ nguyên hành vi cũ (mở cửa) — siết chỗ này là đổi cả luồng,
+        // phải có đường "gõ đúng Mã BN để mở" của ADR 0020 trước, không thì khóa
+        // chết người dùng thật. Xem ADR 0028 mục "Còn thiếu".
         var so = await GanMotMaAsync(idBenhNhan, idCoSo.Value, ma, daXacThuc: true);
 
-        // 🔴 Ma da co ho so khac nhan thi DUNG HAN o day — cong khong tu thao ra
-        // duoc. Nhan lai la keo benh an dang thuoc ve nguoi khac sang minh; go nham
-        // thi ca hai ben deu mat. Phai qua bo phan ho tro cua co so.
+        // 🔴 Mã đã có hồ sơ khác nhận thì DỪNG HẲN ở đây — cổng không tự tháo ra
+        // được. Nhận lại là kéo bệnh án đang thuộc về người khác sang mình; gỡ nhầm
+        // thì cả hai bên đều mất. Phải qua bộ phận hỗ trợ của cơ sở.
         return so > 0
             ? (true, "OK", so)
             : (false, "Mã " + ma + " đã có hồ sơ khác nhận. Bạn cần liên hệ bộ phận hỗ trợ "
@@ -567,7 +567,7 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
         var idCoSo = await LayIdCoSoAsync(maCoSo);
         if (idCoSo is null) return new List<string>();
 
-        // "Chu" o day la ho so KHAC. Ma cua chinh ho so nay khong tinh la vuong.
+        // "Chủ" ở đây là hồ sơ KHÁC. Mã của chính hồ sơ này không tính là vướng.
         return await _db.BenhNhans.AsNoTracking()
             .Where(h => h.IdCoSo == idCoSo.Value
                      && h.MaBN != null
@@ -583,43 +583,43 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
         var idCoSo = await LayIdCoSoAsync(maCoSo);
         if (idCoSo is null) return (false, "Chưa xác định được cơ sở.");
 
-        // Moi phep chan nam trong thu tuc: khong phai ho so cua minh, hoac dong
-        // do von la ho so tu khai (khong co ma nao de go).
+        // Mọi phép chặn nằm trong thủ tục: không phải hồ sơ của mình, hoặc dòng
+        // đó vốn là hồ sơ tự khai (không có mã nào để gỡ).
         var ketQua = await _thuTuc.GoNoiAsync(idBenhNhan, sdt, idCoSo.Value);
         return (ketQua.Succeeded, ketQua.Message ?? "");
     }
 
     /// <summary>
-    /// Gan DUNG MOT ma vao ho so. Tra <c>1</c> neu gan duoc, <c>0</c> neu khong.
+    /// Gán ĐÚNG MỘT mã vào hồ sơ. Trả <c>1</c> nếu gán được, <c>0</c> nếu không.
     ///
     /// <para>
-    /// 🔴 KHONG nhan danh sach, va do la co y. Thu tuc <c>DM_BenhNhanCoSo_Save</c>
-    /// tra khoa theo <c>(IDBenhNhan, IDCoSo)</c> roi UPDATE, nen goi no nhieu lan
-    /// cho cung mot ho so chi GHI DE mot dong: vong lap cu bao "da noi N ma" trong
-    /// khi CSDL chi giu ma CUOI CUNG — mat im lang, do duoc ngay 09/09 (ma 111457
-    /// bien mat khi 100992 duoc gan de len). Mot ho so &lt;-&gt; mot ma.
+    /// 🔴 KHÔNG nhận danh sách, và đó là cố ý. Thủ tục <c>DM_BenhNhanCoSo_Save</c>
+    /// tra khóa theo <c>(IDBenhNhan, IDCoSo)</c> rồi UPDATE, nên gọi nó nhiều lần
+    /// cho cùng một hồ sơ chỉ GHI ĐÈ một dòng: vòng lặp cũ báo "đã nối N mã" trong
+    /// khi CSDL chỉ giữ mã CUỐI CÙNG — mất im lặng, đo được ngày 09/09 (mã 111457
+    /// biến mất khi 100992 được gán đè lên). Một hồ sơ &lt;-&gt; một mã.
     /// </para>
     ///
     /// <para>
-    /// 🔴 Ma da co nguoi khac nhan thi tu choi (unique co loc tren
-    /// <c>(IDCoSo, MaBN)</c>). Chan o day de con thong bao tu te, nhung KHONG noi
-    /// ma do dang thuoc ve ai.
+    /// 🔴 Mã đã có người khác nhận thì từ chối (unique có lọc trên
+    /// <c>(IDCoSo, MaBN)</c>). Chặn ở đây để còn thông báo tử tế, nhưng KHÔNG nói
+    /// mã đó đang thuộc về ai.
     /// </para>
     /// </summary>
     /// <param name="daXacThuc">
-    /// Lan noi nay CO mot yeu to chi dung nguoi moi co hay khong (hien tai: CCCD
-    /// hop le va trung khit). Khop ho ten + ngay sinh + gioi tinh KHONG tinh — ba o
-    /// do in tren moi toa thuoc, ai cung go duoc. Co nay quyet dinh *Cua tai lieu*
-    /// (ADR 0020): khong co yeu to nao thi ho so van noi duoc va van xem duoc TOM TAT
-    /// dot kham, nhung don thuoc + ket qua CLS thi dong.
+    /// Lần nối này CÓ một yếu tố chỉ đúng người mới có hay không (hiện tại: CCCD
+    /// hợp lệ và trùng khớp). Khớp họ tên + ngày sinh + giới tính KHÔNG tính — ba ô
+    /// đó in trên mọi toa thuốc, ai cũng gõ được. Cờ này quyết định *Cửa tài liệu*
+    /// (ADR 0020): không có yếu tố nào thì hồ sơ vẫn nối được và vẫn xem được TÓM TẮT
+    /// đợt khám, nhưng đơn thuốc + kết quả CLS thì đóng.
     /// </param>
     /// <summary>
-    /// Ma gia HIS dung de danh dau "khong co can cuoc". 🔴 Ho so mang ma nay
-    /// KHONG BAO GIO duoc noi (chot 10/09) — xem <see cref="MaGiaKhongCanCuoc"/>.
+    /// Mã giả HIS dùng để đánh dấu "không có căn cước". 🔴 Hồ sơ mang mã này
+    /// KHÔNG BAO GIỜ được nối (chốt 10/09) — xem <see cref="MaGiaKhongCanCuoc"/>.
     /// </summary>
     private static readonly string[] MaGiaKhongCanCuoc = { "11111111111", "111111111111" };
 
-    /// <summary>Can cuoc nay that ra la dau "khong co can cuoc" chu khong phai so that.</summary>
+    /// <summary>Căn cước này thật ra là dấu "không có căn cước" chứ không phải số thật.</summary>
     private static bool LaMaGia(string? cccd) =>
         MaGiaKhongCanCuoc.Contains((cccd ?? string.Empty).Trim(), StringComparer.Ordinal);
 
@@ -646,14 +646,14 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
     }
 
     /// <summary>
-    /// Luat chon MOT ho so khi <c>MOT_HO_SO</c> bat — dung o CA HAI noi
-    /// (<see cref="LayDanhSachAsync"/> va <see cref="LayIdHoSoMoSanKhiQuetAsync"/>)
-    /// nen chi duoc viet MOT lan o day.
+    /// Luật chọn MỘT hồ sơ khi <c>MOT_HO_SO</c> bật — dùng ở CẢ HAI nơi
+    /// (<see cref="LayDanhSachAsync"/> và <see cref="LayIdHoSoMoSanKhiQuetAsync"/>)
+    /// nên chỉ được viết MỘT lần ở đây.
     ///
     /// <para>
-    /// Thu tu: ho so DANG CHON -> CCCD cua phien -> dong dau. Ho so dang chon phai di
-    /// truoc vi bam *Chon* khong doi claim Cccd (HoSoController.PhatLaiClaimAsync),
-    /// lay CCCD lam tieu chi dau la tra ve nguoi vua bi chuyen khoi.
+    /// Thứ tự: hồ sơ ĐANG CHỌN -> CCCD của phiên -> dòng đầu. Hồ sơ đang chọn phải đi
+    /// trước vì bấm *Chọn* không đổi claim Cccd (HoSoController.PhatLaiClaimAsync),
+    /// lấy CCCD làm tiêu chí đầu là trả về người vừa bị chuyển khỏi.
     /// </para>
     /// </summary>
     private static BenhNhan ChonMotHoSo(List<BenhNhan> nguoi, string? cccdPhien, long? idDangChon) =>
@@ -667,7 +667,7 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
     {
         if (string.IsNullOrWhiteSpace(sdt)) return null;
 
-        // MOT_HO_SO tat => tai khoan duoc giu nhieu ho so, phai de nguoi dung tu chon.
+        // MOT_HO_SO tắt => tài khoản được giữ nhiều hồ sơ, phải để người dùng tự chọn.
         if (!await _config.KiemTraHieuLucAsync("MOT_HO_SO")) return null;
 
         var idCoSo = await LayIdCoSoAsync(maCoSo);
@@ -678,8 +678,8 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
             .OrderBy(p => p.Id)
             .ToListAsync();
 
-        // Phien vua quet xong thi chua co claim HoSoDangChon => truyen null, luat lui
-        // ve CCCD cua phieu vua quet.
+        // Phiên vừa quét xong thì chưa có claim HoSoDangChon => truyền null, luật lùi
+        // về CCCD của phiếu vừa quét.
         return nguoi.Count == 0 ? null : ChonMotHoSo(nguoi, cccdPhien, null).Id;
     }
 
@@ -697,8 +697,8 @@ public class HoSoBenhNhanService : IHoSoBenhNhanService
         var idCoSo = await LayIdCoSoAsync(maCoSo);
         if (idCoSo is null) return (false, "Chưa xác định được cơ sở.");
 
-        // Moi phep chan nam trong thu tuc (ADR 0008): khong phai ho so cua minh,
-        // da noi HIS, hoac da co du lieu kham.
+        // Mọi phép chặn nằm trong thủ tục (ADR 0008): không phải hồ sơ của mình,
+        // đã nối HIS, hoặc đã có dữ liệu khám.
         var ketQua = await _thuTuc.XoaHoSoAsync(idBenhNhan, sdt, idCoSo.Value);
         return (ketQua.Succeeded, ketQua.Message ?? "");
     }

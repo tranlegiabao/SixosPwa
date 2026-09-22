@@ -8,70 +8,70 @@ using SixosPwa.Services;
 namespace SixosPwa.Services.Partner;
 
 /// <summary>
-/// Cay quyet dinh cua cong benh nhan: sau khi xac thuc thi di dau, tao ho so noi
-/// bo the nao. Tach khoi controller de cac man dung chung MOT cay, khong ai tu
-/// che lai.
+/// Cây quyết định của cổng bệnh nhân: sau khi xác thực thì đi đâu, tạo hồ sơ nội
+/// bộ thế nào. Tách khỏi controller để các màn dùng chung MỘT cây, không ai tự
+/// chế lại.
 ///
-/// 🔴 Dot A da go HET bo man doi tac (ADR 0014): khong con IPartnerGateway,
-/// khong con HT_TaiKhoanDoiTac, khong con man Ban giao. Co so co trang rieng thi
-/// ChonDichDenAsync tra thang <c>DM_CSKCB.KetNoi_UrlChuyenHuong</c> — xem
+/// 🔴 Đợt A đã gỡ HẾT bộ màn đối tác (ADR 0014): không còn IPartnerGateway,
+/// không còn HT_TaiKhoanDoiTac, không còn màn Bàn giao. Cơ sở có trang riêng thì
+/// ChonDichDenAsync trả thẳng <c>DM_CSKCB.KetNoi_UrlChuyenHuong</c> — xem
 /// <see cref="CuaCoSoService"/>.
 /// </summary>
 public interface ILuongCongBenhNhan
 {
-    /// <summary>Cho ha canh sau khi OTP dung.</summary>
+    /// <summary>Chờ hạ cánh sau khi OTP đúng.</summary>
     Task<string> ChonDichDenAsync(string maCoSo, string cccd, string dinhDanh, string? returnUrl,
                                   DanhTinhQuet? quet = null, CancellationToken ct = default);
 
-    /// <summary>Co so co dang hien thi cong khai khong (DM_CSKCB.HienThiCongKhai). ADR 0013.</summary>
+    /// <summary>Cơ sở có đang hiển thị công khai không (DM_CSKCB.HienThiCongKhai). ADR 0013.</summary>
     Task<bool> CoSoDangHienThiAsync(string? maCoSo, CancellationToken ct = default);
 
-    /// <summary>Tao ho so noi bo + dat mat khau noi bo.</summary>
+    /// <summary>Tạo hồ sơ nội bộ + đặt mật khẩu nội bộ.</summary>
     Task<KetQuaBuoc> MoTaiKhoanAsync(string maCoSo, string cccd, string dinhDanh, string hoTen, string matKhau, string? returnUrl = null, CancellationToken ct = default);
 
-    /// <summary>Doi mat khau noi bo. Co so co cua rieng thi tu choi — mat khau la cua ho.</summary>
+    /// <summary>Đổi mật khẩu nội bộ. Cơ sở có cửa riêng thì từ chối — mật khẩu là của họ.</summary>
     Task<KetQuaThaoTac> DoiMatKhauAsync(string maCoSo, ClaimsPrincipal nguoiDung, string matKhauMoi, CancellationToken ct = default);
 }
 
-/// <summary>Ket qua mot buoc co dich den ke tiep.</summary>
-/// <param name="DoiTacHong">Chuyen tiep tu <see cref="KetQuaThaoTac.DoiTacHong"/> — xem chu thich o do.</param>
+/// <summary>Kết quả một bước có đích đến kế tiếp.</summary>
+/// <param name="DoiTacHong">Chuyển tiếp từ <see cref="KetQuaThaoTac.DoiTacHong"/> — xem chú thích ở đó.</param>
 public record KetQuaBuoc(bool ThanhCong, string ThongBao, string? DichDen, bool DoiTacHong = false);
 
 public class LuongCongBenhNhan : ILuongCongBenhNhan
 {
-    /// <summary>Claim giu so CCCD cua benh nhan trong phien.</summary>
+    /// <summary>Claim giữ số CCCD của bệnh nhân trong phiên.</summary>
     public const string ClaimCccd = "Cccd";
 
-    /// <summary>Claim giu ma co so benh nhan dang dung trong phien.</summary>
+    /// <summary>Claim giữ mã cơ sở bệnh nhân đang dùng trong phiên.</summary>
     public const string ClaimMaCoSo = "MaCoSo";
 
     /// <summary>
-    /// Claim giu ID cua *ho so dang chon* — con nguoi nao trong so cac ho so cua
-    /// tai khoan dang duoc xem (ADR 0019). Mot tai khoan quan nhieu ho so: con
-    /// dat kham cho me, me theo doi ket qua cho con.
+    /// Claim giữ ID của *hồ sơ đang chọn* — con người nào trong số các hồ sơ của
+    /// tài khoản đang được xem (ADR 0019). Một tài khoản quản nhiều hồ sơ: con
+    /// đặt khám cho mẹ, mẹ theo dõi kết quả cho con.
     ///
     /// <para>
-    /// 🔴 Doi ho so = PHAT LAI claim nay (khuon <c>DangKyOnlineUB</c>:
-    /// <c>ThemIdXemThongTinBenhNhan</c> goi <c>AddClaimsAsync</c>). Man chi doc,
-    /// khong bao gio nhan ID ho so tu tham so URL — nhan tu URL thi go so khac
-    /// la xem duoc ho so nguoi ta.
+    /// 🔴 Đổi hồ sơ = PHÁT LẠI claim này (khuôn <c>DangKyOnlineUB</c>:
+    /// <c>ThemIdXemThongTinBenhNhan</c> gọi <c>AddClaimsAsync</c>). Màn chỉ đọc,
+    /// không bao giờ nhận ID hồ sơ từ tham số URL — nhận từ URL thì gõ số khác
+    /// là xem được hồ sơ người ta.
     /// </para>
     /// <para>
-    /// Thieu claim nay (phien cu dang song, hoac tai khoan mot ho so) thi cac man
-    /// tu chon ho so dau tien — xem <c>HomeController.LayHoSoDangDungAsync</c>.
+    /// Thiếu claim này (phiên cũ đang sống, hoặc tài khoản một hồ sơ) thì các màn
+    /// tự chọn hồ sơ đầu tiên — xem <c>HomeController.LayHoSoDangDungAsync</c>.
     /// </para>
     /// </summary>
     public const string ClaimHoSoDangChon = "HoSoDangChon";
 
     /// <summary>
-    /// Dau an: phien nay do CHINH doi tac xac thuc (mat khau that hoac ma SMS cua
-    /// ho), khong phai OTP cua SixosPwa. Chi CapPhienBenhNhanAsync dong dau nay.
+    /// Dấu ấn: phiên này do CHÍNH đối tác xác thực (mật khẩu thật hoặc mã SMS của
+    /// họ), không phải OTP của SixosPwa. Chỉ CapPhienBenhNhanAsync đóng dấu này.
     ///
-    /// 🔴 Day la thu duy nhat phan biet mot phien THAT voi mot phien duc tu
-    /// XacNhanOtp — action do goi tran duoc, ma OTP con dang ke tam mot gia tri co
-    /// dinh, va ca Cccd lan MaCoSo deu lay thang tu than request. Thieu dau an nay
-    /// thi ai biet CCCD cua nguoi khac cung mo duoc man Ban giao va doc duoc mat
-    /// khau that cua ho. Xem ADR 0016.
+    /// 🔴 Đây là thứ duy nhất phân biệt một phiên THẬT với một phiên đúc từ
+    /// XacNhanOtp — action đó gọi trần được, mà OTP còn đang kê tạm một giá trị cố
+    /// định, và cả Cccd lẫn MaCoSo đều lấy thẳng từ thân request. Thiếu dấu ấn này
+    /// thì ai biết CCCD của người khác cũng mở được màn Bàn giao và đọc được mật
+    /// khẩu thật của họ. Xem ADR 0016.
     /// </summary>
     public const string ClaimDoiTacXacThuc = "DoiTacXacThuc";
 
@@ -93,7 +93,7 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
         _thuTuc = thuTuc;
     }
 
-    /// <summary>Doi ma co so (chuoi) sang khoa chinh DM_CSKCB.</summary>
+    /// <summary>Đổi mã cơ sở (chuỗi) sang khóa chính DM_CSKCB.</summary>
     private Task<long?> LayIdCoSoAsync(string maCoSo, CancellationToken ct) =>
         _db.DMCSKCBs.AsNoTracking()
             .Where(x => x.MaCoSo == maCoSo)
@@ -101,13 +101,13 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
             .FirstOrDefaultAsync(ct);
 
     /// <summary>
-    /// Co so co dang hien thi cong khai khong (DM_CSKCB.HienThiCongKhai — ten cu la
-    /// <c>Active</c>). Day la cong DUY NHAT quyet dinh co so co nhan DANG NHAP /
-    /// DANG KY MOI hay khong. Khong tim thay ma co so thi tra false (hong theo
-    /// huong an toan). Xem ADR 0013.
+    /// Cơ sở có đang hiển thị công khai không (DM_CSKCB.HienThiCongKhai — tên cũ là
+    /// <c>Active</c>). Đây là cổng DUY NHẤT quyết định cơ sở có nhận ĐĂNG NHẬP /
+    /// ĐĂNG KÝ MỚI hay không. Không tìm thấy mã cơ sở thì trả false (hỏng theo
+    /// hướng an toàn). Xem ADR 0013.
     ///
-    /// CANH BAO: dung nham voi <c>KetNoi_Active</c> (cong tat duong ket noi HIS) —
-    /// hai cong khac nhau, cung nam tren mot bang.
+    /// CẢNH BÁO: đừng nhầm với <c>KetNoi_Active</c> (công tắc đường kết nối HIS) —
+    /// hai công tắc khác nhau, cùng nằm trên một bảng.
     /// </summary>
     public Task<bool> CoSoDangHienThiAsync(string? maCoSo, CancellationToken ct = default)
     {
@@ -121,26 +121,26 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
     }
 
     // ------------------------------------------------------------------
-    //  Cay quyet dinh sau OTP
+    //  Cây quyết định sau OTP
     // ------------------------------------------------------------------
 
     public async Task<string> ChonDichDenAsync(string maCoSo, string cccd, string dinhDanh, string? returnUrl,
                                                DanhTinhQuet? quet = null, CancellationToken ct = default)
     {
-        // 🔴 Dot A: "co so co cua rieng khong" nay la DU LIEU
-        // (DM_CSKCB.KetNoi_UrlChuyenHuong), khong con la kieu ban cai
-        // (DM_DoiTacApi.KieuApi da bi bo). Co URL thi chuyen huong THANG sang
-        // trang cua co so; khong co thi o lai trang benh nhan noi bo.
+        // 🔴 Đợt A: "cơ sở có cửa riêng không" nay là DỮ LIỆU
+        // (DM_CSKCB.KetNoi_UrlChuyenHuong), không còn là kiểu bản cài
+        // (DM_DoiTacApi.KieuApi đã bị bỏ). Có URL thì chuyển hướng THẲNG sang
+        // trang của cơ sở; không có thì ở lại trang bệnh nhân nội bộ.
         var idCoSo = await LayIdCoSoAsync(maCoSo, ct);
         var cua = idCoSo is null ? null : await _cua.LayCuaAsync(idCoSo.Value);
 
-        // 🔴 Ho so noi bo phai co TRUOC khi tra bat ky dich den nao — ke ca duong
-        // chuyen huong sang trang cua co so. Duong doi tac cu cung lam dung thu tu
-        // nay (GhiHoSoRoiChoBanGiaoAsync goi TaoHoSoNoiBoAsync roi moi ban giao).
-        // Tra URL truoc roi moi tinh chuyen tao ho so thi benh nhan xong OTP se duoc
-        // phat cookie va bay thang sang co so, ma ben nay KHONG co dong DM_BenhNhan /
-        // DM_BenhNhanCoSo / HT_TaiKhoan nao: quay lai /benh-nhan la ho so trong tron,
-        // con TaiLieuService thi nem ChuaCoNguoiNhanException vi khong nhan ra ho.
+        // 🔴 Hồ sơ nội bộ phải có TRƯỚC khi trả bất kỳ đích đến nào — kể cả đường
+        // chuyển hướng sang trang của cơ sở. Đường đối tác cũ cũng làm đúng thứ tự
+        // này (GhiHoSoRoiChoBanGiaoAsync gọi TaoHoSoNoiBoAsync rồi mới bàn giao).
+        // Trả URL trước rồi mới tính chuyện tạo hồ sơ thì bệnh nhân xong OTP sẽ được
+        // phát cookie và bay thẳng sang cơ sở, mà bên này KHÔNG có dòng DM_BenhNhan /
+        // DM_BenhNhanCoSo / HT_TaiKhoan nào: quay lại /benh-nhan là hồ sơ trống trơn,
+        // còn TaiLieuService thì ném ChuaCoNguoiNhanException vì không nhận ra họ.
         await BaoDamHoSoNoiBoAsync(maCoSo, cccd, dinhDanh, quet, ct);
 
         if (cua?.UrlChuyenHuong is { Length: > 0 } urlChuyenHuong)
@@ -149,15 +149,15 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
             return urlChuyenHuong;
         }
 
-        // Mot tai khoan quan nhieu ho so (ADR 0019) => phai biet dang xem AI
-        // truoc khi vao trang benh nhan. Bam khuon DangKyOnlineUB: dang nhap
-        // xong la ve man chon ho so (HT_DangNhap_FE.js:35 day thang toi
+        // Một tài khoản quản nhiều hồ sơ (ADR 0019) => phải biết đang xem AI
+        // trước khi vào trang bệnh nhân. Bám khuôn DangKyOnlineUB: đăng nhập
+        // xong là về màn chọn hồ sơ (HT_DangNhap_FE.js:35 đẩy thẳng tới
         // /QuanLy/QL_HoSoBenhNhan).
         //
-        // Khac UB o mot cho: chi bat chon khi THAT SU co tren mot ho so. Ben
-        // UB ai cung nhieu ho so nen ho luon qua man do; ben nay phan lon tai
-        // khoan chi co dung mot ho so, bat ho bam them mot lan la phien vo ich
-        // — mot ho so thi khong co gi de chon.
+        // Khác UB ở một chỗ: chỉ bắt chọn khi THẬT SỰ có trên một hồ sơ. Bên
+        // UB ai cũng nhiều hồ sơ nên họ luôn qua màn đó; bên này phần lớn tài
+        // khoản chỉ có đúng một hồ sơ, bắt họ bấm thêm một lần là phiền vô ích
+        // — một hồ sơ thì không có gì để chọn.
         // Nếu người bệnh quét mã trên phiếu khám HIS, ta đã tự động chọn đúng hồ sơ đó,
         // nên đưa thẳng vào trang chủ /benh-nhan thay vì bắt quay về màn danh sách hồ sơ /benh-nhan/ho-so.
         if (quet != null && (quet.LaNguonHis || !string.IsNullOrWhiteSpace(quet.MaBN)))
@@ -172,13 +172,13 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
     }
 
     // ------------------------------------------------------------------
-    //  Man Dang ky
+    //  Màn Đăng ký
     // ------------------------------------------------------------------
 
     public async Task<KetQuaBuoc> MoTaiKhoanAsync(string maCoSo, string cccd, string dinhDanh, string hoTen, string matKhau, string? returnUrl = null, CancellationToken ct = default)
     {
-        // Co so dang an thi khong mo tai khoan moi. Phien CU van dung binh thuong —
-        // cho nay la duong tao MOI co chu dich, khong phai duong dung lai. ADR 0013.
+        // Cơ sở đang ẩn thì không mở tài khoản mới. Phiên CŨ vẫn dùng bình thường —
+        // cửa này là đường tạo MỚI có chủ đích, không phải đường dùng lại. ADR 0013.
         if (!await CoSoDangHienThiAsync(maCoSo, ct))
         {
             return new KetQuaBuoc(false, "Cơ sở này đang tạm ngưng tiếp nhận đăng ký trực tuyến.", null);
@@ -186,42 +186,42 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
 
         _ = await TaoHoSoNoiBoAsync(maCoSo, cccd, dinhDanh, hoTen, ct: ct);
 
-        // 🔴 Dot 1B: KHONG con ghi mat khau noi bo cho benh nhan — ho khong co
-        // tai khoan nua, dang nhap bang OTP (ADR 0036). Cot HT_TaiKhoan.MatKhauNoiBo
-        // chi con phuc vu Admin.
+        // 🔴 Đợt 1B: KHÔNG còn ghi mật khẩu nội bộ cho bệnh nhân — họ không có
+        // tài khoản nữa, đăng nhập bằng OTP (ADR 0036). Cột HT_TaiKhoan.MatKhauNoiBo
+        // chỉ còn phục vụ Admin.
 
-        // Cung luat voi ChonDichDenAsync — hai loi vao (dang nhap / dang ky) phai
-        // di cung mot duong, neu khong nguoi dung thay hai hanh vi khac nhau cho
-        // cung mot trang thai.
+        // Cùng luật với ChonDichDenAsync — hai lối vào (đăng nhập / đăng ký) phải
+        // đi cùng một đường, nếu không người dùng thấy hai hành vi khác nhau cho
+        // cùng một trạng thái.
         var soHoSo = await DemHoSoTaiCoSoAsync(maCoSo, dinhDanh, ct);
         return new KetQuaBuoc(true, "Đã tạo tài khoản",
             soHoSo > 1 ? "/benh-nhan/ho-so" : "/benh-nhan");
     }
 
     // ------------------------------------------------------------------
-    //  Man Doi mat khau
+    //  Màn Đổi mật khẩu
     // ------------------------------------------------------------------
 
     /// <summary>
-    /// Bam mat khau noi bo. Dung <c>PasswordHasher&lt;TaiKhoan&gt;</c> cua ASP.NET Core
-    /// (co san trong shared framework, khong phai them goi NuGet) — dung ba viec ma
-    /// muc "Dieu kien de go dinh chinh" cua ADR 0009 chi dinh.
+    /// Băm mật khẩu nội bộ. Dùng <c>PasswordHasher&lt;TaiKhoan&gt;</c> của ASP.NET Core
+    /// (có sẵn trong shared framework, không phải thêm gói NuGet) — đúng ba việc mà
+    /// mục "Điều kiện để gỡ đính chính" của ADR 0009 chỉ định.
     /// </summary>
     private static readonly IPasswordHasher<TaiKhoan> BamMatKhau = new PasswordHasher<TaiKhoan>();
 
     /// <summary>
-    /// Ghi mat khau noi bo vao <c>HT_TaiKhoan.MatKhauNoiBo</c> qua thu tuc
-    /// <c>HT_TaiKhoan_Save</c> (moi duong ghi di qua stored — ADR 0008).
+    /// Ghi mật khẩu nội bộ vào <c>HT_TaiKhoan.MatKhauNoiBo</c> qua thủ tục
+    /// <c>HT_TaiKhoan_Save</c> (mọi đường ghi đi qua stored — ADR 0008).
     ///
-    /// 🔴 Thay cho <c>HT_TaiKhoanDoiTac</c> da bi xoa o dot A: mat khau khong con
-    /// cat theo TUNG CO SO nua, vi khong con he doi tac nao de ban giao sang.
+    /// 🔴 Thay cho <c>HT_TaiKhoanDoiTac</c> đã bị xóa ở đợt A: mật khẩu không còn
+    /// cắt theo TỪNG CƠ SỞ nữa, vì không còn hệ đối tác nào để bàn giao sang.
     ///
-    /// 🔴 BAT BUOC BAM TRUOC KHI TRUYEN (ADR 0009): tham so cua thu tuc ten la
-    /// <c>@MatKhauNoiBoDaBam</c> va tang T-SQL KHONG BAO GIO tu bam. Truyen chuoi
-    /// tho vao day la de mat khau benh nhan tu chon nam nguyen van tren dung cai cot
-    /// ma duong dang nhap Admin/DoiTac dem ra so — doi Role mot cai la chuoi do mo
-    /// duoc khu quan tri. ADR 0005 (luu khong bam) chi ap cho mat khau DOI TAC, va
-    /// bang do (<c>HT_TaiKhoanDoiTac</c>) da bi xoa o dot A.
+    /// 🔴 BẮT BUỘC BĂM TRƯỚC KHI TRUYỀN (ADR 0009): tham số của thủ tục tên là
+    /// <c>@MatKhauNoiBoDaBam</c> và tầng T-SQL KHÔNG BAO GIỜ tự băm. Truyền chuỗi
+    /// thô vào đây là để mật khẩu bệnh nhân tự chọn nằm nguyên văn trên đúng cái cột
+    /// mà đường đăng nhập Admin/DoiTac đem ra so — đổi Role một cái là chuỗi đó mở
+    /// được khu quản trị. ADR 0005 (lưu không băm) chỉ áp cho mật khẩu ĐỐI TÁC, và
+    /// bảng đó (<c>HT_TaiKhoanDoiTac</c>) đã bị xóa ở đợt A.
     /// </summary>
     private Task GhiMatKhauNoiBoAsync(TaiKhoan taiKhoan, string matKhau) =>
         _thuTuc.SaveTaiKhoanAsync(
@@ -239,45 +239,45 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
             return new KetQuaThaoTac(false, "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại");
         }
 
-        // 🔴 Dot 1B: benh nhan KHONG CON tai khoan, nen cung khong con mat khau
-        // noi bo de doi (HT_TaiKhoan chi con Admin — ADR 0036). Ban trung gian cua
-        // dot nay tra "Khong tim thay tai khoan cua ban" — DUNG ket qua nhung SAI
-        // nguyen nhan, nguoi dung se di tim lai tai khoan khong ton tai.
-        // Man nay dang la no cua dot A (§7): hoac bo han, hoac cho no dung that.
+        // 🔴 Đợt 1B: bệnh nhân KHÔNG CÒN tài khoản, nên cũng không còn mật khẩu
+        // nội bộ để đổi (HT_TaiKhoan chỉ còn Admin — ADR 0036). Bản trung gian của
+        // đợt này trả "Không tìm thấy tài khoản của bạn" — ĐÚNG kết quả nhưng SAI
+        // nguyên nhân, người dùng sẽ đi tìm lại tài khoản không tồn tại.
+        // Màn này đang là nợ của đợt A (§7): hoặc bỏ hẳn, hoặc cho nó đúng thật.
         return new KetQuaThaoTac(false,
             "Cổng không còn dùng mật khẩu cho bệnh nhân — bạn đăng nhập bằng mã OTP gửi tới số điện thoại.");
     }
 
 
     // ------------------------------------------------------------------
-    //  Ho so noi bo
+    //  Hồ sơ nội bộ
     // ------------------------------------------------------------------
 
     /// <summary>
-    /// CCCD nay thuoc DM_BenhNhan chu khong con nam tren tai khoan — 5/18 tai khoan
-    /// la Admin/DoiTac, khong co CCCD la DUNG chu khong phai du lieu thieu.
+    /// CCCD này thuộc DM_BenhNhan chứ không còn nằm trên tài khoản — 5/18 tài khoản
+    /// là Admin/DoiTac, không có CCCD là ĐÚNG chứ không phải dữ liệu thiếu.
     /// </summary>
     private async Task<TaiKhoan?> TimTaiKhoanAsync(string cccd, CancellationToken ct)
     {
-        // 🔴 Dot 1B: benh nhan KHONG CON tai khoan (HT_TaiKhoan chi con Admin),
-        // nen khong con duong nao di tu CCCD sang tai khoan. Xem ADR 0034.
+        // 🔴 Đợt 1B: bệnh nhân KHÔNG CÒN tài khoản (HT_TaiKhoan chỉ còn Admin),
+        // nên không còn đường nào đi từ CCCD sang tài khoản. Xem ADR 0040.
         TaiKhoan? theoChuSoHuu = null;
 
-        // 🔴 Dot A da bo cot HT_TaiKhoan.IDBenhNhan, nen nhanh lui ve chieu CU
-        // (join t.IdBenhNhan = p.ID) khong con nua. Script 09 da do het du lieu
-        // sang DM_BenhNhan.IDTaiKhoan tu truoc — ADR 0019.
+        // 🔴 Đợt A đã bỏ cột HT_TaiKhoan.IDBenhNhan, nên nhánh lùi về chiều CŨ
+        // (join t.IdBenhNhan = p.ID) không còn nữa. Script 09 đã dồn hết dữ liệu
+        // sang DM_BenhNhan.IDTaiKhoan từ trước — ADR 0019.
         return theoChuSoHuu;
     }
 
 
 
     /// <summary>
-    /// So ho so ma tai khoan nay dang quan TAI MOT CO SO — dung de quyet dinh co
-    /// phai qua man chon ho so khong.
+    /// Số hồ sơ mà tài khoản này đang quản TẠI MỘT CƠ SỞ — dùng để quyết định có
+    /// phải qua màn chọn hồ sơ không.
     ///
-    /// Phai khop dung dieu kien cua <c>HomeController.LayHoSoDangDungAsync</c>
-    /// (loc theo tai khoan + <c>DaMoTaiLieu</c>), neu khong se co canh: dem ra 2
-    /// nen day sang man chon, ma man kia chi hien 1.
+    /// Phải khớp đúng điều kiện của <c>HomeController.LayHoSoDangDungAsync</c>
+    /// (lọc theo tài khoản + <c>DaMoTaiLieu</c>), nếu không sẽ có cảnh: đếm ra 2
+    /// nên đẩy sang màn chọn, mà màn kia chỉ hiện 1.
     /// </summary>
     private async Task<int> DemHoSoTaiCoSoAsync(string maCoSo, string dinhDanh, CancellationToken ct)
     {
@@ -288,7 +288,7 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
             .Select(t => (long?)t.Id)
             .FirstOrDefaultAsync(ct);
 
-        // Dot 1B: pham vi la cap (SDT x co so) — luat C2.
+        // Đợt 1B: phạm vi là cặp (SDT x cơ sở) — luật C2.
         return await (
             from h in _db.BenhNhans.AsNoTracking()
             join cs in _db.DMCSKCBs.AsNoTracking() on h.IdCoSo equals (long?)cs.Id
@@ -299,11 +299,11 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
     }
 
     /// <summary>
-    /// 🔴 Tu dot 1B KHONG tra <c>TaiKhoan</c> nua. Ban trung gian ket thuc bang
-    /// <c>_db.TaiKhoans.FirstAsync(...)</c>, ma <c>HT_TaiKhoan_Save</c> nay no-op
-    /// voi vai tro khac Admin nen <c>idTaiKhoan</c> = 0 =>
-    /// <c>InvalidOperationException: Sequence contains no elements</c> ngay cuoi
-    /// buoc xac nhan OTP. Tra ID HO SO vua dung.
+    /// 🔴 Từ đợt 1B KHÔNG trả <c>TaiKhoan</c> nữa. Bản trung gian kết thúc bằng
+    /// <c>_db.TaiKhoans.FirstAsync(...)</c>, mà <c>HT_TaiKhoan_Save</c> nay no-op
+    /// với vai trò khác Admin nên <c>idTaiKhoan</c> = 0 =>
+    /// <c>InvalidOperationException: Sequence contains no elements</c> ngay cuối
+    /// bước xác nhận OTP. Trả ID HỒ SƠ vừa dùng.
     /// </summary>
     private async Task<long> TaoHoSoNoiBoAsync(string maCoSo, string cccd, string dinhDanh, string hoTen,
                                                    DanhTinhQuet? quet = null, CancellationToken ct = default)
@@ -314,9 +314,9 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
 
         var idCoSo = await LayIdCoSoAsync(maCoSo, ct);
 
-        // Con nguoi truoc (khoa CCCD), roi moi den ho so tai co so.
-        // Ten/ngay sinh/gioi tinh/dia chi tinh o mot cho duy nhat, de luat "chi dien o
-        // trong" khong bi viet lai hai kieu o hai duong.
+        // Con người trước (khóa CCCD), rồi mới đến hồ sơ tại cơ sở.
+        // Tên/ngày sinh/giới tính/địa chỉ tính ở một chỗ duy nhất, để luật "chỉ điền ô
+        // trống" không bị viết lại hai kiểu ở hai đường.
         var o = await TinhOCanDienAsync(cccd, dinhDanh, hoTen, quet, ct);
 
         var luuNguoi = await _thuTuc.SaveBenhNhanAsync(
@@ -325,22 +325,22 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
             sdt,
             email,
             o.DiaChi,
-            // Chu so huu chua biet o buoc nay — tai khoan duoc tao SAU. Nhan chu
-            // o cuoi ham bang DM_BenhNhan_NhanChuSoHuu.
+            // Chủ sở hữu chưa biết ở bước này — tài khoản được tạo SAU. Nhận chủ
+            // ở cuối hàm bằng DM_BenhNhan_NhanChuSoHuu.
             idTaiKhoan: null,
             ngaySinh: o.Ngay,
-            // O thu ba cua luat gop (ADR 0018). Chuan hoa MOT BAN DUY NHAT qua
-            // ChuanHoaTen — dung tu bo dau kieu khac o cho khac.
+            // Ô thứ ba của luật gộp (ADR 0018). Chuẩn hóa MỘT BẢN DUY NHẤT qua
+            // ChuanHoaTen — đừng tự bỏ dấu kiểu khác ở chỗ khác.
             hoTenKhongDau: o.Slug,
             gioiTinh: o.GioiTinh);
 
-        // 🔴 KHONG con bia ma benh nhan (chot 12 dot 1). Ho so vua tao la *tu
-        // khai*: co so chua cap ma nao cho nguoi nay, nen MaBN de RONG. Truoc day
-        // cong sinh BN-yyyyMMdd-#### cho co cho lap, nhung do khong phai ma co so
-        // cap nen no danh lua ca nguoi doc du lieu lan duong nhan tai lieu.
+        // 🔴 KHÔNG còn bịa mã bệnh nhân (chốt 12 đợt 1). Hồ sơ vừa tạo là *tự
+        // khai*: cơ sở chưa cấp mã nào cho người này, nên MaBN để RỖNG. Trước đây
+        // cổng sinh BN-yyyyMMdd-#### cho có chỗ lấp, nhưng đó không phải mã cơ sở
+        // cấp nên nó đánh lừa cả người đọc dữ liệu lẫn đường nhận tài liệu.
         //
-        // Thu tuc tu lo chong trung, va tu bo qua neu nguoi nay DA co ho so noi
-        // HIS tai co so — luc do khong can them dong tu khai.
+        // Thủ tục tự lo chống trùng, và tự bỏ qua nếu người này ĐÃ có hồ sơ nối
+        // HIS tại cơ sở — lúc đó không cần thêm dòng tự khai.
         if (idCoSo is not null && luuNguoi.Id > 0)
         {
             if (!string.IsNullOrWhiteSpace(quet?.MaBN))
@@ -356,7 +356,7 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
         var taiKhoan = await TimTaiKhoanAsync(cccd, ct)
                        ?? await _db.TaiKhoans.FirstOrDefaultAsync(x => x.SDT == dinhDanh, ct);
 
-        // MatKhauNoiBo de null: dot nay chua thi hanh phan bam (Dinh chinh ADR 0009).
+        // MatKhauNoiBo để null: đợt này chưa thi hành phần băm (Đính chính ADR 0009).
         var luuTaiKhoan = await _thuTuc.SaveTaiKhoanAsync(
             taiKhoan?.Id ?? 0,
             string.IsNullOrWhiteSpace(sdt) ? (taiKhoan?.SDT ?? dinhDanh) : sdt,
@@ -366,30 +366,30 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
 
         var idTaiKhoan = luuTaiKhoan.Id > 0 ? luuTaiKhoan.Id : (taiKhoan?.Id ?? 0);
 
-        // Nhan chu so huu (ADR 0019). Da co chu KHAC thi thu tuc tra ResultCode 3
-        // va khong doi gi — day la "ai khai truoc giu CCCD".
+        // Nhận chủ sở hữu (ADR 0019). Đã có chủ KHÁC thì thủ tục trả ResultCode 3
+        // và không đổi gì — đây là "ai khai trước giữ CCCD".
         //
-        // 🔴 KHONG chan dang nhap khi trung chu: phien van phai vao duoc, chi la
-        // ho so do khong thuoc ve tai khoan nay. Chan o day thi nguoi go nham mot
-        // so CCCD se bi khoa hoan toan khoi cong ma khong hieu vi sao. Man *Ho so
-        // cua toi* moi la cho hien loi va chi duong ra.
-        // 🔴 Cua 3 "nhan chu so huu" da chet tu dot 1B: cot DM_BenhNhan.IDTaiKhoan
-        // khong con, va "ho so thuoc ve ai" nay la cap (SDT x co so) cua chinh
-        // dong do. Xem ADR 0034 va CONTEXT.md muc *Loi vao*.
+        // 🔴 KHÔNG chặn đăng nhập khi trùng chủ: phiên vẫn phải vào được, chỉ là
+        // hồ sơ đó không thuộc về tài khoản này. Chặn ở đây thì người gõ nhầm một
+        // số CCCD sẽ bị khóa hoàn toàn khỏi cổng mà không hiểu vì sao. Màn *Hồ sơ
+        // của tôi* mới là chỗ hiện lỗi và chỉ đường ra.
+        // 🔴 Cửa 3 "nhận chủ sở hữu" đã chết từ đợt 1B: cột DM_BenhNhan.IDTaiKhoan
+        // không còn, và "hồ sơ thuộc về ai" nay là cặp (SDT x cơ sở) của chính
+        // dòng đó. Xem ADR 0040 và CONTEXT.md mục *Lối vào*.
 
         return luuNguoi.Id;
     }
 
     /// <summary>
-    /// Benh nhan vao thang nhanh noi bo thi chua qua man Dang ky nen chua co ten.
-    /// Tao ho so toi thieu de trang benh nhan co cai ma chao.
+    /// Bệnh nhân vào thẳng nhánh nội bộ thì chưa qua màn Đăng ký nên chưa có tên.
+    /// Tạo hồ sơ tối thiểu để trang bệnh nhân có cái mà chào.
     /// </summary>
     private async Task BaoDamHoSoNoiBoAsync(string maCoSo, string cccd, string dinhDanh,
                                             DanhTinhQuet? quet, CancellationToken ct)
     {
-        // Khong duoc dung o "da co tai khoan": tai khoan la mot, nhung ho so thi
-        // MOI CO SO MOT CAI. Benh nhan tung dung co so A sang co so B ma chi kiem
-        // tai khoan thi B khong co ho so nao, va trang benh nhan khong biet chao ai.
+        // Không được dừng ở "đã có tài khoản": tài khoản là một, nhưng hồ sơ thì
+        // MỖI CƠ SỞ MỘT CÁI. Bệnh nhân từng dùng cơ sở A sang cơ sở B mà chỉ kiểm
+        // tài khoản thì B không có hồ sơ nào, và trang bệnh nhân không biết chào ai.
         var idCoSo = await LayIdCoSoAsync(maCoSo, ct);
         if (idCoSo is null) return;
 
@@ -399,9 +399,9 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
 
         if (daCoHoSo)
         {
-            // Da co ho so roi thi khong phai dung them. NHUNG neu benh nhan vua quet ma
-            // thi day la co hoi dien nhung o con trong (chot 11/09) — nhat la nhom ho so
-            // dang mang ten la SO DIEN THOAI, do dang ky bang OTP tu de ra.
+            // Đã có hồ sơ rồi thì không phải dựng thêm. NHƯNG nếu bệnh nhân vừa quét mã
+            // thì đây là cơ hội điền những ô còn trống (chốt 11/09) — nhất là nhóm hồ sơ
+            // đang mang tên là SỐ ĐIỆN THOẠI, do đăng ký bằng OTP tự đẻ ra.
             if (quet is not null) await DienOTrongTuMaAsync(maCoSo, cccd, dinhDanh, quet, ct);
             return;
         }
@@ -410,14 +410,14 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
     }
 
     /// <summary>
-    /// Dien du lieu tu ma QR vao ho so DA CO — dien nhung o dang TRONG, cong voi o ten khi
-    /// ten cu la RAC (bang dung dinh danh). Luu MaBN neu co quet duoc tu phieu kham.
+    /// Điền dữ liệu từ mã QR vào hồ sơ ĐÃ CÓ — điền những ô đang TRỐNG, cộng với ô tên khi
+    /// tên cũ là RÁC (bằng đúng định danh). Lưu MaBN nếu có quét được từ phiếu khám.
     /// </summary>
     private async Task DienOTrongTuMaAsync(string maCoSo, string cccd, string dinhDanh, DanhTinhQuet quet, CancellationToken ct)
     {
         var o = await TinhOCanDienAsync(cccd, dinhDanh, string.Empty, quet, ct);
 
-        // Chi goi SaveBenhNhan khi co it nhat mot truong thay doi
+        // Chỉ gọi SaveBenhNhan khi có ít nhất một trường thay đổi
         if (!string.IsNullOrEmpty(o.Ten) || o.Ngay is not null
             || !string.IsNullOrWhiteSpace(o.GioiTinh) || !string.IsNullOrWhiteSpace(o.DiaChi))
         {
@@ -429,7 +429,7 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
                 gioiTinh: o.GioiTinh);
         }
 
-        // Luu/cap nhat MaBN vao DM_BenhNhanCoSo neu quet duoc ma tren phieu kham
+        // Lưu/cập nhật MaBN vào DM_BenhNhanCoSo nếu quét được mã trên phiếu khám
         if (!string.IsNullOrWhiteSpace(quet?.MaBN))
         {
             var idCoSo = await LayIdCoSoAsync(maCoSo, ct);
@@ -462,18 +462,18 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
     }
 
     /// <summary>
-    /// 🔴 Thi hanh chot 11/09: <b>du lieu tu ma QR chi duoc dien vao o TRONG hoac o RAC</b>,
-    /// khong dam len ban benh nhan da tu sua tay.
+    /// 🔴 Thi hành chốt 11/09: <b>dữ liệu từ mã QR chỉ được điền vào ô TRỐNG hoặc ô RÁC</b>,
+    /// không đè lên bản bệnh nhân đã tự sửa tay.
     ///
-    /// Cach thi hanh dua han vao <c>DM_BenhNhan_Save</c>: moi cot deu la
-    /// <c>ISNULL(NULLIF(@X,''), X)</c> nen <b>gui NULL (hay chuoi rong cho ten) la giu
-    /// nguyen ban cu</b> — khoi phai sua thu tuc. Chi can o day quyet dinh gui gi.
+    /// Cách thi hành dựa hẳn vào <c>DM_BenhNhan_Save</c>: mọi cột đều là
+    /// <c>ISNULL(NULLIF(@X,''), X)</c> nên <b>gửi NULL (hay chuỗi rỗng cho tên) là giữ
+    /// nguyên bản cũ</b> — khỏi phải sửa thủ tục. Chỉ cần ở đây quyết định gửi gì.
     ///
-    /// Hai cho phai can than:
-    ///  · Ho so CHUA co thi nhanh INSERT lay THANG <c>@TenBN</c>, nen luc do buoc phai gui
-    ///    ten that chu khong duoc gui rong.
-    ///  · CCCD la <b>ma gia</b> thi tra cuu theo CCCD vo nghia (nhieu ho so chung mot ma,
-    ///    tu sau chi muc co loc <c>19_</c>) — bo qua, cu xu nhu ho so moi.
+    /// Hai chỗ phải cẩn thận:
+    ///  · Hồ sơ CHƯA có thì nhánh INSERT lấy THẲNG <c>@TenBN</c>, nên lúc đó buộc phải gửi
+    ///    tên thật chứ không được gửi rỗng.
+    ///  · CCCD là <b>mã giả</b> thì tra cứu theo CCCD vô nghĩa (nhiều hồ sơ chung một mã,
+    ///    từ sau chỉ mục có lọc <c>19_</c>) — bỏ qua, cứ xử như hồ sơ mới.
     /// </summary>
     private async Task<(string Ten, DateTime? Ngay, string? GioiTinh, string? DiaChi, string? Slug)>
         TinhOCanDienAsync(string cccd, string dinhDanh, string hoTen, DanhTinhQuet? quet, CancellationToken ct)
@@ -486,8 +486,8 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
                     : !string.IsNullOrWhiteSpace(quet?.HoTen) ? quet!.HoTen!.Trim()
                     : dinhDanh;
 
-        // Ten cu la RAC khi no bang dung dinh danh: do la ho so tu de ra luc dang ky bang
-        // OTP, chua bao gio di qua man *Them ho so*.
+        // Tên cũ là RÁC khi nó bằng đúng định danh: đó là hồ sơ tự đẻ ra lúc đăng ký bằng
+        // OTP, chưa bao giờ đi qua màn *Thêm hồ sơ*.
         var tenCuLaRac = cu is null
                          || string.IsNullOrWhiteSpace(cu.TenBN)
                          || string.Equals(cu.TenBN.Trim(), dinhDanh, StringComparison.OrdinalIgnoreCase);
@@ -505,7 +505,7 @@ public class LuongCongBenhNhan : ILuongCongBenhNhan
 
     private static string? Rong(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 
-    /// <summary>Ma gia "khong co can cuoc" — cung bo voi <c>HoSoBenhNhanService</c>.</summary>
+    /// <summary>Mã giả "không có căn cước" — cùng bộ với <c>HoSoBenhNhanService</c>.</summary>
     private static readonly string[] MaGiaKhongCanCuoc = { "11111111111", "111111111111" };
 
     public static bool LaMaGia(string? cccd) =>

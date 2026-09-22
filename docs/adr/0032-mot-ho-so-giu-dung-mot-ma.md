@@ -1,7 +1,6 @@
 # 0032 — Một hồ sơ giữ đúng một mã, và đổi mã là một cửa riêng
 
-- **Trạng thái:** Đề xuất
-- **Ngày:** 2026-09-16
+- **Tác giả:** Nam · **Ngày:** 2026-09-16 · **Trạng thái:** Đề xuất
 - **Bối cảnh liên quan:** [0008](0008-moi-duong-ghi-qua-stored-procedure.md) ·
   [0020](0020-tin-cccd-o-loi-vao-chan-o-tang-tai-lieu.md) ·
   [0024](0024-noi-ho-so-tu-dong-hai-tang-va-go-noi.md) ·

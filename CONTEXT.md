@@ -1,8 +1,9 @@
-# SixosPwaTemplate
+# SixosPwa
 
-Khuôn mẫu web cài đặt được của Sixos: một phần mềm ASP.NET Core tối giản mà khách hàng mở bằng đường
-link, rồi tự cài thành biểu tượng trên điện thoại hoặc máy tính. Không chứa nghiệp vụ nào — tồn tại để
-được nhân bản làm điểm khởi đầu cho các phần mềm sau.
+Cổng bệnh nhân của Sixos đang chạy thật: một phần mềm ASP.NET Core cài đặt được (PWA) mà bệnh nhân mở
+bằng đường link, tự cài thành biểu tượng trên điện thoại hoặc máy tính, rồi dùng để xem hồ sơ khám
+bệnh, tài liệu, lịch hẹn của mình tại các cơ sở khám chữa bệnh đang vận hành trên `HIS_CSKH`. Không
+còn là khuôn mẫu/bản nháp để nhân bản — đây là sản phẩm đang phục vụ bệnh nhân thật.
 
 ## Language
 
@@ -377,7 +378,7 @@ giữ nguyên hình dạng, chỉ đổi bảng neo. Câu báo lỗi đang hiể
 cơ sở y tế"* — trước 1B **nói chặt hơn code**, sau 1B mới thành đúng nghĩa đen.
 🔴 Quan hệ một-số-điện-thoại-nhiều-hồ-sơ **chỉ áp cho nhánh màn chung**; cơ sở đi *nhánh bàn giao*
 (`KieuApi='UB'`) giữ nguyên một người một hồ sơ. Hai mô hình danh tính song song là **cố ý**.
-Xem ADR 0027 (đã đảo) và ADR 0034.
+Xem ADR 0027 (đã đảo) và ADR 0040.
 _Tránh_: tài khoản bệnh nhân, đăng ký, profile
 
 **Hồ sơ tự khai**:
@@ -472,7 +473,7 @@ Bản sao bệnh nhân thật, chép từ các DB khách cùng máy chủ (`Nhak
 `NhaKhoa_NoVa`, `nhakhoatamduc712htp`) vào `HIS_CSKH` với **mục đích duy nhất là làm bảng đủ lớn để
 đo**. Không phải người dùng của cổng: không ai trong số đó đăng nhập, không ai nhận thông báo. Nhưng
 cũng **không phải dữ liệu bịa** — giữ nguyên tên, CCCD, ngày sinh và mọi tỉ lệ bẩn của nguồn, vì chính
-mấy tỉ lệ ấy mới thử được *Luật gộp hồ sơ*. Xem ADR 0031.
+mấy tỉ lệ ấy mới thử được *Luật gộp hồ sơ*. Xem ADR 0029.
 _Tránh_: dữ liệu giả, dữ liệu test, dummy, mock
 
 **Đuôi nặng**:

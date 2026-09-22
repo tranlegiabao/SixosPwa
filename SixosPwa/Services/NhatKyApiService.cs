@@ -1,6 +1,6 @@
 namespace SixosPwa.Services;
 
-/// <summary>Ket qua mot cuoc goi vao khu API — gia tri di thang vao cot KetQua.</summary>
+/// <summary>Kết quả một cuộc gọi vào khu API — giá trị đi thẳng vào cột KetQua.</summary>
 public static class KetQuaApi
 {
     public const string Nhan = "NHAN";
@@ -9,8 +9,8 @@ public static class KetQuaApi
 }
 
 /// <summary>
-/// Ly do bi tu choi. Chuoi co dinh chu khong phai cau tieng Viet: day la cot de
-/// GROUP BY luc doi soat, khong phai cau de doc.
+/// Lý do bị từ chối. Chuỗi cố định chứ không phải câu tiếng Việt: đây là cột để
+/// GROUP BY lúc đối soát, không phải câu để đọc.
 /// </summary>
 public static class LyDoApi
 {
@@ -38,16 +38,16 @@ public interface INhatKyApi
 }
 
 /// <summary>
-/// Nhat ky doi soat cua khu API nhan. Ghi qua stored procedure theo ADR 0008.
+/// Nhật ký đối soát của khu API nhận. Ghi qua stored procedure theo ADR 0008.
 ///
 /// <para>
-/// Quy uoc: MOI cuoc goi de lai DUNG MOT dong. Hoac attribute xac thuc chan lai
-/// va ghi dong tu choi, hoac controller chay xong va ghi dong ket qua nghiep vu.
-/// Khong ghi ca hai, neu khong moi cuoc goi thanh hai dong va so lieu doi soat
-/// dem gap doi.
+/// Quy ước: MỖI cuộc gọi để lại ĐÚNG MỘT dòng. Hoặc attribute xác thực chặn lại
+/// và ghi dòng từ chối, hoặc controller chạy xong và ghi dòng kết quả nghiệp vụ.
+/// Không ghi cả hai, nếu không mỗi cuộc gọi thành hai dòng và số liệu đối soát
+/// đếm gấp đôi.
 /// </para>
 /// <para>
-/// Khong bao gio ghi noi dung tep vao day.
+/// Không bao giờ ghi nội dung tệp vào đây.
 /// </para>
 /// </summary>
 public class NhatKyApiService : INhatKyApi
@@ -81,8 +81,8 @@ public class NhatKyApiService : INhatKyApi
         }
         catch (Exception ex)
         {
-            // Nhat ky hong KHONG duoc lam hong cuoc goi nghiep vu: mat mot dong
-            // doi soat con hon tu choi mot phieu ket qua that.
+            // Nhật ký hỏng KHÔNG được làm hỏng cuộc gọi nghiệp vụ: mất một dòng
+            // đối soát còn hơn từ chối một phiếu kết quả thật.
             _logger.LogError(ex, "Khong ghi duoc nhat ky API ({Endpoint}, {KetQua})", endpoint, ketQua);
         }
     }

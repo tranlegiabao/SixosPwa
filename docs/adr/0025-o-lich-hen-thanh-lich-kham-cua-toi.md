@@ -1,7 +1,6 @@
 # 0025 — Ô *Lịch hẹn* thành *Lịch khám của tôi*, trộn hai nguồn — đóng nợ ADR 0023
 
-- **Trạng thái:** Đã chấp nhận
-- **Ngày:** 2026-09-09
+- **Tác giả:** Nam · **Ngày:** 2026-09-09 · **Trạng thái:** Đã chấp nhận
 - **Bối cảnh liên quan:** [0023](0023-o-lich-hen-len-trunk-voi-du-lieu-mau.md) — món nợ mà ADR này
   đóng. [0017](0017-hai-chieu-theo-loai-du-lieu.md) — lịch thì *gọi thẳng* HIS, không giữ bản sao.
 

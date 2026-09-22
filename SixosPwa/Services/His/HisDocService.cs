@@ -6,27 +6,23 @@ using SixosPwa.Models;
 
 namespace SixosPwa.Services.His;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Hop dong tra ve
-// ─────────────────────────────────────────────────────────────────────────────
-
 /// <summary>
-/// Ba trang thai TACH BAC cua mot lan hoi HIS. 🔴 Khong duoc gop
-/// <see cref="ChuaNoi"/> voi <see cref="KhongHoiDuoc"/> vao "khong co du lieu":
-/// Dot 3 da can dung loi nay mot lan (<c>HoiMaDaCoNguoiNhan</c> coi <c>null</c> la
-/// rong => 100% dong roi nham trang thai), va o *Lich kham cua toi* thi im lang
-/// bi dich thanh "ban khong co hen" — benh nhan co hen tai kham that se tin la
-/// minh khong co.
+/// Ba trạng thái TÁCH BẠCH của một lần hỏi HIS. 🔴 Không được gộp
+/// <see cref="ChuaNoi"/> với <see cref="KhongHoiDuoc"/> vào "không có dữ liệu":
+/// Đợt 3 đã cán đúng lỗi này một lần (<c>HoiMaDaCoNguoiNhan</c> coi <c>null</c> là
+/// rỗng => 100% dòng rơi nhầm trạng thái), và ở *Lịch khám của tôi* thì im lặng
+/// bị dịch thành "bạn không có hẹn" — bệnh nhân có hẹn tái khám thật sẽ tin là
+/// mình không có.
 /// </summary>
 public enum TrangThaiHoiHis
 {
-    /// <summary>Co so khong chay HisSoft, hoac duong API dang tat => AN han o.</summary>
+    /// <summary>Cơ sở không chạy HisSoft, hoặc đường API đang tắt => ẨN hẳn ở.</summary>
     ChuaNoi,
 
-    /// <summary>Goi duoc, HIS tra loi (ke ca tra ve tap rong — do la cau tra loi that).</summary>
+    /// <summary>Gọi được, HIS trả lời (kể cả trả về tập rỗng — đó là câu trả lời thật).</summary>
     Xong,
 
-    /// <summary>Da noi nhung HIS khong tra loi lucnay => nhan *chua hoi duoc co so*.</summary>
+    /// <summary>Đã nối nhưng HIS không trả lời lúc này => nhấn *chưa hỏi được cơ sở*.</summary>
     KhongHoiDuoc
 }
 
@@ -36,9 +32,9 @@ public sealed record KetQuaHoiHis<T>(TrangThaiHoiHis TrangThai, T? DuLieu, strin
 }
 
 /// <summary>
-/// Mot ho so ben HIS. 🔴 <see cref="SoCCCD"/> va <see cref="DienThoai"/> da bi HIS
-/// CHE BOT (chi con 4 so cuoi) — dung de HIEN cho nguoi dung nhan ra, KHONG dung
-/// de so khop. Phep so khop CCCD da chay xong ben HIS va ket qua nam o
+/// Một hồ sơ bên HIS. 🔴 <see cref="SoCCCD"/> và <see cref="DienThoai"/> đã bị HIS
+/// CHE BỚT (chỉ còn 4 số cuối) — dùng để HIỆN cho người dùng nhận ra, KHÔNG dùng
+/// để so khớp. Phép so khớp CCCD đã chạy xong bên HIS và kết quả nằm ở
 /// <see cref="CccdKhop"/>.
 /// </summary>
 public sealed class HoSoHis
@@ -57,7 +53,7 @@ public sealed class HoSoHis
     [JsonPropertyName("idBNCu")]    public long? IdBNCu { get; set; }
 }
 
-/// <summary>Mot hen tai kham sap toi. KHONG co gio — nguon ben HIS kieu <c>date</c>.</summary>
+/// <summary>Một hẹn tái khám sắp tới. KHÔNG có giờ — nguồn bên HIS kiểu <c>date</c>.</summary>
 public sealed class LichHenHis
 {
     [JsonPropertyName("maBN")]     public string? MaBN { get; set; }
@@ -71,37 +67,37 @@ public sealed class LichHenHis
 public interface IHisDocService
 {
     /// <summary>
-    /// Tra cuu ho so theo *Luat gop ho so* (bon o). <paramref name="cccd"/> co the
-    /// rong — HIS van tra danh sach de cong dua ra cho benh nhan tu nhan (*Tang 2*).
+    /// Tra cứu hồ sơ theo *Luật gộp hồ sơ* (bốn ô). <paramref name="cccd"/> có thể
+    /// rỗng — HIS vẫn trả danh sách để cổng đưa ra cho bệnh nhân tự nhận (*Tầng 2*).
     /// </summary>
     Task<KetQuaHoiHis<List<HoSoHis>>> TraCuuHoSoAsync(
         long idCoSo, string? cccd, string hoTen, DateTime ngaySinh, string gioiTinh,
         CancellationToken ct = default);
 
-    /// <summary>Hen tai kham sap toi cua TAT CA ma cua mot ho so, mot cuoc goi.</summary>
+    /// <summary>Hẹn tái khám sắp tới của TẤT CẢ mã của một hồ sơ, một cuộc gọi.</summary>
     Task<KetQuaHoiHis<List<LichHenHis>>> LayLichHenAsync(
         long idCoSo, IReadOnlyCollection<string> maBN, CancellationToken ct = default);
 
-    /// <summary>Co so nay co dang noi HIS khong — dung cho CAI VAN, khong goi ra ngoai.</summary>
+    /// <summary>Cơ sở này có đang nối HIS không — dùng cho CÀI VẶN, không gọi ra ngoài.</summary>
     Task<bool> CoNoiHisAsync(long idCoSo, CancellationToken ct = default);
 }
 
 /// <summary>
-/// Duong DOC cua cong sang HIS cua co so (Giai doan 2, Dot 4).
+/// Đường ĐỌC của cổng sang HIS của cơ sở (Giai đoạn 2, Đợt 4).
 ///
 /// <para>
-/// Bam khuon cuoc goi da chay that o <c>Areas/Admin/KiemTraHisController</c>:
-/// <c>BaseAddress</c> lay tu <c>DM_DoiTacApi.BaseUrl</c>, header <c>X-API-Key</c> +
-/// <c>X-Ma-CSKCB</c>, timeout 15 giay. Gom vao MOT cho de khoi moi man mot ban sao.
+/// Bám khuôn cuộc gọi đã chạy thật ở <c>Areas/Admin/KiemTraHisController</c>:
+/// <c>BaseAddress</c> lấy từ <c>DM_DoiTacApi.BaseUrl</c>, header <c>X-API-Key</c> +
+/// <c>X-Ma-CSKCB</c>, timeout 15 giây. Gom vào MỘT chỗ để khỏi mỗi màn một bản sao.
 /// </para>
 /// <para>
-/// 🔴 Chi hoi HIS KHI NGUOI DUNG BAM (luu ho so / mo o lich), khong hoi moi lan mo
-/// man: mot tai khoan N ho so thi mo man mot lan se thanh N cuoc goi sang may khach.
+/// 🔴 Chỉ hỏi HIS KHI NGƯỜI DÙNG BẤM (lưu hồ sơ / mở ở lịch), không hỏi mỗi lần mở
+/// màn: một tài khoản N hồ sơ thì mở màn một lần sẽ thành N cuộc gọi sang máy khách.
 /// </para>
 /// <para>
-/// 🔴 Khong bao gio nem ngoai le ra ngoai. Moi truc trac (HIS chet, timeout, JSON
-/// la) deu ve <see cref="TrangThaiHoiHis.KhongHoiDuoc"/> — man phai NOI duoc rang
-/// no khong hoi duoc, chu khong duoc sap.
+/// 🔴 Không bao giờ ném ngoại lệ ra ngoài. Mọi trục trặc (HIS chết, timeout, JSON
+/// lạ) đều về <see cref="TrangThaiHoiHis.KhongHoiDuoc"/> — màn phải NÓI được rằng
+/// nó không hỏi được, chứ không được sập.
 /// </para>
 /// </summary>
 public sealed class HisDocService : IHisDocService
@@ -110,9 +106,9 @@ public sealed class HisDocService : IHisDocService
 
     private static readonly JsonSerializerOptions _json = new()
     {
-        // HisSoft CAMEL-HOA model co kieu khi tra JSON (data.maBN, data.tenBN).
-        // Bat khong phan biet hoa/thuong de ban HIS cu (neu co) khong lam ca luoi
-        // trong ruot — dung loi da can o Dot 3, khong mot dau hieu nao bao hong.
+        // HisSoft CAMEL-HÓA model có kiểu khi trả JSON (data.maBN, data.tenBN).
+        // Bật không phân biệt hoa/thường để bản HIS cũ (nếu có) không làm cả lưới
+        // trong ruột — đúng lỗi đã cán ở Đợt 3, không một dấu hiệu nào báo hỏng.
         PropertyNameCaseInsensitive = true
     };
 
@@ -141,8 +137,8 @@ public sealed class HisDocService : IHisDocService
                   + $"&ngaySinh={ngaySinh:yyyy-MM-dd}"
                   + $"&gioiTinh={Uri.EscapeDataString(gioiTinh)}";
 
-        // CCCD chi gui khi CO va KHONG PHAI truong hop khong co CCCD (11 hoac 12 so 1).
-        // HIS dung no de dat co cccdKhop tren tung dong, va co do la ranh gioi *Tang 1* / *Tang 2*.
+        // CCCD chỉ gửi khi CÓ và KHÔNG PHẢI trường hợp không có CCCD (11 hoặc 12 số 1).
+        // HIS dùng nó để đặt cờ cccdKhop trên từng dòng, và cờ đó là ranh giới *Tầng 1* / *Tầng 2*.
         var cccdTrim = cccd?.Trim();
         var laCccdKhongCo = cccdTrim is "11111111111" or "111111111111";
 
@@ -161,8 +157,8 @@ public sealed class HisDocService : IHisDocService
             .Distinct(StringComparer.Ordinal)
             .ToList();
 
-        // Khong co ma nao = ho so chua noi. Do la cau tra loi CHAC CHAN, khong phai
-        // "chua hoi duoc" — khoi ton mot cuoc goi de nhan ve tap rong.
+        // Không có mã nào = hồ sơ chưa nối. Đó là câu trả lời CHẮC CHẮN, không phải
+        // "chưa hỏi được" — khỏi tốn một cuộc gọi để nhận về tập rỗng.
         if (ma.Count == 0)
             return Task.FromResult(new KetQuaHoiHis<List<LichHenHis>>(
                 TrangThaiHoiHis.Xong, new List<LichHenHis>()));
@@ -177,19 +173,19 @@ public sealed class HisDocService : IHisDocService
     private sealed record CuaHis(Uri Goc, string Khoa, string MaCoSo);
 
     /// <summary>
-    /// Cau hinh de goi sang HIS cua mot co so, hoac <c>null</c> khi co so nay
-    /// khong di duong nay. Cac dieu kien deu la "chua noi", khong phai loi:
-    /// <c>KetNoi_Active = 0</c> · khong cau hinh <c>KetNoi_BaseUrlHIS</c>.
-    /// Thieu <c>KetNoi_BaseUrlHIS</c> hay <c>KetNoi_KhoaGoiHIS</c> khi dang mo cong thi
-    /// ghi canh bao vi gan nhu chac chan la seed thieu.
+    /// Cấu hình để gọi sang HIS của một cơ sở, hoặc <c>null</c> khi cơ sở này
+    /// không đi đường này. Các điều kiện đều là "chưa nối", không phải lỗi:
+    /// <c>KetNoi_Active = 0</c> · không cấu hình <c>KetNoi_BaseUrlHIS</c>.
+    /// Thiếu <c>KetNoi_BaseUrlHIS</c> hay <c>KetNoi_KhoaGoiHIS</c> khi đang mở cổng thì
+    /// ghi cảnh báo vì gần như chắc chắn là seed thiếu.
     ///
     /// <para>
-    /// 🔴 <b>Doc bang CAU SQL RIENG (ADO thuan), co y khong qua EF.</b> Bang
-    /// <c>DM_DoiTacApi</c> da bi xoa, cau hinh don vao <c>DM_CSKCB</c>; trong do
-    /// <c>KetNoi_KhoaGoiHIS</c> la <b>cot bi mat</b> — KHONG duoc khai trong thuc the EF
-    /// <see cref="Models.DMCSKCB"/> vi co 59 cho doc <c>DM_CSKCB</c> qua EF va trang cong
-    /// khai nap TRON thuc the moi co so. Doc SQL rieng la sua 3 cho thay vi 59.
-    /// Chi SELECT dung cot can, khong <c>SELECT *</c>.
+    /// 🔴 <b>Đọc bằng CÂU SQL RIÊNG (ADO thuần), cố ý không qua EF.</b> Bảng
+    /// <c>DM_DoiTacApi</c> đã bị xóa, cấu hình dồn vào <c>DM_CSKCB</c>; trong đó
+    /// <c>KetNoi_KhoaGoiHIS</c> là <b>cột bí mật</b> — KHÔNG được khai trong thực thể EF
+    /// <see cref="Models.DMCSKCB"/> vì có 59 chỗ đọc <c>DM_CSKCB</c> qua EF và trang công
+    /// khai nạp TRỌN thực thể mọi cơ sở. Đọc SQL riêng là sửa 3 chỗ thay vì 59.
+    /// Chỉ SELECT đúng cột cần, không <c>SELECT *</c>.
     /// </para>
     /// </summary>
     private async Task<CuaHis?> LayCuaAsync(long idCoSo, CancellationToken ct)
@@ -286,14 +282,14 @@ WHERE ID = @idCoSo;";
                 return new KetQuaHoiHis<List<T>>(TrangThaiHoiHis.KhongHoiDuoc, null,
                     "HIS trả nội dung không đọc được");
 
-            // data = null ma success = true thi coi la TAP RONG, khong phai loi:
-            // "khong tim thay" la ket qua binh thuong cua ca hai cua nay.
+            // data = null mà success = true thì coi là TẬP RỖNG, không phải lỗi:
+            // "không tìm thấy" là kết quả bình thường của cả hai cửa này.
             return new KetQuaHoiHis<List<T>>(TrangThaiHoiHis.Xong, boc.Data ?? new List<T>());
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
-            // Nguoi dung bo trang — khong phai HIS hong. Van ve KhongHoiDuoc vi
-            // ta that su khong co du lieu, nhung khong ghi canh bao.
+            // Người dùng bỏ trang — không phải HIS hỏng. Vẫn về KhongHoiDuoc vì
+            // ta thật sự không có dữ liệu, nhưng không ghi cảnh báo.
             return new KetQuaHoiHis<List<T>>(TrangThaiHoiHis.KhongHoiDuoc, null);
         }
         catch (Exception ex)

@@ -365,3 +365,8 @@ FodyWeavers.xsd
 .agents/
 temp_qr.json
 
+# Repo chỉ chứa mã nguồn — CSDL, binary và file truy vấn tạm không lên git
+Database/
+cloudflared.exe
+/*.sql
+

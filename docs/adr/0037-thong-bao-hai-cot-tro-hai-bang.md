@@ -1,8 +1,7 @@
 # 0037 — `HT_ThongBao` có hai cột trỏ hai bảng khác nhau, và đó là bước trung gian
 
-- **Trạng thái:** Đề xuất
-- **Ngày:** 2026-09-19
-- **Bối cảnh liên quan:** [0034](0034-idtaikhoantheosdt-soi-guong-idbenhnhan.md) ·
+- **Tác giả:** Nam · **Ngày:** 2026-09-19 · **Trạng thái:** Đề xuất
+- **Bối cảnh liên quan:** [0040](0040-idtaikhoantheosdt-soi-guong-idbenhnhan.md) ·
   [0036](0036-ho-so-la-cap-nguoi-x-co-so.md)
 
 ## Bối cảnh

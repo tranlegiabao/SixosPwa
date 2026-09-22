@@ -68,8 +68,8 @@ public sealed class DashboardController : AdminControllerBase
         //
         // Tài khoản có thể NULL (hồ sơ cơ sở tự khai, chưa ai nhận) ⇒ LEFT JOIN, và
         // khi đó SDT lấy từ chính hồ sơ.
-        // Dot 1B: mot dong = con nguoi + ho so tai co so, va benh nhan khong con
-        // tai khoan => SDT lay thang tu chinh dong do.
+        // Đợt 1B: một dòng = con người + hồ sơ tại cơ sở, và bệnh nhân không còn
+        // tài khoản => SDT lấy thẳng từ chính dòng đó.
         var facilityPatients = await (
             from h in _db.BenhNhans.AsNoTracking()
             join cs in _db.DMCSKCBs.AsNoTracking() on h.IdCoSo equals (long?)cs.Id
@@ -77,7 +77,7 @@ public sealed class DashboardController : AdminControllerBase
             {
                 MaCoSo = cs.MaCoSo,
                 SDT = h.SDT,
-                // Dot 1B: khong con tai khoan benh nhan; ID cua ho so chinh la danh tinh.
+                // Đợt 1B: không còn tài khoản bệnh nhân; ID của hồ sơ chính là danh tính.
                 Id = (long?)h.Id,
                 CCCD = h.CCCD
             })
@@ -114,7 +114,7 @@ public sealed class DashboardController : AdminControllerBase
         {
             AccountCount = await _db.TaiKhoans.CountAsync(),
             AdminAccountCount = await _db.TaiKhoans.CountAsync(x => x.Role == "Admin"),
-            // Dot 1B: benh nhan khong con tai khoan (ADR 0034) => luon 0.
+            // Đợt 1B: bệnh nhân không còn tài khoản (ADR 0040) => luôn 0.
             PatientAccountCount = 0,
             PatientCount = await _db.BenhNhans.CountAsync(),
             FacilityCount = await _db.DMCSKCBs.CountAsync(),
@@ -169,8 +169,8 @@ public sealed class DashboardController : AdminControllerBase
             return RedirectToAction(nameof(Index), redirectValues);
         }
 
-        // Ban HTML truoc khi sua — doc TRUOC khi luu, neu khong thi khong con
-        // cach nao biet admin vua go bo the <img> nao.
+        // Bản HTML trước khi sửa — đọc TRƯỚC khi lưu, nếu không thì không còn
+        // cách nào biết admin vừa gỡ bỏ thẻ <img> nào.
         var noiDungCu = await _adminStoredProcedures.GetNoiDungCskcbAsync(facility.Id, topic.ID);
         var noiDungMoi = SanitizeHtml(model.NoiDung);
 
@@ -184,8 +184,8 @@ public sealed class DashboardController : AdminControllerBase
             return RedirectToAction(nameof(Index), redirectValues);
         }
 
-        // Luu xong roi moi don: DB da giu ban MOI nen phep do cheo trong
-        // DonAnhService khong con thay anh vua bi go.
+        // Lưu xong rồi mới dọn: DB đã giữ bản MỚI nên phép đo chéo trong
+        // DonAnhService không còn thấy ảnh vừa bị gỡ.
         await _donAnh.DonTheoHtmlAsync(noiDungCu, noiDungMoi);
 
         Success("Đã lưu nội dung HTML cho cơ sở y tế.");

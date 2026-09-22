@@ -155,7 +155,7 @@ public sealed class KhoCoSoService : IKhoCoSoService
         }
         catch (Exception ex)
         {
-            // Sai mat khau, host chet, thu muc goc khong co — deu la "chua dat".
+            // Sai mật khẩu, host chết, thư mục gốc không có — đều là "chưa đạt".
             _logger.LogWarning(ex, "Thu ket noi kho {Host} / {TaiKhoan} that bai",
                 thongSo.Host, thongSo.TaiKhoan);
             return false;
@@ -242,10 +242,10 @@ WHERE ID = @idCoSo;";
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         cts.CancelAfter(TimeoutMs);
 
-        // Abort() de socket khong bi bo lai treo cho den khi Windows tu bo cuoc.
+        // Abort() để socket không bị bỏ lại treo cho đến khi Windows tự bỏ cuộc.
         using var dangKy = cts.Token.Register(() =>
         {
-            try { request.Abort(); } catch { /* dang huy roi, nuot */ }
+            try { request.Abort(); } catch { /* đang hủy rồi, nuốt */ }
         });
 
         return (FtpWebResponse)await request.GetResponseAsync().WaitAsync(cts.Token);

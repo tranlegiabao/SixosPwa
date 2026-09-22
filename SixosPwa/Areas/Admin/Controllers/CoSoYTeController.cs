@@ -20,13 +20,13 @@ public sealed class CoSoYTeController : AdminControllerBase
     private readonly AdminStoredProcedureService _adminStoredProcedures;
     private readonly IFtpService _ftp;
     private readonly IDonAnhService _donAnh;
-    /// <summary>Chi de bam nut "Thu ket noi kho". Lop nay CHI DOC (ADR 0030).</summary>
+    /// <summary>Chỉ để bấm nút "Thử kết nối kho". Lớp này CHỈ ĐỌC (ADR 0030).</summary>
     private readonly IKhoCoSoService _khoCoSo;
 
     /// <summary>
-    /// Canh bao KHONG chan viec Luu — vd FTP hong dung luc tai anh. Noi vao cuoi
-    /// cau thong bao thanh cong nen hien duoc o ca nhanh AJAX lan nhanh thuong,
-    /// khong phai dung toi .js nao.
+    /// Cảnh báo KHÔNG chặn việc Lưu — vd FTP hỏng đúng lúc tải ảnh. Nối vào cuối
+    /// câu thông báo thành công nên hiện được ở cả nhánh AJAX lẫn nhánh thường,
+    /// không phải đụng tới .js nào.
     /// </summary>
     private readonly List<string> _canhBao = new();
 
@@ -85,7 +85,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         }
         if (!string.IsNullOrWhiteSpace(loaiCS) && AllowedTypes.Contains(loaiCS))
         {
-            // Nhom co so nay la khoa ngoai sang DM_NhomCS, khong con la chuoi trong bang co so.
+            // Nhóm cơ sở này là khóa ngoại sang DM_NhomCS, không còn là chuỗi trong bảng cơ sở.
             var idNhom = await _db.DMNhomCSs.AsNoTracking()
                 .Where(nc => nc.MaNhom == loaiCS)
                 .Select(nc => (long?)nc.ID)
@@ -147,8 +147,8 @@ public sealed class CoSoYTeController : AdminControllerBase
                 nameof(model.LogoFile));
         var advertisingImageUrl = await ResolveAdvertisingImageAsync(model, null);
         model.QcAnh = advertisingImageUrl;
-        // Giu nguyen net cu cua SaveAdvertisingAsync: so tien = 0 thi quang cao TAT,
-        // ca noi dung lan anh deu ve null. Chi khac la gio no la cot cua chinh co so.
+        // Giữ nguyên nét cũ của SaveAdvertisingAsync: số tiền = 0 thì quảng cáo TẮT,
+        // cả nội dung lẫn ảnh đều về null. Chỉ khác là giờ nó là cột của chính cơ sở.
         if (model.QcSoTienDaTra.GetValueOrDefault() <= 0) model.QcNoiDung = null;
         ApplyOperatingHours(model);
         ValidateType(model.LoaiCS);
@@ -191,9 +191,9 @@ public sealed class CoSoYTeController : AdminControllerBase
                 return RedirectToAction(nameof(Edit), new { id = createdFacilityForAdvertising.Id, topicId = model.TopicId });
             }
 
-            // 🔴 Dot A: DM_CSKCB_QuangCao_Save bi bo — noi dung / anh quang cao la
-            // cot QcNoiDung / QcAnh cua chinh DM_CSKCB, da luu xong o DM_CSKCB_Save
-            // ngay tren. Khong con luot ghi thu hai nao o day.
+            // 🔴 Đợt A: DM_CSKCB_QuangCao_Save bị bỏ — nội dung / ảnh quảng cáo là
+            // cột QcNoiDung / QcAnh của chính DM_CSKCB, đã lưu xong ở DM_CSKCB_Save
+            // ngay trên. Không còn lượt ghi thứ hai nào ở đây.
         }
 
         if (createdFacilityForAdvertising != null)
@@ -239,10 +239,10 @@ public sealed class CoSoYTeController : AdminControllerBase
     {
         var entity = await _db.DMCSKCBs.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
         if (entity == null) return NotFound();
-        // Ban ASYNC moi nap LoaiCS + gio lam viec tu bang con DM_CSKCB_GioLamViec.
-        // Ban dong bo de ca bon truong nay NULL, ma man Sua co bind ca bon =>
-        // o gio trang va "Loai hinh" tut ve "Chua phan loai", bam Luu la XOA MAT
-        // loai co so. Da dinh o Dot 3.
+        // Bản ASYNC mới nạp LoaiCS + giờ làm việc từ bảng con DM_CSKCB_GioLamViec.
+        // Bản đồng bộ để cả bốn trường này NULL, mà màn Sửa có bind cả bốn =>
+        // ô giờ trắng và "Loại hình" tụt về "Chưa phân loại", bấm Lưu là XÓA MẤT
+        // loại cơ sở. Đã dính ở Đợt 3.
         var model = await ToViewModelAsync(entity);
         model.ActiveSection = section;
         await PopulateContentEditorAsync(model, topicId);
@@ -256,9 +256,9 @@ public sealed class CoSoYTeController : AdminControllerBase
         var entity = await _db.DMCSKCBs.AsNoTracking().FirstOrDefaultAsync(x => x.Id == model.Id);
         if (entity == null) return NotFound();
 
-        // Ghi nho anh cu de don SAU KHI luu thanh cong. Khong duoc xoa som: doan
-        // giai quyet anh nam truoc SaveCoSoYTeAsync, thu tuc do van co the that
-        // bai — xoa truoc la mat anh trong khi DB con tro toi no.
+        // Ghi nhớ ảnh cũ để dọn SAU KHI lưu thành công. Không được xóa sớm: đoạn
+        // giải quyết ảnh nằm trước SaveCoSoYTeAsync, thủ tục đó vẫn có thể thất
+        // bại — xóa trước là mất ảnh trong khi DB còn trỏ tới nó.
         var logoCu = entity.Logo;
         var anhCoSoCu = entity.AnhBia;
         var anhQuangCaoCu = entity.QcAnh;
@@ -283,8 +283,8 @@ public sealed class CoSoYTeController : AdminControllerBase
                 nameof(model.LogoFile));
         var advertisingImageUrl = await ResolveAdvertisingImageAsync(model, entity.QcAnh);
         model.QcAnh = advertisingImageUrl;
-        // Giu nguyen net cu cua SaveAdvertisingAsync: so tien = 0 thi quang cao TAT,
-        // ca noi dung lan anh deu ve null. Chi khac la gio no la cot cua chinh co so.
+        // Giữ nguyên nét cũ của SaveAdvertisingAsync: số tiền = 0 thì quảng cáo TẮT,
+        // cả nội dung lẫn ảnh đều về null. Chỉ khác là giờ nó là cột của chính cơ sở.
         if (model.QcSoTienDaTra.GetValueOrDefault() <= 0) model.QcNoiDung = null;
         ApplyOperatingHours(model);
         ValidateType(model.LoaiCS);
@@ -317,9 +317,9 @@ public sealed class CoSoYTeController : AdminControllerBase
             return View(model);
         }
 
-        // 🔴 Dot A: HT_KhoFtpCoSo_Save bi bo — cau hinh kho la cot Ftp_* cua chinh
-        // DM_CSKCB, da luu cung luot DM_CSKCB_Save ngay tren. Khong con luot ghi thu
-        // hai, nen cung khong con canh bao "kho chua luu" rieng.
+        // 🔴 Đợt A: HT_KhoFtpCoSo_Save bị bỏ — cấu hình kho là cột Ftp_* của chính
+        // DM_CSKCB, đã lưu cùng lượt DM_CSKCB_Save ngay trên. Không còn lượt ghi thứ
+        // hai, nên cũng không còn cảnh báo "kho chưa lưu" riêng.
 
         var loiGioLamViec = await LuuGioLamViecAsync(model.Id, model);
         if (loiGioLamViec != null)
@@ -329,7 +329,7 @@ public sealed class CoSoYTeController : AdminControllerBase
             return RedirectToAction(nameof(Edit), new { id = model.Id, topicId = model.TopicId, section = model.ActiveSection });
         }
 
-        // Ban HTML truoc khi sua — dung de biet anh nao vua bi admin xoa khoi bai.
+        // Bản HTML trước khi sửa — dùng để biết ảnh nào vừa bị admin xóa khỏi bài.
         var noiDungCu = new List<(string? Cu, string? Moi)>();
         var topicContents = await BuildLogoSynchronizedContentsAsync(
             model.Id,
@@ -355,8 +355,8 @@ public sealed class CoSoYTeController : AdminControllerBase
             }
         }
 
-        // Toi day moi ba thu tuc luu deu da thanh cong => DB dang giu gia tri MOI,
-        // nen anh cu nao khong con dong nao tro toi thi don duoc.
+        // Tới đây mọi ba thủ tục lưu đều đã thành công => DB đang giữ giá trị MỚI,
+        // nên ảnh cũ nào không còn dòng nào trỏ tới thì dọn được.
         await _donAnh.DonAsync(logoCu, model.Logo);
         await _donAnh.DonAsync(anhCoSoCu, model.AnhBia);
         await _donAnh.DonAsync(anhQuangCaoCu, advertisingImageUrl);
@@ -387,9 +387,9 @@ public sealed class CoSoYTeController : AdminControllerBase
             return RedirectToAction(nameof(Index), new { q, loaiCS, page = SafePage(page) });
         }
 
-        // Doc anh cua co so TRUOC khi xoa. DM_CSKCB_Delete xoa ca dong cua co so
-        // lan moi dong DM_CSKCB_NoiDung cua no, nen sau khi
-        // goi thu tuc thi khong con cach nao biet no da dung nhung anh gi.
+        // Đọc ảnh của cơ sở TRƯỚC khi xóa. DM_CSKCB_Delete xóa cả dòng của cơ sở
+        // lẫn mọi dòng DM_CSKCB_NoiDung của nó, nên sau khi
+        // gọi thủ tục thì không còn cách nào biết nó đã dùng những ảnh gì.
         var coSo = await _db.DMCSKCBs.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
         var baiViet = coSo == null
             ? new List<string?>()
@@ -401,13 +401,13 @@ public sealed class CoSoYTeController : AdminControllerBase
         var result = await _adminStoredProcedures.DeleteCoSoYTeAsync(id);
         if (result.Succeeded)
         {
-            // Xoa co so xong ma khong don thi logo, anh quang cao va moi anh nhung
-            // trong bai viet cua no deu thanh anh mo coi tren kho — dung loai rac
-            // ma DonAnhService sinh ra de dep, chi la o mot cua khac.
+            // Xóa cơ sở xong mà không dọn thì logo, ảnh quảng cáo và mọi ảnh nhúng
+            // trong bài viết của nó đều thành ảnh mồ côi trên kho — đúng loại rác
+            // mà DonAnhService sinh ra để dẹp, chỉ là ở một cửa khác.
             //
-            // Chay SAU khi thu tuc thanh cong, y nhu duong Sua: luc nay dong cua co
-            // so da bien khoi DB nen phep do cheo trong DonAnhService tra dung ket
-            // qua — anh nao con co so KHAC dung thi van duoc giu lai.
+            // Chạy SAU khi thủ tục thành công, y như đường Sửa: lúc này dòng của cơ
+            // sở đã biến khỏi DB nên phép đo chéo trong DonAnhService trả đúng kết
+            // quả — ảnh nào còn cơ sở KHÁC dùng thì vẫn được giữ lại.
             await _donAnh.DonAsync(coSo?.Logo, null);
             await _donAnh.DonAsync(coSo?.AnhBia, null);
             await _donAnh.DonAsync(coSo?.QcAnh, null);
@@ -444,9 +444,9 @@ public sealed class CoSoYTeController : AdminControllerBase
             HienThiCongKhai = model.HienThiCongKhai
         };
 
-        // Gio lam viec nay nam o bang con DM_CSKCB_GioLamViec, khong con la cot cua
-        // bang co so. Man xem truoc chi can chuoi hien thi nen dung thang gia tri
-        // dang nhap tren form.
+        // Giờ làm việc này nằm ở bảng con DM_CSKCB_GioLamViec, không còn là cột của
+        // bảng cơ sở. Màn xem trước chỉ cần chuỗi hiển thị nên dùng thẳng giá trị
+        // đang nhập trên form.
         var moCuaXemTruoc = ParsePreviewTime(model.GioMoCua);
         var dongCuaXemTruoc = ParsePreviewTime(model.GioDongCua);
         var tgLamViecXemTruoc = model.TGLamViec;
@@ -560,7 +560,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         string thuMuc,
         string propertyName)
     {
-        // Tai len that bai (FTP hong) thi GIU anh cu, dung de cot ve null.
+        // Tải lên thất bại (FTP hỏng) thì GIỮ ảnh cũ, đừng để cột về null.
         if (imageFile != null)
             return await SaveImageAsync(imageFile, maCoSo, thuMuc, propertyName) ?? fallback;
 
@@ -574,25 +574,25 @@ public sealed class CoSoYTeController : AdminControllerBase
     }
 
     /// <summary>
-    /// Bac cau o "Loai hinh" tren form sang khoa ngoai ma thu tuc luu doc.
+    /// Bắc cầu ô "Loại hình" trên form sang khóa ngoại mà thủ tục lưu đọc.
     ///
-    /// O do bind vao <c>LoaiCS</c> (chuoi ma nhom, vd "pkdk"), nhung
-    /// <c>SaveCoSoYTeAsync</c> lai gui <c>@IDNhomCS</c> lay tu
-    /// <c>SelectedNhomCSId</c> — ma KHONG co o nao tren form dat gia tri do, nen
-    /// no luon ve null sau model binding. Thu tuc <c>DM_CSKCB_Save</c> thi
-    /// <c>SET IDNhomCS = @IDNhomCS</c> VO DIEU KIEN, khong bo qua null.
+    /// Ô đó bind vào <c>LoaiCS</c> (chuỗi mã nhóm, vd "pkdk"), nhưng
+    /// <c>SaveCoSoYTeAsync</c> lại gửi <c>@IDNhomCS</c> lấy từ
+    /// <c>SelectedNhomCSId</c> — mà KHÔNG có ô nào trên form đặt giá trị đó, nên
+    /// nó luôn về null sau model binding. Thủ tục <c>DM_CSKCB_Save</c> thì
+    /// <c>SET IDNhomCS = @IDNhomCS</c> VÔ ĐIỀU KIỆN, không bỏ qua null.
     ///
-    /// Hau qua truoc ban va: MOI lan bam Luu deu xoa trang Loai hinh cua co so,
-    /// ke ca khi khong ai dung toi o do. Dau vet con lai trong DB: nhung co so
-    /// tung sua qua man nay (ID 1, 8, 11, 15, 18) deu co IDNhomCS = NULL, con
-    /// nhung co so chua ai sua thi van giu nguyen gia tri seed.
-    /// Nam sua
+    /// Hậu quả trước bản vá: MỖI lần bấm Lưu đều xóa trắng Loại hình của cơ sở,
+    /// kể cả khi không ai đụng tới ô đó. Dấu vết còn lại trong DB: những cơ sở
+    /// từng sửa qua màn này (ID 1, 8, 11, 15, 18) đều có IDNhomCS = NULL, còn
+    /// những cơ sở chưa ai sửa thì vẫn giữ nguyên giá trị seed.
+    /// Nam sửa
     /// </summary>
     private async Task ApDungLoaiCoSoAsync(CoSoYTeEditViewModel model)
     {
         if (string.IsNullOrWhiteSpace(model.LoaiCS))
         {
-            // "Chua phan loai" — o day null moi la y dinh that cua nguoi dung.
+            // "Chưa phân loại" — ở đây null mới là ý định thật của người dùng.
             model.SelectedNhomCSId = null;
             return;
         }
@@ -619,14 +619,14 @@ public sealed class CoSoYTeController : AdminControllerBase
     }
 
     /// <summary>
-    /// Tai anh len kho FTP dung chung, tra ve URL de cat vao cot DB.
+    /// Tải ảnh lên kho FTP dùng chung, trả về URL để cắt vào cột DB.
     ///
-    /// Hai loai that bai KHAC HAN nhau, dung gop lam mot:
-    ///  - Sai kich thuoc / sai duoi tep la LOI NGUOI DUNG  -> ModelState, chan Luu.
-    ///  - FTP hong la SU CO HA TANG                        -> canh bao, VAN Luu,
-    ///    va nguoi goi phai giu lai gia tri cu (xem ResolveImageAsync). Truoc ban
-    ///    va, ham nay tra null khi loi con noi goi thi gan thang vao cot => FTP
-    ///    hong mot lan la XOA TRANG logo trong DB.
+    /// Hai loại thất bại KHÁC HẲN nhau, đừng gộp làm một:
+    ///  - Sai kích thước / sai đuôi tệp là LỖI NGƯỜI DÙNG  -> ModelState, chặn Lưu.
+    ///  - FTP hỏng là SỰ CỐ HẠ TẦNG                        -> cảnh báo, VẪN Lưu,
+    ///    và người gọi phải giữ lại giá trị cũ (xem ResolveImageAsync). Trước bản
+    ///    vá, hàm này trả null khi lỗi còn nơi gọi thì gán thẳng vào cột => FTP
+    ///    hỏng một lần là XÓA TRẮNG logo trong DB.
     /// </summary>
     private async Task<string?> SaveImageAsync(
         IFormFile imageFile,
@@ -683,9 +683,9 @@ public sealed class CoSoYTeController : AdminControllerBase
         model.KetNoi_BaseUrlHIS = model.KetNoi_BaseUrlHIS?.Trim();
         model.Ftp_Host = model.Ftp_Host?.Trim();
         model.Ftp_ThuMucGoc = model.Ftp_ThuMucGoc?.Trim();
-        // 🔴 Ba o bi mat KHONG duoc ep ve chuoi rong: rong va NULL o day cung mot
-        // nghia "khong doi", va stored phan biet bang NULL. Ep "" la GHI DE mat khau
-        // bang chuoi rong — dung kho ngay lap tuc.
+        // 🔴 Ba ô bí mật KHÔNG được ép về chuỗi rỗng: rỗng và NULL ở đây cùng một
+        // nghĩa "không đổi", và stored phân biệt bằng NULL. Ép "" là GHI ĐÈ mật khẩu
+        // bằng chuỗi rỗng — đụng kho ngay lập tức.
         model.Ftp_TaiKhoan = RongThanhNull(model.Ftp_TaiKhoan);
         model.Ftp_MatKhau = RongThanhNull(model.Ftp_MatKhau);
         model.KetNoi_KhoaGoiHIS = RongThanhNull(model.KetNoi_KhoaGoiHIS);
@@ -777,7 +777,7 @@ public sealed class CoSoYTeController : AdminControllerBase
             .OrderBy(x => x.Id)
             .ToListAsync();
 
-        // Chu de nay la khoa ngoai IDChuDe, khong con la chuoi LoaiND tron hai he ma.
+        // Chủ đề này là khóa ngoại IDChuDe, không còn là chuỗi LoaiND trộn hai hệ mã.
         var maTheoId = topics.ToDictionary(x => x.ID, x => x.MaChuDe);
 
         return items
@@ -795,8 +795,8 @@ public sealed class CoSoYTeController : AdminControllerBase
             .OrderByDescending(x => x.QcSoTienDaTra)
             .Take(5)
             .ToListAsync();
-        // Dot A: noi dung / anh quang cao doc thang tren dong co so, khong con
-        // bang con DM_CSKCB_QuangCao de ghep.
+        // Đợt A: nội dung / ảnh quảng cáo đọc thẳng trên dòng cơ sở, không còn
+        // bảng con DM_CSKCB_QuangCao để ghép.
         return facilities.Select(facility => new TopCSKCBQC
         {
             TenCoSo = facility.TenCoSo ?? string.Empty,
@@ -830,12 +830,12 @@ public sealed class CoSoYTeController : AdminControllerBase
     }
 
     // ------------------------------------------------------------------
-    //  Gio lam viec — dich giua CUM CHU cua form va SO THU cua bang con
+    //  Giờ làm việc — dịch giữa CỤM CHỮ của form và SỐ THỨ của bảng con
     // ------------------------------------------------------------------
-    //  Man hinh cho chon 4 cum chu co san (xem _CoSoYTeOperatingHoursFields),
-    //  con DM_CSKCB_GioLamViec luu tung ngay mot bang so Thu 0..6 (0 = Chu
-    //  nhat). Hai the gioi nay phai co bo dich, neu khong thi luu xong doc lai
-    //  se ra chuoi "0,1,2,..." khong khop <option> nao va o chon tut ve rong.
+    //  Màn hình cho chọn 4 cụm chữ có sẵn (xem _CoSoYTeOperatingHoursFields),
+    //  còn DM_CSKCB_GioLamViec lưu từng ngày một bằng số Thứ 0..6 (0 = Chủ
+    //  nhật). Hai thế giới này phải có bộ dịch, nếu không thì lưu xong đọc lại
+    //  sẽ ra chuỗi "0,1,2,..." không khớp <option> nào và ô chọn tụt về rỗng.
 
     private static readonly Dictionary<string, byte[]> CumNgayChuan = new()
     {
@@ -845,13 +845,13 @@ public sealed class CoSoYTeController : AdminControllerBase
         ["Thứ 7 - Chủ nhật"] = new byte[] { 6, 0 },
     };
 
-    /// <summary>Cum chu tren form -> danh sach so Thu. Khong khop = ca tuan.</summary>
+    /// <summary>Cụm chữ trên form -> danh sách số Thứ. Không khớp = cả tuần.</summary>
     private static byte[] SoThuTuCumNgay(string? cumNgay)
     {
         if (string.IsNullOrWhiteSpace(cumNgay)) return Array.Empty<byte>();
         if (CumNgayChuan.TryGetValue(cumNgay.Trim(), out var thu)) return thu;
 
-        // Du lieu cu co the da luu dang "0,1,2" — van doc duoc.
+        // Dữ liệu cũ có thể đã lưu dạng "0,1,2" — vẫn đọc được.
         var tach = cumNgay.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(x => byte.TryParse(x, out var v) && v <= 6 ? (byte?)v : null)
             .Where(x => x.HasValue)
@@ -861,7 +861,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         return tach.Length > 0 ? tach : CumNgayChuan["Thứ 2 - Chủ nhật"];
     }
 
-    /// <summary>Danh sach so Thu doc tu DB -> dung cum chu de form chon lai duoc.</summary>
+    /// <summary>Danh sách số Thứ đọc từ DB -> đúng cụm chữ để form chọn lại được.</summary>
     private static string? CumNgayTuSoThu(IEnumerable<byte> soThu)
     {
         var tap = soThu.Distinct().OrderBy(x => x).ToArray();
@@ -874,37 +874,37 @@ public sealed class CoSoYTeController : AdminControllerBase
         return OperatingHours.Default.Days;   // khong khop cum nao: lay ca tuan
     }
 
-    // ====================== Kho phieu co so (ADR 0030) ======================
+    // ====================== Kho phiếu cơ sở (ADR 0030) ======================
     //
-    // 🔴 Dot A: bang HT_KhoFtpCoSo bi gop thang vao DM_CSKCB (cot Ftp_*), va hai
-    // stored HT_KhoFtpCoSo_Save / HT_KhoaApiCoSo_Save bi bo. Duong GHI cau hinh kho
-    // gio di chung mot luot voi DM_CSKCB_Save, nen o day khong con ham nap/ghi rieng.
+    // 🔴 Đợt A: bảng HT_KhoFtpCoSo bị gộp thẳng vào DM_CSKCB (cột Ftp_*), và hai
+    // stored HT_KhoFtpCoSo_Save / HT_KhoaApiCoSo_Save bị bỏ. Đường GHI cấu hình kho
+    // giờ đi chung một lượt với DM_CSKCB_Save, nên ở đây không còn hàm nạp/ghi riêng.
     //
-    // Ba cot Ftp_TaiKhoan / Ftp_MatKhau / KetNoi_KhoaGoiHIS la COT BI MAT: chung KHONG
-    // duoc map vao thuc the EF DMCSKCB (59 cho doc bang nay qua EF, trang cong khai nap
-    // tron thuc the). Hai he qua phai song chung:
-    //   - Man Sua KHONG hien lai gia tri cu => o de trong, trong = "khong doi" (stored
-    //     nhan NULL thi giu nguyen gia tri cu).
-    //   - Nut "Thu ket noi" KHONG con doc duoc ban dang luu => admin phai GO DU
-    //     tai khoan + mat khau moi thu duoc.
+    // Ba cột Ftp_TaiKhoan / Ftp_MatKhau / KetNoi_KhoaGoiHIS là CỘT BÍ MẬT: chúng KHÔNG
+    // được map vào thực thể EF DMCSKCB (59 chỗ đọc bảng này qua EF, trang công khai nạp
+    // trọn thực thể). Hai hệ quả phải sống chung:
+    //   - Màn Sửa KHÔNG hiện lại giá trị cũ => ô để trống, trống = "không đổi" (stored
+    //     nhận NULL thì giữ nguyên giá trị cũ).
+    //   - Nút "Thử kết nối" KHÔNG còn đọc được bản đang lưu => admin phải GÕ ĐỦ
+    //     tài khoản + mật khẩu mới thử được.
 
     /// <summary>
-    /// Nut <i>Thu ket noi kho</i>. Day la cho DUY NHAT kiem duoc cau hinh truoc khi
-    /// benh nhan bam mo: che do Tro duong khong co "luc nhan" nao ben cong ca —
-    /// stored ben HIS ghi THANG vao HIS_CSKH, khong goi HTTP toi cong (chot 41).
+    /// Nút <i>Thử kết nối kho</i>. Đây là chỗ DUY NHẤT kiểm được cấu hình trước khi
+    /// bệnh nhân bấm mở: chế độ Trỏ đường không có "lúc nhận" nào bên cổng cả —
+    /// stored bên HIS ghi THẲNG vào HIS_CSKH, không gọi HTTP tới cổng (chốt 41).
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ThuKetNoiKho(
         long id, string? host, string? taiKhoan, string? matKhau, string? thuMucGoc)
     {
-        // 🔴 Thu ĐUNG CAI DANG GO tren man, KHONG doc dong dang luu trong DB.
-        // Ban dau lam nguoc, va hau qua la go mat khau sai vao o van bao "dat" —
-        // vi no dang thu ban cu. Ca diem cua nut nay la bat sai TRUOC khi luu.
+        // 🔴 Thử ĐÚNG CÁI ĐANG GÕ trên màn, KHÔNG đọc dòng đang lưu trong DB.
+        // Bản đầu làm ngược, và hậu quả là gõ mật khẩu sai vào ô vẫn báo "đạt" —
+        // vì nó đang thử bản cũ. Cả điểm của nút này là bắt sai TRƯỚC khi lưu.
         //
-        // Sau dot A dieu do thanh BAT BUOC chu khong con la lua chon: tai khoan va
-        // mat khau la cot bi mat, may chu khong doc lai duoc qua EF. "De trong" gio
-        // KHONG con nghia "giu cai cu" nua — trong la khong thu duoc.
+        // Sau đợt A điều đó thành BẮT BUỘC chứ không còn là lựa chọn: tài khoản và
+        // mật khẩu là cột bí mật, máy chủ không đọc lại được qua EF. "Để trống" giờ
+        // KHÔNG còn nghĩa "giữ cái cũ" nữa — trống là không thử được.
         if (string.IsNullOrWhiteSpace(host)
             || string.IsNullOrWhiteSpace(taiKhoan)
             || string.IsNullOrWhiteSpace(matKhau))
@@ -916,7 +916,7 @@ public sealed class CoSoYTeController : AdminControllerBase
         if (!dat)
             return Json(new { success = false, message = "Chưa kết nối được tới kho của cơ sở. Kiểm tra lại máy chủ, tài khoản, mật khẩu." });
 
-        // Co so chua duoc luu lan nao thi chua co IDCoSo de gan moc vao.
+        // Cơ sở chưa được lưu lần nào thì chưa có IDCoSo để gắn mốc vào.
         if (id <= 0)
             return Json(new { success = true, luuTruoc = true, message = "Kết nối đạt. Bấm Lưu cơ sở để ghi nhận, rồi mới bật được kho." });
 
@@ -996,12 +996,12 @@ WHERE ID = @idCoSo;";
     }
 
     /// <summary>
-    /// Ghi gio lam viec cua mot co so: xoa ngay khong con chon, roi upsert tung
-    /// ngay con lai. Tra ve thong diep loi dau tien, null neu dat.
+    /// Ghi giờ làm việc của một cơ sở: xóa ngày không còn chọn, rồi upsert từng
+    /// ngày còn lại. Trả về thông điệp lỗi đầu tiên, null nếu đạt.
     /// </summary>
     private async Task<string?> LuuGioLamViecAsync(long idCoSo, CoSoYTeEditViewModel model)
     {
-        // Khong chon gi = xoa sach gio cua co so do.
+        // Không chọn gì = xóa sạch giờ của cơ sở đó.
         if (string.IsNullOrWhiteSpace(model.TGLamViec))
         {
             var xoaHet = await _adminStoredProcedures.XoaGioLamViecAsync(idCoSo, null);
@@ -1018,8 +1018,8 @@ WHERE ID = @idCoSo;";
             idCoSo, string.Join(",", danhSachThu));
         if (!xoa.Succeeded) return xoa.Message ?? "Không thể dọn giờ làm việc cũ.";
 
-        // Goi lap tung ngay. Khong nguyen tu qua ca tuan, nhung moi lan la
-        // upsert idempotent theo UNIQUE (IDCoSo, Thu) nen chay lai an toan.
+        // Gọi lặp từng ngày. Không nguyên tử qua cả tuần, nhưng mỗi lần là
+        // upsert idempotent theo UNIQUE (IDCoSo, Thu) nên chạy lại an toàn.
         foreach (var thu in danhSachThu)
         {
             var kq = await _adminStoredProcedures.SaveGioLamViecAsync(
@@ -1076,9 +1076,9 @@ WHERE ID = @idCoSo;";
         var url = await SaveImageAsync(file, maCoSo, KhoAnh.ThuMucNoiDung, "file");
         if (url == null)
         {
-            // Gom ca hai nguon loi: ModelState (sai kich thuoc / sai duoi tep) va
-            // _canhBao (FTP hong). Chi lay ModelState thi luc FTP hong se tra ve
-            // chuoi RONG, TinyMCE bao "Tai anh that bai" ma khong noi vi sao.
+            // Gom cả hai nguồn lỗi: ModelState (sai kích thước / sai đuôi tệp) và
+            // _canhBao (FTP hỏng). Chỉ lấy ModelState thì lúc FTP hỏng sẽ trả về
+            // chuỗi RỖNG, TinyMCE báo "Tải ảnh thất bại" mà không nói vì sao.
             var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)
                 .Concat(_canhBao)
                 .Where(x => !string.IsNullOrWhiteSpace(x))
@@ -1143,9 +1143,9 @@ WHERE ID = @idCoSo;";
         _adminStoredProcedures.SaveNoiDungCskcbAsync(idCoSo, topicId, noiDung);
 
     /// <summary>
-    /// Gio lam viec khong con nam trong bang co so — no o bang con DM_CSKCB_GioLamViec.
-    /// Ban dung <see cref="ToViewModelAsync"/> khi can hien gio; ban dong bo nay de
-    /// nhung cho chi can thong tin chung.
+    /// Giờ làm việc không còn nằm trong bảng cơ sở — nó ở bảng con DM_CSKCB_GioLamViec.
+    /// Bản dùng <see cref="ToViewModelAsync"/> khi cần hiện giờ; bản đồng bộ này để
+    /// những chỗ chỉ cần thông tin chung.
     /// </summary>
     private static CoSoYTeEditViewModel ToViewModel(DMCSKCB entity) =>
         new()
@@ -1165,30 +1165,30 @@ WHERE ID = @idCoSo;";
             Logo = entity.Logo,
             TenCongTy = entity.TenCongTy,
 
-            // Quang cao: gop tu bang con DM_CSKCB_QuangCao vao thang cot cua co so.
+            // Quảng cáo: gộp từ bảng con DM_CSKCB_QuangCao vào thẳng cột của cơ sở.
             QcSoTienDaTra = entity.QcSoTienDaTra,
             QcNoiDung = entity.QcNoiDung,
             QcAnh = entity.QcAnh,
 
-            // Ket noi HIS: gop tu bang con DM_DoiTacApi.
+            // Kết nối HIS: gộp từ bảng con DM_DoiTacApi.
             KetNoi_UrlChuyenHuong = entity.KetNoi_UrlChuyenHuong,
             KetNoi_BaseUrlHIS = entity.KetNoi_BaseUrlHIS,
             KetNoi_Active = entity.KetNoi_Active,
 
             // Kho FTP: gop tu bang con HT_KhoFtpCoSo.
-            // 🔴 Ftp_TaiKhoan / Ftp_MatKhau / KetNoi_KhoaGoiHIS CO Y de trong — cot bi
-            // mat, khong map vao EF va khong duoc phun ra HTML. Trong = "khong doi".
+            // 🔴 Ftp_TaiKhoan / Ftp_MatKhau / KetNoi_KhoaGoiHIS CỐ Ý để trống — cột bí
+            // mật, không map vào EF và không được phun ra HTML. Trống = "không đổi".
             Ftp_Host = entity.Ftp_Host,
             Ftp_ThuMucGoc = entity.Ftp_ThuMucGoc,
             Ftp_Active = entity.Ftp_Active,
             Ftp_NgayThuDat = entity.Ftp_NgayThuDat
         };
 
-    /// <summary>Chuoi rong/trang = KHONG nhap, tra NULL de stored hieu la "giu nguyen".</summary>
+    /// <summary>Chuỗi rỗng/trắng = KHÔNG nhập, trả NULL để stored hiểu là "giữ nguyên".</summary>
     private static string? RongThanhNull(string? giaTri) =>
         string.IsNullOrWhiteSpace(giaTri) ? null : giaTri.Trim();
 
-    /// <summary>Nhu tren nhung nap them gio lam viec tu bang con.</summary>
+    /// <summary>Như trên nhưng nạp thêm giờ làm việc từ bảng con.</summary>
     private async Task<CoSoYTeEditViewModel> ToViewModelAsync(DMCSKCB entity)
     {
         var model = ToViewModel(entity);
@@ -1208,9 +1208,9 @@ WHERE ID = @idCoSo;";
         {
             model.GioMoCua = gio[0].GioMoCua.ToString(@"hh\:mm");
             model.GioDongCua = gio[0].GioDongCua.ToString(@"hh\:mm");
-            // Phai tra ve CUM CHU ("Thu 2 - Chu nhat"), khong phai "0,1,2,...":
-            // form la mot <select> bon lua chon co san, chuoi so khong khop
-            // <option> nao nen o chon se tut ve rong va bam Luu la mat gio.
+            // Phải trả về CỤM CHỮ ("Thứ 2 - Chủ nhật"), không phải "0,1,2,...":
+            // form là một <select> bốn lựa chọn có sẵn, chuỗi số không khớp
+            // <option> nào nên ô chọn sẽ tụt về rỗng và bấm Lưu là mất giờ.
             model.NgayLamViec = CumNgayTuSoThu(gio.Select(x => x.Thu));
             model.TGLamViec = OperatingHours.Encode(
                 model.NgayLamViec ?? OperatingHours.Default.Days,

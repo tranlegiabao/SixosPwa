@@ -10,14 +10,14 @@ using SixosPwa.Services.Partner;
 namespace SixosPwa.Controllers;
 
 /// <summary>
-/// Man *Ho so cua toi* — mot tai khoan quan nhieu con nguoi (ADR 0019).
+/// Màn *Hồ sơ của tôi* — một tài khoản quản nhiều con người (ADR 0019).
 ///
 /// <para>
-/// Doi ho so = PHAT LAI cookie voi claim <c>HoSoDangChon</c>, dung khuon
-/// <c>DangKyOnlineUB</c> (<c>ThemIdXemThongTinBenhNhan</c> goi
-/// <c>AddClaimsAsync</c>). KHONG luu lua chon vao CSDL: no la trang thai cua
-/// PHIEN, khong phai cua con nguoi — hai thiet bi cua cung mot tai khoan phai
-/// xem duoc hai ho so khac nhau cung luc.
+/// Đổi hồ sơ = PHÁT LẠI cookie với claim <c>HoSoDangChon</c>, đúng khuôn
+/// <c>DangKyOnlineUB</c> (<c>ThemIdXemThongTinBenhNhan</c> gọi
+/// <c>AddClaimsAsync</c>). KHÔNG lưu lựa chọn vào CSDL: nó là trạng thái của
+/// PHIÊN, không phải của con người — hai thiết bị của cùng một tài khoản phải
+/// xem được hai hồ sơ khác nhau cùng lúc.
 /// </para>
 /// </summary>
 [Authorize]
@@ -40,33 +40,31 @@ public class HoSoController : Controller
         _logger = logger;
     }
 
-    // ── Chan do danh tinh ────────────────────────────────────────────────────
+    // ── Chặn dò danh tính ────────────────────────────────────────────────────
     //
-    // 🔴 Hai action duoi day deu nhan HO TEN + NGAY SINH + GIOI TINH roi hoi HIS.
-    // Ba o do khong phai bi mat, nen khong chan toc do thi mot tai khoan co the
-    // ra soat ca danh sach benh nhan cua co so. Ben HIS da chan do Ma BN
-    // (SPWA_TraCuuTheoMaBN, 20 lan/15 phut) nhung KHONG ai chan do danh tinh.
+    // 🔴 Hai action dưới đây đều nhận HỌ TÊN + NGÀY SINH + GIỚI TÍNH rồi hỏi HIS.
+    // Ba ô đó không phải bí mật, nên không chặn tốc độ thì một tài khoản có thể
+    // rà soát cả danh sách bệnh nhân của cơ sở. Bên HIS đã chặn dò Mã BN
+    // (SPWA_TraCuuTheoMaBN, 20 lần/15 phút) nhưng KHÔNG ai chặn dò danh tính.
     //
-    // Dem theo CA tai khoan LAN dia chi IP: khoa theo tai khoan thi ke tan cong mo
-    // tai khoan moi, khoa theo IP thi ca phong kham chung mot IP bi va lay.
+    // Đếm theo CẢ tài khoản LẪN địa chỉ IP: khóa theo tài khoản thì kẻ tấn công mở
+    // tài khoản mới, khóa theo IP thì cả phòng khám chung một IP bị vạ lây.
     private const int SoPhutCuaSo   = 5;
     private const int NguongTaiKhoan = 10;
     private const int NguongIp       = 30;
 
-    /// <summary>Tang dem va tra <c>true</c> khi da vuot nguong trong cua so thoi gian.</summary>
     private bool QuaNhanh(string viec, string dinhDanh, int nguong)
     {
         var khoa = $"RL_{viec}_{dinhDanh}";
         var dem = _cache.TryGetValue(khoa, out int cu) ? cu + 1 : 1;
 
-        // Dat lai han moi lan ghi thi cua so truot theo — co y: ke dang do lien tuc
-        // se bi khoa cho toi khi no chiu im tron 5 phut.
+        // Đặt lại hạn mỗi lần ghi thì cửa sổ trượt theo — cố ý: kẻ đang dò liên tục
+        // sẽ bị khóa cho tới khi nó chịu im trọn 5 phút.
         _cache.Set(khoa, dem, TimeSpan.FromMinutes(SoPhutCuaSo));
 
         return dem > nguong;
     }
 
-    /// <summary>Chan do cho mot action: dem theo SO DIEN THOAI cua phien va theo IP.</summary>
     private bool BiChanDo(string viec, string? khoaPhien)
     {
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "?";
@@ -109,7 +107,6 @@ public class HoSoController : Controller
             idDangChon));
     }
 
-    /// <summary>Doi ho so dang xem.</summary>
     [HttpPost("/benh-nhan/ho-so/chon")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Chon(long id)
@@ -122,8 +119,8 @@ public class HoSoController : Controller
             return RedirectToAction(nameof(Index), new { loi = "Không tìm thấy tài khoản." });
         }
 
-        // 🔴 Cong chan. Thieu phep kiem nay thi go ID ho so nguoi khac vao la xem
-        // duoc benh an cua ho — dung loai lo hong ma duong doc tai lieu tung mac.
+        // 🔴 Cổng chặn. Thiếu phép kiểm này thì gõ ID hồ sơ người khác vào là xem
+        // được bệnh án của họ — đúng loại lỗ hổng mà đường đọc tài liệu từng mắc.
         if (!await _hoSo.HoSoThuocTaiKhoanAsync(id, dinhDanh, MaCoSoPhien()))
         {
             _logger.LogWarning(
@@ -135,8 +132,8 @@ public class HoSoController : Controller
 
         await PhatLaiClaimAsync(id);
 
-        // Chon xong la vao thang trang benh nhan — do la ly do nguoi ta bam.
-        // Muon doi tiep thi quay lai bang o *Ho so cua toi* tren do.
+        // Chọn xong là vào thẳng trang bệnh nhân — đó là lý do người ta bấm.
+        // Muốn đổi tiếp thì quay lại bằng ô *Hồ sơ của tôi* trên đó.
         return Redirect("/benh-nhan");
     }
 
@@ -198,12 +195,12 @@ public class HoSoController : Controller
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Man *Sua ho so* — MOI o Dot 4 (ADR 0024 ve 1)
+    // Màn *Sửa hồ sơ* — MỚI ở Đợt 4 (ADR 0024 vế 1)
     //
-    // 🔴 Thu duy nhat cuu duoc nhom ho so CHINH CHU: 14/19 tai khoan dang mang
-    // ten la SO DIEN THOAI vi ho so cua ho tu de ra luc dang ky bang OTP, khong
-    // bao gio di qua man *Them ho so*. Bat ky phuong an nao chi sua man *Them*
-    // deu bo roi dung nhom dong nhat.
+    // 🔴 Thứ duy nhất cứu được nhóm hồ sơ CHÍNH CHỦ: 14/19 tài khoản đang mang
+    // tên là SỐ ĐIỆN THOẠI vì hồ sơ của họ tự đẻ ra lúc đăng ký bằng OTP, không
+    // bao giờ đi qua màn *Thêm hồ sơ*. Bất kỳ phương án nào chỉ sửa màn *Thêm*
+    // đều bỏ rơi đúng nhóm đông nhất.
     // ─────────────────────────────────────────────────────────────────────────
 
     [HttpGet("/benh-nhan/ho-so/sua")]
@@ -218,8 +215,8 @@ public class HoSoController : Controller
 
         var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
 
-        // 🔴 Cong chan — service loc theo ca ID lan chu so huu, tra null khi ho so
-        // khong phai cua tai khoan nay.
+        // 🔴 Cổng chặn — service lọc theo cả ID lẫn chủ sở hữu, trả null khi hồ sơ
+        // không phải của tài khoản này.
         var hoSo = await _hoSo.LayDeSuaAsync(id, SdtPhien(), maCoSo);
 
         if (hoSo is null)
@@ -237,10 +234,10 @@ public class HoSoController : Controller
         ViewBag.UngVien = ungVien;
         ViewBag.ChoPhepGoNoi = await _config.KiemTraHieuLucAsync("GONOI");
 
-        // 🔴 Ma nao DA co ho so khac nhan thi man KHOA lai, khong cho tick. Tra o
-        // day chu khong nhet vao TempData luc luu: giua luc luu va luc bam xac nhan
-        // co the co nguoi khac vua nhan mat ma do, va cai nguoi dung nhin thay phai
-        // la trang thai BAY GIO.
+        // 🔴 Mã nào ĐÃ có hồ sơ khác nhận thì màn KHÓA lại, không cho tick. Tra ở
+        // đây chứ không nhét vào TempData lúc lưu: giữa lúc lưu và lúc bấm xác nhận
+        // có thể có người khác vừa nhận mất mã đó, và cái người dùng nhìn thấy phải
+        // là trạng thái BÂY GIỜ.
         ViewBag.MaDaCoChu = ungVien is { Count: > 0 }
             ? await _hoSo.LayMaDaCoChuAsync(id, maCoSo, ungVien.Select(x => x.MaBN ?? string.Empty))
             : new List<string>();
@@ -282,24 +279,24 @@ public class HoSoController : Controller
             return RedirectToAction(nameof(Sua), new { id, loi = ketQua.ThongBao });
         }
 
-        // 🔴 *Cho xac nhan* la ngoai le DUY NHAT phai O LAI man Sua: danh sach ung
-        // vien de benh nhan tu nhan ma chi ve o day. Day ho ve *Ho so cua toi* luc
-        // nay la cat dut tang 2 — ho khong con duong nao nhan ma nua.
+        // 🔴 *Chờ xác nhận* là ngoại lệ DUY NHẤT phải Ở LẠI màn Sửa: danh sách ứng
+        // viên để bệnh nhân tự nhận mã chỉ về ở đây. Đẩy họ về *Hồ sơ của tôi* lúc
+        // này là cắt đứt tầng 2 — họ không còn đường nào nhận mã nữa.
         if (ketQua.KetCuc == KetCucNoi.ChoXacNhan)
         {
             GiuUngVien(ketQua);
             return RedirectToAction(nameof(Sua), new { id, xong = MaKetCuc(ketQua) });
         }
 
-        // Luu xong la VE *Ho so cua toi*. Nguoi dung vao man Sua de sua mot ho so,
-        // sua xong thi viec da het; giu ho lai o cai form vua nop chi de doc mot
-        // dong bao thanh cong la bat ho tu tim duong ra.
+        // Lưu xong là VỀ *Hồ sơ của tôi*. Người dùng vào màn Sửa để sửa một hồ sơ,
+        // sửa xong thì việc đã hết; giữ họ lại ở cái form vừa nộp chỉ để đọc một
+        // dòng báo thành công là bắt họ tự tìm đường ra.
         return RedirectToAction(nameof(Index), new { xong = MaKetCuc(ketQua) });
     }
 
     /// <summary>
-    /// *Tang 2* — benh nhan chon DUNG MOT ma la cua minh roi bam nhan.
-    /// Man hien radio chu khong phai checkbox: mot ho so &lt;-&gt; mot ma.
+    /// *Tầng 2* — bệnh nhân chọn ĐÚNG MỘT mã là của mình rồi bấm nhận.
+    /// Màn hiện radio chứ không phải checkbox: một hồ sơ &lt;-&gt; một mã.
     /// </summary>
     [HttpPost("/benh-nhan/ho-so/xac-nhan-noi")]
     [ValidateAntiForgeryToken]
@@ -324,9 +321,9 @@ public class HoSoController : Controller
 
         XoaUngVienDaGiu(id);
 
-        // Nhan xong la het viec o man Sua => ve *Ho so cua toi*, cung duong ra voi
-        // luc bam Luu. Loi thi PHAI o lai — vd ma vua bi nguoi khac nhan mat, nguoi
-        // dung con phai doc cau chi duong sang bo phan ho tro.
+        // Nhận xong là hết việc ở màn Sửa => về *Hồ sơ của tôi*, cùng đường ra với
+        // lúc bấm Lưu. Lỗi thì PHẢI ở lại — vd mã vừa bị người khác nhận mất, người
+        // dùng còn phải đọc câu chỉ đường sang bộ phận hỗ trợ.
         return thanhCong
             ? RedirectToAction(nameof(Index), new { xong = soMa > 0 ? "da-noi" : "khong-noi" })
             : RedirectToAction(nameof(Sua), new { id, loi = thongBao });
@@ -379,8 +376,8 @@ public class HoSoController : Controller
             return RedirectToAction(nameof(Index), new { loi = thongBao });
         }
 
-        // Vua xoa dung ho so dang chon => bo claim di, de LayHoSoDangDungAsync
-        // roi ve ho so dau tien thay vi tro toi mot ID khong con ton tai.
+        // Vừa xóa đúng hồ sơ đang chọn => bỏ claim đi, để LayHoSoDangDungAsync
+        // rơi về hồ sơ đầu tiên thay vì trỏ tới một ID không còn tồn tại.
         if (LayIdDangChon() == id)
         {
             await PhatLaiClaimAsync(null);
@@ -389,20 +386,19 @@ public class HoSoController : Controller
         return RedirectToAction(nameof(Index), new { xong = "1" });
     }
 
-    /// <summary>So dien thoai cua phien — tu dot 1B day la danh tinh dang nhap.</summary>
+    /// <summary>Số điện thoại của phiên — từ đợt 1B đây là danh tính đăng nhập.</summary>
     private string SdtPhien() => User.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;
 
-    /// <summary>Ma co so cua phien.</summary>
     private string? MaCoSoPhien() => User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
 
     /// <summary>
-    /// 🔴 C7a — GAC ROUTE theo dung luat man dang nhap (C7b). Nut *Them ho so* da
-    /// an o Views/HoSo/Index.cshtml nhung ROUTE van song; thieu cong nay thi go
-    /// thang URL la tao duoc ho so o co so minh chua tung kham.
+    /// 🔴 C7a — GÁC ROUTE theo đúng luật màn đăng nhập (C7b). Nút *Thêm hồ sơ* đã
+    /// ẩn ở Views/HoSo/Index.cshtml nhưng ROUTE vẫn sống; thiếu cổng này thì gõ
+    /// thẳng URL là tạo được hồ sơ ở cơ sở mình chưa từng khám.
     /// </summary>
     private Task<bool> CoLoiVaoAsync() => _hoSo.CoLoiVaoAsync(SdtPhien(), MaCoSoPhien());
 
-    /// <summary>Ma trang thai cho man doc, khong phai cau chu — cau chu nam o view.</summary>
+    /// <summary>Mã trạng thái cho màn đọc, không phải câu chữ — câu chữ nằm ở view.</summary>
     private static string MaKetCuc(KetQuaLuuHoSo ketQua) => ketQua.KetCuc switch
     {
         KetCucNoi.DaGanImLang      => "da-noi",
@@ -410,12 +406,12 @@ public class HoSoController : Controller
         _                          => "1"
     };
 
-    // ── Giu danh sach ung vien cua *Tang 2* qua mot lan chuyen huong ──────────
+    // ── Giữ danh sách ứng viên của *Tầng 2* qua một lần chuyển hướng ──────────
     //
-    // 🔴 Dung TempData chu khong hoi lai HIS o man GET: hoi lai la mot cuoc goi
-    // nua sang may khach cho cung mot cau hoi, va te hon — danh sach co the DOI
-    // giua hai lan hoi, thanh ra nguoi dung tick mot dang roi nhan mot dang khac.
-    // Khoa co kem ID ho so de danh sach cua ho so nay khong lot sang ho so kia.
+    // 🔴 Dùng TempData chứ không hỏi lại HIS ở màn GET: hỏi lại là một cuộc gọi
+    // nữa sang máy khách cho cùng một câu hỏi, và tệ hơn — danh sách có thể ĐỔI
+    // giữa hai lần hỏi, thành ra người dùng tick một đằng rồi nhận một đằng khác.
+    // Khóa có kèm ID hồ sơ để danh sách của hồ sơ này không lọt sang hồ sơ kia.
 
     private string KhoaUngVien(long idHoSo) => $"UngVienNoi_{idHoSo}";
 
@@ -429,8 +425,8 @@ public class HoSoController : Controller
 
     private List<SixosPwa.Services.His.HoSoHis>? LayUngVienDaGiu(long idHoSo)
     {
-        // Peek chu khong doc dut: nguoi dung tai lai trang (F5) van con danh sach,
-        // khong thi ho mat luon buoc xac nhan ma khong hieu vi sao.
+        // Peek chứ không đọc dứt: người dùng tải lại trang (F5) vẫn còn danh sách,
+        // không thì họ mất luôn bước xác nhận mà không hiểu vì sao.
         if (TempData.Peek(KhoaUngVien(idHoSo)) is not string json) return null;
 
         TempData.Keep(KhoaUngVien(idHoSo));
@@ -454,10 +450,10 @@ public class HoSoController : Controller
             : null;
 
     /// <summary>
-    /// Phat lai cookie: giu nguyen moi claim cu, chi thay claim *ho so dang chon*.
+    /// Phát lại cookie: giữ nguyên mọi claim cũ, chỉ thay claim *hồ sơ đang chọn*.
     ///
-    /// Phai chep lai ca bo chu khong tao identity moi — mat claim <c>MaCoSo</c>
-    /// hay dau an doi tac la phien tut xuong trang thai khac han (ADR 0016).
+    /// Phải chép lại cả bộ chứ không tạo identity mới — mất claim <c>MaCoSo</c>
+    /// hay dấu ấn đối tác là phiên tụt xuống trạng thái khác hẳn (ADR 0016).
     /// </summary>
     private async Task PhatLaiClaimAsync(long? idHoSo)
     {
@@ -472,8 +468,8 @@ public class HoSoController : Controller
 
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
-        // Giu dung thoi han cua luong dang nhap (DangNhapController): phat lai ma
-        // quen IsPersistent thi phien tut ve cookie phien, dong trinh duyet la mat.
+        // Giữ đúng thời hạn của luồng đăng nhập (DangNhapController): phát lại mà
+        // quên IsPersistent thì phiên tụt về cookie phiên, đóng trình duyệt là mất.
         await HttpContext.SignInAsync(
             CookieAuthenticationDefaults.AuthenticationScheme,
             new ClaimsPrincipal(identity),

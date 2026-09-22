@@ -3,9 +3,9 @@ using System.Text.Json.Serialization;
 namespace SixosPwa.Models.Dto;
 
 /// <summary>
-/// Mot LO dot kham cua MOT benh nhan. Day theo lo chu khong tung dong: luc benh
-/// nhan vua noi ho so, HIS phai keo tron qua khu ve — vai chuc dot cho mot nguoi
-/// la binh thuong, va tung dong mot se thanh vai chuc cuoc goi.
+/// Một LÔ đợt khám của MỘT bệnh nhân. Đẩy theo lô chứ không từng dòng: lúc bệnh
+/// nhân vừa nối hồ sơ, HIS phải kéo trọn qua khứ về — vài chục đợt cho một người
+/// là bình thường, và từng dòng một sẽ thành vài chục cuộc gọi.
 /// </summary>
 public class NhanDotKhamRequest
 {
@@ -17,9 +17,9 @@ public class NhanDotKhamRequest
 }
 
 /// <summary>
-/// Mot lan den. Toi thieu theo chot 13 dot 1 — khong cong them truong nao chua
-/// co nguoi hoi, va KHONG mang chi tiet tung dong thuoc (don thuoc di duong
-/// tai lieu, dang PDF).
+/// Một lần đến. Tối thiểu theo chốt 13 đợt 1 — không cõng thêm trường nào chưa
+/// có người hỏi, và KHÔNG mang chi tiết từng dòng thuốc (đơn thuốc đi đường
+/// tài liệu, dạng PDF).
 /// </summary>
 /// <summary>
 /// 🔴 GIỮ NGUYÊN <c>MaBenhNhan</c>, <c>NgayGioRa</c>, <c>ChanDoan</c> dù ba cột
@@ -58,23 +58,23 @@ public class NhanDotKhamResponseData
     [JsonPropertyName("soBoQua")]
     public int SoBoQua { get; set; }
 
-    /// <summary>Ly do tung dong bi bo qua, de ben HIS khong phai doan.</summary>
+    /// <summary>Lý do từng dòng bị bỏ qua, để bên HIS không phải đoán.</summary>
     [JsonPropertyName("dongBoQua")]
     public List<string> DongBoQua { get; set; } = new();
 }
 
 /// <summary>
-/// HIS hoi theo lo: trong danh sach ma benh nhan dang ton o hang doi, ma nao DA
-/// co nguoi nhan ben cong?
+/// HIS hỏi theo lô: trong danh sách mã bệnh nhân đang tồn ở hàng đợi, mã nào ĐÃ
+/// có người nhận bên cổng?
 ///
 /// <para>
-/// Vi sao can cua nay: cong TU CHOI tai lieu cua ma benh nhan chua ai noi ho so
-/// (chot 3). Khong co duong hoi nguoc thi bo dem ton ben HIS khong bao gio ve 0
-/// va nguoi o quay se hoc cach phot lo no.
+/// Vì sao cần cửa này: cổng TỪ CHỐI tài liệu của mã bệnh nhân chưa ai nối hồ sơ
+/// (chốt 3). Không có đường hỏi ngược thì bộ đếm tồn bên HIS không bao giờ về 0
+/// và người ở quầy sẽ học cách phớt lờ nó.
 /// </para>
 /// <para>
-/// Khong ro ri gi moi: co so hoi bang khoa cua chinh minh, va danh sach ma benh
-/// nhan cua co so von da la cua ho.
+/// Không rò rỉ gì mới: cơ sở hỏi bằng khóa của chính mình, và danh sách mã bệnh
+/// nhân của cơ sở vốn đã là của họ.
 /// </para>
 /// </summary>
 public class KiemTraNhanRequest
@@ -85,7 +85,7 @@ public class KiemTraNhanRequest
 
 public class KiemTraNhanResponseData
 {
-    /// <summary>Chi tra ve nhung ma DA co nguoi nhan — HIS tu suy phan con lai.</summary>
+    /// <summary>Chỉ trả về những mã ĐÃ có người nhận — HIS tự suy phần còn lại.</summary>
     [JsonPropertyName("daCoNguoiNhan")]
     public List<string> DaCoNguoiNhan { get; set; } = new();
 

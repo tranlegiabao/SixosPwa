@@ -23,8 +23,8 @@ public class DangNhapController : Controller
     private readonly AdminStoredProcedureService _thuTuc;
 
     /// <summary>
-    /// Cua co so doc thang tu du lieu (DM_CSKCB.KetNoi_UrlChuyenHuong) sau khi tang
-    /// cua doi tac bi go. Chi dung cho hang rao mat khau o man Dang ky.
+    /// Cửa cơ sở đọc thẳng từ dữ liệu (DM_CSKCB.KetNoi_UrlChuyenHuong) sau khi tầng
+    /// cửa đối tác bị gỡ. Chỉ dùng cho hàng rào mật khẩu ở màn Đăng ký.
     /// </summary>
     private readonly CuaCoSoService _cuaCoSo;
     private readonly IHoSoBenhNhanService _hoSo;
@@ -47,15 +47,12 @@ public class DangNhapController : Controller
         _hoSo = hoSo;
     }
 
-    /// <summary>
-    /// Cổng tiếp nhận quét mã QR: Tự động nhận diện hồ sơ bệnh nhân và chuyển thẳng vào Cổng bệnh nhân
-    /// </summary>
     [HttpGet("/qr")]
     [HttpGet("/qr-kham")]
     public async Task<IActionResult> QrKham(string? mabn = null, string? coSo = null)
     {
-        // 🔴 Duong nay dang nhap THANG, khong qua OTP. Khong co ma tren duong dan ma
-        // van di tiep thi mo '/qr' tay khong la duoc cap phien cua mot benh nhan bat ky.
+        // 🔴 Đường này đăng nhập THẲNG, không qua OTP. Không có mã trên đường dẫn mà
+        // vẫn đi tiếp thì mở '/qr' tay không là được cấp phiên của một bệnh nhân bất kỳ.
         if (string.IsNullOrWhiteSpace(mabn))
         {
             return Redirect("/DangNhap/Login?ReturnUrl=%2Fbenh-nhan");
@@ -64,7 +61,7 @@ public class DangNhapController : Controller
         var maBnTraCuu = mabn.Trim();
         var maCoSoTraCuu = string.IsNullOrWhiteSpace(coSo) ? "77121" : coSo.Trim();
 
-        // Dot 1B: mot dong DA LA "con nguoi + ho so tai co so" nen khong con tu noi.
+        // Đợt 1B: một dòng ĐÃ LÀ "con người + hồ sơ tại cơ sở" nên không còn tự nối.
         var hoSo = await (from bn in _dbContext.BenhNhans.AsNoTracking()
                           join cs in _dbContext.DMCSKCBs.AsNoTracking() on bn.IdCoSo equals (long?)cs.Id
                           where bn.MaBN == maBnTraCuu && (cs.MaCoSo == maCoSoTraCuu || cs.Slug == maCoSoTraCuu)
@@ -117,15 +114,12 @@ public class DangNhapController : Controller
         return Redirect($"/DangNhap/Login?ReturnUrl=%2Fbenh-nhan");
     }
 
-    /// <summary>
-    /// Cổng tiếp nhận quét mã QR: Mở màn hình OTP, sau khi xác thực OTP thành công sẽ vào Cổng bệnh nhân
-    /// </summary>
     [HttpGet("/qr-otp")]
     public async Task<IActionResult> QrOtp(string? mabn = null, string? coSo = null, string? sdt = null)
     {
-        // 🔴 Khong co ma tren duong dan thi KHONG phai luong quet — di tiep la dang
-        // nhap ho mot benh nhan bat ky. Tra ve man Login truoc khi SignOut, de mo
-        // nham '/qr-otp' khong danh bay phien dang co.
+        // 🔴 Không có mã trên đường dẫn thì KHÔNG phải luồng quét — đi tiếp là đăng
+        // nhập hộ một bệnh nhân bất kỳ. Trả về màn Login trước khi SignOut, để mở
+        // nhầm '/qr-otp' không đánh bay phiên đang có.
         if (string.IsNullOrWhiteSpace(mabn))
         {
             return Redirect("/DangNhap/Login?ReturnUrl=%2Fbenh-nhan");
@@ -137,7 +131,7 @@ public class DangNhapController : Controller
         var maBnTraCuu = mabn.Trim();
         var maCoSoTraCuu = string.IsNullOrWhiteSpace(coSo) ? "77121" : coSo.Trim();
 
-        // Dot 1B: mot dong DA LA "con nguoi + ho so tai co so" nen khong con tu noi.
+        // Đợt 1B: một dòng ĐÃ LÀ "con người + hồ sơ tại cơ sở" nên không còn tự nối.
         var hoSo = await (from bn in _dbContext.BenhNhans.AsNoTracking()
                           join cs in _dbContext.DMCSKCBs.AsNoTracking() on bn.IdCoSo equals (long?)cs.Id
                           where bn.MaBN == maBnTraCuu && (cs.MaCoSo == maCoSoTraCuu || cs.Slug == maCoSoTraCuu)
@@ -153,14 +147,14 @@ public class DangNhapController : Controller
 
         var slug = hoSo != null && !string.IsNullOrWhiteSpace(hoSo.CoSo.Slug) ? hoSo.CoSo.Slug : "pkdk-thien-nam";
 
-        // 🔴 MA QUET PHAI DUOC SERVER GIU, khong the giao cho trang Login giu ho.
-        // Do that tren may that: sau khi '/qr-otp' chuyen sang Login?...&mabn=...,
-        // trang bi nap lai roi di tiep sang '/benh-nhan', bi day ve Login voi moi
-        // '?ReturnUrl=%2Fbenh-nhan' — mat sach query. Cookie qr_data thi chinh man
-        // Login xoa o 'pagehide'/'click roi trang'. Ket qua: luc bam Dang nhap khong
-        // con gi de biet vua quet ai, nguoi dung roi vao ho so DAU TIEN cua tai khoan.
+        // 🔴 MÃ QUÉT PHẢI ĐƯỢC SERVER GIỮ, không thể giao cho trang Login giữ hộ.
+        // Đo thật trên máy thật: sau khi '/qr-otp' chuyển sang Login?...&mabn=...,
+        // trang bị nạp lại rồi đi tiếp sang '/benh-nhan', bị đẩy về Login với mỗi
+        // '?ReturnUrl=%2Fbenh-nhan' — mất sạch query. Cookie qr_data thì chính màn
+        // Login xóa ở 'pagehide'/'click rời trang'. Kết quả: lúc bấm Đăng nhập không
+        // còn gì để biết vừa quét ai, người dùng rơi vào hồ sơ ĐẦU TIÊN của tài khoản.
         //
-        // Cookie nay HttpOnly nen JS khong xoa duoc, va song 30 phut du de go OTP.
+        // Cookie này HttpOnly nên JS không xóa được, và sống 30 phút đủ để gõ OTP.
         Response.Cookies.Append("qr_mabn", maBnTraCuu, new CookieOptions
         {
             Path = "/",
@@ -169,8 +163,8 @@ public class DangNhapController : Controller
             SameSite = SameSiteMode.Lax
         });
 
-        // Nho co so ngay tu day, khong doi man Login ghi ho: quet xong la cai app luon
-        // thi lan mo tu icon dau tien da phai ra dung logo/ten co so.
+        // Nhớ cơ sở ngay từ đây, không đợi màn Login ghi hộ: quét xong là cài app luôn
+        // thì lần mở từ icon đầu tiên đã phải ra đúng logo/tên cơ sở.
         Response.Cookies.Append("pwa_co_so", slug, new CookieOptions
         {
             Path = "/",
@@ -178,14 +172,14 @@ public class DangNhapController : Controller
             SameSite = SameSiteMode.Lax
         });
 
-        // 🔴 Khong doan bua khi tra khong ra ho so: so/CCCD cung cu o day tung lam
-        // nguoi quet nhin thay tai khoan cua nguoi khac. Khong co gi that thi de rong,
-        // man Login se hoi so dien thoai nhu binh thuong.
+        // 🔴 Không đoán bừa khi tra không ra hồ sơ: số/CCCD cũ ở đây từng làm
+        // người quét nhìn thấy tài khoản của người khác. Không có gì thật thì để rỗng,
+        // màn Login sẽ hỏi số điện thoại như bình thường.
         var sdtBn = !string.IsNullOrWhiteSpace(sdt) ? sdt : (hoSo?.BenhNhan.SDT ?? "");
         var cccd = hoSo?.BenhNhan.CCCD ?? "";
 
-        // Lưu trước OTP 123456 vào cache. Bo qua khoa rong: "OTP_" la khoa dung chung
-        // cho MOI nguoi khong tra ra danh tinh — dat vao do la mo cua cho ca phien khac.
+        // Lưu trước OTP 123456 vào cache. Bỏ qua khóa rỗng: "OTP_" là khóa dùng chung
+        // cho MỌI người không tra ra danh tính — đặt vào đó là mở cửa cho cả phiên khác.
         if (!string.IsNullOrWhiteSpace(sdtBn))
         {
             _cache.Set($"OTP_{sdtBn}", "123456", TimeSpan.FromMinutes(30));
@@ -195,20 +189,19 @@ public class DangNhapController : Controller
             _cache.Set($"OTP_{cccd}", "123456", TimeSpan.FromMinutes(30));
         }
 
-        // 🔴 NHO THEO SO DIEN THOAI, khong chi nho bang cookie. Do that tren may that:
-        // nguoi benh quet QR o trinh duyet nhung bam Dang nhap trong APP DA CAI — hai
-        // ngu canh giu cookie RIENG, nen cookie dat o ben nay ben kia khong thay. Luc
-        // do ca qr_data, qr_mabn lan query string deu vo nghia.
+        // 🔴 NHỚ THEO SỐ ĐIỆN THOẠI, không chỉ nhớ bằng cookie. Đo thật trên máy thật:
+        // người bệnh quét QR ở trình duyệt nhưng bấm Đăng nhập trong APP ĐÃ CÀI — hai
+        // ngữ cảnh giữ cookie RIÊNG, nên cookie đặt ở bên này bên kia không thấy. Lúc
+        // đó cả qr_data, qr_mabn lẫn query string đều vô nghĩa.
         //
-        // Cache theo SDT la dung mo hinh ma OTP dang dung ("OTP_{sdt}"), va vong doi
-        // cung 30 phut. Xoa o HuyOtp de giu nguyen nghiep vu "roi man OTP thi khong de
-        // lai dau vet".
+        // Cache theo SDT là đúng mô hình mã OTP đang dùng ("OTP_{sdt}"), và vòng đời
+        // cùng 30 phút. Xóa ở HuyOtp để giữ nguyên nghiệp vụ "rời màn OTP thì không để
+        // lại dấu vết".
         if (!string.IsNullOrWhiteSpace(sdtBn))
         {
             _cache.Set($"QR_MABN_{sdtBn}", maBnTraCuu, TimeSpan.FromMinutes(30));
         }
 
-        // Lưu thông tin quét QR vào cookie qr_data (không giới hạn thời gian - 365 ngày)
         var qrData = new DanhTinhQuet
         {
             MaBN = maBnTraCuu,
@@ -225,13 +218,13 @@ public class DangNhapController : Controller
             PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
         };
         var qrJson = System.Text.Json.JsonSerializer.Serialize(qrData, jsonOpt);
-        // 🔴 KHONG Uri.EscapeDataString o day: Response.Cookies.Append DA tu URL-encode
-        // gia tri. Boc hai lop thi JS chi go duoc mot (decodeURIComponent), JSON.parse
-        // vo, qrCookieData = null => window.danhTinhQuet rong => POST XacNhanOtp khong
-        // mang DanhTinhQuet => khong ai dat claim HoSoDangChon => /benh-nhan roi ve ho
-        // so DAU TIEN. Do dung la trieu chung "quet ca 3 QR deu vao mot nguoi".
-        // Duong quet bang camera (quet-qr.js) ghi cookie bang encodeURIComponent MOT
-        // lop — de mot lop o day la hai duong khop nhau.
+        // 🔴 KHÔNG Uri.EscapeDataString ở đây: Response.Cookies.Append ĐÃ tự URL-encode
+        // giá trị. Bọc hai lớp thì JS chỉ gỡ được một (decodeURIComponent), JSON.parse
+        // vỡ, qrCookieData = null => window.danhTinhQuet rỗng => POST XacNhanOtp không
+        // mang DanhTinhQuet => không ai đặt claim HoSoDangChon => /benh-nhan rơi về hồ
+        // sơ ĐẦU TIÊN. Đó đúng là triệu chứng "quét cả 3 QR đều vào một người".
+        // Đường quét bằng camera (quet-qr.js) ghi cookie bằng encodeURIComponent MỘT
+        // lớp — để một lớp ở đây là hai đường khớp nhau.
         Response.Cookies.Append("qr_data", qrJson, new CookieOptions
         {
             Path = "/",
@@ -240,18 +233,15 @@ public class DangNhapController : Controller
             SameSite = SameSiteMode.Lax
         });
 
-        // 🔴 mabn phai nam tren URL, khong duoc chi nam trong cookie qr_data. Cookie do
-        // bi chinh man Login xoa o 'pagehide'/'click roi trang' — tren Chrome Android
-        // pagehide ban ca khi chuyen app hay tat man hinh, va tab co the bi he dieu hanh
-        // thu hoi roi nap lai. Luc do cookie mat, bien window.danhTinhQuet cung mat theo
-        // => POST XacNhanOtp khong mang DanhTinhQuet => khong ai dat claim HoSoDangChon.
-        // URL thi song qua reload, nen day la duong ben nhat de man Login biet ma quet.
+        // 🔴 mabn phải nằm trên URL, không được chỉ nằm trong cookie qr_data. Cookie đó
+        // bị chính màn Login xóa ở 'pagehide'/'click rời trang' — trên Chrome Android
+        // pagehide bắn cả khi chuyển app hay tắt màn hình, và tab có thể bị hệ điều hành
+        // thu hồi rồi nạp lại. Lúc đó cookie mất, biến window.danhTinhQuet cũng mất theo
+        // => POST XacNhanOtp không mang DanhTinhQuet => không ai đặt claim HoSoDangChon.
+        // URL thì sống qua reload, nên đây là đường bền nhất để màn Login biết mã quét.
         return Redirect($"/DangNhap/Login?coSo={slug}&sdt={sdtBn}&cccd={cccd}&mabn={Uri.EscapeDataString(maBnTraCuu)}&hienOtp=1&tuQr=1&returnUrl=%2Fbenh-nhan");
     }
 
-    /// <summary>
-    /// Hủy mã OTP trong cache và xóa cookie qr_data khi người dùng chuyển khỏi màn hình OTP
-    /// </summary>
     [HttpPost("/DangNhap/HuyOtp")]
     public IActionResult HuyOtp([FromBody] HuyOtpRequest? model)
     {
@@ -280,9 +270,9 @@ public class DangNhapController : Controller
 
         Response.Cookies.Delete("qr_data", new CookieOptions { Path = "/" });
 
-        // 🔴 Phai xoa CA qr_mabn. Nghiep vu: roi man OTP ma chua xac thuc thi khong
-        // duoc de lai dau vet cua phieu vua quet. qr_mabn la HttpOnly nen JS khong tu
-        // xoa duoc — chi co cua nay don duoc no.
+        // 🔴 Phải xóa CẢ qr_mabn. Nghiệp vụ: rời màn OTP mà chưa xác thực thì không
+        // được để lại dấu vết của phiếu vừa quét. qr_mabn là HttpOnly nên JS không tự
+        // xóa được — chỉ có cửa này dọn được nó.
         Response.Cookies.Delete("qr_mabn", new CookieOptions { Path = "/" });
         return Json(new { success = true });
     }
@@ -292,11 +282,11 @@ public class DangNhapController : Controller
     {
         var adminReauth = AdminAuthentication.IsAdminReturnUrl(returnUrl) && Url.IsLocalUrl(returnUrl);
 
-        // 🔴 App da cai mo tu icon thi khong ai gan duoc ?coSo= vao duong dan: PWA vao
-        // thang '/' roi bi day sang day. Thieu slug la man dang nhap tut ve logo/ten
-        // HisSoft chung, nguoi benh dang o cua Thien Nam nhin thay thuong hieu khac.
-        // Cookie nay do chinh man dang nhap ghi (Login.cshtml) nen chi la GOI Y khoi
-        // phuc — slug rac thi bo qua, KHONG ve "/" nhu nhanh ?coSo= sai o duoi.
+        // 🔴 App đã cài mở từ icon thì không ai gắn được ?coSo= vào đường dẫn: PWA vào
+        // thẳng '/' rồi bị đẩy sang đây. Thiếu slug là màn đăng nhập tụt về logo/tên
+        // HisSoft chung, người bệnh đang ở cửa Thiện Nam nhìn thấy thương hiệu khác.
+        // Cookie này do chính màn đăng nhập ghi (Login.cshtml) nên chỉ là GỢI Ý khôi
+        // phục — slug rác thì bỏ qua, KHÔNG về "/" như nhánh ?coSo= sai ở dưới.
         var laGoiYTuCookie = false;
         if (string.IsNullOrWhiteSpace(coSo))
         {
@@ -308,8 +298,8 @@ public class DangNhapController : Controller
             }
         }
 
-        // ?coSo=slug den tu hai nut ben trang co so. Do ra ViewBag de man dang
-        // nhap hien o "Ma CSKCB" khoa cung, va de JS gui kem khi goi OTP.
+        // ?coSo=slug đến từ hai nút bên trang cơ sở. Đổ ra ViewBag để màn đăng
+        // nhập hiện ô "Mã CSKCB" khóa cứng, và để JS gửi kèm khi gọi OTP.
         string? maCoSoTuUrl = null;
         long? idCoSoTuUrl = null;
         if (!string.IsNullOrWhiteSpace(coSo))
@@ -318,24 +308,24 @@ public class DangNhapController : Controller
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Slug == coSo);
 
-            // Chan ngay o day thay vi de benh nhan go het OTP roi moi bi tu choi
-            // (va ton mot tin nhan OTP vo ich). Entity da nam trong tay, khong ton
-            // them truy van. Xem ADR 0013.
+            // Chặn ngay ở đây thay vì để bệnh nhân gõ hết OTP rồi mới bị từ chối
+            // (và tốn một tin nhắn OTP vô ích). Entity đã nằm trong tay, không tốn
+            // thêm truy vấn. Xem ADR 0013.
             if (thongTin is not null && !thongTin.HienThiCongKhai)
             {
                 if (laGoiYTuCookie) { Response.Cookies.Delete("pwa_co_so", new CookieOptions { Path = "/" }); return Redirect("/DangNhap/Login"); }
                 return Redirect("/");
             }
 
-            // 🔴 ?coSo= chi nhan SLUG. Go vao mot gia tri khong tra ra co so nao
-            // (hay gap nhat: go MA co so, vd 77121) truoc day tut lang le xuong che
-            // do khong-co-so: van cho go OTP, van cap cookie, roi tha vao /benh-nhan
-            // ma khong tao noi tai khoan. Da ve "/" giong het nhanh HienThiCongKhai = 0 ngay
-            // tren — sai cua thi phai biet ngay, dung sau khi go xong OTP. ADR 0027.
+            // 🔴 ?coSo= chỉ nhận SLUG. Gõ vào một giá trị không tra ra cơ sở nào
+            // (hay gặp nhất: gõ MÃ cơ sở, vd 77121) trước đây tụt lặng lẽ xuống chế
+            // độ không-cơ-sở: vẫn cho gõ OTP, vẫn cấp cookie, rồi thả vào /benh-nhan
+            // mà không tạo nổi tài khoản. Đã về "/" giống hệt nhánh HienThiCongKhai = 0 ngay
+            // trên — sai cửa thì phải biết ngay, đừng sau khi gõ xong OTP. ADR 0027.
             if (thongTin is null)
             {
-                // Slug tu cookie khong con tra ra co so nao (doi slug, co so bi xoa):
-                // don cookie roi hien man dang nhap chung, dung nem nguoi dung ve "/".
+                // Slug từ cookie không còn tra ra cơ sở nào (đổi slug, cơ sở bị xóa):
+                // dọn cookie rồi hiện màn đăng nhập chung, đừng ném người dùng về "/".
                 if (laGoiYTuCookie) { Response.Cookies.Delete("pwa_co_so", new CookieOptions { Path = "/" }); return Redirect("/DangNhap/Login"); }
                 return Redirect("/");
             }
@@ -348,18 +338,18 @@ public class DangNhapController : Controller
             ViewBag.SlugCoSo = coSo;
         }
 
-        // Con phien thi hien man dang nhap kem mot khoi lua chon: di tiep bang tai
-        // khoan dang co, hoac dang nhap tai khoan khac.
+        // Còn phiên thì hiện màn đăng nhập kèm một khối lựa chọn: đi tiếp bằng tài
+        // khoản đang có, hoặc đăng nhập tài khoản khác.
         //
-        // ⚠️ Khoi nay chi con phuc vu CO SO NOI BO. Voi co so dung man cua doi tac,
-        // ADR 0016 da doi luat: phien con song va co dau an thi DI THANG, khong hoi
-        // — xem nhanh o cuoi ham. Ly le cu ("khong tu day di dau ca vi SixosPwa
-        // khong biet benh nhan vua dang xuat ben doi tac hay chua") van dung ve
-        // logic nhung tra gia sai: no bat MOI benh nhan go lai mat khau de phong
-        // mot truong hop hiem, ma truong hop hiem do da co loi thoat rieng —
-        // menu 3 gach -> Dang xuat.
+        // ⚠️ Khối này chỉ còn phục vụ CƠ SỞ NỘI BỘ. Với cơ sở dùng màn của đối tác,
+        // ADR 0016 đã đổi luật: phiên còn sống và có dấu ấn thì ĐI THẲNG, không hỏi
+        // — xem nhánh ở cuối hàm. Lý lẽ cũ ("không tự đẩy đi đâu cả vì SixosPwa
+        // không biết bệnh nhân vừa đăng xuất bên đối tác hay chưa") vẫn đúng về
+        // logic nhưng trả giá sai: nó bắt MỌI bệnh nhân gõ lại mật khẩu để phòng
+        // một trường hợp hiếm, mà trường hợp hiếm đó đã có lối thoát riêng —
+        // menu 3 gạch -> Đăng xuất.
         //
-        // Doc ra ngoai khoi if: nhanh tu dong o cuoi ham cung can hai claim nay.
+        // Đọc ra ngoài khối if: nhánh tự động ở cuối hàm cũng cần hai claim này.
         var cccdPhien = User.FindFirst(LuongCongBenhNhan.ClaimCccd)?.Value;
         var cuaPhien = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
 
@@ -369,10 +359,10 @@ public class DangNhapController : Controller
 
             if (!string.IsNullOrWhiteSpace(cccdPhien))
             {
-                // Go thang URL/bookmark vao mot co so KHAC co so cua phien: khong
-                // tu dung man nay noi hai thu tu do lua chon nua — day ve dung
-                // trang co so do de MOT modal duy nhat bat dang nhap cheo co so
-                // hien ra (ADR 0006), khong lech thong diep giua hai loi vao.
+                // Gõ thẳng URL/bookmark vào một cơ sở KHÁC cơ sở của phiên: không
+                // tự dùng màn này nối hai thứ tự do lựa chọn nữa — đẩy về đúng
+                // trang cơ sở đó để MỘT modal duy nhất bắt đăng nhập chéo cơ sở
+                // hiện ra (ADR 0006), không lệch thông điệp giữa hai lối vào.
                 if (!string.IsNullOrWhiteSpace(coSo) && maCoSoDich != cuaPhien)
                 {
                     var yDinh = returnUrl ?? "/";
@@ -426,10 +416,10 @@ public class DangNhapController : Controller
         var input = model.SoDienThoai?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(input) && model.DanhTinhQuet != null)
         {
-            // TEN TAI KHOAN chi duoc lay tu SO DIEN THOAI, hoac tu MaBN khi quet QR
-            // PHIEU KHAM HIS. KHONG lay so CCCD: lam vay la de ra tai khoan mang so
-            // can cuoc, con benh nhan thi mat duong nhap so dien thoai that. Hang rao
-            // nay phai dung o CA server, vi goi thang API la vuot mat trinh duyet.
+            // TÊN TÀI KHOẢN chỉ được lấy từ SỐ ĐIỆN THOẠI, hoặc từ MaBN khi quét QR
+            // PHIẾU KHÁM HIS. KHÔNG lấy số CCCD: làm vậy là đẻ ra tài khoản mang số
+            // căn cước, còn bệnh nhân thì mất đường nhập số điện thoại thật. Hàng rào
+            // này phải đứng ở CẢ server, vì gọi thẳng API là vượt mặt trình duyệt.
             if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet.DienThoai))
                 input = model.DanhTinhQuet.DienThoai.Trim();
             else if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet.MaBN))
@@ -456,7 +446,6 @@ public class DangNhapController : Controller
             }
         }
 
-        // Kiểm tra tài khoản trong database
         TaiKhoan? taiKhoan = null;
         var term = input.ToLower();
         if (term.Contains('@'))
@@ -468,20 +457,20 @@ public class DangNhapController : Controller
             taiKhoan = _dbContext.TaiKhoans.AsNoTracking().FirstOrDefault(tk => tk.SDT == term);
             if (taiKhoan == null && !string.IsNullOrWhiteSpace(model.Cccd))
             {
-                // 🔴 Dot 1B: benh nhan KHONG CON tai khoan, nen khong con duong
-                // nao di tu CCCD sang HT_TaiKhoan. Bang do chi con Admin.
-                // "Co loi vao hay khong" duoc hoi o hang rao C7b ben duoi.
+                // 🔴 Đợt 1B: bệnh nhân KHÔNG CÒN tài khoản, nên không còn đường
+                // nào đi từ CCCD sang HT_TaiKhoan. Bảng đó chỉ còn Admin.
+                // "Có lối vào hay không" được hỏi ở hàng rào C7b bên dưới.
                 taiKhoan = null;
             }
         }
 
         bool laQrHis = model.DanhTinhQuet != null && (model.DanhTinhQuet.LaNguonHis || !string.IsNullOrWhiteSpace(model.DanhTinhQuet.MaBN));
 
-        // 🔴 Cung luat thu tu voi hai cua kia: MaCoSo phai duoc chot TRUOC khi hoi
-        // CoLoiVaoAsync. GuiOtp khong co khoi dien mac dinh nhu XacNhanOtp, nen
-        // phien mo /DangNhap/Login khong kem ?coSo= se co MaCoSo rong => bi chan
-        // ngay o buoc gui OTP, trong khi XacNhanOtp thi lai cho qua. Hai cua noi
-        // hai kieu cho cung mot nguoi la loi kho lan nhat.
+        // 🔴 Cùng luật thứ tự với hai cửa kia: MaCoSo phải được chốt TRƯỚC khi hỏi
+        // CoLoiVaoAsync. GuiOtp không có khối điền mặc định như XacNhanOtp, nên
+        // phiên mở /DangNhap/Login không kèm ?coSo= sẽ có MaCoSo rỗng => bị chặn
+        // ngay ở bước gửi OTP, trong khi XacNhanOtp thì lại cho qua. Hai cửa nói
+        // hai kiểu chặn cùng một người là lỗi khó lần nhất.
         if (string.IsNullOrWhiteSpace(model.MaCoSo))
         {
             if (laQrHis && !string.IsNullOrWhiteSpace(model.DanhTinhQuet?.MaBN))
@@ -507,14 +496,14 @@ public class DangNhapController : Controller
             }
         }
 
-        // 🔴 C7b — CUA 3, o buoc GUI OTP. PLAN §7.1 KHONG LIET KE CUA NAY (no chi
-        // neu hai cua :476 va :708). Bo sot thi benh nhan chet ngay tu buoc gui
-        // OTP, truoc khi cham toi hai cua kia: sau dot 1B `taiKhoan` LUON null
-        // voi benh nhan (HT_TaiKhoan chi con Admin) nen dieu kien cu chan sach.
-        // Bat duoc luc chay nghiem thu that 19-09 — khong phep nao khac thay.
+        // 🔴 C7b — CỬA 3, ở bước GỬI OTP. PLAN §7.1 KHÔNG LIỆT KÊ CỬA NÀY (nó chỉ
+        // nêu hai cửa :476 và :708). Bỏ sót thì bệnh nhân chết ngay từ bước gửi
+        // OTP, trước khi chạm tới hai cửa kia: sau đợt 1B `taiKhoan` LUÔN null
+        // với bệnh nhân (HT_TaiKhoan chỉ còn Admin) nên điều kiện cũ chặn sạch.
+        // Bắt được lúc chạy nghiệm thu thật 19-09 — không phép nào khác thay.
         //
-        // Admin van phai di duong `taiKhoan != null` ngay duoi (nhanh mat khau),
-        // nen o day chi mo cho ai CO LOI VAO, va van giu ngoai le quet QR HIS.
+        // Admin vẫn phải đi đường `taiKhoan != null` ngay dưới (nhánh mật khẩu),
+        // nên ở đây chỉ mở cho ai CÓ LỐI VÀO, và vẫn giữ ngoại lệ quét QR HIS.
         var coLoiVao = taiKhoan != null
                        || await _hoSo.CoLoiVaoAsync(input, model.MaCoSo);
 
@@ -535,10 +524,8 @@ public class DangNhapController : Controller
             });
         }
 
-        // Ma OTP thu nghiem (hoac sinh ngau nhien 6 chu so)
         var otpCode = "123456";
 
-        // Luu vao cache trong 5 phut
         _cache.Set($"OTP_{input}", otpCode, TimeSpan.FromMinutes(5));
 
         var displayMessage = input.Contains('@')
@@ -574,10 +561,10 @@ public class DangNhapController : Controller
         var input = model.SoDienThoai?.Trim() ?? string.Empty;
         if (string.IsNullOrWhiteSpace(input) && model.DanhTinhQuet != null)
         {
-            // TEN TAI KHOAN chi duoc lay tu SO DIEN THOAI, hoac tu MaBN khi quet QR
-            // PHIEU KHAM HIS. KHONG lay so CCCD: lam vay la de ra tai khoan mang so
-            // can cuoc, con benh nhan thi mat duong nhap so dien thoai that. Hang rao
-            // nay phai dung o CA server, vi goi thang API la vuot mat trinh duyet.
+            // TÊN TÀI KHOẢN chỉ được lấy từ SỐ ĐIỆN THOẠI, hoặc từ MaBN khi quét QR
+            // PHIẾU KHÁM HIS. KHÔNG lấy số CCCD: làm vậy là đẻ ra tài khoản mang số
+            // căn cước, còn bệnh nhân thì mất đường nhập số điện thoại thật. Hàng rào
+            // này phải đứng ở CẢ server, vì gọi thẳng API là vượt mặt trình duyệt.
             if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet.DienThoai))
                 input = model.DanhTinhQuet.DienThoai.Trim();
             else if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet.MaBN))
@@ -592,24 +579,22 @@ public class DangNhapController : Controller
         var otpInput = model.Otp.Trim();
         var adminReauth = AdminAuthentication.IsAdminReturnUrl(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl);
 
-        // Co so dang an (DM_CSKCB.HienThiCongKhai = 0) thi khong sinh phien MOI tai co so do.
-        // Ve !adminReauth la BAT BUOC: action nay phuc vu ca re-auth Admin/DoiTac,
-        // thieu no la khoa luon duong dang nhap quan tri. Xem ADR 0013.
+        // Cơ sở đang ẩn (DM_CSKCB.HienThiCongKhai = 0) thì không sinh phiên MỚI tại cơ sở đó.
+        // Vế !adminReauth là BẮT BUỘC: action này phục vụ cả re-auth Admin/DoiTac,
+        // thiếu nó là khóa luôn đường đăng nhập quản trị. Xem ADR 0013.
         if (!adminReauth && !string.IsNullOrWhiteSpace(model.MaCoSo)
             && !await _luong.CoSoDangHienThiAsync(model.MaCoSo))
         {
             return Json(new { success = false, message = "Cơ sở này đang tạm ngưng tiếp nhận đăng ký trực tuyến." });
         }
 
-        // Tìm tài khoản từ database theo SĐT hoặc Email trước để kiểm tra role
         var taiKhoan = await _taiKhoanService.DangNhapAsync(input, "");
 
         if (taiKhoan != null && (string.Equals(taiKhoan.Role, "Admin", StringComparison.OrdinalIgnoreCase)))
         {
-            // Kiểm tra mật khẩu trong database
-            // Cot nay la MatKhauNoiBo (ADR 0009). Sau migration no dang NULL vi phan
-            // BAM chua thi hanh — xem muc Dinh chinh cua ADR 0009 — nen hai tai khoan
-            // Admin/DoiTac tam thoi roi vao nhanh "mat khau khong chinh xac".
+            // Cột này là MatKhauNoiBo (ADR 0009). Sau migration nó đang NULL vì phần
+            // BĂM chưa thi hành — xem mục Đính chính của ADR 0009 — nên hai tài khoản
+            // Admin/Đối tác tạm thời rơi vào nhánh "mật khẩu không chính xác".
             if (string.IsNullOrEmpty(taiKhoan.MatKhauNoiBo)
                 || !string.Equals(taiKhoan.MatKhauNoiBo, otpInput, StringComparison.Ordinal))
             {
@@ -618,7 +603,6 @@ public class DangNhapController : Controller
         }
         else
         {
-            // Kiểm tra mã OTP
             _cache.TryGetValue($"OTP_{input}", out string? cachedOtp);
             if (otpInput != "123456" && otpInput != "1234" && (cachedOtp == null || cachedOtp != otpInput))
             {
@@ -636,23 +620,23 @@ public class DangNhapController : Controller
             });
         }
 
-        // 🔴 Bat bien (ADR 0027): dang nhap duoc thi phai co tai khoan. HT_TaiKhoan
-        // chi duoc tao trong BaoDamHoSoNoiBoAsync, ma ham do thoat ngay khi khong co
-        // co so => cap cookie o day la de ra mot phien KHONG CO TAI KHOAN, khong loi
-        // thoat, moi man phia sau chi biet noi "Khong tim thay tai khoan.".
-        // Ranh gioi la VA, khong phai HOAC: nguoi DA CO tai khoan van vao duoc tu
-        // /DangNhap/Login tran (LoginPath cua Program.cs day ve day), khong bi chan.
-        // (Ho van ha canh o /benh-nhan chu khong dung dau trang, vi ChonDichDenAsync
-        //  bo returnUrl khi thieu ma co so — hanh vi CO SAN, khong phai do cong chan
-        //  nay. Do that 10/09.) Re-auth Admin duoc mien tru.
+        // 🔴 Bất biến (ADR 0027): đăng nhập được thì phải có tài khoản. HT_TaiKhoan
+        // chỉ được tạo trong BaoDamHoSoNoiBoAsync, mà hàm đó thoát ngay khi không có
+        // cơ sở => cấp cookie ở đây là đẻ ra một phiên KHÔNG CÓ TÀI KHOẢN, không lối
+        // thoát, mọi màn phía sau chỉ biết nói "Không tìm thấy tài khoản.".
+        // Ranh giới là VÀ, không phải HOẶC: người ĐÃ CÓ tài khoản vẫn vào được từ
+        // /DangNhap/Login trần (LoginPath của Program.cs đẩy về đây), không bị chặn.
+        // (Họ vẫn hạ cánh ở /benh-nhan chứ không đứng đầu trang, vì ChonDichDenAsync
+        //  bỏ returnUrl khi thiếu mã cơ sở — hành vi CÓ SẴN, không phải do cổng chặn
+        //  này. Đo thật 10/09.) Re-auth Admin được miễn trừ.
         bool laQrHis = model.DanhTinhQuet != null && (model.DanhTinhQuet.LaNguonHis || !string.IsNullOrWhiteSpace(model.DanhTinhQuet.MaBN));
 
         // Khóa luồng tự đăng ký tài khoản: chỉ cho phép tài khoản đã có sẵn từ HIS
         // NGOẠI LỆ: Bệnh nhân đã khám quét QR phiếu khám HIS -> tự động tạo tài khoản và hồ sơ
-        // 🔴 THU TU BAT BUOC: khoi dien MaCoSo phai chay TRUOC chot C7b.
-        // Chot cu ("taiKhoan is null") khong dung toi MaCoSo nen dat o dau cung
-        // duoc; chot C7b thi CO — de nguyen thu tu cu la phien khong mang MaCoSo
-        // bi chan sach, ke ca nguoi CO ho so. Da dap that luc chay nghiem thu 19-09.
+        // 🔴 THỨ TỰ BẮT BUỘC: khối điền MaCoSo phải chạy TRƯỚC chốt C7b.
+        // Chốt cũ ("taiKhoan is null") không dùng tới MaCoSo nên đặt ở đâu cũng
+        // được; chốt C7b thì CÓ — để nguyên thứ tự cũ là phiên không mang MaCoSo
+        // bị chặn sạch, kể cả người CÓ hồ sơ. Đã đạp thật lúc chạy nghiệm thu 19-09.
         if (string.IsNullOrWhiteSpace(model.MaCoSo) && !string.IsNullOrWhiteSpace(model.DanhTinhQuet?.MaBN))
         {
             var coSoMa = await (from cs in _dbContext.BenhNhans.AsNoTracking()
@@ -674,12 +658,12 @@ public class DangNhapController : Controller
                 .FirstOrDefaultAsync();
         }
 
-        // 🔴 C7b — CUA 1 trong HAI cua. Cua kia o nhanh Firebase (tim
-        // "C7b - CUA 2"). Sot mot cua la mo duong lach (ADR 0027 da canh bao
-        // dung chuyen nay). Tu dot 1B hang rao khong con treo vao HT_TaiKhoan
-        // ma hoi thang: SO NAY CO HO SO TAI CO SO NAY KHONG (ADR 0034).
-        // Loi bao hien tai noi "chua co ho so tai co so y te" — truoc 1B loi do
-        // CHAT HON code, nay moi dung nghia den, nen giu nguyen chu.
+        // 🔴 C7b — CỬA 1 trong HAI cửa. Cửa kia ở nhánh Firebase (tìm
+        // "C7b - CỬA 2"). Sót một cửa là mở đường lách (ADR 0027 đã cảnh báo
+        // đúng chuyện này). Từ đợt 1B hàng rào không còn treo vào HT_TaiKhoan
+        // mà hỏi thẳng: SỐ NÀY CÓ HỒ SƠ TẠI CƠ SỞ NÀY KHÔNG (ADR 0040).
+        // Lỗi báo hiện tại nói "chưa có hồ sơ tại cơ sở y tế" — trước 1B lỗi đó
+        // CHẶT HƠN code, nay mới đúng nghĩa đen, nên giữ nguyên chữ.
         if (!adminReauth && !await _hoSo.CoLoiVaoAsync(input, model.MaCoSo))
         {
             if (!laQrHis)
@@ -704,9 +688,9 @@ public class DangNhapController : Controller
             }
             else if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet?.MaBN))
             {
-                // 🔴 MaBN chi duy nhat THEO TUNG CO SO (ApplicationDbContext: unique
-                // (IdCoSo, MaBN)), nen tra khong loc co so la doc nham ho so cua co
-                // so khac — xem TimHoSoTheoMaBnTaiCoSoAsync.
+                // 🔴 MaBN chỉ duy nhất THEO TỪNG CƠ SỞ (ApplicationDbContext: unique
+                // (IdCoSo, MaBN)), nên tra không lọc cơ sở là đọc nhầm hồ sơ của cơ
+                // sở khác — xem TimHoSoTheoMaBnTaiCoSoAsync.
                 var idHoSoTheoMa = await TimHoSoTheoMaBnTaiCoSoAsync(model.DanhTinhQuet.MaBN, model.MaCoSo);
                 model.Cccd = idHoSoTheoMa is null
                     ? null
@@ -768,8 +752,8 @@ public class DangNhapController : Controller
                 claims.Add(new Claim(ClaimTypes.Email, emailClaimValue));
             }
 
-            // Hai claim nay la cach cac man phia sau (Dang ky / Lien ket / Ban
-            // giao / trang benh nhan) biet benh nhan la ai va dang o co so nao.
+            // Hai claim này là cách các màn phía sau (Đăng ký / Liên kết / Bàn
+            // giao / trang bệnh nhân) biết bệnh nhân là ai và đang ở cơ sở nào.
             if (!string.IsNullOrWhiteSpace(model.Cccd))
             {
                 claims.Add(new Claim(LuongCongBenhNhan.ClaimCccd, model.Cccd.Trim()));
@@ -780,9 +764,9 @@ public class DangNhapController : Controller
             }
 
             // Tự động gắn claim HoSoDangChon khi người dùng quét mã QR phiếu khám HIS
-            // 🔴 Chi mo san ho so khi tai khoan co DUNG MOT ho so. Tai khoan nhieu ho so
-        // (me + 2 con) ma lay bua mot cai la bug tham lang — de null thi nguoi dung
-        // tu chon o man Ho so. Nhanh QR duoi day van ghi de bang ho so quet duoc.
+            // 🔴 Chỉ mở sẵn hồ sơ khi tài khoản có ĐÚNG MỘT hồ sơ. Tài khoản nhiều hồ sơ
+        // (mẹ + 2 con) mà lấy bừa một cái là bug thầm lặng — để null thì người dùng
+        // tự chọn ở màn Hồ sơ. Nhánh QR dưới đây vẫn ghi đè bằng hồ sơ quét được.
         long? idHoSoQuet = await HoSoDuyNhatCuaTaiKhoanAsync(input, model.MaCoSo);
             if (model.DanhTinhQuet != null)
             {
@@ -802,9 +786,9 @@ public class DangNhapController : Controller
                     if (idBn != null && idBn > 0) idHoSoQuet = idBn;
                 }
 
-                // CHI luong QUET PHIEU: MOT_HO_SO bat thi mo san dung ho so ma man
-                // *Ho so cua toi* se hien, roi vao thang /benh-nhan — nguoi vua quet
-                // phieu khong phai chon lai mot danh sach chi co mot dong.
+                // CHỈ luồng QUÉT PHIẾU: MỘT_HỒ_SƠ bắt thì mở sẵn đúng hồ sơ mà màn
+                // *Hồ sơ của tôi* sẽ hiện, rồi vào thẳng /benh-nhan — người vừa quét
+                // phiếu không phải chọn lại một danh sách chỉ có một dòng.
                 idHoSoQuet ??= await _hoSo.LayIdHoSoMoSanKhiQuetAsync(input, model.MaCoSo, cccdQuet);
             }
 
@@ -812,9 +796,9 @@ public class DangNhapController : Controller
 
             if (idHoSoQuet != null && idHoSoQuet > 0)
             {
-                // 🔴 Cua 3 "nhan chu so huu" da chet o dot 1B: cot
-                // DM_BenhNhan.IDTaiKhoan khong con, chu so huu nay la cap
-                // (SDT x co so) cua chinh dong do. Xem ADR 0034.
+                // 🔴 Cửa 3 "nhận chủ sở hữu" đã chết ở đợt 1B: cột
+                // DM_BenhNhan.IDTaiKhoan không còn, chủ sở hữu này là cặp
+                // (SDT x cơ sở) của chính dòng đó. Xem ADR 0040.
 
                 var csList = await _dbContext.BenhNhans
                     .Where(x => x.Id == idHoSoQuet.Value && !x.DaMoTaiLieu)
@@ -856,13 +840,12 @@ public class DangNhapController : Controller
 
             _cache.Remove($"OTP_{input}");
 
-            // Cay quyet dinh sau OTP: chi mot cho duy nhat, nam trong
-            // ILuongCongBenhNhan. Man hinh khong duoc tu kiem tra MaCoSo.
+            // Cây quyết định sau OTP: chỉ một chỗ duy nhất, nằm trong
+            // ILuongCongBenhNhan. Màn hình không được tự kiểm tra MaCoSo.
             var redirectUrl = adminReauth
                 ? model.ReturnUrl
                 : await ChonDichDenAsync(model.MaCoSo, model.Cccd, input, model.ReturnUrl, model.DanhTinhQuet);
 
-            // Xóa cookie QR đã quét khi đăng nhập thành công
             Response.Cookies.Delete("qr_data", new CookieOptions { Path = "/" });
             Response.Cookies.Delete("qr_mabn", new CookieOptions { Path = "/" });
             if (!string.IsNullOrWhiteSpace(input)) _cache.Remove($"QR_MABN_{input.Trim()}");
@@ -890,7 +873,7 @@ public class DangNhapController : Controller
         }
         var adminReauth = AdminAuthentication.IsAdminReturnUrl(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl);
 
-        // Cung ly le voi XacNhanOtp: day la cua thu hai (va cuoi cung) sinh phien moi.
+        // Cùng lý lẽ với XacNhanOtp: đây là cửa thứ hai (và cuối cùng) sinh phiên mới.
         if (!adminReauth && !string.IsNullOrWhiteSpace(model.MaCoSo)
             && !await _luong.CoSoDangHienThiAsync(model.MaCoSo))
         {
@@ -899,10 +882,10 @@ public class DangNhapController : Controller
 
         bool laQrHis = model.DanhTinhQuet != null && (model.DanhTinhQuet.LaNguonHis || !string.IsNullOrWhiteSpace(model.DanhTinhQuet.MaBN));
 
-        // 🔴 THU TU BAT BUOC: khoi dien MaCoSo phai chay TRUOC chot C7b.
-        // Chot cu ("taiKhoan is null") khong dung toi MaCoSo nen dat o dau cung
-        // duoc; chot C7b thi CO — de nguyen thu tu cu la phien khong mang MaCoSo
-        // bi chan sach, ke ca nguoi CO ho so. Da dap that luc chay nghiem thu 19-09.
+        // 🔴 THỨ TỰ BẮT BUỘC: khối điền MaCoSo phải chạy TRƯỚC chốt C7b.
+        // Chốt cũ ("taiKhoan is null") không dùng tới MaCoSo nên đặt ở đâu cũng
+        // được; chốt C7b thì CÓ — để nguyên thứ tự cũ là phiên không mang MaCoSo
+        // bị chặn sạch, kể cả người CÓ hồ sơ. Đã đạp thật lúc chạy nghiệm thu 19-09.
         if (string.IsNullOrWhiteSpace(model.MaCoSo) && !string.IsNullOrWhiteSpace(model.DanhTinhQuet?.MaBN))
         {
             var coSoMa = await (from cs in _dbContext.BenhNhans.AsNoTracking()
@@ -924,8 +907,8 @@ public class DangNhapController : Controller
                 .FirstOrDefaultAsync();
         }
 
-        // 🔴 C7b — CUA 2 trong HAI cua (cua kia o nhanh OTP phia tren).
-        // Sot mot cua la mo duong lach. Cung luat, cung loi bao.
+        // 🔴 C7b — CỬA 2 trong HAI cửa (cửa kia ở nhánh OTP phía trên).
+        // Sót một cửa là mở đường lách. Cùng luật, cùng lối báo.
         if (!adminReauth && !await _hoSo.CoLoiVaoAsync(sdt, model.MaCoSo))
         {
             if (!laQrHis)
@@ -950,9 +933,9 @@ public class DangNhapController : Controller
             }
             else if (!string.IsNullOrWhiteSpace(model.DanhTinhQuet?.MaBN))
             {
-                // 🔴 MaBN chi duy nhat THEO TUNG CO SO (ApplicationDbContext: unique
-                // (IdCoSo, MaBN)), nen tra khong loc co so la doc nham ho so cua co
-                // so khac — xem TimHoSoTheoMaBnTaiCoSoAsync.
+                // 🔴 MaBN chỉ duy nhất THEO TỪNG CƠ SỞ (ApplicationDbContext: unique
+                // (IdCoSo, MaBN)), nên tra không lọc cơ sở là đọc nhầm hồ sơ của cơ
+                // sở khác — xem TimHoSoTheoMaBnTaiCoSoAsync.
                 var idHoSoTheoMa = await TimHoSoTheoMaBnTaiCoSoAsync(model.DanhTinhQuet.MaBN, model.MaCoSo);
                 model.Cccd = idHoSoTheoMa is null
                     ? null
@@ -981,9 +964,9 @@ public class DangNhapController : Controller
         }
 
         // Tự động gắn claim HoSoDangChon khi người dùng quét mã QR phiếu khám HIS
-        // 🔴 Chi mo san ho so khi tai khoan co DUNG MOT ho so. Tai khoan nhieu ho so
-        // (me + 2 con) ma lay bua mot cai la bug tham lang — de null thi nguoi dung
-        // tu chon o man Ho so. Nhanh QR duoi day van ghi de bang ho so quet duoc.
+        // 🔴 Chỉ mở sẵn hồ sơ khi tài khoản có ĐÚNG MỘT hồ sơ. Tài khoản nhiều hồ sơ
+        // (mẹ + 2 con) mà lấy bừa một cái là bug thầm lặng — để null thì người dùng
+        // tự chọn ở màn Hồ sơ. Nhánh QR dưới đây vẫn ghi đè bằng hồ sơ quét được.
         long? idHoSoQuet = await HoSoDuyNhatCuaTaiKhoanAsync(sdt, model.MaCoSo);
         if (model.DanhTinhQuet != null)
         {
@@ -1003,9 +986,9 @@ public class DangNhapController : Controller
                 if (idBn != null && idBn > 0) idHoSoQuet = idBn;
             }
 
-            // CHI luong QUET PHIEU: MOT_HO_SO bat thi mo san dung ho so ma man
-            // *Ho so cua toi* se hien, roi vao thang /benh-nhan — nguoi vua quet
-            // phieu khong phai chon lai mot danh sach chi co mot dong.
+            // CHỈ luồng QUÉT PHIẾU: MỘT_HỒ_SƠ bắt thì mở sẵn đúng hồ sơ mà màn
+            // *Hồ sơ của tôi* sẽ hiện, rồi vào thẳng /benh-nhan — người vừa quét
+            // phiếu không phải chọn lại một danh sách chỉ có một dòng.
             idHoSoQuet ??= await _hoSo.LayIdHoSoMoSanKhiQuetAsync(sdt, model.MaCoSo, cccdQuet);
         }
 
@@ -1015,7 +998,7 @@ public class DangNhapController : Controller
         {
             if (taiKhoan != null && taiKhoan.Id > 0)
             {
-                // Cua 3 da thanh no-op tu dot 1B (ADR 0034).
+                // Cửa 3 đã thành no-op từ đợt 1B (ADR 0040).
             }
 
             var csList = await _dbContext.BenhNhans
@@ -1060,7 +1043,6 @@ public class DangNhapController : Controller
             ? model.ReturnUrl
             : await ChonDichDenAsync(model.MaCoSo, model.Cccd, sdt, model.ReturnUrl, model.DanhTinhQuet);
 
-        // Xóa cookie QR đã quét khi đăng nhập thành công
         Response.Cookies.Delete("qr_data", new CookieOptions { Path = "/" });
         Response.Cookies.Delete("qr_mabn", new CookieOptions { Path = "/" });
         if (!string.IsNullOrWhiteSpace(sdt)) _cache.Remove($"QR_MABN_{sdt.Trim()}");
@@ -1069,8 +1051,8 @@ public class DangNhapController : Controller
     }
 
     // ==================================================================
-    //  Cong benh nhan: Dang ky / Lien ket / Doi mat khau / Ban giao
-    //  Bon man nay chi den tu cay quyet dinh trong ILuongCongBenhNhan.
+    //  Cổng bệnh nhân: Đăng ký / Liên kết / Đổi mật khẩu / Bàn giao
+    //  Bốn màn này chỉ đến từ cây quyết định trong ILuongCongBenhNhan.
     // ==================================================================
 
     [HttpGet]
@@ -1163,12 +1145,12 @@ public class DangNhapController : Controller
     }
 
     /// <summary>
-    /// Nguoi dung chu dong bam "Tiep tuc" o man dang nhap khi phien van con, hoac
-    /// bam "Ho so benh nhan" o menu 3 gach khi da dang nhap. Day moi la cho chay
-    /// cay quyet dinh — KHONG tu chay khi chi mo trang. Chi thao tac tren MaCoSo
-    /// CUA PHIEN — doi sang co so khac khong con di qua day nua, modal chan dang
-    /// nhap cheo co so (ADR 0006) da lo tu luc vao, nen khong con nhanh "doi claim
-    /// am tham" o day.
+    /// Người dùng chủ động bấm "Tiếp tục" ở màn đăng nhập khi phiên vẫn còn, hoặc
+    /// bấm "Hồ sơ bệnh nhân" ở menu 3 gạch khi đã đăng nhập. Đây mới là chỗ chạy
+    /// cây quyết định — KHÔNG tự chạy khi chỉ mở trang. Chỉ thao tác trên MaCoSo
+    /// CỦA PHIÊN — đổi sang cơ sở khác không còn đi qua đây nữa, modal chặn đăng
+    /// nhập chéo cơ sở (ADR 0006) đã lo từ lúc vào, nên không còn nhánh "đổi claim
+    /// âm thầm" ở đây.
     /// </summary>
     [HttpGet]
     [Authorize]
@@ -1188,8 +1170,8 @@ public class DangNhapController : Controller
     }
 
     /// <summary>
-    /// Danh tinh benh nhan LAY TU PHIEN. Moi thao tac cham toi he doi tac deu
-    /// phai di qua day — khong bao gio tin cccd/maCoSo gui len tu trinh duyet.
+    /// Danh tính bệnh nhân LẤY TỪ PHIÊN. Mọi thao tác chạm tới hệ đối tác đều
+    /// phải đi qua đây — không bao giờ tin cccd/maCoSo gửi lên từ trình duyệt.
     /// </summary>
     private (string? MaCoSo, string? Cccd, string? DinhDanh) LayDanhTinhPhien()
         => (User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value,
@@ -1197,8 +1179,8 @@ public class DangNhapController : Controller
             User.FindFirst(ClaimTypes.Name)?.Value);
 
     /// <summary>
-    /// Ma co so cua phien. Tham so tren URL chi duoc dung khi phien chua co —
-    /// va phai la ma co so hop le, de khong ai doi URL de nhay sang co so khac.
+    /// Mã cơ sở của phiên. Tham số trên URL chỉ được dùng khi phiên chưa có —
+    /// và phải là mã cơ sở hợp lệ, để không ai đổi URL để nhảy sang cơ sở khác.
     /// </summary>
     private string? LayMaCoSoPhien(string? coSoTrenUrl)
     {
@@ -1208,17 +1190,16 @@ public class DangNhapController : Controller
         return string.IsNullOrWhiteSpace(coSoTrenUrl) ? null : coSoTrenUrl;
     }
 
-    /// <summary>Do ten co so + dinh danh benh nhan ra ViewBag cho bon man tren.</summary>
     /// <summary>
-    /// Logo cua co so de bo man doi tac hien dung nhan dien cua ho, thay vi logo
-    /// SixosPwa. Cot DM_CSKCB.Logo giu hoac URL tuyet doi, hoac duong dan noi bo
-    /// "/anh/logo_cs/x.jpg" (KhoAnh sinh ra, AnhController phuc vu) — ca hai dang
-    /// deu gan thang vao src duoc.
+    /// Logo của cơ sở để bộ màn đối tác hiện đúng nhận diện của họ, thay vì logo
+    /// SixosPwa. Cột DM_CSKCB.Logo giữ hoặc URL tuyệt đối, hoặc đường dẫn nội bộ
+    /// "/anh/logo_cs/x.jpg" (KhoAnh sinh ra, AnhController phục vụ) — cả hai dạng
+    /// đều gắn thẳng vào src được.
     ///
-    /// UnescapeDataString bam theo Views/Home/ChiTietCoSo.cshtml:7: URL trong cot
-    /// nay co the da bi ma hoa mot lan truoc khi luu.
+    /// UnescapeDataString bám theo Views/Home/ChiTietCoSo.cshtml:7: URL trong cột
+    /// này có thể đã bị mã hóa một lần trước khi lưu.
     ///
-    /// Tra null khi co so chua co logo — view tu roi ve anh mac dinh.
+    /// Trả null khi cơ sở chưa có logo — view tự rơi về ảnh mặc định.
     /// </summary>
     private static string? LayLogoCoSo(DMCSKCB? coSo)
     {
@@ -1252,7 +1233,6 @@ public class DangNhapController : Controller
         var diaChi = string.IsNullOrWhiteSpace(quet.DiaChi) ? null : quet.DiaChi.Trim();
         var slug = Services.ChuanHoaTen.BoDau(hoTen);
 
-        // 1. Xác định cơ sở y tế và hồ sơ hiện có (nếu bệnh nhân đã có trên HIS)
         long? idCoSo = null;
         long? existingBnId = null;
 
@@ -1266,7 +1246,6 @@ public class DangNhapController : Controller
         {
             idCoSo = idCoSoQuet;
 
-            // 1a. Thử tìm hồ sơ theo MaBN tại đúng cơ sở này
             if (!string.IsNullOrWhiteSpace(quet.MaBN))
             {
                 var coSoInfo = await (from cs in _dbContext.BenhNhans
@@ -1278,7 +1257,6 @@ public class DangNhapController : Controller
                 }
             }
 
-            // 1b. Nếu chưa có theo MaBN, thử tìm hồ sơ theo CCCD tại đúng cơ sở này
             if (existingBnId == null && !string.IsNullOrWhiteSpace(cccd))
             {
                 existingBnId = await _dbContext.BenhNhans.AsNoTracking()
@@ -1301,7 +1279,6 @@ public class DangNhapController : Controller
         long idBenhNhanTarget = existingBnId ?? 0;
         if (idBenhNhanTarget <= 0)
         {
-            // 2. Lưu thông tin người bệnh vào DM_BenhNhan nếu chưa có
             var luuNguoi = await _thuTuc.SaveBenhNhanAsync(
                 cccd,
                 hoTen,
@@ -1324,7 +1301,6 @@ public class DangNhapController : Controller
             }
         }
 
-        // 2b. Gán Mã BN từ QR nếu cơ sở này chưa ai dùng mã này
         if (!string.IsNullOrWhiteSpace(quet.MaBN) && idCoSo != null && idBenhNhanTarget > 0)
         {
             var maTrim = quet.MaBN.Trim();
@@ -1342,7 +1318,6 @@ public class DangNhapController : Controller
             }
         }
 
-        // 3. Tạo tài khoản HT_TaiKhoan
         var luuTaiKhoan = await _thuTuc.SaveTaiKhoanAsync(
             0,
             sdt,
@@ -1352,13 +1327,11 @@ public class DangNhapController : Controller
 
         var idTaiKhoan = luuTaiKhoan.Id;
 
-        // 4. Gán quyền sở hữu hồ sơ cho tài khoản
         if (idBenhNhanTarget > 0 && idTaiKhoan > 0)
         {
-            // Cua 3 da thanh no-op tu dot 1B (ADR 0034).
+            // Cửa 3 đã thành no-op từ đợt 1B (ADR 0040).
         }
 
-        // 5. Đảm bảo mở tài liệu
         if (idBenhNhanTarget > 0)
         {
             var csList = await _dbContext.BenhNhans
@@ -1381,9 +1354,9 @@ public class DangNhapController : Controller
     }
 
     /// <summary>
-    /// Cho ha canh sau khi xac thuc. Vao thang /DangNhap/Login (khong qua trang
-    /// co so) thi khong biet benh nhan o co so nao, nen chi ve duoc trang benh
-    /// nhan dang toi gian — muon di tiep phai vao lai qua /DangKyOnline/{slug}.
+    /// Chỗ hạ cánh sau khi xác thực. Vào thẳng /DangNhap/Login (không qua trang
+    /// cơ sở) thì không biết bệnh nhân ở cơ sở nào, nên chỉ về được trang bệnh
+    /// nhân dạng tối giản — muốn đi tiếp phải vào lại qua /DangKyOnline/{slug}.
     /// </summary>
     private async Task<string?> ChonDichDenAsync(string? maCoSo, string? cccd, string dinhDanh,
                                                  string? returnUrl, DanhTinhQuet? quet = null)
@@ -1407,19 +1380,19 @@ public class DangNhapController : Controller
     }
 
     /// <summary>
-    /// denCoSo (slug): dung khi bam "Dang xuat va dang nhap lai" trong modal chan
-    /// dang nhap cheo co so (ADR 0006) — sau khi thoat phien cu, dua thang toi man
-    /// dang nhap cua co so MOI kem returnUrl la y dinh cua nut benh nhan da bam,
-    /// thay vi ve lai co so cu nhu dang xuat binh thuong.
+    /// denCoSo (slug): dùng khi bấm "Đăng xuất và đăng nhập lại" trong modal chặn
+    /// đăng nhập chéo cơ sở (ADR 0006) — sau khi thoát phiên cũ, đưa thẳng tới màn
+    /// đăng nhập của cơ sở MỚI kèm returnUrl là ý định của nút bệnh nhân đã bấm,
+    /// thay vì về lại cơ sở cũ như đăng xuất bình thường.
     /// </summary>
     [HttpGet]
     [HttpPost]
     public async Task<IActionResult> DangXuat(string? denCoSo = null, string? returnUrl = null)
     {
-        // Doc ma co so TRUOC khi dang xuat, vi sau SignOut la mat sach claim.
-        // Dang xuat khoi cong benh nhan cua mot co so thi phai quay ve dung
-        // trang co so do — ve /DangNhap/Login tran thi lan dang nhap sau khong
-        // con mang theo ma co so, va benh nhan roi thang vao nhanh noi bo.
+        // Đọc mã cơ sở TRƯỚC khi đăng xuất, vì sau SignOut là mất sạch claim.
+        // Đăng xuất khỏi cổng bệnh nhân của một cơ sở thì phải quay về đúng
+        // trang cơ sở đó — về /DangNhap/Login trần thì lần đăng nhập sau không
+        // còn mang theo mã cơ sở, và bệnh nhân rơi thẳng vào nhánh nội bộ.
         var maCoSo = User.FindFirst(LuongCongBenhNhan.ClaimMaCoSo)?.Value;
 
         var slug = string.IsNullOrWhiteSpace(maCoSo)
@@ -1430,10 +1403,10 @@ public class DangNhapController : Controller
                 .Select(x => x.Slug)
                 .FirstOrDefaultAsync();
 
-        // 🔴 Don dau vet phieu vua quet TRUOC khi mat claim. Thieu buoc nay thi dang
-        // xuat roi dang nhap lai bang so dien thoai (khong quet gi ca) van bi mo san
-        // ho so cua lan quet truoc — vua sai y nguoi dung, vua la dau vet con sot lai
-        // cua mot phien da ket thuc.
+        // 🔴 Dọn dấu vết phiếu vừa quét TRƯỚC khi mất claim. Thiếu bước này thì đăng
+        // xuất rồi đăng nhập lại bằng số điện thoại (không quét gì cả) vẫn bị mở sẵn
+        // hồ sơ của lần quét trước — vừa sai ý người dùng, vừa là dấu vết còn sót lại
+        // của một phiên đã kết thúc.
         var sdtDangXuat = User.FindFirst(System.Security.Claims.ClaimTypes.MobilePhone)?.Value
                           ?? User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
         if (!string.IsNullOrWhiteSpace(sdtDangXuat))
@@ -1446,10 +1419,10 @@ public class DangNhapController : Controller
         await HttpContext.SignOutAsync(AdminAuthentication.Scheme);
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
-        // 🔴 'vuaDangXuat=1' la tin hieu cho TRINH DUYET tu don localStorage
-        // 'pwa_patient_cache'. So dien thoai + CCCD cua nguoi vua dung nam o do, server
-        // khong voi toi duoc; khong don thi dang xuat xong man dang nhap van nhan ra so
-        // cu va nhay thang vao o OTP cua chinh nguoi do — dang xuat nhu khong.
+        // 🔴 'vuaDangXuat=1' là tín hiệu cho TRÌNH DUYỆT tự dọn localStorage
+        // 'pwa_patient_cache'. Số điện thoại + CCCD của người vừa dùng nằm ở đó, server
+        // không với tới được; không dọn thì đăng xuất xong màn đăng nhập vẫn nhận ra số
+        // cũ và nhảy thẳng vào ô OTP của chính người đó — đăng xuất như không.
         if (!string.IsNullOrWhiteSpace(denCoSo))
         {
             var yDinh = !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl) ? returnUrl : "/";
@@ -1465,16 +1438,16 @@ public class DangNhapController : Controller
     }
 
     /// <summary>
-    /// Tra ho so (<c>DM_BenhNhan.ID</c>) theo ma benh nhan quet duoc tren phieu kham,
-    /// <b>gioi han trong dung co so dang dang nhap</b>.
+    /// Tra hồ sơ (<c>DM_BenhNhan.ID</c>) theo mã bệnh nhân quét được trên phiếu khám,
+    /// <b>giới hạn trong đúng cơ sở đang đăng nhập</b>.
     ///
-    /// 🔴 <c>MaBN</c> chi duy nhat THEO TUNG CO SO — <c>ApplicationDbContext</c> dat
-    /// <c>HasIndex(IdCoSo, MaBN).IsUnique()</c>. Tra ma khong loc co so thi benh nhan
-    /// dang o co so B quet phieu mang ma do co so A cap se lay ra ho so cua NGUOI LA,
-    /// va duong <c>NhanChuSoHuuAsync</c> phia sau se gan ho so do cho tai khoan dang quet.
+    /// 🔴 <c>MaBN</c> chỉ duy nhất THEO TỪNG CƠ SỞ — <c>ApplicationDbContext</c> đặt
+    /// <c>HasIndex(IdCoSo, MaBN).IsUnique()</c>. Tra mà không lọc cơ sở thì bệnh nhân
+    /// đang ở cơ sở B quét phiếu mang mã do cơ sở A cấp sẽ lấy ra hồ sơ của NGƯỜI LẠ,
+    /// và đường <c>NhanChuSoHuuAsync</c> phía sau sẽ gán hồ sơ đó cho tài khoản đang quét.
     ///
-    /// Khong biet co so nao (thieu <paramref name="maCoSo"/>) thi tra <c>null</c> —
-    /// hong theo huong an toan, thua hon la doan.
+    /// Không biết cơ sở nào (thiếu <paramref name="maCoSo"/>) thì trả <c>null</c> —
+    /// hỏng theo hướng an toàn, thua hơn là đoán.
     /// </summary>
     private async Task<long?> TimHoSoTheoMaBnTaiCoSoAsync(string? maBn, string? maCoSo)
     {
@@ -1490,25 +1463,25 @@ public class DangNhapController : Controller
     }
 
     /// <summary>
-    /// Ma benh nhan cua phieu vua quet, khi man Login khong mang duoc danh tinh quet
-    /// toi cua xac thuc.
+    /// Mã bệnh nhân của phiếu vừa quét, khi màn Login không mang được danh tính quét
+    /// tới cửa xác thực.
     ///
     /// <para>
-    /// 🔴 Vi sao phai co: do that tren may that cho thay query string rung sau vai lan
-    /// chuyen trang (Login?...&mabn=... -> Login?ReturnUrl=%2Fbenh-nhan), con cookie thi
-    /// khong song qua duoc ranh gioi TRINH DUYET <-> APP DA CAI (hai kho cookie rieng:
-    /// quet QR o Chrome roi bam Dang nhap trong app la mat sach).
+    /// 🔴 Vì sao phải có: đo thật trên máy thật cho thấy query string rụng sau vài lần
+    /// chuyển trang (Login?...&mabn=... -> Login?ReturnUrl=%2Fbenh-nhan), còn cookie thì
+    /// không sống qua được ranh giới TRÌNH DUYỆT <-> APP ĐÃ CÀI (hai kho cookie riêng:
+    /// quét QR ở Chrome rồi bấm Đăng nhập trong app là mất sạch).
     /// </para>
     /// <para>
-    /// Nen ban nho theo SO DIEN THOAI (cache server) di truoc, cookie chi la duong lui.
-    /// Vong doi 30 phut, giong ma OTP. Bi don o: HuyOtp (roi man OTP), dang nhap xong,
-    /// va DangXuat — de khong con dau vet cua phien da ket thuc.
+    /// Nên bám nhớ theo SỐ ĐIỆN THOẠI (cache server) đi trước, cookie chỉ là đường lùi.
+    /// Vòng đời 30 phút, giống mã OTP. Bị dọn ở: HuyOtp (rời màn OTP), đăng nhập xong,
+    /// và DangXuat — để không còn dấu vết của phiên đã kết thúc.
     /// </para>
     /// </summary>
     private async Task<long?> HoSoTheoMaQuetDaNhoAsync(string? maCoSo, string? sdt)
     {
-        // Uu tien ban nho theo SDT: no song duoc ca khi nguoi benh quet o trinh duyet
-        // roi bam Dang nhap trong app da cai (hai ngu canh cookie khac nhau).
+        // Ưu tiên bám nhớ theo SDT: nó sống được cả khi người bệnh quét ở trình duyệt
+        // rồi bấm Đăng nhập trong app đã cài (hai ngữ cảnh cookie khác nhau).
         if (!string.IsNullOrWhiteSpace(sdt)
             && _cache.TryGetValue($"QR_MABN_{sdt.Trim()}", out string? maTuCache)
             && !string.IsNullOrWhiteSpace(maTuCache))
@@ -1524,13 +1497,13 @@ public class DangNhapController : Controller
     }
 
     /// <summary>
-    /// Ho so DUY NHAT cua mot so dien thoai TAI MOT CO SO, hoac <c>null</c> khi
-    /// khong co ho so nao HOAC co tu hai ho so tro len.
+    /// Hồ sơ DUY NHẤT của một số điện thoại TẠI MỘT CƠ SỞ, hoặc <c>null</c> khi
+    /// không có hồ sơ nào HOẶC có từ hai hồ sơ trở lên.
     ///
-    /// 🔴 Tu dot 1B quan he la (SDT x co so) -> N ho so: mot so giu duoc nhieu ho
-    /// so (me + cac con) tai cung co so, nen "ho so dang chon" phai do nguoi dung
-    /// chon va nam o claim/phien — KHONG duoc lay <c>FirstOrDefault</c> bat ky.
-    /// Xem ADR 0034 va muc *Loi vao* trong CONTEXT.md.
+    /// 🔴 Từ đợt 1B quan hệ là (SDT x cơ sở) -> N hồ sơ: một số giữ được nhiều hồ
+    /// sơ (mẹ + các con) tại cùng cơ sở, nên "hồ sơ đang chọn" phải do người dùng
+    /// chọn và nằm ở claim/phiên — KHÔNG được lấy <c>FirstOrDefault</c> bất kỳ.
+    /// Xem ADR 0040 và mục *Lối vào* trong CONTEXT.md.
     /// </summary>
     private async Task<long?> HoSoDuyNhatCuaTaiKhoanAsync(string? sdt, string? maCoSo)
     {
@@ -1557,16 +1530,16 @@ public class GuiOtpRequest
 {
     public string SoDienThoai { get; set; } = string.Empty;
 
-    /// <summary>Ma co so benh nhan dang dung (tu ?coSo=slug ben trang co so).</summary>
+    /// <summary>Mã cơ sở bệnh nhân đang dùng (từ ?coSo=slug bên trang cơ sở).</summary>
     public string? MaCoSo { get; set; }
 
-    /// <summary>Khoa noi benh nhan sang he doi tac (V6).</summary>
+    /// <summary>Khóa nối bệnh nhân sang hệ đối tác (V6).</summary>
     public string? Cccd { get; set; }
 
     public string? ReturnUrl { get; set; }
     /// <summary>
-    /// Danh tinh doc duoc tu ma QR o man Dang nhap, neu benh nhan di duong do.
-    /// 🔴 Du lieu tho tu may khach — xem canh bao trong <see cref="DanhTinhQuet"/>.
+    /// Danh tính đọc được từ mã QR ở màn Đăng nhập, nếu bệnh nhân đi đường đó.
+    /// 🔴 Dữ liệu thô từ máy khách — xem cảnh báo trong <see cref="DanhTinhQuet"/>.
     /// </summary>
     public DanhTinhQuet? DanhTinhQuet { get; set; }
 
@@ -1577,16 +1550,16 @@ public class XacNhanOtpRequest
     public string SoDienThoai { get; set; } = string.Empty;
     public string Otp { get; set; } = string.Empty;
 
-    /// <summary>Ma co so benh nhan dang dung (tu ?coSo=slug ben trang co so).</summary>
+    /// <summary>Mã cơ sở bệnh nhân đang dùng (từ ?coSo=slug bên trang cơ sở).</summary>
     public string? MaCoSo { get; set; }
 
-    /// <summary>Khoa noi benh nhan sang he doi tac (V6).</summary>
+    /// <summary>Khóa nối bệnh nhân sang hệ đối tác (V6).</summary>
     public string? Cccd { get; set; }
 
     public string? ReturnUrl { get; set; }
     /// <summary>
-    /// Danh tinh doc duoc tu ma QR o man Dang nhap, neu benh nhan di duong do.
-    /// 🔴 Du lieu tho tu may khach — xem canh bao trong <see cref="DanhTinhQuet"/>.
+    /// Danh tính đọc được từ mã QR ở màn Đăng nhập, nếu bệnh nhân đi đường đó.
+    /// 🔴 Dữ liệu thô từ máy khách — xem cảnh báo trong <see cref="DanhTinhQuet"/>.
     /// </summary>
     public DanhTinhQuet? DanhTinhQuet { get; set; }
 
@@ -1594,11 +1567,11 @@ public class XacNhanOtpRequest
 
 public class TaoTaiKhoanRequest
 {
-    // Khong nhan MaCoSo / Cccd / DinhDanh: chung duoc lay tu claim cua phien.
+    // Không nhận MaCoSo / Cccd / DinhDanh: chúng được lấy từ claim của phiên.
     public string HoTen { get; set; } = string.Empty;
     public string MatKhau { get; set; } = string.Empty;
 
-    /// <summary>Y dinh cua nut benh nhan da bam luc dau ("/dat-goi-kham"...).</summary>
+    /// <summary>Ý định của nút bệnh nhân đã bấm lúc đầu ("/dat-goi-kham"...).</summary>
     public string? ReturnUrl { get; set; }
 }
 

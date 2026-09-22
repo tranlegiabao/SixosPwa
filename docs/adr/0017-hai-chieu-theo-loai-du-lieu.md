@@ -1,7 +1,6 @@
 # 0017 — Hai chiều theo loại dữ liệu: tài liệu thì đẩy, lịch hẹn thì gọi thẳng
 
-- **Trạng thái:** Đã chấp nhận
-- **Ngày:** 2026-09-08
+- **Tác giả:** Nam · **Ngày:** 2026-09-08 · **Trạng thái:** Đã chấp nhận
 - **Bối cảnh liên quan:** [0014](0014-co-so-ub-dung-man-cua-khach.md) — bài học `BaseUrl` không với tới
   được. [0012](0012-anh-luu-tren-ftp-dung-chung.md) — kho FTP dùng chung.
   [0015](0015-phan-hoi-doi-tac-phai-co-statuscode-200.md) — đọc phản hồi đối tác.

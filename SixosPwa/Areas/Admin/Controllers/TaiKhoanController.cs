@@ -84,7 +84,7 @@ public sealed class TaiKhoanController : AdminControllerBase
 
         if (!ModelState.IsValid) return View(model);
 
-        // MatKhauNoiBo de null — phan bam chua thi hanh (Dinh chinh ADR 0009).
+        // MatKhauNoiBo để null — phần băm chưa thi hành (Đính chính ADR 0009).
         var (result, _) = await _adminStoredProcedures.SaveTaiKhoanAsync(
             0, model.SDT, null, model.Role, null);
         if (!result.Succeeded)
@@ -168,7 +168,7 @@ public sealed class TaiKhoanController : AdminControllerBase
             return Json(new { success = false, message = "Không tìm thấy hồ sơ bệnh nhân." });
 
         // 🔴 KIỂM TRA: Nếu hồ sơ đang có mã bệnh nhân tại cơ sở thì KHÔNG cho sửa thông tin. Phải gỡ nối trước!
-        // Dot 1B: chinh dong do LA ho so tai co so, giu dung mot ma (ADR 0032).
+        // Đợt 1B: chính dòng đó LÀ hồ sơ tại cơ sở, giữ đúng một mã (ADR 0032).
         var coSoRecord = bn;
 
         if (!string.IsNullOrEmpty(coSoRecord?.MaBN))
@@ -183,7 +183,6 @@ public sealed class TaiKhoanController : AdminControllerBase
             return Json(new { success = false, isWarning = true, message = "Ngày sinh không hợp lệ. Vui lòng nhập ngày sinh chính xác của bệnh nhân." });
         }
 
-        // Kiểm tra trùng lặp:
         if (!laCccdKhongCo)
         {
             var trungCccd = await _db.BenhNhans.AsNoTracking()
@@ -216,7 +215,6 @@ public sealed class TaiKhoanController : AdminControllerBase
         bn.DiaChi = string.IsNullOrWhiteSpace(req.DiaChi) ? null : req.DiaChi.Trim();
         bn.HoTenKhongDau = ChuanHoaTen.BoDau(req.TenBN);
 
-        // ───── Cơ sở khám chữa bệnh & Mã bệnh nhân (DM_BenhNhanCoSo) ─────
         var newMaBN = string.IsNullOrWhiteSpace(req.MaBN) ? null : req.MaBN.Trim();
         var idCoSoDich = req.IdCoSo ?? coSoRecord?.IdCoSo ?? 0;
         long? idCoSoHienThi = idCoSoDich > 0 ? idCoSoDich : coSoRecord?.IdCoSo;
@@ -224,8 +222,6 @@ public sealed class TaiKhoanController : AdminControllerBase
         long? idHoSoCoSoResult = coSoRecord?.Id;
         string? canhBao = null;
 
-        // Nếu có chọn cơ sở đích mà hồ sơ chưa có dòng cơ sở nào với cơ sở này:
-        // Gọi tạo dòng tự khai trước
         if (idCoSoDich > 0)
         {
             var dongHienTai = await _db.BenhNhans
@@ -245,7 +241,6 @@ public sealed class TaiKhoanController : AdminControllerBase
             }
         }
 
-        // Nếu có nhập mã bệnh nhân mới:
         if (!string.IsNullOrEmpty(newMaBN))
         {
             if (idCoSoDich <= 0)
@@ -261,11 +256,11 @@ public sealed class TaiKhoanController : AdminControllerBase
             var (ketQuaMa, idCoSoMoi) = await _adminStoredProcedures.SaveBenhNhanCoSoAsync(
                 bn.Id, idCoSoDich, newMaBN, moCuaTaiLieu: true);
 
-            // Code 3 = ho so DANG NOI mot ma KHAC. Hang rao chot 47 / ADR 0032:
-            // cua Luu ho so CO Y tu choi doi ma da co. Nhung man nay ten la
-            // "nhap ma benh nhan moi" — nguoi bam la bo phan ho tro va DA co y
-            // doi — nen day la cho duy nhat duoc di tiep bang CUA DOI MA (co ghi
-            // so). Bon noi goi _Save con lai KHONG duoc mo duong nay.
+            // Code 3 = hồ sơ ĐANG NỐI một mã KHÁC. Hàng rào chốt 47 / ADR 0032:
+            // cửa Lưu hồ sơ CỐ Ý từ chối đổi mã đã có. Nhưng màn này tên là
+            // "nhập mã bệnh nhân mới" — người bấm là bộ phận hỗ trợ và ĐÃ cố ý
+            // đổi — nên đây là chỗ duy nhất được đi tiếp bằng CỬA ĐỔI MÃ (có ghi
+            // sổ). Bốn nơi gọi _Save còn lại KHÔNG được mở đường này.
             if (ketQuaMa.Code == 3)
             {
                 (ketQuaMa, idCoSoMoi) = await _adminStoredProcedures.DoiMaBenhNhanCoSoAsync(
@@ -285,13 +280,13 @@ public sealed class TaiKhoanController : AdminControllerBase
             maBNSauKhiLuu = newMaBN;
             idCoSoHienThi = idCoSoDich;
 
-            // 🔴 Khoi "dong bo dong mo coi" cu da bi go o dot A.
-            // No tim tai lieu / dot kham CHUA gan IDBenhNhanCoSo roi doi chieu bang cot
-            // MaBN nam tren chinh hai bang do. Ca hai cot MaBN nay da bi xoa
-            // (QL_TaiLieuBenhNhan.MaBN, QL_DotKham.MaBN) va ma benh nhan gio chi con
-            // suy ra duoc QUA IDBenhNhanCoSo — tuc la phai dung chinh cai dang thieu
-            // de tim no. Khong con manh moi nao de noi lai, ma tu dot A moi duong ghi
-            // deu bat buoc co IDBenhNhanCoSo ngay tu dau nen cung khong sinh them dong mo coi.
+            // 🔴 Khối "đồng bộ dòng mồ côi" cũ đã bị gỡ ở đợt A.
+            // Nó tìm tài liệu / đợt khám CHƯA gắn IDBenhNhanCoSo rồi đối chiếu bằng cột
+            // MaBN nằm trên chính hai bảng đó. Cả hai cột MaBN này đã bị xóa
+            // (QL_TaiLieuBenhNhan.MaBN, QL_DotKham.MaBN) và mã bệnh nhân giờ chỉ còn
+            // suy ra được QUA IDBenhNhanCoSo — tức là phải dùng chính cái đang thiếu
+            // để tìm nó. Không còn manh mối nào để nối lại, mà từ đợt A mọi đường ghi
+            // đều bắt buộc có IDBenhNhanCoSo ngay từ đầu nên cũng không sinh thêm dòng mồ côi.
         }
         else if (!string.IsNullOrEmpty(coSoRecord?.MaBN))
         {
@@ -308,11 +303,11 @@ public sealed class TaiKhoanController : AdminControllerBase
                 .Select(x => x.TenCoSo)
                 .FirstOrDefaultAsync();
 
-        // "Ho so chinh" sau dot 1B: so dien thoai nay dang giu DUNG MOT ho so
-        // TAI CO SO NAY (ADR 0036 — pham vi la cap SDT x co so).
-        // 🔴 Ban trung gian cua dot nay tra HT_TaiKhoan bang ID CO SO roi dem
-        // DM_BenhNhan theo ID TAI KHOAN — hai lan nham bang, ra ket qua dung
-        // ngau nhien khi hai day ID tinh co trung.
+        // "Hồ sơ chính" sau đợt 1B: số điện thoại này đang giữ ĐÚNG MỘT hồ sơ
+        // TẠI CƠ SỞ NÀY (ADR 0036 — phạm vi là cặp SDT x cơ sở).
+        // 🔴 Bản trung gian của đợt này tra HT_TaiKhoan bằng ID CƠ SỞ rồi đếm
+        // DM_BenhNhan theo ID TÀI KHOẢN — hai lần nhầm bảng, ra kết quả đúng
+        // ngẫu nhiên khi hai dãy ID tình cờ trùng.
         bool isPrimary = false;
         if (bn.IdCoSo.HasValue && !string.IsNullOrWhiteSpace(bn.SDT))
         {
@@ -330,7 +325,7 @@ public sealed class TaiKhoanController : AdminControllerBase
             data = new
             {
                 id = bn.Id,
-                // Khong con khai niem "tai khoan" cho benh nhan (ADR 0036).
+                // Không còn khái niệm "tài khoản" cho bệnh nhân (ADR 0036).
                 idHoSo = bn.Id,
                 tenBN = bn.TenBN,
                 cccd = bn.CCCD,
@@ -350,20 +345,20 @@ public sealed class TaiKhoanController : AdminControllerBase
     }
 
     /// <summary>
-    /// *Go noi* mot ma khoi mot ho so — cua duy nhat, va do ADMIN bam.
+    /// *Gỡ nối* một mã khỏi một hồ sơ — cửa duy nhất, và do ADMIN bấm.
     ///
     /// <para>
-    /// 🔴 KHONG xoa dong bang EF. Thu tuc <c>dbo.DM_BenhNhanCoSo_GoNoi</c> con phai
-    /// sao luu tai lieu + dot kham sang <c>bak.GoNoi_*_V001</c> roi moi xoa, va phai de
-    /// lai mot dong TU KHAI de ho so "tut ve *Ho so tu khai*" chu khong bien mat khoi co
-    /// so. Xoa thang bang EF thi mat het ba viec do, ma khoa ngoai NO_ACTION cung chan
-    /// khong cho xoa khi con tai lieu — nen duong cu vua sai vua se gay 500.
+    /// 🔴 KHÔNG xóa dòng bằng EF. Thủ tục <c>dbo.DM_BenhNhanCoSo_GoNoi</c> còn phải
+    /// sao lưu tài liệu + đợt khám sang <c>bak.GoNoi_*_V001</c> rồi mới xóa, và phải để
+    /// lại một dòng TỰ KHAI để hồ sơ "tụt về *Hồ sơ tự khai*" chứ không biến mất khỏi cơ
+    /// sở. Xóa thẳng bằng EF thì mất hết ba việc đó, mà khóa ngoại NO_ACTION cũng chặn
+    /// không cho xóa khi còn tài liệu — nên đường cũ vừa sai vừa sẽ gây 500.
     /// </para>
     ///
     /// <para>
-    /// Thu tuc chan theo CHU SO HUU ho so (<c>@IDTaiKhoan</c>) chu khong theo nguoi dang
-    /// bam, nen o day truyen tai khoan cua chinh ho so. Quyen cua admin da duoc canh cua
-    /// Area Admin giu — khong noi hai lop chan vao lam mot.
+    /// Thủ tục chặn theo CHỦ SỞ HỮU hồ sơ (<c>@IDTaiKhoan</c>) chứ không theo người đang
+    /// bấm, nên ở đây truyền tài khoản của chính hồ sơ. Quyền của admin đã được cánh cửa
+    /// Area Admin giữ — không nối hai lớp chặn vào làm một.
     /// </para>
     /// </summary>
     [HttpPost]
@@ -384,9 +379,9 @@ public sealed class TaiKhoanController : AdminControllerBase
         if (string.IsNullOrEmpty(dong.MaBN))
             return Json(new { success = false, message = "Hồ sơ này chưa nối mã nào nên không có gì để gỡ." });
 
-        // Dot 1B: "chu so huu" la cap (SDT x co so) cua chinh dong ho so do
-        // (ADR 0034). Khu Admin di duong nay thay mat benh nhan nen lay SDT +
-        // co so tu chinh dong, khong hoi phien.
+        // Đợt 1B: "chủ sở hữu" là cặp (SDT x cơ sở) của chính dòng hồ sơ đó
+        // (ADR 0040). Khu Admin đi đường này thay mặt bệnh nhân nên lấy SDT +
+        // cơ sở từ chính dòng, không hỏi phiên.
         var neo = await _db.BenhNhans.AsNoTracking()
             .Where(b => b.Id == dong.Id)
             .Select(b => new { b.SDT, b.IdCoSo })
@@ -423,11 +418,11 @@ public sealed class TaiKhoanController : AdminControllerBase
         if (bn == null)
             return Json(new { success = false, message = "Không tìm thấy hồ sơ bệnh nhân." });
 
-        // 🔴 Dot 1B: mot dong DA LA ho so tai co so, khong con bang lien ket de
-        // don truoc. Ban trung gian cua dot nay doc lai chinh `bn` roi RemoveRange
-        // + Remove => DELETE hai lan cung mot dong, lan hai nem
-        // DbUpdateConcurrencyException. Xoa DUNG MOT LAN.
-        // Thong bao / push neo vao ho so nay phai di truoc (FK).
+        // 🔴 Đợt 1B: một dòng ĐÃ LÀ hồ sơ tại cơ sở, không còn bảng liên kết để
+        // dọn trước. Bản trung gian của đợt này đọc lại chính `bn` rồi RemoveRange
+        // + Remove => DELETE hai lần cùng một dòng, lần hai ném
+        // DbUpdateConcurrencyException. Xóa ĐÚNG MỘT LẦN.
+        // Thông báo / push neo vào hồ sơ này phải đi trước (FK).
         var thongBao = await _db.ThongBaos.Where(x => x.IdNguoiNhan == bn.Id).ToListAsync();
         if (thongBao.Count > 0) _db.ThongBaos.RemoveRange(thongBao);
 
@@ -461,9 +456,9 @@ public sealed class TaiKhoanController : AdminControllerBase
             return Json(new { success = false, isWarning = true, message = "Ngày sinh không hợp lệ. Vui lòng nhập ngày sinh chính xác của bệnh nhân." });
         }
 
-        // 🔴 Pham vi la MOT CO SO: khoa that la UNIQUE(IDCoSo, CCCD) (ADR 0036),
-        // khong con UNIQUE CCCD toan he. Tra toan he la chan nham nguoi da co ho
-        // so o co so KHAC — dung thu ma dot 1B co y cho phep.
+        // 🔴 Phạm vi là MỘT CƠ SỞ: khóa thật là UNIQUE(IDCoSo, CCCD) (ADR 0036),
+        // không còn UNIQUE CCCD toàn hệ. Tra toàn hệ là chặn nhầm người đã có hồ
+        // sơ ở cơ sở KHÁC — đúng thứ mà đợt 1B cố ý cho phép.
         var idCoSoTao = req.IdCoSo ?? 0;
 
         if (!laCccdKhongCo && idCoSoTao > 0)
@@ -478,9 +473,9 @@ public sealed class TaiKhoanController : AdminControllerBase
         else if (laCccdKhongCo && req.NgaySinh.HasValue && !string.IsNullOrEmpty(req.GioiTinh))
         {
             var tenKd = ChuanHoaTen.BoDau(req.TenBN);
-            // 🔴 PHAI gioi han trong CUNG MOT CO SO. Khong co ve nay thi mot ten
-            // pho bien trung ngay sinh + gioi tinh o co so KHAC cung bi chan, va
-            // loi bao "da co ho so khac tai co so nay" thanh noi sai.
+            // 🔴 PHẢI giới hạn trong CÙNG MỘT CƠ SỞ. Không có vế này thì một tên
+            // phổ biến trùng ngày sinh + giới tính ở cơ sở KHÁC cũng bị chặn, và
+            // lỗi báo "đã có hồ sơ khác tại cơ sở này" thành nói sai.
             var trungNhanThan = idCoSoTao <= 0 ? false : await _db.BenhNhans.AsNoTracking()
                 .AnyAsync(x => x.HoTenKhongDau == tenKd
                             && x.NgaySinh.HasValue && x.NgaySinh.Value.Date == req.NgaySinh.Value.Date
@@ -494,7 +489,7 @@ public sealed class TaiKhoanController : AdminControllerBase
 
         var bn = new SixosPwa.Models.BenhNhan
         {
-            // Dot 1B: khong con cot IDTaiKhoan; ho so thuoc ve cap (SDT x co so).
+            // Đợt 1B: không còn cột IDTaiKhoan; hồ sơ thuộc về cặp (SDT x cơ sở).
             TenBN = req.TenBN.Trim(),
             CCCD = cccdMoi,
             SDT = string.IsNullOrWhiteSpace(req.SDT) ? null : req.SDT.Trim(),
@@ -532,7 +527,7 @@ public sealed class TaiKhoanController : AdminControllerBase
             data = new
             {
                 id = bn.Id,
-                // Khong con khai niem "tai khoan" cho benh nhan (ADR 0036).
+                // Không còn khái niệm "tài khoản" cho bệnh nhân (ADR 0036).
                 idHoSo = bn.Id,
                 tenBN = bn.TenBN,
                 cccd = bn.CCCD,

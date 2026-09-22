@@ -1,50 +1,50 @@
 namespace SixosPwa.Services;
 
 /// <summary>
-/// Quy uoc duong dan anh giua kho FTP dung chung va URL cong khai.
+/// Quy ước đường dẫn ảnh giữa kho FTP dùng chung và URL công khai.
 ///
-///     Moi (theo co so):
+///     Mới (theo cơ sở):
 ///     FTP   sixospwa/{MaCoSo}/{thuMuc}/{ten} (vd: sixospwa/CS1/logo/x.jpg, sixospwa/_chung/noi_dung/y.jpg)
 ///     URL   /anh/{MaCoSo}/{thuMuc}/{ten} (vd: /anh/CS1/logo/x.jpg, /anh/_chung/noi_dung/y.jpg)
 ///
-///     Cu (backward-compatible):
+///     Cũ (backward-compatible):
 ///     FTP   sixospwa/{thuMuc}/{ten} (vd: sixospwa/logo_cs/x.jpg)
 ///     URL   /anh/{thuMuc}/{ten} (vd: /anh/logo_cs/x.jpg)
 ///
-/// Kho FTP nay dung CHUNG voi HisSoft. Moi thu cua SixosPwa nam gon duoi thu muc goc
-/// 'sixospwa' de khong the xoa nham do cua HisSoft: xem HangRao trong DonAnhService.
+/// Kho FTP này dùng CHUNG với HisSoft. Mọi thứ của SixosPwa nằm gọn dưới thư mục gốc
+/// 'sixospwa' để không thể xóa nhầm đồ của HisSoft: xem HangRao trong DonAnhService.
 /// </summary>
 public static class KhoAnh
 {
-    /// <summary>Thu muc goc cua rieng SixosPwa tren FTP dung chung.</summary>
+    /// <summary>Thư mục gốc của riêng SixosPwa trên FTP dùng chung.</summary>
     public const string GocFtp = "sixospwa";
 
-    /// <summary>Tien to URL cua route doc anh (AnhController).</summary>
+    /// <summary>Tiền tố URL của route đọc ảnh (AnhController).</summary>
     public const string TienToUrl = "/anh";
 
     public const string CoSoChung = "_chung";
 
-    // Ten thu muc con moi (chuẩn hóa theo từng cơ sở)
+    // Tên thư mục con mới (chuẩn hóa theo từng cơ sở)
     public const string ThuMucLogo = "logo";
     public const string ThuMucQuangCao = "quang_cao";
     public const string ThuMucHinhAnh = "hinh_anh";
-    public const string ThuMucCoSo = "hinh_anh"; // Alias giu tuong thich code cu
+    public const string ThuMucCoSo = "hinh_anh"; // Alias giữ tương thích code cũ
     public const string ThuMucNoiDung = "noi_dung";
     public const string ThuMucTaiLieu = "tailieu";
 
-    /// <summary>Danh sach thu muc con moi hop le duoi co so.</summary>
+    /// <summary>Danh sách thư mục con mới hợp lệ dưới cơ sở.</summary>
     public static readonly string[] ThuMucMoiHopLe =
     {
         ThuMucLogo, ThuMucQuangCao, ThuMucHinhAnh, ThuMucNoiDung
     };
 
-    /// <summary>Bon thu muc cu truoc dot tai cau truc (backward compatibility).</summary>
+    /// <summary>Bốn thư mục cũ trước đợt tái cấu trúc (backward compatibility).</summary>
     public static readonly string[] ThuMucCuHopLe =
     {
         "logo_cs", "img_qc_kcb", "img_cs", "img_nd"
     };
 
-    /// <summary>Tat ca thu muc anh hop le (ca moi va cu).</summary>
+    /// <summary>Tất cả thư mục ảnh hợp lệ (cả mới và cũ).</summary>
     public static readonly string[] ThuMucHopLe =
         ThuMucMoiHopLe.Concat(ThuMucCuHopLe).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
 
@@ -52,19 +52,19 @@ public static class KhoAnh
         !string.IsNullOrWhiteSpace(thuMuc)
         && ThuMucHopLe.Contains(thuMuc, StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Duong dan thu muc tren FTP theo co so, vd "sixospwa/CS1/logo".</summary>
+    /// <summary>Đường dẫn thư mục trên FTP theo cơ sở, vd "sixospwa/CS1/logo".</summary>
     public static string ThuMucFtp(string? maCoSo, string thuMuc)
     {
         var safeMa = string.IsNullOrWhiteSpace(maCoSo) ? CoSoChung : maCoSo.Trim();
         return $"{GocFtp}/{safeMa}/{thuMuc}";
     }
 
-    /// <summary>Duong dan thu muc cu tren FTP, vd "sixospwa/logo_cs" hoac fallback.</summary>
+    /// <summary>Đường dẫn thư mục cũ trên FTP, vd "sixospwa/logo_cs" hoặc fallback.</summary>
     public static string ThuMucFtp(string thuMuc) => $"{GocFtp}/{thuMuc}";
 
     /// <summary>
-    /// Doi ket qua cua IFtpService.UploadFileAsync ("sixospwa/CS1/logo/x.jpg" hoac "sixospwa/logo_cs/x.jpg")
-    /// thanh URL cat vao cot DB ("/anh/CS1/logo/x.jpg" hoac "/anh/logo_cs/x.jpg").
+    /// Đổi kết quả của IFtpService.UploadFileAsync ("sixospwa/CS1/logo/x.jpg" hoặc "sixospwa/logo_cs/x.jpg")
+    /// thành URL cất vào cột DB ("/anh/CS1/logo/x.jpg" hoặc "/anh/logo_cs/x.jpg").
     /// </summary>
     public static string? UrlTuDuongDanFtp(string? duongDanFtp)
     {
@@ -77,9 +77,9 @@ public static class KhoAnh
     }
 
     /// <summary>
-    /// Chieu nguoc lai. Tra null khi URL KHONG thuoc kho anh cua minh — do la
-    /// hang rao chinh: link http(s) admin dan vao, hay duong dan cu /static/...,
-    /// deu khong quy ra duoc duong dan FTP nen khong the bi xoa.
+    /// Chiều ngược lại. Trả null khi URL KHÔNG thuộc kho ảnh của mình — đó là
+    /// hàng rào chính: link http(s) admin dán vào, hay đường dẫn cũ /static/...,
+    /// đều không quy ra được đường dẫn FTP nên không thể bị xóa.
     /// </summary>
     public static string? DuongDanFtpTuUrl(string? url)
     {
@@ -119,7 +119,7 @@ public static class KhoAnh
     }
 
     /// <summary>
-    /// Tach URL "/anh/..." thanh mang cac phan:
+    /// Tách URL "/anh/..." thành mảng các phần:
     /// - "/anh/CS1/logo/x.jpg" -> ["CS1", "logo", "x.jpg"]
     /// - "/anh/logo_cs/x.jpg" -> ["logo_cs", "x.jpg"]
     /// </summary>
@@ -133,7 +133,7 @@ public static class KhoAnh
         var phanConLai = duongDan[(TienToUrl.Length + 1)..].Trim('/');
         var parts = phanConLai.Split('/', StringSplitOptions.RemoveEmptyEntries);
 
-        // Chan traversal ra ngoai kho
+        // Chặn traversal ra ngoài kho
         if (parts.Any(p => p.Contains("..") || p.Contains('\\'))) return null;
 
         if (parts.Length == 3)
@@ -156,9 +156,6 @@ public static class KhoAnh
         return null;
     }
 
-    /// <summary>
-    /// Suy kieu noi dung theo duoi tep.
-    /// </summary>
     public static string KieuNoiDung(string tenTep) =>
         Path.GetExtension(tenTep).ToLowerInvariant() switch
         {

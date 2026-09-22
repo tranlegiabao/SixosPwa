@@ -1,5 +1,7 @@
 # 0019 — Một tài khoản quản nhiều hồ sơ, và ai khai trước giữ CCCD
 
+- **Tác giả:** Nam · **Ngày:** 2026-09-08 · **Trạng thái:** Đã bị thay thế bởi ADR 0036
+
 > 🔴 **ĐÃ BỊ THAY THẾ bởi ADR 0036** (2026-09-19, đợt 1B).
 > Vế 1 chuyển sang cặp (SĐT × cơ sở) + toggle `HT_Config.MOT_HO_SO`; vế 2 *"ai khai trước giữ CCCD"* **bị bỏ** cùng `UK_DM_BenhNhan_CCCD`.
 > Xem [0036](0036-ho-so-la-cap-nguoi-x-co-so.md). Giữ file này để đọc lại bối cảnh cũ.

@@ -6,14 +6,14 @@ using SixosPwa.Services;
 namespace SixosPwa.Controllers.Api;
 
 /// <summary>
-/// Duong DOC cho HIS: hoi theo lo xem ma benh nhan nao da co nguoi nhan ben cong.
+/// Đường ĐỌC cho HIS: hỏi theo lô xem mã bệnh nhân nào đã có người nhận bên cổng.
 ///
 /// <para>
-/// Vi sao phai co cua nay: cong TU CHOI moi tai lieu va dot kham cua ma benh
-/// nhan chua ai noi ho so (chot 3). Neu khong co duong hoi nguoc thi bo dem ton
-/// ben HIS khong bao gio ve 0, va nguoi o quay se hoc cach phot lo no — dung cai
-/// benh chot 5 dot 0 muon tranh. Co cua nay thi man *Gui cho benh nhan* tach
-/// duoc hai so: CHO NGUOI NHAN va GUI DUOC NGAY, va so thu hai ve 0 duoc.
+/// Vì sao phải có cửa này: cổng TỪ CHỐI mọi tài liệu và đợt khám của mã bệnh
+/// nhân chưa ai nối hồ sơ (chốt 3). Nếu không có đường hỏi ngược thì bộ đếm tồn
+/// bên HIS không bao giờ về 0, và người ở quầy sẽ học cách phớt lờ nó — đúng cái
+/// bệnh chốt 5 đợt 0 muốn tránh. Có cửa này thì màn *Gửi cho bệnh nhân* tách
+/// được hai số: CHỜ NGƯỜI NHẬN và GỬI ĐƯỢC NGAY, và số thứ hai về 0 được.
 /// </para>
 /// </summary>
 [ApiController]
@@ -21,7 +21,7 @@ namespace SixosPwa.Controllers.Api;
 [KhoaCoSo]
 public class HoSoApiController : ControllerBase
 {
-    /// <summary>Mot lan hoi toi da bay nhieu ma — du cho mot man hang doi, khong du de quet ca danh ba.</summary>
+    /// <summary>Một lần hỏi tối đa bấy nhiêu mã — đủ cho một màn hàng đợi, không đủ để quét cả danh bạ.</summary>
     private const int ToiDaMoiLanHoi = 1000;
 
     private readonly IDotKhamService _dotKham;
@@ -56,8 +56,8 @@ public class HoSoApiController : ControllerBase
                 $"Một lần hỏi tối đa {ToiDaMoiLanHoi} mã, lần này có {yeuCau.MaBenhNhan.Count}."));
         }
 
-        // Chi tra ve trong pham vi co so cua khoa dang dung — mot co so khong
-        // bao gio hoi duoc ho so cua co so khac.
+        // Chỉ trả về trong phạm vi cơ sở của khóa đang dùng — một cơ sở không
+        // bao giờ hỏi được hồ sơ của cơ sở khác.
         var daCo = await _dotKham.LocMaDaCoNguoiNhanAsync(coSo.Id, yeuCau.MaBenhNhan);
 
         await _nhatKy.GhiAsync(duong, KetQuaApi.Nhan, coSo.Id,

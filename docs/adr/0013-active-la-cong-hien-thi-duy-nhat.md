@@ -1,7 +1,6 @@
 # 0013 — `Active` là cổng hiển thị duy nhất, khai tử `XacMinh`
 
-- **Trạng thái:** Đã chấp nhận
-- **Ngày:** 2026-08-26
+- **Tác giả:** Nam · **Ngày:** 2026-08-26 · **Trạng thái:** Đã chấp nhận
 - **Bối cảnh liên quan:** [0006](0006-chan-dang-nhap-cheo-co-so.md) ·
   [0008](0008-moi-duong-ghi-qua-stored-procedure.md) · [0011](0011-co-so-thuoc-doi-tac-mot-nhieu.md)
 

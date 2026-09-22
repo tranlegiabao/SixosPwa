@@ -1,14 +1,13 @@
 # 0036 — Hồ sơ là cặp (người × cơ sở), và điều đó đảo ba ADR cũ
 
-- **Trạng thái:** Đề xuất
-- **Ngày:** 2026-09-19
+- **Tác giả:** Nam · **Ngày:** 2026-09-19 · **Trạng thái:** Đề xuất
 - **Thay thế:** [0011](0011-co-so-thuoc-doi-tac-mot-nhieu.md) ·
   [0019](0019-mot-tai-khoan-nhieu-ho-so.md) ·
   [0027](0027-dang-nhap-duoc-thi-phai-co-tai-khoan.md)
 - **Bối cảnh liên quan:** [0018](0018-luat-gop-ho-so-cccd-ten-ngaysinh.md) ·
   [0020](0020-tin-cccd-o-loi-vao-chan-o-tang-tai-lieu.md) ·
   [0032](0032-mot-ho-so-giu-dung-mot-ma.md) ·
-  [0034](0034-idtaikhoantheosdt-soi-guong-idbenhnhan.md) ·
+  [0040](0040-idtaikhoantheosdt-soi-guong-idbenhnhan.md) ·
   [0035](0035-hop-dong-linked-server-spwa-cong.md)
 
 ## Bối cảnh
@@ -60,7 +59,7 @@ rồi "phép xác thực" so lại đúng chuỗi mà trang vừa tự điền v
 
 **Được:** bớt một bảng trung gian trên đường nóng nhất; câu hỏi *"người này vào được cơ sở này chưa"*
 trả lời bằng **một** phép `EXISTS` trên **một** bảng; và nó là **cùng một câu hỏi** mà hợp đồng linked
-server hỏi (ADR 0034) — trước đây hai tầng trả lời hai kiểu.
+server hỏi (ADR 0040) — trước đây hai tầng trả lời hai kiểu.
 
 **Mất:** một người ở N cơ sở thì N dòng, và các dòng đó **trôi độc lập** — sửa tên ở cơ sở A không
 sang cơ sở B. Đây là cố ý (C12), không phải bỏ sót.

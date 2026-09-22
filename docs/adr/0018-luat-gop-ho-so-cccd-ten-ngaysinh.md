@@ -1,7 +1,6 @@
 # 0018 — Gộp hồ sơ đòi cả CCCD + tên + ngày sinh, không gộp bằng CCCD trần
 
-- **Trạng thái:** Đã chấp nhận · **sửa đổi 2026-09-09** (ba ô → bốn ô, xem cuối tài liệu)
-- **Ngày:** 2026-09-08
+- **Tác giả:** Nam · **Ngày:** 2026-09-08 · **Trạng thái:** Đã chấp nhận · **sửa đổi 2026-09-09** (ba ô → bốn ô, xem cuối tài liệu)
 - **Bối cảnh liên quan:** [0011](0011-co-so-thuoc-doi-tac-mot-nhieu.md) — bài học "lọc chết âm thầm là
   loại hỏng tệ nhất". [0017](0017-hai-chieu-theo-loai-du-lieu.md) — dữ liệu HIS đẩy lên phải khớp vào
   đúng người.

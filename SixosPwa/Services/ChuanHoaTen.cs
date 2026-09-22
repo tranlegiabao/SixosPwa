@@ -4,34 +4,34 @@ using System.Text;
 namespace SixosPwa.Services;
 
 /// <summary>
-/// Chuan hoa ho ten cho *luat gop ho so* (ADR 0018) — MOT BAN DUY NHAT trong ca
-/// ung dung (chot 1 dot 1).
+/// Chuẩn hóa họ tên cho *luật gộp hồ sơ* (ADR 0018) — MỘT BẢN DUY NHẤT trong cả
+/// ứng dụng (chốt 1 đợt 1).
 ///
 /// <para>
-/// 🔴 Dung nham voi <c>HomeController.RemoveAccentsAndSpaces</c>: cai do bo LUON
-/// khoang trang vi no dung de khop slug URL. O day khoang trang phai GIU (gom
-/// ve mot dau cach) — bo het thi "Nguyen Van An" va "Nguyen Vanan" hoa thanh
-/// mot, tuc gop nham hai con nguoi.
+/// 🔴 Đừng nhầm với <c>HomeController.RemoveAccentsAndSpaces</c>: cái đó bỏ LUÔN
+/// khoảng trắng vì nó dùng để khớp slug URL. Ở đây khoảng trắng phải GIỮ (gom
+/// về một dấu cách) — bỏ hết thì "Nguyen Van An" và "Nguyen Vanan" hóa thành
+/// một, tức gộp nhầm hai con người.
 /// </para>
 /// <para>
-/// Vi sao chuan hoa luc chay chu khong tin cot trong CSDL: ben HIS cot
-/// <c>DM_BenhNhan.HoTenKhongDau</c> RONG 100% (74.725/74.725 tren Thien Nam) —
-/// code ben do chi DOC cot nay de loc chu khong bao gio ghi. Cot cung ten ben
-/// cong la ket qua chuan hoa cua CONG, va van phai chuan hoa lai khi so sanh vi
-/// du lieu cu co the duoc ghi truoc khi ham nay ton tai.
+/// Vì sao chuẩn hóa lúc chạy chứ không tin cột trong CSDL: bên HIS cột
+/// <c>DM_BenhNhan.HoTenKhongDau</c> RỖNG 100% (74.725/74.725 trên Thiên Nam) —
+/// code bên đó chỉ ĐỌC cột này để lọc chứ không bao giờ ghi. Cột cùng tên bên
+/// cổng là kết quả chuẩn hóa của CỔNG, và vẫn phải chuẩn hóa lại khi so sánh vì
+/// dữ liệu cũ có thể được ghi trước khi hàm này tồn tại.
 /// </para>
 /// </summary>
 public static class ChuanHoaTen
 {
     /// <summary>
-    /// Bo dau, ve chu HOA, gom khoang trang. Tra chuoi rong khi dau vao rong —
-    /// va chuoi rong KHONG duoc coi la khop voi bat ky ten nao.
+    /// Bỏ dấu, về chữ HOA, gom khoảng trắng. Trả chuỗi rỗng khi đầu vào rỗng —
+    /// và chuỗi rỗng KHÔNG được coi là khớp với bất kỳ tên nào.
     /// </summary>
     public static string BoDau(string? ten)
     {
         if (string.IsNullOrWhiteSpace(ten)) return string.Empty;
 
-        // FormD tach dau ra thanh ky tu rieng de loc bo.
+        // FormD tách dấu ra thành ký tự riêng để lọc bỏ.
         var tach = ten.Trim().Normalize(NormalizationForm.FormD);
         var sb = new StringBuilder(tach.Length);
 
@@ -40,8 +40,8 @@ public static class ChuanHoaTen
             if (CharUnicodeInfo.GetUnicodeCategory(c) == UnicodeCategory.NonSpacingMark)
                 continue;
 
-            // 'd'/'D' co gach ngang KHONG mang dau phu nen FormD khong tach duoc,
-            // phai doi tay.
+            // 'đ'/'Đ' có gạch ngang KHÔNG mang dấu phụ nên FormD không tách được,
+            // phải đổi tay.
             if (c == 'đ' || c == 'Đ') { sb.Append('D'); continue; }
 
             if (char.IsWhiteSpace(c)) { sb.Append(' '); continue; }
@@ -49,14 +49,14 @@ public static class ChuanHoaTen
             if (char.IsLetterOrDigit(c)) sb.Append(char.ToUpperInvariant(c));
         }
 
-        // Gom nhieu dau cach lien tiep ve mot: du lieu that co ca "NGUYEN  VAN A".
+        // Gom nhiều dấu cách liên tiếp về một: dữ liệu thật có cả "NGUYEN  VAN A".
         return string.Join(' ', sb.ToString()
             .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
     }
 
     /// <summary>
-    /// Hai ten co cung mot nguoi khong, xet rieng o TEN cua luat gop.
-    /// Ten rong thi tra <c>false</c> — thieu du lieu khong phai la bang chung khop.
+    /// Hai tên có cùng một người không, xét riêng ở TÊN của luật gộp.
+    /// Tên rỗng thì trả <c>false</c> — thiếu dữ liệu không phải là bằng chứng khớp.
     /// </summary>
     public static bool CungTen(string? a, string? b)
     {

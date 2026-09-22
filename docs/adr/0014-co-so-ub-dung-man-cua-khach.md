@@ -1,5 +1,7 @@
 # 0014 — Cơ sở Ung Bướu dùng bộ màn của khách, không dùng OTP của SixosPwa
 
+- **Tác giả:** Nam · **Ngày:** 2026-08-26 · **Trạng thái:** Đã bị thay thế bởi ADR 0038
+
 > 🔴 **ĐÃ BỊ THAY THẾ bởi ADR 0038** (2026-09-19).
 > Đợt A xoá hẳn bộ màn UB dựng-lại-trong-cổng; nay cơ sở có `KetNoi_UrlChuyenHuong` thì
 > **chuyển hướng thẳng** sang trang của họ. Xem [0038](0038-co-so-co-cua-rieng-thi-chuyen-huong-thang.md).

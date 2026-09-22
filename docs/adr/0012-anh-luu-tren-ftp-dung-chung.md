@@ -1,7 +1,6 @@
 # 0012 — Ảnh lưu trên FTP dùng chung, đọc lại qua route proxy
 
-- **Trạng thái:** Đã chấp nhận
-- **Ngày:** 2026-08-25
+- **Tác giả:** Nam · **Ngày:** 2026-08-25 · **Trạng thái:** Đã chấp nhận
 - **Bối cảnh liên quan:** [0007](0007-moi-truong-thu-that-qua-cloudflare-tunnel.md) ·
   [0008](0008-moi-duong-ghi-qua-stored-procedure.md)
 

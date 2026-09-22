@@ -1,5 +1,7 @@
 # Băm mật khẩu đăng nhập nội bộ, tách hẳn khỏi mật khẩu đối tác
 
+- **Tác giả:** Nam · **Ngày:** 2026-08-25 · **Trạng thái:** Đã chốt
+
 [ADR 0005](0005-luu-mat-khau-khong-bam.md) cho phép lưu mật khẩu ở dạng đọc lại được — nhưng chỉ cho
 **mật khẩu đối tác**, và đã ghi rõ ở phần Consequences: *"Đừng tái sử dụng cột này làm credential đăng
 nhập nội bộ."*

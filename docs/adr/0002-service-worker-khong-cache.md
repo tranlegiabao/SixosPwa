@@ -1,5 +1,7 @@
 # Service worker cố ý KHÔNG cache nội dung ứng dụng
 
+- **Tác giả:** Nam · **Ngày:** 2026-08-06 · **Trạng thái:** Đã chốt
+
 Người đọc sau sẽ thắc mắc: PWA mà sao không cache gì cả? Đây là chủ ý. Khuôn mẫu này nhắm tới các phần
 mềm y tế, nơi **hiện dữ liệu cũ là sai nghiệp vụ**, chứ không chỉ là bất tiện. Service worker trong
 `wwwroot/sw.js` vì thế để mọi request đi thẳng ra server, và chỉ giữ trong máy đúng hai file: trang

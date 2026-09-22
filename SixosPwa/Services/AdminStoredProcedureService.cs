@@ -13,9 +13,9 @@ public sealed record AdminStoredProcedureResult(int Code, string? Message)
 }
 
 /// <summary>
-/// MOI duong ghi cua ung dung di qua day (ADR 0008). EF chi con dung de doc.
-/// Ten lop giu nguyen tu thoi chi khu Admin ghi DB; tu dot tai kien truc no phuc
-/// vu ca luong benh nhan.
+/// MỌI đường ghi của ứng dụng đi qua đây (ADR 0008). EF chỉ còn dùng để đọc.
+/// Tên lớp giữ nguyên từ thời chỉ khu Admin ghi DB; từ đợt tái kiến trúc nó phục
+/// vụ cả luồng bệnh nhân.
 /// </summary>
 public sealed class AdminStoredProcedureService
 {
@@ -24,12 +24,12 @@ public sealed class AdminStoredProcedureService
     public AdminStoredProcedureService(ApplicationDbContext db) => _db = db;
 
     // ------------------------------------------------------------------
-    //  Tai khoan
+    //  Tài khoản
     // ------------------------------------------------------------------
 
     /// <summary>
-    /// <paramref name="matKhauNoiBoDaBam"/> phai la chuoi DA BAM. Dot nay chua thi
-    /// hanh phan bam nen moi noi goi deu truyen null — xem muc Dinh chinh ADR 0009.
+    /// <paramref name="matKhauNoiBoDaBam"/> phải là chuỗi ĐÃ BĂM. Đợt này chưa thi
+    /// hành phần băm nên mọi nơi gọi đều truyền null — xem mục Đính chính ADR 0009.
     /// </summary>
     public Task<(AdminStoredProcedureResult KetQua, long Id)> SaveTaiKhoanAsync(
         long id,
@@ -44,10 +44,10 @@ public sealed class AdminStoredProcedureService
             AddParameter(command, "@Email", DbType.String, email, 50);
             AddParameter(command, "@Role", DbType.AnsiString, role, 20);
             AddParameter(command, "@MatKhauNoiBoDaBam", DbType.AnsiString, matKhauNoiBoDaBam, 255);
-            // 🔴 Tham so @IDBenhNhan van con trong CHU KY stored (hop dong linked
-            // server, ADR 0035 #2) nhung khong truyen tu day: C# cua cong khong
-            // dung toi. Tu dot 1B stored chi con nhan Role='Admin'; vai tro khac
-            // bi ghi log roi bo qua.
+            // 🔴 Tham số @IDBenhNhan vẫn còn trong CHỮ KÝ stored (hợp đồng linked
+            // server, ADR 0035 #2) nhưng không truyền từ đây: C# của cổng không
+            // đụng tới. Từ đợt 1B stored chỉ còn nhận Role='Admin'; vai trò khác
+            // bị ghi log rồi bỏ qua.
         });
 
     /// <summary>Nút <i>Thử kết nối kho</i> bấm ĐẠT thì ghi mốc. Tách khỏi Save có chủ ý.</summary>
@@ -97,7 +97,7 @@ public sealed class AdminStoredProcedureService
 
             await using var reader = await command.ExecuteReaderAsync();
 
-            // Result Set 1: TaiKhoan
+            // Result Set 1: Tài khoản
             while (await reader.ReadAsync())
             {
                 var tk = new TaiKhoan
@@ -106,15 +106,15 @@ public sealed class AdminStoredProcedureService
                     SDT = reader["SDT"]?.ToString() ?? "",
                     Email = reader["Email"] != DBNull.Value ? reader["Email"]?.ToString() : null,
                     Role = reader["Role"]?.ToString() ?? "Admin",
-                    // 🔴 Stored tra CoMatKhau (bit) chu KHONG tra MatKhauNoiBo: mot man
-                    // DANH SACH khong duoc keo mat khau ra khoi CSDL. Doc nham ten cot
-                    // o day la IndexOutOfRangeException => man bao "Loi tai danh sach
-                    // tai khoan tu may chu" ma khong noi vi sao.
-                    // Gan mot cho-giu de cho nao chi hoi "co mat khau chua" van dung.
+                    // 🔴 Stored trả CoMatKhau (bit) chứ KHÔNG trả MatKhauNoiBo: một màn
+                    // DANH SÁCH không được kéo mật khẩu ra khỏi CSDL. Đọc nhầm tên cột
+                    // ở đây là IndexOutOfRangeException => màn báo "Lỗi tải danh sách
+                    // tài khoản từ máy chủ" mà không nói vì sao.
+                    // Gán một chỗ-giữ để chỗ nào chỉ hỏi "có mật khẩu chưa" vẫn đúng.
                     MatKhauNoiBo = (reader["CoMatKhau"] != DBNull.Value
                                     && Convert.ToBoolean(reader["CoMatKhau"])) ? "***" : null,
-                    // Tu dot 1B benh nhan KHONG con tai khoan (ADR 0036) nen khong con
-                    // Result Set 2 "ho so theo tai khoan"; tu dien duoi day luon rong.
+                    // Từ đợt 1B bệnh nhân KHÔNG còn tài khoản (ADR 0036) nên không còn
+                    // Result Set 2 "hồ sơ theo tài khoản"; từ điển dưới đây luôn rỗng.
                     NgayTao = Convert.ToDateTime(reader["NgayTao"])
                 };
                 items.Add(tk);
@@ -126,7 +126,7 @@ public sealed class AdminStoredProcedureService
                 }
             }
 
-            // Result Set 2: HoSoBenhNhan
+            // Result Set 2: Hồ sơ bệnh nhân
             if (await reader.NextResultAsync())
             {
                 var tempProfiles = new List<(long IdTaiKhoan, HoSoBenhNhanItemViewModel Item)>();
@@ -179,20 +179,20 @@ public sealed class AdminStoredProcedureService
     }
 
     // ------------------------------------------------------------------
-    //  Benh nhan
+    //  Bệnh nhân
     // ------------------------------------------------------------------
 
     /// <summary>
-    /// Them/cap nhat CON NGUOI, nhan dien bang CCCD.
+    /// Thêm/cập nhật CON NGƯỜI, nhận diện bằng CCCD.
     ///
     /// <para>
-    /// <paramref name="idTaiKhoan"/> la chu so huu ho so (ADR 0019). Thu tuc chi
-    /// nhan chu khi cot dang bo trong, va tra <c>ResultCode 3</c> khi CCCD da
-    /// thuoc mot tai khoan KHAC — "ai khai truoc giu CCCD".
+    /// <paramref name="idTaiKhoan"/> là chủ sở hữu hồ sơ (ADR 0019). Thủ tục chỉ
+    /// nhận chủ khi cột đang bỏ trống, và trả <c>ResultCode 3</c> khi CCCD đã
+    /// thuộc một tài khoản KHÁC — "ai khai trước giữ CCCD".
     /// </para>
     /// <para>
-    /// <paramref name="hoTenKhongDau"/> phai lay tu <see cref="ChuanHoaTen.BoDau"/>,
-    /// dung tu chuan hoa kieu khac — do la o thu ba cua luat gop (ADR 0018).
+    /// <paramref name="hoTenKhongDau"/> phải lấy từ <see cref="ChuanHoaTen.BoDau"/>,
+    /// đừng tự chuẩn hóa kiểu khác — đó là ô thứ ba của luật gộp (ADR 0018).
     /// </para>
     /// </summary>
     public Task<(AdminStoredProcedureResult KetQua, long Id)> SaveBenhNhanAsync(
@@ -212,8 +212,8 @@ public sealed class AdminStoredProcedureService
             AddParameter(command, "@SDT", DbType.AnsiString, sdt, 20);
             AddParameter(command, "@Email", DbType.AnsiString, email, 100);
             AddParameter(command, "@DiaChi", DbType.String, diaChi, 255);
-            // Giu tham so (hop dong linked server, ADR 0035 #1) nhung stored da
-            // NHAN ROI BO: cot DM_BenhNhan.IDTaiKhoan bi xoa o dot 1B.
+            // Giữ tham số (hợp đồng linked server, ADR 0035 #1) nhưng stored đã
+            // NHẬN RỒI BỎ: cột DM_BenhNhan.IDTaiKhoan bị xóa ở đợt 1B.
             AddParameter(command, "@IDTaiKhoan", DbType.Int64, idTaiKhoan);
             AddParameter(command, "@NgaySinh", DbType.DateTime, ngaySinh);
             AddParameter(command, "@HoTenKhongDau", DbType.String, hoTenKhongDau, 100);
@@ -221,13 +221,13 @@ public sealed class AdminStoredProcedureService
         });
 
     /// <summary>
-    /// Man *Sua ho so* (Dot 4). 🔴 KHONG dung lai <see cref="SaveBenhNhanAsync"/>:
-    /// cai do nhan dien bang CCCD, ma o day nguoi dung DOI DUOC ca CCCD — goi Save
-    /// voi CCCD moi se de ra mot CON NGUOI THU HAI thay vi sua nguoi dang co.
+    /// Màn *Sửa hồ sơ* (Đợt 4). 🔴 KHÔNG dùng lại <see cref="SaveBenhNhanAsync"/>:
+    /// cái đó nhận diện bằng CCCD, mà ở đây người dùng ĐỔI ĐƯỢC cả CCCD — gọi Save
+    /// với CCCD mới sẽ đẻ ra một CON NGƯỜI THỨ HAI thay vì sửa người đang có.
     ///
-    /// Thu tuc tu chan: khong phai ho so cua minh (<c>ResultCode 5</c>), CCCD dam
-    /// vao nguoi khac (<c>3</c>). Ho so DA NOI HIS thi bon o danh tinh khoa cung,
-    /// chi con so dien thoai sua duoc — thu tuc tu bo qua, ben goi khong phai biet.
+    /// Thủ tục tự chặn: không phải hồ sơ của mình (<c>ResultCode 5</c>), CCCD đâm
+    /// vào người khác (<c>3</c>). Hồ sơ ĐÃ NỐI HIS thì bốn ô danh tính khóa cứng,
+    /// chỉ còn số điện thoại sửa được — thủ tục tự bỏ qua, bên gọi không phải biết.
     /// </summary>
     public Task<AdminStoredProcedureResult> SuaHoSoAsync(
         long idBenhNhan,
@@ -253,14 +253,14 @@ public sealed class AdminStoredProcedureService
         });
 
     /// <summary>
-    /// *Go noi* — thao MOT ma khoi mot ho so (ADR 0024 ve 3).
+    /// *Gỡ nối* — tháo MỘT mã khỏi một hồ sơ (ADR 0024 vế 3).
     ///
-    /// 🔴 Thu tuc XOA CA tai lieu va dot kham cua dong do (sao luu sang
-    /// <c>bak.GoNoi_*_V001</c> truoc). Khong phai tuy chon: khoa ngoai la
-    /// NO_ACTION nen khong xoa dong duoc chung nao con con, va neu ma bi noi NHAM
-    /// thi de tai lieu lai chinh la giu nguyen cai hai ma nut nay sinh ra de chua.
-    /// Mat khong vinh vien — cua <c>kiem-tra-nhan</c> se dua ma ve trang thai
-    /// "chua ai nhan" nen hang doi ben HIS day lai duoc.
+    /// 🔴 Thủ tục XÓA CẢ tài liệu và đợt khám của dòng đó (sao lưu sang
+    /// <c>bak.GoNoi_*_V001</c> trước). Không phải tùy chọn: khóa ngoại là
+    /// NO_ACTION nên không xóa dòng được chừng nào còn con, và nếu mã bị nối NHẦM
+    /// thì để tài liệu lại chính là giữ nguyên cái hại mà nút này sinh ra để chữa.
+    /// Mất không vĩnh viễn — cửa <c>kiem-tra-nhan</c> sẽ đưa mã về trạng thái
+    /// "chưa ai nhận" nên hàng đợi bên HIS đẩy lại được.
     /// </summary>
     public Task<AdminStoredProcedureResult> GoNoiAsync(long idBenhNhan, string sdt, long idCoSo) =>
         ExecuteAsync("dbo.DM_BenhNhan_GoNoi", command =>
@@ -271,9 +271,9 @@ public sealed class AdminStoredProcedureService
         });
 
     /// <summary>
-    /// Doi *Moc xem lich* cho TAT CA dong cua mot con nguoi tai mot co so (ADR 0025).
-    /// Doi tung dong thi mo modal xong huy hieu van con — o *Lich kham cua toi* gop
-    /// het cac ma lai thanh mot danh sach nen "da xem" phai la mot trang thai duy nhat.
+    /// Đổi *Mốc xem lịch* cho TẤT CẢ dòng của một con người tại một cơ sở (ADR 0025).
+    /// Đổi từng dòng thì mở modal xong huy hiệu vẫn còn — ở *Lịch khám của tôi* gộp
+    /// hết các mã lại thành một danh sách nên "đã xem" phải là một trạng thái duy nhất.
     /// </summary>
     public Task<AdminStoredProcedureResult> DoiMocXemLichAsync(
         long idBenhNhan, long idCoSo, string sdt) =>
@@ -285,13 +285,13 @@ public sealed class AdminStoredProcedureService
         });
 
     /// <summary>
-    /// Ho so TU KHAI tai mot co so: <c>MaBN</c> de RONG vi co so chua cap ma nao.
+    /// Hồ sơ TỰ KHAI tại một cơ sở: <c>MaBN</c> để RỖNG vì cơ sở chưa cấp mã nào.
     ///
-    /// 🔴 Tach khoi <see cref="SaveBenhNhanCoSoAsync"/> chu khong gop lam mot:
-    /// duong nay khoa theo <c>(IDBenhNhan, IDCoSo)</c> trong pham vi cac dong
-    /// CHUA noi HIS, con duong kia khoa theo ma that. Gop lai thi phai so
-    /// <c>MaBN = NULL</c>, ma trong SQL <c>NULL = NULL</c> khong bao gio dung nen
-    /// moi lan luu se de mot dong moi.
+    /// 🔴 Tách khỏi <see cref="SaveBenhNhanCoSoAsync"/> chứ không gộp làm một:
+    /// đường này khóa theo <c>(IDBenhNhan, IDCoSo)</c> trong phạm vi các dòng
+    /// CHƯA nối HIS, còn đường kia khóa theo mã thật. Gộp lại thì phải so
+    /// <c>MaBN = NULL</c>, mà trong SQL <c>NULL = NULL</c> không bao giờ đúng nên
+    /// mỗi lần lưu sẽ đẻ một dòng mới.
     /// </summary>
     public Task<(AdminStoredProcedureResult KetQua, long Id)> TaoHoSoTuKhaiAsync(
         long idBenhNhan,
@@ -303,14 +303,14 @@ public sealed class AdminStoredProcedureService
         });
 
     /// <summary>
-    /// Xoa mot ho so de NHA CCCD ra (ADR 0019 muc 2) — khong co nut nay thi "ai
-    /// khai truoc giu" thanh cai bay khong loi thoat cho chinh chu.
-    /// Thu tuc tu chan: khong phai ho so cua minh, ho so da noi HIS, hoac da co
-    /// du lieu kham.
+    /// Xóa một hồ sơ để NHẢ CCCD ra (ADR 0019 mục 2) — không có nút này thì "ai
+    /// khai trước giữ" thành cái bẫy không lối thoát cho chính chủ.
+    /// Thủ tục tự chặn: không phải hồ sơ của mình, hồ sơ đã nối HIS, hoặc đã có
+    /// dữ liệu khám.
     /// </summary>
     /// <summary>
-    /// Xoa mot ho so tai co so. Tu 1B chu so huu la cap (SDT phien x co so phien),
-    /// khong con <c>IDTaiKhoan</c> — xem ADR 0027 (da dao) va ADR 0034.
+    /// Xóa một hồ sơ tại cơ sở. Từ 1B chủ sở hữu là cặp (SDT phiên x cơ sở phiên),
+    /// không còn <c>IDTaiKhoan</c> — xem ADR 0027 (đã đảo) và ADR 0040.
     /// </summary>
     public Task<AdminStoredProcedureResult> XoaHoSoAsync(long idBenhNhan, string sdt, long idCoSo) =>
         ExecuteAsync("dbo.DM_BenhNhan_XoaHoSo", command =>
@@ -321,18 +321,18 @@ public sealed class AdminStoredProcedureService
         });
 
     /// <summary>
-    /// Gan con nguoi vao co so kem MA THAT do co so cap — duong NOI HIS.
+    /// Gán con người vào cơ sở kèm MÃ THẬT do cơ sở cấp — đường NỐI HIS.
     ///
-    /// 🔴 Tu dot V6b KHONG con cho nao goi: luong dang ky da chuyen sang
-    /// <see cref="TaoHoSoTuKhaiAsync"/> (ho so tu khai, MaBN rong). Giu lai vi
-    /// man *Noi ho so* cua dot sau chinh la cho dung no. Xoa di roi viet lai la
-    /// mat doan chan trung MaBN da chay dung.
+    /// 🔴 Từ đợt V6b KHÔNG còn chỗ nào gọi: luồng đăng ký đã chuyển sang
+    /// <see cref="TaoHoSoTuKhaiAsync"/> (hồ sơ tự khai, MaBN rỗng). Giữ lại vì
+    /// màn *Nối hồ sơ* của đợt sau chính là chỗ dùng nó. Xóa đi rồi viết lại là
+    /// mất đoạn chặn trùng MaBN đã chạy đúng.
     /// </summary>
     /// <summary>
-    /// 🔴 <paramref name="moCuaTaiLieu"/> phai truyen TUONG MINH. Thu tuc de mac
-    /// dinh <c>@DaMoTaiLieu = 1</c>, nen bo trong la moi lan noi deu MO TOANG cua
-    /// tai lieu — dung cai cua ma ADR 0020 dung len de chan. Mac dinh <c>true</c> o
-    /// day giu nguyen hanh vi cu cho man Admin (do la duong cua bo phan ho tro).
+    /// 🔴 <paramref name="moCuaTaiLieu"/> phải truyền TƯỜNG MINH. Thủ tục để mặc
+    /// định <c>@DaMoTaiLieu = 1</c>, nên bỏ trống là mỗi lần nối đều MỞ TOANG cửa
+    /// tài liệu — đúng cái cửa mà ADR 0020 dựng lên để chặn. Mặc định <c>true</c> ở
+    /// đây giữ nguyên hành vi cũ cho màn Admin (đó là đường của bộ phận hỗ trợ).
     /// </summary>
     public Task<(AdminStoredProcedureResult KetQua, long Id)> SaveBenhNhanCoSoAsync(
         long idBenhNhan,
@@ -348,19 +348,19 @@ public sealed class AdminStoredProcedureService
         });
 
     /// <summary>
-    /// CUA DOI MA (chot 47, ADR 0032) — doi ma benh nhan cua mot ho so DA NOI
-    /// sang ma khac. Viec CO Y, CO GHI SO, danh cho bo phan ho tro sua mot lan
-    /// noi sai.
+    /// CỬA ĐỔI MÃ (chốt 47, ADR 0032) — đổi mã bệnh nhân của một hồ sơ ĐÃ NỐI
+    /// sang mã khác. Việc CỐ Ý, CÓ GHI SỔ, dành cho bộ phận hỗ trợ sửa một lần
+    /// nối sai.
     ///
-    /// 🔴 Tach khoi <see cref="SaveBenhNhanCoSoAsync"/> chu khong lam mot tham
-    /// so cua no: login <c>spwa_his</c> co EXECUTE tren <c>DM_BenhNhanCoSo_Save</c>
-    /// (Database/25), nen mot tham so cho-phep-bo-qua thi HIS chi can truyen co
-    /// la xuyen rao. Tach cua thi hang rao giu bang GRANT — <c>spwa_his</c>
-    /// KHONG duoc cap stored nay, nen HIS khong goi duoc du co muon.
+    /// 🔴 Tách khỏi <see cref="SaveBenhNhanCoSoAsync"/> chứ không làm một tham
+    /// số của nó: login <c>spwa_his</c> có EXECUTE trên <c>DM_BenhNhanCoSo_Save</c>
+    /// (Database/25), nên một tham số cho-phép-bỏ-qua thì HIS chỉ cần truyền cờ
+    /// là xuyên rào. Tách cửa thì hàng rào giữ bằng GRANT — <c>spwa_his</c>
+    /// KHÔNG được cấp stored này, nên HIS không gọi được dù có muốn.
     ///
-    /// Tra <c>Code == 4</c> khi ho so chua ton tai (tao ho so la viec cua
-    /// <see cref="SaveBenhNhanCoSoAsync"/>), <c>Code == 2</c> khi ma da thuoc ve
-    /// nguoi khac tai co so do.
+    /// Trả <c>Code == 4</c> khi hồ sơ chưa tồn tại (tạo hồ sơ là việc của
+    /// <see cref="SaveBenhNhanCoSoAsync"/>), <c>Code == 2</c> khi mã đã thuộc về
+    /// người khác tại cơ sở đó.
     /// </summary>
     public Task<(AdminStoredProcedureResult KetQua, long Id)> DoiMaBenhNhanCoSoAsync(
         long idBenhNhan,
@@ -396,7 +396,7 @@ public sealed class AdminStoredProcedureService
             AddParameter(command, "@MaBN", DbType.String, maBN, 50);
             AddParameter(command, "@LoaiTaiLieu", DbType.String, loaiTaiLieu, 50);
             AddParameter(command, "@TenTaiLieu", DbType.String, tenTaiLieu, 255);
-            // Tran 2000 -- xem Database/27_NANG_TRAN_DUONG_DAN_FTP.sql (con so o sau cho).
+            // Trần 2000 -- xem Database/27_NANG_TRAN_DUONG_DAN_FTP.sql (con số ở sáu chỗ).
             AddParameter(command, "@DuongDanFtp", DbType.String, duongDanFtp, 2000);
             AddParameter(command, "@DungLuongByte", DbType.Int64, dungLuongByte);
             AddParameter(command, "@NgayKham", DbType.DateTime, ngayKham);
@@ -406,10 +406,10 @@ public sealed class AdminStoredProcedureService
         });
 
     // ------------------------------------------------------------------
-    //  Khu API nhan (dot 2 giai doan 2)
+    //  Khu API nhận (đợt 2 giai đoạn 2)
     // ------------------------------------------------------------------
 
-    /// <summary>Mot dong nhat ky doi soat. Thu tuc nay khong tra ResultCode.</summary>
+    /// <summary>Một dòng nhật ký đối soát. Thủ tục này không trả ResultCode.</summary>
     public Task GhiLogApiCoSoAsync(
         long? idCoSo,
         string endpoint,
@@ -422,7 +422,7 @@ public sealed class AdminStoredProcedureService
         ExecuteNoResultAsync("dbo.HT_LogApiCoSo_Ghi", command =>
         {
             AddParameter(command, "@IDCoSo", DbType.Int64, idCoSo);
-            // Cot IDKhoa da bi xoa khoi HT_LogApiCoSo va tham so @IDKhoa da go khoi stored.
+            // Cột IDKhoa đã bị xóa khỏi HT_LogApiCoSo và tham số @IDKhoa đã gỡ khỏi stored.
             AddParameter(command, "@Endpoint", DbType.AnsiString, endpoint, 100);
             AddParameter(command, "@MaBN", DbType.AnsiString, maBN, 20);
             AddParameter(command, "@MaNguonHIS", DbType.AnsiString, maNguonHIS, 50);
@@ -433,9 +433,9 @@ public sealed class AdminStoredProcedureService
         });
 
     /// <summary>
-    /// Luu MOT dot kham. Goi lap cho ca lo tu <see cref="DotKhamService"/> —
-    /// moi dong tu quyet dinh them hay cap nhat theo khoa tu nhien
-    /// (IDCoSo, MaVaoVien), nen day lai ca lo khong de dong trung.
+    /// Lưu MỘT đợt khám. Gọi lặp cho cả lô từ <see cref="DotKhamService"/> —
+    /// mỗi dòng tự quyết định thêm hay cập nhật theo khóa tự nhiên
+    /// (IDCoSo, MaVaoVien), nên đẩy lại cả lô không đẻ dòng trùng.
     /// </summary>
     public Task<(AdminStoredProcedureResult KetQua, long Id)> SaveDotKhamAsync(
         long idCoSo,
@@ -461,19 +461,19 @@ public sealed class AdminStoredProcedureService
         });
 
     // ------------------------------------------------------------------
-    //  Co so y te
+    //  Cơ sở y tế
     // ------------------------------------------------------------------
 
     /// <summary>
-    /// Ghi MOT co so y te. Sau dot A, <c>DM_CSKCB</c> da nuot tron ba bang con
-    /// (<c>DM_DoiTacApi</c>, <c>DM_CSKCB_QuangCao</c>, <c>HT_KhoFtpCoSo</c>) nen
-    /// day la duong ghi DUY NHAT cho ca ket noi HIS, quang cao va kho FTP.
+    /// Ghi MỘT cơ sở y tế. Sau đợt A, <c>DM_CSKCB</c> đã nuốt trọn ba bảng con
+    /// (<c>DM_DoiTacApi</c>, <c>DM_CSKCB_QuangCao</c>, <c>HT_KhoFtpCoSo</c>) nên
+    /// đây là đường ghi DUY NHẤT cho cả kết nối HIS, quảng cáo và kho FTP.
     ///
-    /// 🔴 Ba o BI MAT — <c>@KetNoi_KhoaGoiHIS</c>, <c>@KhoaBam</c>, <c>@Ftp_MatKhau</c> —
-    /// truyen NULL nghia la GIU NGUYEN gia tri cu (man Admin khong do mat khau ra
-    /// man hinh nen khong the gui lai). Vi the o day TUYET DOI khong duoc bien
-    /// null thanh chuoi rong: <c>CoSoYTeController.Normalize</c> da ep o trong ve
-    /// null co y, bien no thanh "" la XOA TRANG khoa that.
+    /// 🔴 Ba ô BÍ MẬT — <c>@KetNoi_KhoaGoiHIS</c>, <c>@KhoaBam</c>, <c>@Ftp_MatKhau</c> —
+    /// truyền NULL nghĩa là GIỮ NGUYÊN giá trị cũ (màn Admin không đổ mật khẩu ra
+    /// màn hình nên không thể gửi lại). Vì thế ở đây TUYỆT ĐỐI không được biến
+    /// null thành chuỗi rỗng: <c>CoSoYTeController.Normalize</c> đã ép ô trống về
+    /// null cố ý, biến nó thành "" là XÓA TRẮNG khóa thật.
     /// </summary>
     public Task<AdminStoredProcedureResult> SaveCoSoYTeAsync(CoSoYTeEditViewModel model) =>
         ExecuteAsync("dbo.DM_CSKCB_Save", command =>
@@ -497,25 +497,25 @@ public sealed class AdminStoredProcedureService
             AddParameter(command, "@QcAnh", DbType.String, model.QcAnh, size: -1);
             AddParameter(command, "@TenCongTy", DbType.String, model.TenCongTy, 200);
 
-            // ---- Ket noi HIS (cu la bang 1-1 DM_DoiTacApi) ----------------------
+            // ---- Kết nối HIS (cũ là bảng 1-1 DM_DoiTacApi) ----------------------
             AddParameter(command, "@KetNoi_UrlChuyenHuong", DbType.String,
                 model.KetNoi_UrlChuyenHuong, 255);
             AddParameter(command, "@KetNoi_BaseUrlHIS", DbType.String,
                 model.KetNoi_BaseUrlHIS, 255);
-            // 🔒 null = giu nguyen
+            // 🔒 null = giữ nguyên
             AddParameter(command, "@KetNoi_KhoaGoiHIS", DbType.String,
                 model.KetNoi_KhoaGoiHIS, 500);
             AddParameter(command, "@KetNoi_Active", DbType.Boolean, model.KetNoi_Active);
 
-            // ---- Khoa goi API cua co so (cu la HT_KhoaApiCoSo) -------------------
-            // 🔒 Man Admin khong cap khoa bam qua duong nay ⇒ luon NULL = giu nguyen.
+            // ---- Khóa gọi API của cơ sở (cũ là HT_KhoaApiCoSo) -------------------
+            // 🔒 Màn Admin không cấp khóa băm qua đường này ⇒ luôn NULL = giữ nguyên.
             AddParameter(command, "@KhoaBam", DbType.Binary, null, 32);
             AddParameter(command, "@Khoa_NgayHetHan", DbType.DateTime, null);
 
-            // ---- Kho phieu co so: FTP (cu la HT_KhoFtpCoSo) ----------------------
+            // ---- Kho phiếu cơ sở: FTP (cũ là HT_KhoFtpCoSo) ----------------------
             AddParameter(command, "@Ftp_Host", DbType.String, model.Ftp_Host, 200);
             AddParameter(command, "@Ftp_TaiKhoan", DbType.String, model.Ftp_TaiKhoan, 100);
-            // 🔒 null = giu nguyen
+            // 🔒 null = giữ nguyên
             AddParameter(command, "@Ftp_MatKhau", DbType.String, model.Ftp_MatKhau, 200);
             AddParameter(command, "@Ftp_ThuMucGoc", DbType.String, model.Ftp_ThuMucGoc, 200);
             AddParameter(command, "@Ftp_Active", DbType.Boolean, model.Ftp_Active);
@@ -537,9 +537,9 @@ public sealed class AdminStoredProcedureService
         });
 
     /// <summary>
-    /// Ghi gio lam viec cua MOT ngay. Man Sua goi lap 7 lan (Thu 0..6).
-    /// Goi lap KHONG nguyen tu qua ca tuan, nhung moi lan la upsert idempotent
-    /// theo khoa UNIQUE (IDCoSo, Thu) nen chay lai an toan.
+    /// Ghi giờ làm việc của MỘT ngày. Màn Sửa gọi lặp 7 lần (Thứ 0..6).
+    /// Gọi lặp KHÔNG nguyên tử qua cả tuần, nhưng mỗi lần là upsert idempotent
+    /// theo khóa UNIQUE (IDCoSo, Thu) nên chạy lại an toàn.
     /// </summary>
     public Task<AdminStoredProcedureResult> SaveGioLamViecAsync(
         long idCoSo,
@@ -555,8 +555,8 @@ public sealed class AdminStoredProcedureService
         });
 
     /// <summary>
-    /// Xoa cac ngay KHONG con duoc chon. <paramref name="danhSachThuGiuLai"/>
-    /// rong = xoa het gio cua co so do.
+    /// Xóa các ngày KHÔNG còn được chọn. <paramref name="danhSachThuGiuLai"/>
+    /// rỗng = xóa hết giờ của cơ sở đó.
     /// </summary>
     public Task<AdminStoredProcedureResult> XoaGioLamViecAsync(
         long idCoSo,
@@ -575,7 +575,7 @@ public sealed class AdminStoredProcedureService
         });
 
     // ------------------------------------------------------------------
-    //  Thong bao / thiet bi / push
+    //  Thông báo / thiết bị / push
     // ------------------------------------------------------------------
 
     public Task<(AdminStoredProcedureResult KetQua, long Id)> SaveThongBaoAsync(
@@ -594,9 +594,9 @@ public sealed class AdminStoredProcedureService
             AddParameter(command, "@IDNguoiNhan", DbType.Int64, idNguoiNhan));
 
     /// <summary>
-    /// 🔴 Dot 1B: tham so la <c>@IDBenhNhan</c> (tro <c>DM_BenhNhan</c>), KHONG con
-    /// <c>@IDTaiKhoan</c> — C15/PA-2a. Sai ten o day thi BUILD VAN XANH va chi no
-    /// luc chay: da bat duoc bang phep doi chieu tham so C# vs stored that (§10 muc 3).
+    /// 🔴 Đợt 1B: tham số là <c>@IDBenhNhan</c> (trỏ <c>DM_BenhNhan</c>), KHÔNG còn
+    /// <c>@IDTaiKhoan</c> — C15/PA-2a. Sai tên ở đây thì BUILD VẪN XANH và chỉ nổ
+    /// lúc chạy: đã bắt được bằng phép đối chiếu tham số C# vs stored thật (§10 mục 3).
     /// </summary>
     public Task<(AdminStoredProcedureResult KetQua, long Id)> SavePushDangKyAsync(
         long idBenhNhan,
@@ -609,17 +609,17 @@ public sealed class AdminStoredProcedureService
             AddParameter(command, "@Endpoint", DbType.String, endpoint, 2000);
             AddParameter(command, "@P256dh", DbType.String, p256dh, 1000);
             AddParameter(command, "@Auth", DbType.String, auth, 400);
-            // Tham so @MaThietBi da bi go: cot HT_PushDangKy.IDThietBi va bang
-            // HT_ThietBi deu khong con.
+            // Tham số @MaThietBi đã bị gỡ: cột HT_PushDangKy.IDThietBi và bảng
+            // HT_ThietBi đều không còn.
         });
 
-    /// <summary>Don mot subscription da het han (browser tra 404/410).</summary>
+    /// <summary>Dọn một subscription đã hết hạn (browser trả 404/410).</summary>
     public Task XoaPushDangKyAsync(string endpoint) =>
         ExecuteNoResultAsync("dbo.HT_PushDangKy_Xoa", command =>
             AddParameter(command, "@Endpoint", DbType.String, endpoint, 2000));
 
     // ------------------------------------------------------------------
-    //  Ha tang goi thu tuc
+    //  Hạ tầng gọi thủ tục
     // ------------------------------------------------------------------
 
     private async Task<AdminStoredProcedureResult> ExecuteAsync(
@@ -652,8 +652,8 @@ public sealed class AdminStoredProcedureService
     }
 
     /// <summary>
-    /// Nhu <see cref="ExecuteAsync"/> nhung thu tuc con tra ve khoa chinh vua ghi
-    /// qua mot tham so OUTPUT rieng.
+    /// Như <see cref="ExecuteAsync"/> nhưng thủ tục còn trả về khóa chính vừa ghi
+    /// qua một tham số OUTPUT riêng.
     /// </summary>
     private async Task<(AdminStoredProcedureResult KetQua, long Id)> ExecuteWithIdAsync(
         string procedureName,
@@ -688,8 +688,8 @@ public sealed class AdminStoredProcedureService
     }
 
     /// <summary>
-    /// Cho nhung thu tuc KHONG khai bao @ResultCode/@ResultMessage. Them hai tham so
-    /// do vao la SQL Server bao loi thua tham so, nen phai co duong goi rieng.
+    /// Cho những thủ tục KHÔNG khai báo @ResultCode/@ResultMessage. Thêm hai tham số
+    /// đó vào là SQL Server báo lỗi thừa tham số, nên phải có đường gọi riêng.
     /// </summary>
     private async Task ExecuteNoResultAsync(string procedureName, Action<DbCommand> configure)
     {
@@ -714,10 +714,10 @@ public sealed class AdminStoredProcedureService
     }
 
     /// <summary>
-    /// Chay mot thu tuc tra ve bang, lay MOT chuoi.
-    /// <paramref name="tenCot"/> BAT BUOC doc theo TEN chu khong theo thu tu:
-    /// DM_CSKCB_NoiDung_Get tra ca dong (cot 0 la ID bigint), doc theo thu tu
-    /// la nem InvalidCastException => HTTP 500. Da dinh o Dot 3.
+    /// Chạy một thủ tục trả về bảng, lấy MỘT chuỗi.
+    /// <paramref name="tenCot"/> BẮT BUỘC đọc theo TÊN chứ không theo thứ tự:
+    /// DM_CSKCB_NoiDung_Get trả cả dòng (cột 0 là ID bigint), đọc theo thứ tự
+    /// là ném InvalidCastException => HTTP 500. Đã dính ở Đợt 3.
     /// </summary>
     private async Task<string?> QueryStringAsync(
         string procedureName,

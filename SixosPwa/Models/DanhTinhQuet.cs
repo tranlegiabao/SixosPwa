@@ -1,40 +1,40 @@
 namespace SixosPwa.Models;
 
 /// <summary>
-/// Danh tinh doc duoc tu mot ma QR o man Dang nhap. Hai nguon, cung mot khuon 7 manh
-/// ngan bang '|', chi khac o thu hai:
+/// Danh tính đọc được từ một mã QR ở màn Đăng nhập. Hai nguồn, cùng một khuôn 7 mảnh
+/// ngăn bằng '|', chỉ khác ở thứ hai:
 /// <code>
-/// phieu kham (HIS): cccd | MaBN    | tenBN | ddMMyyyy | Nam/Nu/Chua XD | diaChi | ddMMyyyy
-/// CCCD gan chip   : cccd | CMND cu | hoTen | ddMMyyyy | Nam/Nu         | diaChi | ddMMyyyy
+/// phiếu khám (HIS): cccd | MaBN    | tenBN | ddMMyyyy | Nam/Nu/Chua XD | diaChi | ddMMyyyy
+/// CCCD gắn chip   : cccd | CMND cũ | hoTen | ddMMyyyy | Nam/Nu         | diaChi | ddMMyyyy
 /// </code>
 ///
-/// 🔴 <b>Day chi la DU LIEU do may khach gui len, khong phai bang chung.</b> Moi ket luan
-/// "khop / duoc noi" phai tinh lai o may chu. Dac biet <see cref="MaBN"/>: no mo duong toi
-/// benh an cua nguoi khac nen bat buoc phai doi chieu lai voi HIS truoc khi dung.
+/// 🔴 <b>Đây chỉ là DỮ LIỆU do máy khách gửi lên, không phải bằng chứng.</b> Mọi kết luận
+/// "khớp / được nối" phải tính lại ở máy chủ. Đặc biệt <see cref="MaBN"/>: nó mở đường tới
+/// bệnh án của người khác nên bắt buộc phải đối chiếu lại với HIS trước khi dùng.
 ///
-/// 🔴 <b>KHONG co so dien thoai, va co y khong bao gio co</b> (chot 11/09). Khuon CCCD gan
-/// chip do Bo Cong an dinh nen khong them duoc; con QR cua HIS thi them duoc nhung KHONG
-/// duoc them: so do in tren giay se khien cong doi chieu "4 so cuoi" mat sach tac dung —
-/// nguoi nhat duoc to phieu chep so tu chinh to giay la qua cong. Chung nao OTP con la
-/// ma co dinh (<c>DangNhapController</c> cho "123456" qua vo dieu kien) thi dieu do dong
-/// nghia voi: cam to giay = doc duoc benh an. So dien thoai PHAI do nguoi dung tu go.
+/// 🔴 <b>KHÔNG có số điện thoại, và cố ý không bao giờ có</b> (chốt 11/09). Khuôn CCCD gắn
+/// chip do Bộ Công an định nên không thêm được; còn QR của HIS thì thêm được nhưng KHÔNG
+/// được thêm: số đó in trên giấy sẽ khiến cổng đối chiếu "4 số cuối" mất sạch tác dụng —
+/// người nhặt được tờ phiếu chép số từ chính tờ giấy là qua cổng. Chừng nào OTP còn là
+/// mã cố định (<c>DangNhapController</c> cho "123456" qua vô điều kiện) thì điều đó đồng
+/// nghĩa với: cầm tờ giấy = đọc được bệnh án. Số điện thoại PHẢI do người dùng tự gõ.
 /// </summary>
 public sealed class DanhTinhQuet
 {
-    /// <summary>"his" = ma tren phieu kham · "cccd" = CCCD gan chip.</summary>
+    /// <summary>"his" = mã trên phiếu khám · "cccd" = CCCD gắn chip.</summary>
     public string? Nguon { get; set; }
 
     public string? Cccd { get; set; }
 
-    /// <summary>Chi co o nguon "his". Rong voi CCCD gan chip.</summary>
+    /// <summary>Chỉ có ở nguồn "his". Rỗng với CCCD gắn chip.</summary>
     public string? MaBN { get; set; }
 
     public string? HoTen { get; set; }
 
-    /// <summary>Dang <c>ddMMyyyy</c> nhu trong ma. Doi sang ngay that bang <see cref="DoiNgay"/>.</summary>
+    /// <summary>Dạng <c>ddMMyyyy</c> như trong mã. Đổi sang ngày thật bằng <see cref="DoiNgay"/>.</summary>
     public string? NgaySinh { get; set; }
 
-    /// <summary>Chu trong ma: "Nam" / "Nu" / "Chua XD". Doi sang ma so bang <see cref="DoiGioiTinh"/>.</summary>
+    /// <summary>Chữ trong mã: "Nam" / "Nu" / "Chua XD". Đổi sang mã số bằng <see cref="DoiGioiTinh"/>.</summary>
     public string? GioiTinh { get; set; }
 
     public string? DiaChi { get; set; }
@@ -43,9 +43,6 @@ public sealed class DanhTinhQuet
 
     public bool LaNguonHis => string.Equals(Nguon, "his", StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>
-    /// Hỗ trợ ddMMyyyy, yyyy-MM-dd HH:mm:ss.fff, yyyy-MM-dd, dd/MM/yyyy...
-    /// </summary>
     public DateTime? DoiNgay()
     {
         var s = (NgaySinh ?? "").Trim();
@@ -87,7 +84,7 @@ public sealed class DanhTinhQuet
     }
 
     /// <summary>
-    /// Chu trong ma -> ma so cua cong ("1" Nam · "2" Nu · "3" chua xac dinh)
+    /// Chữ trong mã -> mã số của cổng ("1" Nam · "2" Nữ · "3" chưa xác định)
     /// </summary>
     public string? DoiGioiTinh()
     {

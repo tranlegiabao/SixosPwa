@@ -1,0 +1,6 @@
+appsettings*.json
+bin/
+obj/
+wwwroot/lib/
+wwwroot/dist/
+Database/

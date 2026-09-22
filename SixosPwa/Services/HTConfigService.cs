@@ -5,9 +5,6 @@ using SixosPwa.Models;
 
 namespace SixosPwa.Services;
 
-/// <summary>
-/// Triển khai dịch vụ tra cứu cấu hình từ bảng HT_Config có sử dụng IMemoryCache.
-/// </summary>
 public class HTConfigService : IHTConfigService
 {
     private readonly ApplicationDbContext _db;

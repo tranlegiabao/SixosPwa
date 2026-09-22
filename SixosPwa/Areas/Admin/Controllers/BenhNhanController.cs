@@ -34,7 +34,6 @@ public sealed class BenhNhanController : AdminControllerBase
         page = SafePage(page);
         pageSize = pageSize is 20 or 50 or 100 or 500 ? pageSize : 50;
 
-        // Đồng bộ ô tìm kiếm số điện thoại với q nếu có
         if (string.IsNullOrWhiteSpace(sdt) && !string.IsNullOrWhiteSpace(q))
         {
             sdt = q;
@@ -81,10 +80,9 @@ public sealed class BenhNhanController : AdminControllerBase
             return View(emptyModel);
         }
 
-        // 🔴 MOI cau doc phuc vu giao dien PHAI loc IdCoSo != null (ADR 0034)
+        // 🔴 MỌI câu đọc phục vụ giao diện PHẢI lọc IdCoSo != null (ADR 0040)
         var query = _db.BenhNhans.AsNoTracking().Where(x => x.IdCoSo != null).AsQueryable();
 
-        // 1. Lọc theo cơ sở
         if (!string.IsNullOrWhiteSpace(loaiCS))
         {
             var trimCs = loaiCS.Trim();
@@ -103,21 +101,18 @@ public sealed class BenhNhanController : AdminControllerBase
             }
         }
 
-        // 2. Lọc theo CCCD
         if (!string.IsNullOrWhiteSpace(cccd))
         {
             var trimCccd = cccd.Trim();
             query = query.Where(x => x.CCCD.Contains(trimCccd));
         }
 
-        // 3. Lọc theo SĐT
         if (!string.IsNullOrWhiteSpace(sdt))
         {
             var trimSdt = sdt.Trim();
             query = query.Where(x => x.SDT != null && x.SDT.Contains(trimSdt));
         }
 
-        // 4. Lọc theo Mã BN
         if (!string.IsNullOrWhiteSpace(maBN))
         {
             var trimMa = maBN.Trim();
@@ -285,7 +280,6 @@ public sealed class BenhNhanController : AdminControllerBase
             return Json(new { success = false, isWarning = true, message = "Ngày sinh không hợp lệ. Vui lòng nhập ngày sinh chính xác của bệnh nhân." });
         }
 
-        // Kiểm tra trùng lặp
         if (!laCccdKhongCo)
         {
             var trungCccd = await _db.BenhNhans.AsNoTracking()

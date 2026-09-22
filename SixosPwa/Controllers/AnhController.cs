@@ -5,11 +5,11 @@ using SixosPwa.Services;
 namespace SixosPwa.Controllers;
 
 /// <summary>
-/// Duong doc anh tu kho FTP dung chung. Phuc vu ca:
-///  - URL moi theo co so: /anh/{maCoSo}/{thuMuc}/{ten} (vd: /anh/CS1/logo/x.jpg, /anh/_chung/noi_dung/y.jpg)
-///  - URL cu (backward-compatible): /anh/{thuMuc}/{ten} (vd: /anh/logo_cs/x.jpg)
+/// Đường đọc ảnh từ kho FTP dùng chung. Phục vụ cả:
+///  - URL mới theo cơ sở: /anh/{maCoSo}/{thuMuc}/{ten} (vd: /anh/CS1/logo/x.jpg, /anh/_chung/noi_dung/y.jpg)
+///  - URL cũ (backward-compatible): /anh/{thuMuc}/{ten} (vd: /anh/logo_cs/x.jpg)
 ///
-/// Moi lan tai anh la mot phien FTP moi: khong dem, khong giu ket noi.
+/// Mỗi lần tải ảnh là một phiên FTP mới: không đệm, không giữ kết nối.
 /// </summary>
 [AllowAnonymous]
 public sealed class AnhController : Controller
@@ -47,7 +47,7 @@ public sealed class AnhController : Controller
         }
         catch (Exception ex)
         {
-            // FTP chet hay khong co tep deu ra 404 — the <img> vo, khong do trang.
+            // FTP chết hay không có tệp đều ra 404 — thẻ <img> vỡ, không đổ trang.
             _logger.LogWarning(ex, "Khong doc duoc anh {DuongDan} tu FTP.", duongDanFtp);
             return NotFound();
         }

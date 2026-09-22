@@ -1,8 +1,8 @@
 # ADR 0034 — `MAX(PhienBan)` lấy trong phạm vi `LaBanMoiNhat = 1`, không quét mọi phiên bản
 
-- **Trạng thái:** Chấp nhận — 17/09/2026
+- **Tác giả:** Nam · **Ngày:** 17/09/2026 · **Trạng thái:** Chấp nhận
 - **Bối cảnh đo:** `HIS_CSKH` @ 118.69.34.247,8392 sau khi dựng tải 593.297 dòng `QL_TaiLieuBenhNhan`
-- **Liên quan:** ADR 0031 (dựng tải bằng bản sao thật) · `Database/29_FIX_MAX_PHIENBAN_QUET_BANG.sql`
+- **Liên quan:** ADR 0029 (dựng tải bằng bản sao thật) · `Database/29_FIX_MAX_PHIENBAN_QUET_BANG.sql`
 
 ## Bối cảnh
 

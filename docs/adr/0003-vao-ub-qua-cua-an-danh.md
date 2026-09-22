@@ -1,5 +1,7 @@
 # Vào trang Ung Bướu bằng cửa ẩn danh sẵn có, không mở SSO
 
+- **Tác giả:** Nam · **Ngày:** 2026-08-22 · **Trạng thái:** Đã bị thay thế bởi ADR 0014
+
 > ⚠️ **BỊ THAY THẾ bởi [0014](0014-co-so-ub-dung-man-cua-khach.md)** (2026-08-26).
 > Cơ chế mô tả ở đây — SixosPwa tự chạy OTP của mình, mật khẩu bên đối tác do máy sinh, bệnh nhân
 > đi qua màn Liên kết — **không còn dùng cho cơ sở Ung Bướu**. Bệnh nhân nay gõ **mật khẩu thật**

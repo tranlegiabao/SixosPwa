@@ -1,5 +1,7 @@
 # Khuôn mẫu dựng trên .NET 7 dù .NET 7 đã hết hỗ trợ
 
+- **Tác giả:** Nam · **Ngày:** 2026-08-06 · **Trạng thái:** Đã chốt
+
 Khuôn mẫu này sẽ được nhân bản nhiều lần, nên chọn phiên bản nền là quyết định lan rộng và tốn công
 đảo ngược. Chúng tôi chọn **net7.0** — trùng với HisSoft đang chạy — để mọi bản nhân triển khai được
 ngay lên hạ tầng khách hàng hiện tại mà không phải cài Hosting Bundle mới, và để code bê qua lại giữa

@@ -1,5 +1,7 @@
 # Hồ sơ không có căn cước thì không nối bệnh án
 
+- **Tác giả:** Nam · **Ngày:** 2026-09-10 · **Trạng thái:** Đã chốt
+
 HIS đánh dấu bệnh nhân không có căn cước bằng mã giả `11111111111` / `111111111111`, và cổng bắt buộc
 phải điền ô CCCD nên bệnh nhân gõ đúng mã đó vào. Ngày 10/09 nhánh `HIeu_10/09` mở đường cho nhóm này
 nối bệnh án: bỏ khớp theo căn cước, chuyển sang khớp **họ tên không dấu + ngày sinh + giới tính**, và

@@ -1,7 +1,6 @@
 # 0039 — Lỗi của từng cửa phải về tới người vận hành, không bị nuốt
 
-- **Trạng thái:** Đề xuất
-- **Ngày:** 2026-09-19
+- **Tác giả:** Nam · **Ngày:** 2026-09-19 · **Trạng thái:** Đề xuất
 - **Bối cảnh liên quan:** [0035](0035-hop-dong-linked-server-spwa-cong.md) ·
   [0036](0036-ho-so-la-cap-nguoi-x-co-so.md) · [0032](0032-cua-doi-ma-benh-nhan.md)
 

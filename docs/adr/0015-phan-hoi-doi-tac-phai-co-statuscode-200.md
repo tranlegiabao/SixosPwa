@@ -1,7 +1,6 @@
 # 0015 — Phản hồi của đối tác chỉ tính là thành công khi mang `statusCode == 200`
 
-- **Trạng thái:** Đã chấp nhận
-- **Ngày:** 2026-08-27
+- **Tác giả:** Nam · **Ngày:** 2026-08-27 · **Trạng thái:** Đã chấp nhận
 - **Bối cảnh liên quan:** [0014](0014-co-so-ub-dung-man-cua-khach.md) —
   quyết định này giữ cho bộ màn dựng lại ở 0014 không nói dối bệnh nhân.
 

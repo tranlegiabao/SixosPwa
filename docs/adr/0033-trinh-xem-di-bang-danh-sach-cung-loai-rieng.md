@@ -1,7 +1,6 @@
 # 0033 — Trình xem đi bằng danh sách cùng loại riêng, không bám danh sách trên màn
 
-- **Trạng thái:** Đề xuất
-- **Ngày:** 2026-09-17
+- **Tác giả:** Nam · **Ngày:** 2026-09-17 · **Trạng thái:** Đề xuất
 - **Bối cảnh liên quan:** [0020](0020-tin-cccd-o-loi-vao-chan-o-tang-tai-lieu.md) ·
   [0030](0030-tai-lieu-nam-o-hai-kho.md)
 

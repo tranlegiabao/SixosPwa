@@ -1,5 +1,7 @@
 # SixosPwa lưu mật khẩu ở dạng đọc lại được, không băm
 
+- **Tác giả:** Nam · **Ngày:** 2026-08-22 · **Trạng thái:** Đã chốt
+
 `TaiKhoan.MatKhau` bên `HIS_CSKH` lưu mật khẩu **đọc lại được** thay vì băm. Đây là deviation cố ý và
 trái trực giác của mọi người đọc code, nên ghi lại để không ai "sửa" nó.
 

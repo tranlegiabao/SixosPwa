@@ -1,7 +1,6 @@
 # 0022 — Khoá API ở bảng riêng, băm, và có công tắc riêng
 
-- **Trạng thái:** Đã chấp nhận
-- **Ngày:** 2026-09-08
+- **Tác giả:** Nam · **Ngày:** 2026-09-08 · **Trạng thái:** Đã chấp nhận
 - **Bối cảnh liên quan:** [0008](0008-moi-duong-ghi-qua-stored-procedure.md) ·
   [0013](0013-active-la-cong-hien-thi-duy-nhat.md) · [0017](0017-hai-chieu-theo-loai-du-lieu.md) ·
   [0021](0021-tu-choi-tai-lieu-mo-coi.md)

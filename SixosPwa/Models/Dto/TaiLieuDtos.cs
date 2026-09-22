@@ -20,9 +20,9 @@ public class TiepNhanTaiLieuRequest
     public string? HoTen { get; set; }
 
     /// <summary>
-    /// Dinh danh phieu ben HIS (IDPhieuCLS, IDToaThuoc...). Cung
-    /// (co so, loai, maNguonHIS) => day lai KHONG de dong trung; noi dung doi
-    /// => them mot phien ban moi va chi ban moi nhat duoc hien.
+    /// Định danh phiếu bên HIS (IDPhieuCLS, IDToaThuoc...). Cùng
+    /// (cơ sở, loại, maNguonHIS) => đẩy lại KHÔNG đẻ dòng trùng; nội dung đổi
+    /// => thêm một phiên bản mới và chỉ bản mới nhất được hiện.
     /// </summary>
     [JsonPropertyName("maNguonHIS")]
     public string? MaNguonHIS { get; set; }
@@ -44,9 +44,6 @@ public class TiepNhanTaiLieuRequest
     public string? GhiChu { get; set; }
 }
 
-/// <summary>
-/// DTO dữ liệu trả về khi tiếp nhận tài liệu thành công.
-/// </summary>
 public class TiepNhanTaiLieuResponseData
 {
     [JsonPropertyName("id")]
@@ -56,10 +53,10 @@ public class TiepNhanTaiLieuResponseData
     public long? IdBenhNhan { get; set; }
 
     /// <summary>
-    /// true = noi dung y het ban dang co nen cong GIU NGUYEN ban do: khong them
-    /// phien ban, khong upload tep moi. HIS ghi nhat ky la THANH CONG kem thong
-    /// diep "noi dung khong doi" — nguoi o quay thay dung su that thay vi tuong
-    /// vua tao mot ban moi.
+    /// true = nội dung y hệt bản đang có nên cổng GIỮ NGUYÊN bản đó: không thêm
+    /// phiên bản, không upload tệp mới. HIS ghi nhật ký là THÀNH CÔNG kèm thông
+    /// điệp "nội dung không đổi" — người ở quầy thấy đúng sự thật thay vì tưởng
+    /// vừa tạo một bản mới.
     /// </summary>
     [JsonPropertyName("noiDungKhongDoi")]
     public bool NoiDungKhongDoi { get; set; }
@@ -83,9 +80,6 @@ public class TiepNhanTaiLieuResponseData
     public DateTime NgayTao { get; set; }
 }
 
-/// <summary>
-/// Wrapper phản hồi chuẩn của API.
-/// </summary>
 public class ApiResponse<T>
 {
     [JsonPropertyName("success")]

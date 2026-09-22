@@ -5,7 +5,6 @@ using SixosPwa.Models.Dto;
 
 namespace SixosPwa.Services;
 
-/// <summary>Ket qua nhan mot lo dot kham.</summary>
 public record KetQuaNhanLo(bool CoHoSo, NhanDotKhamResponseData DuLieu);
 
 public interface IDotKhamService
@@ -16,23 +15,23 @@ public interface IDotKhamService
 }
 
 /// <summary>
-/// Nhan lich su kham HIS day len.
+/// Nhận lịch sử khám HIS đẩy lên.
 ///
 /// <para>
-/// 🔴 Luat TU CHOI (chot 3): ma benh nhan chua co ho so nao noi ben cong thi ca
-/// lo bi tu choi, cong khong luu gi. Cong khong giu du lieu y te cua nguoi chua
-/// la nguoi dung. HIS giu lo do o hang doi va hoi lai bang
-/// <c>/api/v1/ho-so/kiem-tra-nhan</c> de biet khi nao day duoc.
+/// 🔴 Luật TỪ CHỐI (chốt 3): mã bệnh nhân chưa có hồ sơ nào nối bên cổng thì cả
+/// lô bị từ chối, cổng không lưu gì. Cổng không giữ dữ liệu y tế của người chưa
+/// là người dùng. HIS giữ lô đó ở hàng đợi và hỏi lại bằng
+/// <c>/api/v1/ho-so/kiem-tra-nhan</c> để biết khi nào đẩy được.
 /// </para>
 /// <para>
-/// KHONG doan ho so bang CCCD hay so dien thoai. Do la dieu ADR 0018 cam: Thien
-/// Nam co 345 nhom cung CCCD khac ten, va co so dien thoai gan toi 876 nguoi.
-/// Viec noi ho so la cua NGUOI DUNG o man Noi ho so, khong phai cua duong API.
+/// KHÔNG đoán hồ sơ bằng CCCD hay số điện thoại. Đó là điều ADR 0018 cấm: Thiên
+/// Nam có 345 nhóm cùng CCCD khác tên, và có số điện thoại gán tới 876 người.
+/// Việc nối hồ sơ là của NGƯỜI DÙNG ở màn Nối hồ sơ, không phải của đường API.
 /// </para>
 /// </summary>
 public class DotKhamService : IDotKhamService
 {
-    /// <summary>Chan lo qua lon: mot nguoi vai chuc dot la binh thuong, vai nghin thi khong.</summary>
+    /// <summary>Chặn lô quá lớn: một người vài chục đợt là bình thường, vài nghìn thì không.</summary>
     private const int ToiDaMoiLo = 500;
 
     private readonly ApplicationDbContext _db;
@@ -62,9 +61,9 @@ public class DotKhamService : IDotKhamService
         if (yeuCau.DotKham.Count > ToiDaMoiLo)
             throw new ArgumentException($"Một lô tối đa {ToiDaMoiLo} đợt khám, lô này có {yeuCau.DotKham.Count}.");
 
-        // Khoa tra cuu la (co so, ma benh nhan) — dung rang buoc that cua
-        // DM_BenhNhanCoSo. Khong tra theo con nguoi, vi mot nguoi tai MOT co so
-        // van co the co nhieu ho so (17,3% o Thien Nam).
+        // Khóa tra cứu là (cơ sở, mã bệnh nhân) — đúng ràng buộc thật của
+        // DM_BenhNhanCoSo. Không tra theo con người, vì một người tại MỘT cơ sở
+        // vẫn có thể có nhiều hồ sơ (17,3% ở Thiên Nam).
         var hoSo = await _db.BenhNhans.AsNoTracking()
             .FirstOrDefaultAsync(b => b.IdCoSo == coSo.Id && b.MaBN == maBN);
 
@@ -93,8 +92,8 @@ public class DotKhamService : IDotKhamService
                 continue;
             }
 
-            // Ngay ra truoc ngay vao la du lieu hong — nhan vao roi man hien thi
-            // se ra khoang thoi gian am.
+            // Ngày ra trước ngày vào là dữ liệu hỏng — nhận vào rồi màn hiện thị
+            // sẽ ra khoảng thời gian âm.
             if (dong.NgayGioRa.HasValue && dong.NgayGioRa.Value < dong.NgayGioVao)
             {
                 ketQua.SoBoQua++;
@@ -139,10 +138,10 @@ public class DotKhamService : IDotKhamService
 
         if (ma.Count == 0) return new List<string>();
 
-        // MaBN o model van la string khong-null: script 05 moi chi NOI rang buoc
-        // cho phep NULL, con du lieu thi chua dong nao NULL — viec don 18/21 ma
-        // tu bia di cung dot xoa SinhMaBenhNhan(). Doi model sang string? phai
-        // doi cung luc voi dot do.
+        // MaBN ở model vẫn là string không-null: script 05 mới chỉ NỚI ràng buộc
+        // cho phép NULL, còn dữ liệu thì chưa dòng nào NULL — việc dồn 18/21 mã
+        // tự bịa đi cùng đợt xóa SinhMaBenhNhan(). Đổi model sang string? phải
+        // đổi cùng lúc với đợt đó.
         return await _db.BenhNhans.AsNoTracking()
             .Where(b => b.IdCoSo == idCoSo && ma.Contains(b.MaBN))
             .Select(b => b.MaBN)
