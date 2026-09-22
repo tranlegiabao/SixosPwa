@@ -35,3 +35,11 @@ phần màu sắc/thành phần UI chỉ là do bản mẫu được dựng đ�
 Lần sau có bản mẫu rời dạng này, mặc định tách hai lớp **bố cục** (nhóm field, thứ tự, field mới —
 luôn đáng lấy) và **hệ thống thiết kế** (màu, component, hiệu ứng — chỉ lấy khi có quyết định rõ ràng
 là đổi luôn cho cả khu Admin, không lấy lẻ cho một màn).
+
+## Cập nhật 2026-09-22 — TenVietTat không còn "chỉ dùng trong Admin"
+
+Lúc chốt field "Tên cơ sở viết tắt", phạm vi đặt ra là chỉ lưu trong Admin, không đụng màn nào khác.
+Nhìn icon PWA cài trên máy thật (`PwaController.GetManifest()`) mới thấy `short_name` — thứ hệ điều
+hành in ra dưới icon màn hình chính — đang lấy `TenCoSo` đầy đủ, dễ bị cắt bớt. Đó đúng là chỗ
+`TenVietTat` sinh ra để giải quyết, nên đã nới phạm vi: `short_name` ưu tiên `TenVietTat`, rỗng thì
+rơi về `TenCoSo` như cũ (`name` — tên đầy đủ — vẫn giữ `TenCoSo`, không đổi).

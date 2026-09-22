@@ -62,6 +62,9 @@ public class PwaController : Controller
         if (clinic != null && !string.IsNullOrWhiteSpace(clinic.TenCoSo))
         {
             var tenCoSo = clinic.TenCoSo.Trim();
+            // Icon màn hình chính chỉ có chỗ cho vài chữ — ưu tiên Tên cơ sở viết tắt
+            // (DM_CSKCB.TenVietTat) khi có, không thì rơi về TenCoSo như trước.
+            var tenNgan = !string.IsNullOrWhiteSpace(clinic.TenVietTat) ? clinic.TenVietTat.Trim() : tenCoSo;
             var clinicSlug = !string.IsNullOrWhiteSpace(clinic.Slug) ? clinic.Slug : slug!;
             var startUrl = $"/DangNhap/Login?coSo={Uri.EscapeDataString(clinicSlug)}";
 
@@ -69,7 +72,7 @@ public class PwaController : Controller
             {
                 id = $"/?coSo={Uri.EscapeDataString(clinicSlug)}",
                 name = tenCoSo,
-                short_name = tenCoSo,
+                short_name = tenNgan,
                 description = $"Cổng thông tin và quản lý hồ sơ bệnh nhân {tenCoSo}",
                 lang = "vi",
                 dir = "ltr",
