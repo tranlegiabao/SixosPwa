@@ -9,6 +9,142 @@
 --     Doan duoi chi tra lai COT rong.
 -- ============================================================================
 
+-- --- Nguoc 29 (MAX(PhienBan) trong pham vi ban moi nhat) ---------------------
+-- 🔴 CHAY CAI NAY LA TRA LAI BENH QUET TOAN BANG cua duong GHI. O bang 593k
+-- dong do duoc: 28.625 logical reads/luot, ke hoach song song, khoa U tren gan
+-- nhu moi trang => 85 deadlock/40 phut va 746/800 luot ghi HONG (mat tai lieu,
+-- im lang vi thu tuc nuot loi trong CATCH). Chi chay khi that su can quay ve
+-- ban truoc va. Ly le o docs/adr/0034-phien-ban-lay-max-trong-pham-vi-ban-moi-nhat.md.
+-- Duoi day la NGUYEN VAN thu tuc TRUOC file 29 (tuc ban sau file 26).
+GO
+SET QUOTED_IDENTIFIER ON;
+GO
+SET ANSI_NULLS ON;
+GO
+-- ---------------------------------------------------------------------------
+-- Thu tuc luu — VIET DE, GIU NGUYEN chu ky cu roi THEM tham so tuy chon.
+-- Code C# hien tai cua khu tai lieu goi khong co @MaNguonHIS van chay duoc.
+--
+-- Luat TU CHOI duoc chan ngay o day chu khong chi o C#: @IDBenhNhanCoSo NULL
+-- hay khong thuoc co so => ResultCode 5. Nhu vay chot 3 van dung ke ca khi
+-- tang C# chua kip va.
+-- ---------------------------------------------------------------------------
+CREATE OR ALTER PROCEDURE dbo.QL_TaiLieuBenhNhan_Save
+    @ID             BIGINT,
+    @IDCoSo         BIGINT,
+    @IDBenhNhanCoSo BIGINT = NULL,
+    @MaBN           NVARCHAR(50),
+    @LoaiTaiLieu    NVARCHAR(50),
+    @TenTaiLieu     NVARCHAR(255),
+    -- Tran 2000 (file 27). 🔴 Con so nay nam o SAU cho -- doi mot cho ma quen
+    -- cac cho kia la quay lai dung benh CAT IM LANG ma chot chan sinh ra de chong.
+    @DuongDanFtp    NVARCHAR(2000),
+    @DungLuongByte  BIGINT,
+    @NgayKham       DATETIME = NULL,
+    @GhiChu         NVARCHAR(MAX) = NULL,
+    @MaNguonHIS     VARCHAR(50) = NULL,
+    @BamNoiDung     CHAR(64) = NULL,
+    /* THEM 26: kho chua tep. Mac dinh N'CONG' => moi cho goi cu (C# cua cong)
+       giu nguyen hanh vi, khong phai sua mot dong C# nao. Chi che do Tro duong
+       ben HIS truyen N'COSO'. */
+    @NguonKho       NVARCHAR(20) = N'CONG',
+    @IDTaiLieu      BIGINT OUTPUT,
+    @ResultCode     INT OUTPUT,
+    @ResultMessage  NVARCHAR(4000) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+    SET @ResultCode = 0;
+    SET @ResultMessage = NULL;
+    SET @IDTaiLieu = 0;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        IF NOT EXISTS (SELECT 1 FROM dbo.DM_CSKCB WHERE ID = @IDCoSo)
+        BEGIN
+            SET @ResultCode = 2;
+            SET @ResultMessage = N'Cơ sở khám chữa bệnh không tồn tại.';
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END;
+
+        -- Chot 3: khong co ho so noi thi TU CHOI, khong luu.
+        IF @IDBenhNhanCoSo IS NULL
+           OR NOT EXISTS (SELECT 1 FROM dbo.DM_BenhNhanCoSo
+                          WHERE ID = @IDBenhNhanCoSo AND IDCoSo = @IDCoSo)
+        BEGIN
+            SET @ResultCode = 5;
+            SET @ResultMessage = N'Mã bệnh nhân này chưa có hồ sơ nào nhận tại cổng.';
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END;
+
+        IF @ID = 0
+        BEGIN
+            DECLARE @PhienBan int = 1;
+
+            IF @MaNguonHIS IS NOT NULL
+            BEGIN
+                -- Cung nguon => day them mot PHIEN BAN, ha co ban moi nhat cua
+                -- cac ban truoc. Chan trung tuyet doi (day lai y het noi dung)
+                -- la viec cua tang C#, xem NhanTaiLieu.
+                SELECT @PhienBan = ISNULL(MAX(PhienBan), 0) + 1
+                FROM dbo.QL_TaiLieuBenhNhan WITH (UPDLOCK, HOLDLOCK)
+                WHERE IDCoSo = @IDCoSo AND LoaiTaiLieu = @LoaiTaiLieu AND MaNguonHIS = @MaNguonHIS;
+
+                UPDATE dbo.QL_TaiLieuBenhNhan
+                SET LaBanMoiNhat = 0
+                WHERE IDCoSo = @IDCoSo AND LoaiTaiLieu = @LoaiTaiLieu
+                  AND MaNguonHIS = @MaNguonHIS AND LaBanMoiNhat = 1;
+            END;
+
+            INSERT INTO dbo.QL_TaiLieuBenhNhan (
+                IDCoSo, IDBenhNhanCoSo, MaBN, LoaiTaiLieu, TenTaiLieu, DuongDanFtp,
+                DungLuongByte, NgayKham, GhiChu, MaNguonHIS, BamNoiDung, NguonKho,
+                PhienBan, LaBanMoiNhat, NgayTao)
+            VALUES (
+                @IDCoSo, @IDBenhNhanCoSo, @MaBN, @LoaiTaiLieu, @TenTaiLieu, @DuongDanFtp,
+                @DungLuongByte, @NgayKham, @GhiChu, @MaNguonHIS, @BamNoiDung,
+                ISNULL(NULLIF(LTRIM(RTRIM(@NguonKho)), N''), N'CONG'),
+                @PhienBan, 1, GETDATE());
+
+            SET @IDTaiLieu = SCOPE_IDENTITY();
+        END
+        ELSE
+        BEGIN
+            IF NOT EXISTS (SELECT 1 FROM dbo.QL_TaiLieuBenhNhan WHERE ID = @ID)
+            BEGIN
+                SET @ResultCode = 3;
+                SET @ResultMessage = N'Tài liệu không tồn tại.';
+                ROLLBACK TRANSACTION;
+                RETURN;
+            END;
+
+            UPDATE dbo.QL_TaiLieuBenhNhan
+            SET IDCoSo = @IDCoSo, IDBenhNhanCoSo = @IDBenhNhanCoSo, MaBN = @MaBN,
+                LoaiTaiLieu = @LoaiTaiLieu, TenTaiLieu = @TenTaiLieu,
+                DuongDanFtp = @DuongDanFtp, DungLuongByte = @DungLuongByte,
+                NgayKham = @NgayKham, GhiChu = @GhiChu
+            WHERE ID = @ID;
+
+            SET @IDTaiLieu = @ID;
+        END;
+
+        COMMIT TRANSACTION;
+        SET @ResultCode = 1;
+        SET @ResultMessage = N'OK';
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+        SET @ResultCode = 99;
+        SET @ResultMessage = ERROR_MESSAGE();
+    END CATCH
+END;
+
+GO
+
 -- --- Nguoc 21 (cot NguonKho — che do Tro duong, ADR 0030) -------------------
 -- 🔴 Chay cai nay LA MAT dau vet tai lieu nao nam o kho co so. Sau khi bo cot,
 -- moi dong deu bi doc nhu o kho cong => 404 im lang. Chi chay khi that su go

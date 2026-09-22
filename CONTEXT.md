@@ -465,6 +465,29 @@ sơ để nhả căn cước, hoặc liên hệ cơ sở. Người chính chủ 
 đã biết và chấp nhận của ADR 0019.
 _Tránh_: khoá CCCD, chiếm hồ sơ
 
+### Dựng tải (chốt 2026-09-17)
+
+**Dữ liệu dựng tải**:
+Bản sao bệnh nhân thật, chép từ các DB khách cùng máy chủ (`Nhakhoa_DHYD`, `Dev_Master3`,
+`NhaKhoa_NoVa`, `nhakhoatamduc712htp`) vào `HIS_CSKH` với **mục đích duy nhất là làm bảng đủ lớn để
+đo**. Không phải người dùng của cổng: không ai trong số đó đăng nhập, không ai nhận thông báo. Nhưng
+cũng **không phải dữ liệu bịa** — giữ nguyên tên, CCCD, ngày sinh và mọi tỉ lệ bẩn của nguồn, vì chính
+mấy tỉ lệ ấy mới thử được *Luật gộp hồ sơ*. Xem ADR 0031.
+_Tránh_: dữ liệu giả, dữ liệu test, dummy, mock
+
+**Đuôi nặng**:
+Nhóm nhỏ bệnh nhân giữ hàng trăm tài liệu (bệnh mạn tính tái khám liên tục), đối lại với phần đông giữ
+5–20 tài liệu. Là **thước đo thật** của màn *Danh sách tài liệu*: màn ấy lọc theo một hồ sơ nên tổng số
+dòng trong bảng không ảnh hưởng gì tới nó — chỉ số tài liệu **của riêng một người** mới làm nó chậm.
+Một bộ dữ liệu không có đuôi nặng sẽ báo "màn tài liệu ổn" bất kể bảng to tới đâu.
+_Tránh_: ca biên, outlier, ca cực đoan
+
+**Ngày hiệu lực**:
+Mốc thời gian dùng để xếp tài liệu từ mới tới cũ: `NgayKham` nếu có, không thì `NgayTao`. Hiện nó
+**chỉ là một biểu thức trong câu truy vấn**, không phải một cột — nên không index nào sắp sẵn được theo
+nó, và mỗi lần mở màn *Danh sách tài liệu* là một lần sắp xếp lại toàn bộ tài liệu của người đó.
+_Tránh_: ngày khám (trần — sẽ hiểu nhầm là chỉ `NgayKham`), ngày tài liệu
+
 ## Quyết định
 
 Xem [`docs/adr/`](docs/adr/). Hai quyết định định hình khuôn mẫu này:
