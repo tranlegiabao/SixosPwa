@@ -1,0 +1,503 @@
+/* Ẩn Layout mặc định */
+.app-nav { display: none !important; }
+.bottom-nav { display: none !important; }
+body {
+    background-color: var(--ytv-bg);
+    margin: 0 !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Buoc Layout cha phai full width */
+body > *:not(.ts-dropdown),
+.container, .container-fluid, .container-sm, .container-md, .container-lg, .container-xl, .container-xxl {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* Layout chung vẫn bọc trang bằng main.py-4; chỉ bỏ khoảng đệm phía trên ở màn này. */
+main.container.py-4 {
+    padding-top: 0 !important;
+}
+
+/* Layout Variables */
+:root {
+    --ytv-primary: #3b82f6;
+    --ytv-secondary: #0ea5e9;
+    --ytv-accent: #ffb703;
+    --ytv-text: #334155;
+    --ytv-bg: #f0f9ff;
+}
+
+/* HEADER */
+.ytv-header {
+    background: linear-gradient(135deg, #3b82f6, #60a5fa);
+    color: white;
+    padding: 15px 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    position: relative;
+}
+.ytv-logo-area {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    text-decoration: none;
+    color: white;
+}
+.ytv-logo-area:hover {
+    color: white;
+}
+.ytv-logo-text {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 34px;
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: 1px;
+    text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.4);
+}
+.ytv-header-title {
+    text-align: center;
+    flex-grow: 1;
+}
+.ytv-header-title h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+.ytv-header-title p {
+    margin: 5px 0 0 0;
+    font-size: 19px;
+    opacity: 0.9;
+}
+/* Menu 3 gach o goc phai header — dung chung khuon voi trang "/"
+   (ThongTinBenhNhan). Chep sang de trang danh sach co so cung co loi ra +
+   khoi Tai khoan, khong con la nut Home cut. */
+.ytv-header-menu {
+    font-size: 32px;
+    color: white;
+    cursor: pointer;
+    padding: 10px;
+    position: relative;
+}
+.ytv-header-menu:focus-visible { outline: 3px solid #fff; outline-offset: 3px; border-radius: 8px; }
+.ytv-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    min-width: 240px;
+    z-index: 9999;
+    overflow: hidden;
+    animation: fadeDown 0.2s ease;
+}
+.ytv-dropdown.open { display: block; }
+@keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.ytv-dropdown a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 48px;
+    padding: 15px 20px;
+    color: #334155;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    border-bottom: 1px solid #f1f5f9;
+    transition: all 0.2s;
+}
+.ytv-dropdown a:last-child { border-bottom: none; }
+.ytv-dropdown a:hover {
+    background: #eff6ff;
+    color: var(--ytv-primary);
+    padding-left: 28px;
+}
+.ytv-dropdown a i {
+    font-size: 20px;
+    width: 26px;
+    text-align: center;
+    color: var(--ytv-secondary);
+}
+.ytv-dropdown a.ytv-dropdown-thoat,
+.ytv-dropdown a.ytv-dropdown-thoat i { color: #dc2626; }
+.ytv-dropdown-title {
+    padding: 10px 16px 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+/* Nhom "loai co so" trong menu: CHI hien tren dien thoai. Tu 768px tro len
+   5 loai da co san o sidebar than trang -> an di, khoi lap. */
+.ytv-dropdown-coso { display: none; }
+@media (max-width: 767.98px) {
+    .ytv-dropdown-coso { display: block; }
+    .ytv-dropdown-coso + .ytv-dropdown-title { border-top: 1px solid #e2e8f0; margin-top: 4px; padding-top: 12px; }
+}
+.bieu-tuong-benh-vien { color: #ef4444 !important; }
+.bieu-tuong-phong-kham { color: #10b981 !important; }
+.bieu-tuong-nha-khoa { color: #06b6d4 !important; }
+.bieu-tuong-phong-mach { color: #8b5cf6 !important; }
+.bieu-tuong-nha-thuoc { color: #f59e0b !important; }
+
+/* MAIN CONTAINER */
+.ytv-main {
+    display: flex;
+    width: 100%;
+    min-height: calc(100vh - 140px);
+    background: white;
+}
+
+/* MENU SIDEBAR */
+.ytv-sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: #f8fafc;
+    border-right: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    padding: 10px 0;
+}
+.ytv-menu-item {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    gap: 15px;
+    color: var(--ytv-primary);
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+.ytv-menu-item i {
+    font-size: 22px;
+    width: 30px;
+    text-align: center;
+    color: #64748b;
+    transition: all 0.3s ease;
+}
+.ytv-menu-item:hover, .ytv-menu-item.active {
+    background: #f1f5f9;
+    border-left-color: var(--ytv-secondary);
+    color: var(--ytv-primary);
+}
+.ytv-menu-item:hover i, .ytv-menu-item.active i {
+    color: var(--ytv-secondary);
+    transform: scale(1.1);
+}
+
+/* KHU VUC SECTION */
+.ytv-khu-vuc {
+    margin-top: 10px;
+    padding: 15px 15px 10px 15px;
+    border-top: 1px solid #e2e8f0;
+}
+.ytv-khu-vuc-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+@* Truoc day .ytv-province-select bi display:none de giau <select> cho bo
+   dropdown tu che. Bo rule do: Tom Select CHEP class cua <select> sang the
+   .ts-wrapper cua no, nen de lai la an luon ca dropdown moi. *@
+
+/* --- Tom Select trong khoi Khu vuc -------------------------------
+   Chinh cho khop dang cua sidebar (bo goc 10px, vien nhat, nen trang)
+   thay vi de dang bootstrap5 mac dinh. */
+.ytv-khu-vuc .ts-wrapper {
+    margin-bottom: 10px;
+    position: relative !important;
+    z-index: 1;
+}
+
+.ytv-khu-vuc .ts-wrapper.focus,
+.ytv-khu-vuc .ts-wrapper.dropdown-active {
+    z-index: 1000 !important;
+}
+
+/* O chon phuong/xa bi khoa khi chua chon tinh — noi ro bang mau nhat. */
+.ytv-khu-vuc .ts-wrapper.disabled .ts-control {
+    background: #f8fafc;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+.ytv-khu-vuc .ts-control {
+    border: 1.5px solid #64748b !important;
+    border-radius: 10px;
+    padding: 0 32px 0 12px !important;
+    min-height: 42px;
+    height: 42px;
+    font-size: 14px;
+    box-shadow: none;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    background-color: #ffffff !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 10px center !important;
+    background-size: 14px 10px !important;
+    cursor: pointer !important;
+}
+
+.ytv-khu-vuc .ts-control > input {
+    min-width: 0 !important;
+    width: 1px !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+}
+
+.ytv-khu-vuc .ts-control .item {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: calc(100% - 24px) !important;
+    flex: 0 1 auto !important;
+}
+
+.ytv-khu-vuc .ts-wrapper.single:not(.input-active) .ts-control > input {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    position: absolute !important;
+    width: 1px !important;
+    min-width: 0 !important;
+}
+
+.ytv-khu-vuc .ts-wrapper.single.input-active .ts-control > input {
+    opacity: 1 !important;
+    position: relative !important;
+    width: auto !important;
+    flex: 1 1 auto !important;
+    min-width: 20px !important;
+    pointer-events: auto !important;
+}
+
+.ytv-khu-vuc .ts-wrapper.focus .ts-control,
+.ytv-khu-vuc .ts-control:hover {
+    border-color: #2563eb;
+}
+
+.ytv-khu-vuc .ts-dropdown {
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    background-color: #ffffff !important;
+    border: 1px solid #475569 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18) !important;
+    margin-top: 4px;
+    z-index: 99999 !important;
+}
+
+.ytv-khu-vuc .ts-dropdown .ts-dropdown-content {
+    max-height: 240px !important;
+    overflow-y: auto !important;
+}
+
+.ytv-khu-vuc .ts-dropdown .option {
+    padding: 8px 14px !important;
+    font-size: 13.5px !important;
+    color: #1e293b !important;
+    cursor: pointer !important;
+    transition: background-color .1s ease !important;
+}
+
+.ytv-khu-vuc .ts-dropdown .option:hover,
+.ytv-khu-vuc .ts-dropdown .option.active,
+.ytv-khu-vuc .ts-dropdown .option.selected,
+.ytv-khu-vuc .ts-dropdown .active {
+    background-color: #ffea79 !important;
+    color: #000000 !important;
+    font-weight: 600 !important;
+}
+
+.ytv-khu-vuc .ts-dropdown .no-results {
+    padding: 10px 12px;
+    font-size: 14px;
+    color: #94a3b8;
+}
+
+.ytv-district-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 200px;
+    overflow-y: auto;
+}
+.ytv-district-list li {
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #475569;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.ytv-district-list li:hover, .ytv-district-list li.active {
+    color: var(--ytv-primary);
+    background: #eff6ff;
+}
+
+/* RIGHT CONTENT */
+.ytv-content {
+    flex: 1;
+    padding: 30px;
+    background: #ffffff;
+}
+.ytv-content-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--ytv-primary);
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+.ytv-content-title-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.ytv-search-box {
+    position: relative;
+    width: 300px;
+}
+.ytv-search-box input {
+    width: 100%;
+    padding: 10px 15px 10px 40px;
+    border: 1px solid #cbd5e1;
+    border-radius: 20px;
+    outline: none;
+    font-size: 14px;
+    transition: border-color 0.3s;
+}
+.ytv-search-box input:focus {
+    border-color: var(--ytv-primary);
+}
+.ytv-search-box i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+}
+.ytv-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 25px;
+}
+.ytv-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    transition: transform 0.3s, box-shadow 0.3s;
+    display: flex;
+    flex-direction: column;
+}
+.ytv-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    border-color: var(--ytv-secondary);
+}
+.ytv-card-img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    background: #f1f5f9;
+}
+.ytv-card-body {
+    padding: 15px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.ytv-card-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ytv-text);
+    margin-bottom: 10px;
+}
+.ytv-card-address {
+    font-size: 14px;
+    color: #64748b;
+    margin-bottom: 15px;
+    display: flex;
+    gap: 8px;
+}
+.ytv-card-address i {
+    color: var(--ytv-secondary);
+    margin-top: 3px;
+}
+.ytv-card-btn {
+    margin-top: auto;
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background: var(--ytv-primary);
+    color: white;
+    text-align: center;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background 0.3s;
+}
+.ytv-card-btn:hover {
+    background: var(--ytv-secondary);
+    color: white;
+}
+
+
+/* RESPONSIVE */
+@media (max-width: 992px) {
+    .ytv-header { position: relative; flex-direction: column; gap: 15px; text-align: center; padding-top: 20px; }
+    .ytv-header-menu { position: absolute; top: 15px; right: 20px; }
+    .ytv-main { flex-direction: column; }
+    .ytv-sidebar { width: 100%; border-right: none; border-bottom: 1px solid #e2e8f0; padding: 15px; }
+    .ytv-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 576px) {
+    .ytv-grid { grid-template-columns: 1fr; }
+    .ytv-sidebar { padding: 10px; }
+    .ytv-content { padding: 15px; }
+    .ytv-search-box { width: 100%; }
+    .ytv-content-title { flex-direction: column; align-items: flex-start; }
+}
