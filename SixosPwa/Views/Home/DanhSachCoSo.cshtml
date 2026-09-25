@@ -1,0 +1,516 @@
+@model IEnumerable<SixosPwa.Models.DMCSKCB>
+@{
+    ViewData["ChanTrangCong"] = true;
+    ViewData["Title"] = ViewData["Title"];
+
+    // Menu 3 gach o header re theo trang thai dang nhap, y het trang "/"
+    // (ThongTinBenhNhan). Admin ky CA HAI cookie nen cung tinh la da dang nhap,
+    // nhung khong co claim Cccd -> "Ho so benh nhan" se ve /benh-nhan rong; phai
+    // re rieng sang khu Admin.
+    var daDangNhap = User.Identity?.IsAuthenticated == true;
+    var laAdmin = daDangNhap && User.IsInRole("Admin");
+}
+
+@* Tom Select ban dia trong wwwroot/lib — KHONG lay tu CDN. Day la PWA cho benh
+   nhan: mang yeu hay CDN chet la o loc mat luon. *@
+<link rel="stylesheet" href="~/lib/tom-select/tom-select.bootstrap5.min.css" />
+<script src="~/lib/tom-select/tom-select.complete.min.js" asp-append-version="true"></script>
+
+<link rel="stylesheet" href="~/css/CoSo/danh-sach-co-so.css" asp-append-version="true" />
+
+<div class="ytv-header">
+    <a href="/Home/ThongTinBenhNhan" class="ytv-logo-area">
+        <img src="/static/icon-512.png" alt="Logo" style="height: 65px; width: 65px; object-fit: cover; background: white; border-radius: 50%; padding: 0;" />
+        <div class="ytv-logo-text">Y TẾ<br>VIỆT</div>
+    </a>
+    <div class="ytv-header-title d-none d-md-block">
+        <h1>Dịch Vụ Đăng Ký Khám Bệnh Online</h1>
+        <p>Tiện lợi - Nhanh chóng - Chính xác</p>
+    </div>
+    <div class="ytv-header-menu" id="menuBtn" onclick="toggleMenu()" role="button" tabindex="0"
+         aria-label="Mở menu" aria-haspopup="true" aria-expanded="false" aria-controls="dropdownMenu">
+        <i class="fas fa-bars" aria-hidden="true"></i>
+        <div class="ytv-dropdown" id="dropdownMenu" role="menu" aria-label="Menu">
+            @* Nhom 1 - loai co so: CHI hien tren dien thoai. Tu tablet tro len da
+               co san o sidebar than trang nen an di, khoi lap. *@
+            <div class="ytv-dropdown-coso">
+                <a href="/Home/DanhSachCoSo-benhvien" role="menuitem">
+                    <i class="fas fa-hospital bieu-tuong-benh-vien" aria-hidden="true"></i> Bệnh viện
+                </a>
+                <a href="/Home/DanhSachCoSo-pkdk" role="menuitem">
+                    <i class="fas fa-clinic-medical bieu-tuong-phong-kham" aria-hidden="true"></i> Phòng khám đa khoa
+                </a>
+                <a href="/Home/DanhSachCoSo-nhakhoa" role="menuitem">
+                    <i class="fas fa-tooth bieu-tuong-nha-khoa" aria-hidden="true"></i> Nha khoa
+                </a>
+                <a href="/Home/DanhSachCoSo-phongmach" role="menuitem">
+                    <i class="fas fa-stethoscope bieu-tuong-phong-mach" aria-hidden="true"></i> Phòng mạch
+                </a>
+                <a href="/Home/DanhSachCoSo-nhathuoc" role="menuitem">
+                    <i class="fas fa-pills bieu-tuong-nha-thuoc" aria-hidden="true"></i> Nhà thuốc
+                </a>
+            </div>
+            @* Nhom 2 - tai khoan: CHI hien khi da dang nhap. Trang nay
+               [AllowAnonymous] nen phai re theo trang thai dang nhap. *@
+            @if (laAdmin)
+            {
+                <div class="ytv-dropdown-title">Tài khoản</div>
+                <a href="/Admin" role="menuitem">
+                    <i class="fas fa-user-shield" aria-hidden="true"></i> Tài khoản
+                </a>
+                <a href="/Admin/DangNhap/Logout" role="menuitem" class="ytv-dropdown-thoat">
+                    <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Đăng xuất
+                </a>
+            }
+            else if (daDangNhap)
+            {
+                <div class="ytv-dropdown-title">Tài khoản</div>
+                <a href="/DangNhap/DiTiep?returnUrl=ho-so" role="menuitem">
+                    <i class="fas fa-user-md" aria-hidden="true"></i> Hồ sơ bệnh nhân
+                </a>
+                <a href="/DangNhap/DangXuat" role="menuitem" class="ytv-dropdown-thoat">
+                    <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Đăng xuất
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="ytv-main">
+    <div class="ytv-sidebar">
+        <!-- KHU VUC -->
+        <div class="ytv-khu-vuc">
+            <div class="ytv-khu-vuc-title">
+                <i class="fas fa-map-marker-alt"></i> Khu vực
+            </div>
+            @* Tom Select nam thang <select> that — bo bo dropdown tu che (div trigger
+               + ul options + o tim rieng). Theo dung khuon HisSoft: o tim nam san
+               trong control, khong phai dung them tang the nao. *@
+            <select class="ytv-province-select" id="provinceSelect"
+                    placeholder="-- Chọn Tỉnh / TP --" autocomplete="off">
+                <option value="">-- Chọn Tỉnh / TP --</option>
+            </select>
+            @* Truoc day cho la <ul> nhoi ca 169 phuong/xa vao mot o cao 200px, KHONG
+               co o tim — muon chon mot phuong phai cuon ca tram muc, trong khi
+               dropdown Tinh ngay tren lai tim duoc. Doi sang Tom Select cho dong bo. *@
+            <select class="ytv-district-select" id="districtSelect"
+                    placeholder="Tất cả phường/xã" autocomplete="off">
+                <option value="">Tất cả phường/xã</option>
+            </select>
+        </div>
+    </div>
+    <div class="ytv-content">
+        <div class="ytv-content-title">
+            <div class="ytv-content-title-left">
+                <span>Danh sách @ViewData["Title"]</span>
+                <span class="badge bg-primary rounded-pill" style="font-size: 14px; display: none !important;"><span id="resultCount">0</span> cơ sở</span>
+            </div>
+            <div class="ytv-search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Tìm kiếm tên cơ sở..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+            </div>
+        </div>
+        
+        <div class="ytv-grid" id="clinicGrid">
+            <!-- Rendered by JS -->
+        </div>
+    </div>
+</div>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let provinceData = [];
+        let currentWards = [];
+        let wardFetchId = 0;
+        const provinceSelect = document.getElementById("provinceSelect");
+        const districtSelect = document.getElementById("districtSelect");
+        const clinicGrid = document.getElementById("clinicGrid");
+        const resultCount = document.getElementById("resultCount");
+        const searchInput = document.getElementById("searchInput");
+
+        const images = [
+            "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=500&q=80",
+            "https://images.unsplash.com/photo-1581594693702-fbdc51b2763b?w=500&q=80",
+            "https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=500&q=80",
+            "https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=500&q=80"
+        ];
+
+        // Lấy dữ liệu cơ sở thực tế từ database (Model)
+        const dbClinics = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model)) || [];
+        
+        // Chuẩn hóa dữ liệu sang định dạng client
+        const clinics = dbClinics.map((c, i) => ({
+            name: c.TenCoSo || c.tenCoSo || "Chưa cập nhật",
+            address: c.DiaChi || c.diaChi || "Đang cập nhật",
+            img: c.Img || c.img || images[i % images.length],
+            tinh: c.Tinh !== undefined ? c.Tinh : c.tinh,
+            phuongXa: c.PhuongXa !== undefined ? c.PhuongXa : c.phuongXa,
+            quangCao: c.QuangCao !== undefined ? c.QuangCao : (c.quangCao || 0)
+        }));
+
+        // Trạng thái ban đầu
+        applyFilter();
+
+        // Lọc và hiển thị danh sách
+        function applyFilter() {
+            const selectedProvinceCode = provinceSelect.value;
+            const selectedWardCode = districtSelect.value || "";
+            let selectedWardName = "";
+
+            if (selectedWardCode) {
+                const opt = districtSelect.options[districtSelect.selectedIndex];
+                selectedWardName = opt ? opt.textContent.trim() : "";
+            }
+
+            const keyword = searchInput.value.toLowerCase().trim();
+
+            let filtered = clinics;
+
+            const isSearching = selectedProvinceCode || selectedWardCode || keyword;
+            // Khi mới vào chưa tìm kiếm, hiển thị toàn bộ cơ sở của loại cơ sở đó (sắp xếp quảng cáo lên trước)
+
+            // 1. Lọc theo tỉnh thành
+            if (selectedProvinceCode) {
+                filtered = filtered.filter(c => c.tinh == selectedProvinceCode);
+            }
+
+            // 2. Lọc theo phường xã
+            if (selectedWardCode) {
+                const normalizedWard = removeAccents(selectedWardName.toLowerCase());
+                filtered = filtered.filter(c => {
+                    if (c.phuongXa && String(c.phuongXa) === String(selectedWardCode)) return true;
+                    const normalizedAddress = removeAccents(c.address.toLowerCase());
+                    return normalizedAddress.includes(normalizedWard);
+                });
+            }
+
+            // 3. Tìm kiếm theo tên cơ sở
+            if (keyword) {
+                const normalizedKeyword = removeAccents(keyword);
+                filtered = filtered.filter(c => {
+                    const normalizedName = removeAccents(c.name.toLowerCase());
+                    return normalizedName.includes(normalizedKeyword);
+                });
+            }
+
+            // Sắp xếp theo số tiền quảng cáo đã thanh toán, số tiền càng lớn đứng trước
+            filtered.sort((a, b) => b.quangCao - a.quangCao);
+
+            renderClinics(filtered);
+        }
+
+        // Sự kiện tìm kiếm tên cơ sở
+        searchInput.addEventListener("input", applyFilter);
+
+        // Loại bỏ dấu tiếng Việt để tìm kiếm không dấu
+        function removeAccents(str) {
+            if (!str) return "";
+            return str.normalize("NFD")
+                      .replace(/[\u0300-\u036f]/g, "")
+                      .replace(/đ/g, "d")
+                      .replace(/Đ/g, "D");
+        }
+
+        // Tạo slug từ tên cơ sở (bỏ dấu và ký tự đặc biệt)
+        function toSlug(str) {
+            if (!str) return "";
+            return removeAccents(str).replace(/[^a-zA-Z0-9]/g, "");
+        }
+
+        function matchesKeyword(provinceName, kw) {
+            const normalizedName = removeAccents(provinceName.toLowerCase());
+            const normalizedKw = removeAccents(kw.toLowerCase());
+            
+            if (normalizedName.includes(normalizedKw)) return true;
+            
+            const abbrevMap = {
+                "hn": "ha noi",
+                "hcm": "ho chi minh",
+                "sg": "ho chi minh",
+                "tphcm": "ho chi minh",
+                "dn": "da nang",
+                "hp": "hai phong",
+                "ct": "can tho",
+                "bd": "binh duong",
+                "dna": "dong nai",
+                "dnai": "dong nai",
+                "la": "long an",
+                "tg": "tien giang",
+                "vt": "vung tau",
+                "brvt": "vung tau",
+                "nt": "nha trang",
+                "qn": "quang ninh",
+                "qng": "quang ngai",
+                "qb": "quang binh",
+                "qt": "quang tri",
+                "qtri": "quang tri",
+                "th": "thanh hoa",
+                "na": "nghe an",
+                "ht": "ha tinh",
+                "hue": "hue",
+                "tth": "hue",
+                "gl": "gia lai",
+                "dl": "dak lak",
+                "ld": "lam dong",
+                "tn": "tay ninh",
+                "dt": "dong thap",
+                "vl": "vinh long",
+                "ag": "an giang",
+                "cm": "ca mau",
+                "cb": "cao bang",
+                "db": "dien bien",
+                "lc": "lai chau",
+                "sl": "son la",
+                "ls": "lang son",
+                "bn": "bac ninh",
+                "pt": "phu tho",
+                "hy": "hung yen",
+                "nb": "ninh binh",
+                "kh": "khanh hoa"
+            };
+            
+            if (abbrevMap[normalizedKw] && normalizedName.includes(abbrevMap[normalizedKw])) {
+                return true;
+            }
+            
+            const initials = normalizedName.split(/\s+/).map(word => word[0]).join("");
+            if (initials.includes(normalizedKw)) return true;
+            
+            return false;
+        }
+
+        /**
+         * Dropdown Tỉnh/TP bằng Tom Select — thay bộ dropdown tự chế (div trigger +
+         * ul options + ô tìm riêng) trước đây.
+         *
+         * Bám cấu hình chuẩn của HisSoft (skill ui-tom-select): searchField theo
+         * text, no_results tiếng Việt, loadThrottle, mở dropdown khi bấm control.
+         * KHÔNG dùng configCb() của họ được vì hàm đó nạp JSON từ
+         * /dist/data/json/[action].json — SixosPwa không có cấu trúc thư mục đó,
+         * dữ liệu tỉnh/thành ở đây lấy từ API provinces.open-api.vn.
+         *
+         * Giữ nguyên matchesKeyword: nó cho gõ tắt (hn, hcm, bd, vt...) và gõ chữ
+         * cái đầu — Tom Select mặc định không làm được, nên cắm vào qua score().
+         */
+        let tsChonTinh = null;
+
+        function khoiTaoChonTinh() {
+            if (tsChonTinh) {
+                tsChonTinh.destroy();
+            }
+
+            tsChonTinh = new TomSelect(provinceSelect, {
+                placeholder: "-- Chọn Tỉnh / TP --",
+                allowEmptyOption: true,
+                openOnFocus: true,
+                selectOnTab: true,
+                loadThrottle: 200,
+                searchField: ["text"],
+
+                // Cắm lại logic gõ tắt của bản cũ. Trả 1 = khớp, 0 = loại.
+                score: function (search) {
+                    const kw = (search || "").trim();
+                    if (!kw) {
+                        return function () { return 1; };
+                    }
+                    return function (item) {
+                        return matchesKeyword(item.text, kw) ? 1 : 0;
+                    };
+                },
+
+                render: {
+                    no_results: function () {
+                        return '<div class="no-results">Không tìm thấy tỉnh/thành phù hợp</div>';
+                    }
+                }
+            });
+        }
+
+        // Lấy danh sách tỉnh thành từ API v2
+        fetch("https://provinces.open-api.vn/api/v2/p/")
+            .then(res => res.json())
+            .then(data => {
+                provinceData = Array.isArray(data) ? data : [];
+                provinceData.forEach(p => {
+                    const opt = document.createElement("option");
+                    opt.value = p.code;
+                    opt.textContent = p.name;
+                    provinceSelect.appendChild(opt);
+                });
+                khoiTaoChonTinh();
+            })
+            .catch(err => console.error("Lỗi lấy dữ liệu tỉnh thành v2: ", err));
+
+        // Sự kiện thay đổi tỉnh thành
+        /**
+         * Dropdown Phường/Xã — Tom Select thứ hai, cùng kiểu với Tỉnh/TP.
+         *
+         * Bản cũ đổ 169 thẻ <li> vào một ô cuộn cao 200px trong sidebar rộng 220px
+         * và không có ô tìm: muốn chọn một phường phải cuộn qua cả trăm mục, lại
+         * còn cuộn lồng bên trong trang. Dropdown có tìm kiếm gỡ được cả hai.
+         */
+        let tsChonPhuong = null;
+
+        function khoiTaoChonPhuong() {
+            if (tsChonPhuong) {
+                tsChonPhuong.destroy();
+                tsChonPhuong = null;
+            }
+
+            tsChonPhuong = new TomSelect(districtSelect, {
+                placeholder: "Tất cả phường/xã",
+                allowEmptyOption: true,
+                openOnFocus: true,
+                selectOnTab: true,
+                loadThrottle: 200,
+                searchField: ["text"],
+
+                // Dùng chung logic gõ tắt / gõ chữ cái đầu với dropdown Tỉnh.
+                score: function (search) {
+                    const kw = (search || "").trim();
+                    if (!kw) {
+                        return function () { return 1; };
+                    }
+                    return function (item) {
+                        return matchesKeyword(item.text, kw) ? 1 : 0;
+                    };
+                },
+
+                render: {
+                    no_results: function () {
+                        return '<div class="no-results">Không tìm thấy phường/xã phù hợp</div>';
+                    }
+                },
+
+                onChange: function () {
+                    applyFilter();
+                }
+            });
+        }
+
+        // Dung len ngay tu dau, o trang thai khoa: de trong thi o phuong/xa hien ra
+        // la <select> tran cua trinh duyet, lech han voi o Tinh ngay tren.
+        // Phai dat SAU `let tsChonPhuong` — `let` khong duoc hoist, goi som la
+        // ReferenceError va chet ca khoi script (ke ca dropdown Tinh).
+        khoiTaoChonPhuong();
+        tsChonPhuong.disable();
+
+        /**
+         * Đổ lại danh sách phường/xã. Rỗng = chỉ còn "Tất cả" và khoá ô.
+         *
+         * Dùng API của Tom Select chứ KHÔNG destroy rồi dựng lại: destroy() phục
+         * hồi <select> về đúng HTML lúc nó khởi tạo, nên options vừa thêm bằng
+         * appendChild sẽ bay sạch.
+         *
+         * Thứ tự bắt buộc: clear() xoá giá trị đang hiển thị TRƯỚC, rồi mới
+         * clearOptions() — làm ngược lại thì chữ cũ còn nằm trên ô.
+         */
+        function napPhuongXa(wards) {
+            _savedWards = Array.isArray(wards) ? wards : [];
+
+            tsChonPhuong.clear(true);
+            tsChonPhuong.clearOptions();
+            tsChonPhuong.addOption({ value: "", text: "Tất cả phường/xã" });
+            tsChonPhuong.addOptions(_savedWards.map(w => ({ value: String(w.code), text: w.name })));
+            tsChonPhuong.refreshOptions(false);
+
+            if (_savedWards.length === 0) {
+                tsChonPhuong.disable();
+            } else {
+                tsChonPhuong.enable();
+            }
+        }
+
+        // Sự kiện thay đổi tỉnh thành
+        provinceSelect.addEventListener("change", async function () {
+            const selectedCode = this.value;
+
+            if (!selectedCode) {
+                currentWards = [];
+                napPhuongXa([]);
+                applyFilter();
+                return;
+            }
+
+            // Báo "đang tải" bằng chính ô chọn, không phải một dòng <li> lạc lõng.
+            if (tsChonPhuong) {
+                tsChonPhuong.disable();
+            }
+
+            try {
+                const res = await fetch(`https://provinces.open-api.vn/api/v2/p/${encodeURIComponent(selectedCode)}?depth=2`);
+                if (!res.ok) throw new Error("HTTP " + res.status);
+
+                const data = await res.json();
+                currentWards = Array.isArray(data?.wards) ? data.wards : [];
+                napPhuongXa(currentWards);
+            } catch (err) {
+                console.error("Lỗi lấy phường/xã: ", err);
+                currentWards = [];
+                napPhuongXa([]);
+            }
+
+            applyFilter();
+        });
+
+        function renderClinics(list) {
+            if (list.length === 0) {
+                clinicGrid.style.display = "block";
+                clinicGrid.innerHTML = `
+                    <div style="text-align: center; padding: 50px 20px; color: #64748b; background: #f8fafc; border-radius: 12px; border: 2px dashed #cbd5e1;">
+                        <i class="fas fa-search" style="font-size: 48px; color: #94a3b8; margin-bottom: 15px;"></i>
+                        <h3 style="font-size: 18px; font-weight: 600; color: #475569;">Không tìm thấy kết quả</h3>
+                        <p style="margin: 0;">Thử tìm với từ khóa khác nhé</p>
+                    </div>`;
+                resultCount.textContent = "0";
+                return;
+            }
+            clinicGrid.style.display = "grid";
+            resultCount.textContent = list.length;
+            clinicGrid.innerHTML = list.map((c, i) => `
+                <div class="ytv-card clinic-card">
+                    <img src="${c.img}" alt="${c.name}" class="ytv-card-img" />
+                    <div class="ytv-card-body">
+                        <div class="ytv-card-title">${c.name}</div>
+                        <div class="ytv-card-address">
+                            <i class="fas fa-map-pin"></i>
+                            <span class="address-text">${c.address}</span>
+                        </div>
+                        <a href="/Home/DangKyOnline/${toSlug(c.name)}" class="ytv-card-btn">Xem chi tiết</a>
+                    </div>
+                </div>`).join("");
+        }
+    });
+
+    // Menu 3 gach — cung hanh vi voi trang "/": bam mo/dong, roi chuot ra thi
+    // dong, bam ra ngoai cung dong.
+    function toggleMenu() {
+        var menu = document.getElementById("dropdownMenu");
+        var btn = document.getElementById("menuBtn");
+        if (!menu) return;
+        var mo = menu.classList.toggle("open");
+        if (btn) btn.setAttribute("aria-expanded", mo ? "true" : "false");
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        var menuBtn = document.getElementById("menuBtn");
+        if (menuBtn) {
+            menuBtn.addEventListener("mouseleave", function () {
+                var menu = document.getElementById("dropdownMenu");
+                if (menu) menu.classList.remove("open");
+            });
+        }
+    });
+
+    window.addEventListener("click", function (event) {
+        if (!event.target.closest('#menuBtn')) {
+            var dropdowns = document.getElementsByClassName("ytv-dropdown");
+            for (var i = 0; i < dropdowns.length; i++) {
+                dropdowns[i].classList.remove('open');
+            }
+        }
+    });
+
+</script>
+

@@ -1,0 +1,328 @@
+@{
+    // Dang nhap khu Admin ky CA HAI cookie — AdminAuthentication.Scheme VA cookie
+    // mac dinh, kem Role="Admin" (Areas/Admin/Controllers/DangNhapController.cs:113-121),
+    // nen admin qua duoc [Authorize] cua TimBacSi/HoSoBenhAn va thay menu benh nhan.
+    // Admin KHONG co claim Cccd/MaCoSo => "Ho so benh nhan" se roi vao nhanh du phong
+    // cua DiTiep va da ve /benh-nhan rong khong ten. Phai re rieng.
+    var layoutLaAdmin = User.Identity?.IsAuthenticated == true && User.IsInRole("Admin");
+}
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>@ViewData["Title"] — HisSoft</title>
+
+    <script>
+        // PWA Last Page Restore Feature (run immediately to prevent flash)
+        (function() {
+            var currentPath = window.location.pathname;
+
+            // 🔴 Vua dang xuat => QUEN nguoi cu, tren MOI trang dich (DangXuat co ba
+            // duong ra: Login?coSo=, /DangKyOnline/{slug}, Login tran). Server khong
+            // xoa duoc localStorage, ma 'pwa_patient_cache' giu sdt/cccd nguoi vua dung:
+            // khong don thi man dang nhap nhan ra so cu roi nhay thang vao o OTP cua
+            // chinh ho — dang xuat nhu khong. 'lastVisitedUrl' cung phai di theo, khong
+            // thi lan mo app sau lai nem ve trang trong cua phien da ket thuc.
+            if (/[?&]vuaDangXuat=1(&|$)/.test(window.location.search)) {
+                try {
+                    localStorage.removeItem('pwa_patient_cache');
+                    localStorage.removeItem('lastVisitedUrl');
+                    sessionStorage.removeItem('on_otp_step');
+                } catch (e) { }
+                document.cookie = 'qr_data=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax';
+            }
+            var isIgnored = /^\/(DangNhap|Admin)/i.test(currentPath);
+            var isRootPage = currentPath === '/' || currentPath === '/Home' || currentPath === '/benh-nhan';
+
+            // Man CHI admin moi vao duoc nhung lai nam duoi /Home nen lot khoi
+            // luat isIgnored o tren (HomeController.cs:461 —
+            // [Authorize(AuthenticationSchemes = AdminAuthentication.Scheme, Roles = "Admin")]).
+            // Khoi phuc toi day khi khong phai admin thi bi thu thach cookie Admin
+            // va an nguyen man DANG NHAP ADMIN — localStorage dung chung ca trinh
+            // duyet nen benh nhan/khach tren cung may cung dinh.
+            var laTrangChiAdmin = function (p) { return /^\/Home\/GuiTinNhan/i.test(p); };
+
+            // Chi khoi phuc nhung duong CON SONG. lastVisitedUrl song lau hon ca
+            // mot dot doi route: 09/09/2026 bat duoc mot cai ket lai la '/pk/benh-vien-ung-buou'
+            // — route do da doi thanh '/DangKyOnline/{slug}' tu vai tuan truoc, nen
+            // moi lan mo app la bi nem thang vao 404 va KHONG TU THOAT RA DUOC:
+            // app chua bat 404 (Program.cs khong co UseStatusCodePages) nen trang
+            // loi do la trang cua TRINH DUYET, _Layout khong chay, khong ai xoa
+            // duoc cai key nay. Ket vinh vien cho toi khi mo DevTools go tay.
+            //
+            // Danh sach duoi day bam theo route THAT trong Controllers/ + Program.cs:
+            //   /benh-nhan[/...]  ·  /DangKyOnline/{slug}  ·  /Home/{action}
+            // (/DangNhap va /Admin khong bao gio duoc ghi — isIgnored chan o tren;
+            //  /anh/{*duongDan} co that nhung la ANH, khoi phuc toi do la vo nghia.)
+            // Sai sot theo huong CHAT chi lam mat tinh nang khoi phuc mot lan roi
+            // ve trang goc; sai theo huong RONG thi de lot dung con bug nay. Nen
+            // khi them route moi ma muon no khoi phuc duoc thi bo sung vao day.
+            var duongConSong = function (p) {
+                return /^\/(benh-nhan(\/|$)|DangKyOnline\/|Home(\/|$))/i.test(p);
+            };
+            var dangLaAdmin = @(layoutLaAdmin ? "true" : "false");
+
+            var pwaPatient = localStorage.getItem('pwa_patient_cache');
+            var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            // 🔴 TUYET DOI khong nem sang '/qr-otp' o day. '/qr-otp' KHONG co tham so
+            // thi server roi vao benh nhan mac dinh, va man Login lai GHI DE
+            // pwa_patient_cache bang chinh so mac dinh do (Login.cshtml muc 1) — mo app
+            // tu icon la thay ho so nguoi la, cang mo cang ket. Them nua '/qr-otp' bat
+            // dau bang SignOut, nen moi lan mo app la dang xuat phien dang co.
+            // Di thang '/benh-nhan': con phien thi vao luon, het phien thi bi day sang
+            // Login va chinh man Login doc pwa_patient_cache de hien o OTP.
+            if (isStandalone && pwaPatient && (currentPath === '/' || currentPath === '/Home')) {
+                window.location.replace('/benh-nhan');
+                return;
+            }
+
+            if (!isIgnored) {
+                if (isRootPage) {
+                    var referrer = document.referrer;
+                    var hasReferrerSameOrigin = referrer && referrer.indexOf(window.location.origin) === 0;
+
+                    if (!hasReferrerSameOrigin) {
+                        var lastVisited = localStorage.getItem('lastVisitedUrl');
+                        if (lastVisited && lastVisited !== (currentPath + window.location.search + window.location.hash)) {
+                            var targetPath = lastVisited.split('?')[0].split('#')[0];
+                            var isTargetRoot = targetPath === '/' || targetPath === '/Home' || targetPath === '/benh-nhan';
+
+                            // Chan ca gia tri CU con ket trong localStorage tu phien
+                            // admin truoc do — xoa luon de khong lam phien lan sau.
+                            if (laTrangChiAdmin(targetPath) && !dangLaAdmin) {
+                                localStorage.removeItem('lastVisitedUrl');
+                            } else if (!duongConSong(targetPath)) {
+                                // Duong da chet (route cu, doi ten, go bo) — XOA han
+                                // thay vi nhay vao hu khong. Khong xoa thi lan sau
+                                // van dinh dung cho nay.
+                                localStorage.removeItem('lastVisitedUrl');
+                            } else if (!isTargetRoot) {
+                                window.location.replace(lastVisited);
+                            }
+                        }
+                    }
+                } else if (!laTrangChiAdmin(currentPath) || dangLaAdmin) {
+                    localStorage.setItem('lastVisitedUrl', currentPath + window.location.search + window.location.hash);
+                }
+            }
+        })();
+    </script>
+
+    <partial name="_PwaHead" />
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/page-loader.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/chan-trang-cong.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/show-toast.css" asp-append-version="true" />
+    <script src="~/js/show-toast.js" asp-append-version="true"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <link rel="stylesheet" href="~/css/Chung/layout.css" asp-append-version="true" />
+</head>
+<body class="@(ViewData["ChanTrangCong"] as bool? == true ? "co-chan-trang" : "")">
+    <header class="app-nav shadow-sm py-2">
+        <div class="container">
+            <a class="app-nav__brand text-white text-decoration-none d-flex align-items-center gap-2 fw-bold" href="/benh-nhan">
+                <img src="~/static/icon-192.png" alt="HisSoft" width="36" height="36" class="rounded-2" />
+                <span class="fs-5">HisSoft Medical</span>
+            </a>
+            <div class="d-flex align-items-center gap-2">
+
+                @* ====== CHUÔNG THÔNG BÁO (chỉ hiện khi đã đăng nhập) ====== *@
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <div class="notif-bell-wrapper" id="notifBellWrapper">
+                        <button class="notif-bell-btn" id="notifBellBtn" onclick="toggleNotifDropdown(event)" title="Thông báo">
+                            🔔
+                            <span class="notif-badge d-none" id="notifBadge">0</span>
+                        </button>
+
+                        <div class="notif-dropdown" id="notifDropdown">
+                            <div class="notif-dropdown-header">
+                                <h6>🔔 Thông báo</h6>
+                                <button class="notif-mark-read-btn" onclick="danhDauDaDoc()">✓ Đọc tất cả</button>
+                            </div>
+                            <div class="notif-list" id="notifList">
+                                <div class="notif-empty">
+                                    <span class="notif-empty-icon">🔕</span>
+                                    Chưa có thông báo nào
+                                </div>
+                            </div>
+                            <div class="notif-dropdown-footer" id="notifFooter">
+                                Tự động cập nhật mỗi 15 giây
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Nút Avatar gọi Offcanvas -->
+                <img src="https://ui-avatars.com/api/?name=@(ViewData["TenBN"] ?? ViewData["UserName"] ?? "BN")&background=1691E2&color=fff" 
+                     alt="Avatar" class="avatar-btn ms-2" 
+                     data-bs-toggle="offcanvas" data-bs-target="#fbMenuOffcanvas" />
+            </div>
+        </div>
+    </header>
+
+    <main class="container py-4">
+        @RenderBody()
+    </main>
+
+    @if (ViewData["ChanTrangCong"] as bool? == true)
+    {
+        <partial name="_ChanTrangCong" />
+    }
+
+    <!-- BOTTOM NAVIGATION BAR (Mobile Only) -->
+    <nav class="bottom-nav fixed-bottom d-flex justify-content-around align-items-center shadow-sm">
+        <a href="/benh-nhan" class="bottom-nav-item active text-decoration-none">
+            <i class="fas fa-home fs-4"></i>
+            <span class="d-block mt-1" style="font-size: 11px; font-weight: 600;">Trang chủ</span>
+        </a>
+        
+        @if (layoutLaAdmin)
+        {
+            <a href="/Admin" class="bottom-nav-item text-decoration-none">
+                <i class="fas fa-user-shield fs-4"></i>
+                <span class="d-block mt-1" style="font-size: 11px; font-weight: 600;">Tài khoản</span>
+            </a>
+        }
+        else
+        {
+            <a href="/DangNhap/DiTiep?returnUrl=ho-so" class="bottom-nav-item text-decoration-none">
+                <i class="fas fa-user-md fs-4"></i>
+                <span class="d-block mt-1" style="font-size: 11px; font-weight: 600;">Hồ sơ bệnh nhân</span>
+            </a>
+        }
+
+        <a href="javascript:void(0)" class="bottom-nav-item text-decoration-none">
+            <i class="fas fa-question-circle fs-4"></i>
+            <span class="d-block mt-1" style="font-size: 11px; font-weight: 600;">Trợ giúp & Hỗ trợ</span>
+        </a>
+
+        <!-- Nút Menu để mở Offcanvas -->
+        <a href="javascript:void(0)" class="bottom-nav-item text-decoration-none" data-bs-toggle="offcanvas" data-bs-target="#fbMenuOffcanvas">
+            <i class="fas fa-bars fs-4"></i>
+            <span class="d-block mt-1" style="font-size: 11px; font-weight: 600;">Menu</span>
+        </a>
+    </nav>
+
+    <!-- FACEBOOK MENU OFFCANVAS -->
+    <div class="offcanvas offcanvas-end fb-offcanvas" tabindex="-1" id="fbMenuOffcanvas" aria-labelledby="fbMenuOffcanvasLabel">
+        <div class="offcanvas-header pb-0">
+            <h5 class="offcanvas-title fw-bold" id="fbMenuOffcanvasLabel">Menu</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body p-0 pt-2">
+            
+            <!-- Hồ sơ thu gọn -->
+            <a href="@(layoutLaAdmin ? "/Admin" : "/DangNhap/DiTiep?returnUrl=ho-so")" class="text-decoration-none text-dark">
+                <div class="fb-menu-profile d-flex align-items-center">
+                    <img src="https://ui-avatars.com/api/?name=@(ViewData["TenBN"] ?? ViewData["UserName"] ?? "BN")&background=1691E2&color=fff"
+                         alt="Avatar" class="rounded-circle me-3" style="width:40px; height:40px; border:1px solid #ddd;" />
+                    <div class="flex-grow-1">
+                        <h6 class="mb-0 fw-bold">@(layoutLaAdmin ? "Tài khoản" : (ViewData["TenBN"] ?? "Hồ sơ bệnh nhân"))</h6>
+                        <small class="text-muted">@(layoutLaAdmin ? "Vào khu quản trị" : "Xem trang cá nhân của bạn")</small>
+                    </div>
+                    <i class="fas fa-chevron-down text-muted bg-light rounded-circle p-2"></i>
+                </div>
+            </a>
+            
+            <hr class="mx-3 opacity-25">
+
+            <!-- Danh sách menu -->
+            <a href="/benh-nhan" class="fb-menu-item">
+                <div class="fb-menu-icon"><i class="fas fa-home"></i></div>
+                Trang chủ
+            </a>
+            
+            @if (layoutLaAdmin)
+            {
+                <a href="/Admin" class="fb-menu-item">
+                    <div class="fb-menu-icon"><i class="fas fa-user-shield"></i></div>
+                    Tài khoản
+                </a>
+            }
+            else
+            {
+                <a href="/DangNhap/DiTiep?returnUrl=ho-so" class="fb-menu-item">
+                    <div class="fb-menu-icon"><i class="fas fa-user-md"></i></div>
+                    Hồ sơ bệnh nhân
+                </a>
+            }
+
+            <a href="javascript:void(0)" class="fb-menu-item">
+                <div class="fb-menu-icon"><i class="fas fa-question-circle"></i></div>
+                Trợ giúp & Hỗ trợ
+            </a>
+
+            <a href="@(layoutLaAdmin ? "/Admin/DangNhap/Logout" : "/DangNhap/DangXuat")" class="fb-menu-item text-danger">
+                <div class="fb-menu-icon" style="background:#fee2e2; color:#dc2626;"><i class="fas fa-sign-out-alt"></i></div>
+                Đăng xuất
+            </a>
+            
+        </div>
+    </div>
+
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <!-- CHAT MODAL -->
+        <div class="modal fade" id="chatModal" tabindex="-1" aria-labelledby="chatModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content chat-modal-content">
+                    <div class="modal-header chat-modal-header py-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fs-4">💬</span>
+                            <h5 class="modal-title fw-bold m-0" id="chatModalLabel">Trò chuyện</h5>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body chat-modal-body" id="chatModalBody">
+                        <div class="text-center text-muted small my-auto">Đang tải tin nhắn...</div>
+                    </div>
+                    <div class="modal-footer chat-modal-footer d-flex gap-2">
+                        <input type="hidden" id="chatTargetUser" value="" />
+                        <input type="text" id="chatInputMessage" class="form-control rounded-pill border-secondary-subtle px-3" placeholder="Nhập tin nhắn..." autocomplete="off" onkeypress="handleChatKeyPress(event)">
+                        <button type="button" class="btn btn-primary rounded-circle shadow-sm" style="width: 40px; height: 40px; padding: 0;" onclick="guiTinNhanTuChat()" id="btnSendChat">
+                            ➤
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+
+
+    <!-- Page Loader chuan HisSoft -->
+    <div class="d-flex position-fixed top-0 bottom-0 modal-blur fade" id="page-loader-body" tabindex="-1" role="dialog" aria-hidden="true" style="z-index: -1; left: 0; right: 0;">
+        <div class="modal-dialog modal-sm modal-dialog-centered w-20" role="document">
+            <div class="modal-content">
+                <div class="container container-slim py-4">
+                    <div class="text-center">
+                        <div class="mb-3">
+                            <span class="navbar-brand navbar-brand-autodark"><img src="/static/logo12.svg" height="36" alt=""></span>
+                        </div>
+                        <div class="text-dark mb-3 fw-bolder fs-2">Đang tải...</div>
+                        <div class="progress progress-sm">
+                            <div class="progress-bar progress-bar-indeterminate"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/page-loader.js" asp-append-version="true"></script>
+    <script src="~/js/pwa-install.js" asp-append-version="true"></script>
+
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <script src="~/js/Chung/layout.js" asp-append-version="true"></script>
+    }
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

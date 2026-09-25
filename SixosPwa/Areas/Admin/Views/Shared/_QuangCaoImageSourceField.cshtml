@@ -1,0 +1,30 @@
+@model CoSoYTeEditViewModel
+@{
+    var existingImage = Model.QcAnh?.Trim();
+}
+
+<div class="image-source-control" data-image-source data-existing-image="@existingImage">
+    <button type="button" class="image-source-toggle" data-image-toggle aria-expanded="false" aria-label="Mở tùy chọn ảnh quảng cáo" title="Mở tùy chọn ảnh quảng cáo">
+        <span class="image-source-toggle-preview @(string.IsNullOrWhiteSpace(existingImage) ? "d-none" : string.Empty)" data-image-toggle-preview>
+            <img src="@existingImage" alt="Ảnh quảng cáo đã chọn" />
+        </span>
+        <svg class="image-source-toggle-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="8.5" cy="9" r="1.5"></circle><path d="m4 17 5-5 3 3 2-2 6 6"></path></svg>
+        <span data-image-toggle-label>@(string.IsNullOrWhiteSpace(existingImage) ? "Chọn ảnh quảng cáo" : "Đổi ảnh quảng cáo")</span>
+    </button>
+    <div class="image-source-panel d-none" data-image-panel>
+        <div class="image-dropzone" data-image-dropzone>
+            <svg class="image-dropzone-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="8.5" cy="9" r="1.5"></circle><path d="m4 17 5-5 3 3 2-2 6 6"></path></svg>
+            <span>Kéo hình ảnh vào đây hoặc</span>
+            <label for="QuangCaoImageFile" class="image-upload-link">tải tệp lên</label>
+            <input asp-for="QuangCaoImageFile" class="image-file-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-image-file />
+        </div>
+        <div class="image-url-divider"><span>HOẶC</span></div>
+        <div class="image-url-row">
+            <input asp-for="QcAnhUrlInput" class="form-control" type="text" placeholder="Dán đường dẫn ảnh quảng cáo" data-image-url autocomplete="off" />
+            <button type="button" class="image-url-button" data-image-url-button>Tìm kiếm</button>
+        </div>
+        <span asp-validation-for="QcAnhUrlInput" class="text-danger field-error"></span>
+        <span asp-validation-for="QuangCaoImageFile" class="text-danger field-error"></span>
+        <img class="image-preview d-none" alt="Ảnh quảng cáo xem trước" data-image-preview />
+    </div>
+</div>

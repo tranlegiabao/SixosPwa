@@ -1,0 +1,178 @@
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.EntityFrameworkCore;
+using SixosPwa.Data;
+using SixosPwa.Models;
+using SixosPwa.Security;
+using SixosPwa.Services;
+using SixosPwa.Services.Partner;
+
+var contentRoot = Directory.GetCurrentDirectory();
+if (!Directory.Exists(Path.Combine(contentRoot, "wwwroot")))
+{
+    var possibleDirs = new[]
+    {
+        Path.Combine(contentRoot, "SixosPwaTemplate", "SixosPwaTemplate", "SixosPwa"),
+        Path.Combine(contentRoot, "SixosPwaTemplate", "SixosPwa"),
+        Path.Combine(contentRoot, "SixosPwa"),
+        Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", ".."))
+    };
+    foreach (var dir in possibleDirs)
+    {
+        if (Directory.Exists(Path.Combine(dir, "wwwroot")))
+        {
+            contentRoot = dir;
+            break;
+        }
+    }
+}
+
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    ContentRootPath = contentRoot,
+    WebRootPath = Path.Combine(contentRoot, "wwwroot")
+});
+
+builder.Services.AddControllersWithViews();
+builder.Services.AddMemoryCache();
+
+// Add DbContext
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DaotaoHIS")));
+
+// Add Services
+builder.Services.AddScoped<ITaiKhoanService, DbTaiKhoanService>();
+builder.Services.AddScoped<IHTConfigService, HTConfigService>();
+builder.Services.AddScoped<AdminStoredProcedureService>();
+
+builder.Services.AddHttpClient();
+// Tang cua doi tac (3 gateway + factory, 695 dong) da duoc go o dot A:
+// noi chuyen huong sang he ngoai gio la DU LIEU - cot DM_CSKCB.KetNoi_UrlChuyenHuong.
+builder.Services.AddScoped<CuaCoSoService>();
+builder.Services.AddScoped<ILuongCongBenhNhan, LuongCongBenhNhan>();
+
+// Kho anh tren FTP dung chung voi HisSoft (xem docs/adr/0012).
+builder.Services.Configure<FtpSettings>(builder.Configuration.GetSection("FtpServer"));
+builder.Services.AddScoped<IFtpService, FtpService>();
+builder.Services.AddScoped<IDonAnhService, DonAnhService>();
+builder.Services.AddScoped<ITaiLieuService, TaiLieuService>();
+// Kho FTP cua PHONG KHAM, cong chi DOC (che do Tro duong, ADR 0030). Tach han
+// khoi IFtpService — lop nay khong co Upload/Delete/Move, co y.
+builder.Services.AddScoped<IKhoCoSoService, KhoCoSoService>();
+builder.Services.AddScoped<INhatKyApi, NhatKyApiService>();
+builder.Services.AddScoped<IDotKhamService, DotKhamService>();
+builder.Services.AddScoped<IHoSoBenhNhanService, HoSoBenhNhanService>();
+
+// ── Dot 4: duong DOC cong -> HIS (tra cuu ho so + lich hen) ─────────────────
+// Cai van nam trong chinh service: co so khong bat API, hoac
+// DM_DoiTacApi.Active = 0, hoac thieu BaseUrl/KhoaGoiHIS => tra ChuaNoi, khong
+// goi ra ngoai mot cuoc nao.
+builder.Services.AddScoped<SixosPwa.Services.His.IHisDocService, SixosPwa.Services.His.HisDocService>();
+
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/DangNhap/Login";
+        options.LogoutPath = "/DangNhap/DangXuat";
+        options.AccessDeniedPath = "/Admin/AccessDenied";
+        options.ExpireTimeSpan = TimeSpan.FromDays(365);
+        options.SlidingExpiration = true;
+        options.Cookie.Name = "SixosPwaAuthCookie";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.IsEssential = true;
+    })
+    .AddCookie(AdminAuthentication.Scheme, options =>
+    {
+        options.LoginPath = "/Admin/DangNhap/Login";
+        options.LogoutPath = "/Admin/DangNhap/Logout";
+        options.AccessDeniedPath = "/Admin/AccessDenied";
+        options.ExpireTimeSpan = TimeSpan.FromDays(365);
+        options.Cookie.Name = AdminAuthentication.CookieName;
+        options.Cookie.HttpOnly = true;
+        options.Cookie.IsEssential = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.SlidingExpiration = true;
+    });
+
+var app = builder.Build();
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
+}
+
+// app.UseHttpsRedirection();
+
+// ---------------------------------------------------------------------------
+// Static files - hai tuy chinh BAT BUOC cho PWA.
+// Khuon mau lay tu HisSoft: Projects/master_3/.../HisSoft/Program.cs:389-405
+// ---------------------------------------------------------------------------
+var contentTypes = new FileExtensionContentTypeProvider();
+
+// 1) ASP.NET Core KHONG biet duoi .webmanifest -> tra ve 404 kieu noi dung la.
+//    Trinh duyet gap kieu la thi BO QUA manifest va khong bao gio cho cai dat.
+//    Day la loi pho bien nhat khi lam PWA tren ASP.NET.
+contentTypes.Mappings[".webmanifest"] = "application/manifest+json";
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    ContentTypeProvider = contentTypes,
+
+    // 2) sw.js va manifest phai luon lay ban moi tu server. Neu de trinh duyet
+    //    cache 2 file nay thi sau khi sua service worker, may khach van chay ban
+    //    cu - dung cai bay ma ADR 0002 tim cach tranh.
+    OnPrepareResponse = ctx =>
+    {
+        var name = ctx.File.Name;
+        if (name.Equals("sw.js", StringComparison.OrdinalIgnoreCase)
+            || name.EndsWith(".webmanifest", StringComparison.OrdinalIgnoreCase))
+        {
+            var headers = ctx.Context.Response.Headers;
+            headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+            headers["Pragma"] = "no-cache";
+            headers["Expires"] = "0";
+        }
+    }
+});
+
+app.UseRouting();
+
+app.UseAuthentication();
+
+// Admin luôn yêu cầu một phiên xác thực riêng, không dùng lại phiên đăng nhập chung.
+app.Use(async (context, next) =>
+{
+    var isAdminArea = context.Request.Path.StartsWithSegments("/Admin", StringComparison.OrdinalIgnoreCase);
+    var isAdminLogin = context.Request.Path.StartsWithSegments("/Admin/DangNhap", StringComparison.OrdinalIgnoreCase);
+    var isAccessDeniedPage = context.Request.Path.StartsWithSegments("/Admin/AccessDenied", StringComparison.OrdinalIgnoreCase);
+    var adminAuth = await context.AuthenticateAsync(AdminAuthentication.Scheme);
+
+    if (isAdminArea && !isAdminLogin && !isAccessDeniedPage)
+    {
+        if (!adminAuth.Succeeded || adminAuth.Principal?.IsInRole("Admin") != true)
+        {
+            var returnUrl = context.Request.PathBase + context.Request.Path + context.Request.QueryString;
+            context.Response.Redirect("/Admin/DangNhap/Login?returnUrl=" + Uri.EscapeDataString(returnUrl));
+            return;
+        }
+    }
+
+    await next();
+});
+
+app.UseAuthorization();
+
+// Vao thang la ra trang chu
+app.MapControllerRoute(
+    name: "areas",
+    pattern: "{area:exists}/{controller=Dashboard}/{action=Index}/{id?}");
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=ThongTinBenhNhan}/{id?}");
+
+app.Run();
+// Trigger restart for new CauHinhController: 2026-09-10

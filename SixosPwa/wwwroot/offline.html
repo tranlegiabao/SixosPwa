@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Mất kết nối — HisSoft</title>
+    <meta name="theme-color" content="#3854A4">
+    <!--
+      Trang này được service worker giữ sẵn trong máy nên phải TỰ CHỨA HOÀN TOÀN:
+      CSS viết thẳng vào đây, không gọi bootstrap hay font ngoài — vì lúc nó hiện
+      ra là đúng lúc không có mạng để tải những thứ đó.
+      Ảnh duy nhất được phép dùng là /static/icon-192.png (đã nằm trong cache).
+    -->
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            background: #f5f7fb;
+            color: #1f2937;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                         "Helvetica Neue", Arial, sans-serif;
+            text-align: center;
+        }
+
+        .box {
+            max-width: 24rem;
+            width: 100%;
+            background: #fff;
+            border-radius: 1rem;
+            padding: 2.5rem 1.75rem;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, .1), 0 8px 24px rgba(15, 23, 42, .06);
+        }
+
+        img { width: 84px; height: 84px; margin-bottom: 1.25rem; }
+
+        h1 { font-size: 1.25rem; margin: 0 0 .5rem; }
+
+        p { margin: 0 0 1.5rem; color: #6b7280; line-height: 1.5; font-size: .95rem; }
+
+        button {
+            width: 100%;
+            padding: .7rem 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #fff;
+            background: #3854A4;
+            border: 0;
+            border-radius: .5rem;
+            cursor: pointer;
+        }
+
+        button:hover { background: #2e4589; }
+
+        @media (prefers-color-scheme: dark) {
+            body { background: #111827; color: #e5e7eb; }
+            .box { background: #1f2937; box-shadow: none; }
+            p { color: #9ca3af; }
+        }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <img src="/static/icon-192.png" alt="HisSoft">
+        <h1>Mất kết nối mạng</h1>
+        <p>
+            Không liên lạc được với máy chủ HisSoft.
+            Vui lòng kiểm tra Wi-Fi hoặc mạng di động rồi thử lại.
+        </p>
+        <button type="button" onclick="location.reload()">Thử lại</button>
+    </div>
+</body>
+</html>

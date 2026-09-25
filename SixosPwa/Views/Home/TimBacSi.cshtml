@@ -1,0 +1,266 @@
+@{
+    ViewData["Title"] = "Tìm Bác Sĩ";
+}
+
+<style>
+    .app-nav, .bottom-nav, .app-foot { display: none !important; }
+    body {
+        padding-bottom: 0 !important;
+        background-color: #fff;
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .container { max-width: 100% !important; padding: 0 !important; }
+    main.container { margin: 0 !important; }
+    
+    /* Binh Dan Style CSS */
+    .bd-header { background: #fff; border-bottom: 1px solid #eee; }
+    .bd-top-menu { display: flex; align-items: center; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+    .bd-top-menu::-webkit-scrollbar { display: none; }
+    .bd-top-menu a { color: #333; text-decoration: none; padding: 15px; display: inline-block; font-weight: 500; font-size: 14px; }
+    .bd-top-menu a:hover { color: #009688; }
+    
+    /* Hero Banner Bác sĩ */
+    .bd-doctor-hero {
+        width: 100%;
+        height: 400px;
+        background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Medicine_doctor_holding_patient%27s_hand.jpg/1200px-Medicine_doctor_holding_patient%27s_hand.jpg') no-repeat center center/cover;
+        position: relative;
+    }
+    .bd-breadcrumb-box {
+        position: absolute;
+        top: 50%;
+        left: 15%;
+        transform: translateY(-50%);
+        background: rgba(255, 255, 255, 0.9);
+        padding: 5px 15px;
+        font-size: 13px;
+        color: #555;
+    }
+    .bd-breadcrumb-box a { color: #555; text-decoration: none; }
+    .bd-title-box {
+        position: absolute;
+        top: calc(50% + 15px);
+        left: 15%;
+        background: #00bfa5;
+        color: white;
+        padding: 10px 40px;
+        font-size: 32px;
+        font-weight: 300;
+    }
+    
+    /* Thanh công cụ tìm kiếm */
+    .bd-search-bar {
+        max-width: 1000px;
+        margin: 30px auto 40px auto;
+        display: flex;
+        gap: 15px;
+    }
+    .bd-search-bar select, .bd-search-bar input {
+        border: 1px solid #ddd;
+        padding: 10px 15px;
+        border-radius: 0;
+        outline: none;
+    }
+    .bd-search-bar select { width: 200px; color: #555; }
+    .bd-search-bar input { flex-grow: 1; }
+    .bd-search-bar button {
+        background: #00bfa5;
+        color: #fff;
+        border: none;
+        padding: 10px 30px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+    }
+    .bd-search-bar button:hover { background: #009688; }
+    
+    /* Danh sách bác sĩ Grid */
+    .doctor-grid {
+        max-width: 1000px;
+        margin: 0 auto 60px auto;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        padding: 0 15px;
+    }
+    .doctor-card {
+        background: #b1d0e0;
+        position: relative;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        aspect-ratio: 3/4;
+        border: 1px solid #e0e0e0;
+        overflow: hidden;
+    }
+    .doctor-card img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    @@media (max-width: 991px) {
+        .doctor-grid { grid-template-columns: repeat(2, 1fr); }
+        .bd-search-bar { flex-direction: column; margin: 20px 15px; }
+        .bd-search-bar select, .bd-search-bar input { width: 100%; }
+        .bd-title-box, .bd-breadcrumb-box { left: 5%; }
+    }
+    @@media (max-width: 576px) {
+        .doctor-grid { grid-template-columns: 1fr; }
+    }
+</style>
+
+<!-- HEADER BÌNH DÂN -->
+<div class="bd-header px-4 py-2 d-flex justify-content-between align-items-center flex-wrap" style="gap: 10px;">
+    <div class="d-flex align-items-center gap-3">
+        <a href="/benh-nhan" class="text-decoration-none h4 mb-0 text-secondary" title="Quay lại">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <img src="/static/icon-192.png" alt="Logo" style="height: 50px;">
+        <div>
+            <small class="text-danger fw-bold d-block" style="font-size: 11px;">SỞ Y TẾ THÀNH PHỐ HỒ CHÍ MINH</small>
+            <h5 class="mb-0 fw-bold" style="color: #009688; text-transform: uppercase; font-size: 1rem;">@ViewData["TenPhongKham"]</h5>
+        </div>
+    </div>
+    <div class="bd-top-menu mt-2 mt-xl-0" style="width: 100%; max-width: 100%;">
+        <a href="#"><i class="fas fa-home text-success"></i></a>
+        <a href="#">Giới thiệu</a>
+        <a href="#">Điều Trị</a>
+        <a href="#">Dịch vụ</a>
+        <a href="#">Hướng dẫn</a>
+        <a href="#">Truyền thông</a>
+        <a href="#">Đào tạo</a>
+        <a href="#">Văn bản</a>
+        <a href="#">Tuyển dụng</a>
+        <a href="#">Liên hệ</a>
+        <a href="#"><i class="fas fa-search"></i></a>
+    </div>
+</div>
+
+<!-- HERO BANNER -->
+<div class="bd-doctor-hero">
+    <div class="bd-breadcrumb-box">
+        <a href="#"><i class="fas fa-home"></i></a> &gt; điều trị
+    </div>
+    <div class="bd-title-box">BÁC SĨ</div>
+</div>
+
+<hr style="border-top: 1px solid #eee; margin:0;" />
+
+<!-- THANH TÌM KIẾM -->
+<div class="bd-search-bar">
+    <select id="cboKhoa">
+        <option value="">--- Tất cả ---</option>
+        <option value="Khoa Nội">Khoa Nội</option>
+        <option value="Khoa Ngoại">Khoa Ngoại</option>
+        <option value="Khoa Nhi">Khoa Nhi</option>
+    </select>
+    <input type="text" id="txtTenBacSi" placeholder="Tên bác sĩ">
+    <button type="button" onclick="timBacSi()">TÌM BÁC SĨ &nbsp; <i class="fas fa-search"></i></button>
+</div>
+
+<!-- GRID BÁC SĨ -->
+<div class="doctor-grid" id="doctorGrid">
+    <div class="doctor-card-wrapper" data-khoa="Khoa Nội" data-ten="Nguyễn Văn A">
+        <div class="doctor-card">
+            <img src="https://img.freepik.com/free-vector/doctor-character-background_1270-84.jpg?w=360" style="mix-blend-mode: multiply;" alt="BS. Nguyễn Văn A">
+        </div>
+        <div class="text-center mt-3 bg-white p-2 border" style="margin-top: -5px; position: relative; z-index: 2;">
+            <h6 class="fw-bold text-dark mb-1">BS. Nguyễn Văn A</h6>
+            <span class="badge bg-primary">Khoa Nội</span>
+        </div>
+    </div>
+    
+    <div class="doctor-card-wrapper" data-khoa="Khoa Ngoại" data-ten="Trần Thị B">
+        <div class="doctor-card">
+            <img src="https://img.freepik.com/free-vector/doctor-character-background_1270-84.jpg?w=360" style="mix-blend-mode: multiply;" alt="BS. Trần Thị B">
+        </div>
+        <div class="text-center mt-3 bg-white p-2 border" style="margin-top: -5px; position: relative; z-index: 2;">
+            <h6 class="fw-bold text-dark mb-1">BS. Trần Thị B</h6>
+            <span class="badge bg-danger">Khoa Ngoại</span>
+        </div>
+    </div>
+    
+    <div class="doctor-card-wrapper" data-khoa="Khoa Nội" data-ten="Phạm Thị C">
+        <div class="doctor-card">
+            <img src="https://img.freepik.com/free-vector/doctor-character-background_1270-84.jpg?w=360" style="mix-blend-mode: multiply;" alt="BS. Phạm Thị C">
+        </div>
+        <div class="text-center mt-3 bg-white p-2 border" style="margin-top: -5px; position: relative; z-index: 2;">
+            <h6 class="fw-bold text-dark mb-1">BS. Phạm Thị C</h6>
+            <span class="badge bg-primary">Khoa Nội</span>
+        </div>
+    </div>
+    
+    <div class="doctor-card-wrapper" data-khoa="Khoa Ngoại" data-ten="Hoàng Văn D">
+        <div class="doctor-card">
+            <img src="https://img.freepik.com/free-vector/doctor-character-background_1270-84.jpg?w=360" style="mix-blend-mode: multiply;" alt="BS. Hoàng Văn D">
+        </div>
+        <div class="text-center mt-3 bg-white p-2 border" style="margin-top: -5px; position: relative; z-index: 2;">
+            <h6 class="fw-bold text-dark mb-1">BS. Hoàng Văn D</h6>
+            <span class="badge bg-danger">Khoa Ngoại</span>
+        </div>
+    </div>
+    
+    <div class="doctor-card-wrapper" data-khoa="Khoa Nhi" data-ten="Lê Văn E">
+        <div class="doctor-card">
+            <img src="https://img.freepik.com/free-vector/doctor-character-background_1270-84.jpg?w=360" style="mix-blend-mode: multiply;" alt="BS. Lê Văn E">
+        </div>
+        <div class="text-center mt-3 bg-white p-2 border" style="margin-top: -5px; position: relative; z-index: 2;">
+            <h6 class="fw-bold text-dark mb-1">BS. Lê Văn E</h6>
+            <span class="badge bg-success">Khoa Nhi</span>
+        </div>
+    </div>
+    
+    <div class="doctor-card-wrapper" data-khoa="Khoa Nội" data-ten="Vũ Thị F">
+        <div class="doctor-card">
+            <img src="https://img.freepik.com/free-vector/doctor-character-background_1270-84.jpg?w=360" style="mix-blend-mode: multiply;" alt="BS. Vũ Thị F">
+        </div>
+        <div class="text-center mt-3 bg-white p-2 border" style="margin-top: -5px; position: relative; z-index: 2;">
+            <h6 class="fw-bold text-dark mb-1">BS. Vũ Thị F</h6>
+            <span class="badge bg-primary">Khoa Nội</span>
+        </div>
+    </div>
+</div>
+
+<!-- Chat widget -->
+<div class="position-fixed" style="bottom: 20px; right: 20px; z-index: 9999;">
+    <div style="background: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: inline-flex; align-items: center; gap: 10px; font-size: 14px; margin-bottom: 10px; position: relative;">
+        Chào bạn. Mình có thể hỗ trợ thông tin gì?
+        <i class="fas fa-times text-muted ms-3 fs-5" style="cursor: pointer;" onclick="this.parentElement.style.display='none'"></i>
+    </div>
+    <div style="width: 60px; height: 60px; background: #ff6b00; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-size: 30px; box-shadow: 0 4px 12px rgba(255,107,0,0.4); margin-left: auto; cursor: pointer;">
+        <i class="fas fa-cube"></i>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function timBacSi() {
+            var khoa = document.getElementById('cboKhoa').value.toLowerCase();
+            var ten = document.getElementById('txtTenBacSi').value.toLowerCase().trim();
+            var cards = document.querySelectorAll('.doctor-card-wrapper');
+            
+            cards.forEach(function(card) {
+                var cardKhoa = card.getAttribute('data-khoa').toLowerCase();
+                var cardTen = card.getAttribute('data-ten').toLowerCase();
+                
+                var show = true;
+                if (khoa !== '' && cardKhoa !== khoa) {
+                    show = false;
+                }
+                if (ten !== '' && !cardTen.includes(ten)) {
+                    show = false;
+                }
+                
+                if (show) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    </script>
+}

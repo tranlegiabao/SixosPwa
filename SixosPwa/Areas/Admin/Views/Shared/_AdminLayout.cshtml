@@ -1,0 +1,263 @@
+@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+    var isCoSoYTeForm = string.Equals(currentController, "CoSoYTe", StringComparison.OrdinalIgnoreCase)
+        && (string.Equals(currentAction, "Create", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(currentAction, "Edit", StringComparison.OrdinalIgnoreCase));
+}
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>@ViewData["Title"] - Quản trị Y TẾ VIỆT</title>
+    <partial name="_PwaHead" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/dist/webfont/tabler-icons.min.css" />
+    <link rel="stylesheet" href="~/dist/datetimepicker/bootstrap-datetimepicker.min.css" />
+    <link rel="stylesheet" href="~/lib/tom-select/tom-select.bootstrap5.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/page-loader.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/show-toast.css" asp-append-version="true" />
+    <script src="~/js/show-toast.js" asp-append-version="true"></script>
+</head>
+<body class="admin-body">
+    <div class="admin-app">
+        <div class="offcanvas-lg offcanvas-start admin-sidebar" tabindex="-1" id="adminSidebar" aria-labelledby="adminSidebarTitle">
+            <div class="admin-brand">
+                <a class="admin-brand-home" href="/Home/ThongTinBenhNhan" aria-label="Về trang chủ Y TẾ VIỆT">
+                    <img class="brand-logo-image" src="~/static/icon-512.png" asp-append-version="true" alt="Y TẾ VIỆT" />
+                    <div>
+                        <div class="brand-name">Y TẾ VIỆT</div>
+                        <div class="brand-caption">Trung tâm quản trị</div>
+                    </div>
+                </a>
+                <button type="button" class="btn-close d-lg-none ms-auto" data-bs-dismiss="offcanvas" data-bs-target="#adminSidebar" aria-label="Đóng menu"></button>
+            </div>
+                
+            <div class="admin-sidebar-label" id="adminSidebarTitle">@* Không gian làm việc *@</div>
+            <nav class="admin-nav" aria-label="Điều hướng quản trị">
+                <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")">
+                    <span class="nav-symbol">⌂</span><span>Tổng quan</span>
+                </a>
+                <a asp-area="Admin" asp-controller="CoSoYTe" asp-action="Index" class="admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "CoSoYTe" ? "active" : "")">
+                    <span class="nav-symbol">+</span><span>Cơ sở y tế</span>
+                </a>
+                <a asp-area="Admin" asp-controller="BenhNhan" asp-action="Index" class="admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BenhNhan" ? "active" : "")">
+                    <span class="nav-symbol">◌</span><span>Bệnh nhân</span>
+                </a>
+                <a asp-area="Admin" asp-controller="CauHinh" asp-action="Index" class="admin-nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "CauHinh" ? "active" : "")">
+                    <span class="nav-symbol">⚙</span><span>Cấu hình</span>
+                </a>
+            </nav>
+
+            <div class="admin-sidebar-label mt-4">Tiện ích</div>
+            <nav class="admin-nav">
+                <a href="/Home/GuiTinNhan" class="admin-nav-link">
+                    <span class="nav-symbol">↗</span><span>Gửi thông báo</span>
+                </a>
+                <a href="javascript:void(0)" onclick="moModalDoiMatKhauAdmin()" class="admin-nav-link">
+                    <span class="nav-symbol">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </span>
+                    <span>Đổi mật khẩu</span>
+                </a>
+                <a href="/Admin/DangNhap/Logout" class="admin-nav-link admin-nav-logout">
+                    <span class="nav-symbol">
+                        <svg class="admin-logout-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8"></path>
+                            <path d="M10 12h11"></path>
+                            <path d="m18 9 3 3-3 3"></path>
+                        </svg>
+                    </span>
+                    <span>&#272;&#259;ng xu&#7845;t</span>
+                </a>
+            </nav>
+
+        </div>
+
+        <main class="admin-main">
+            <header class="admin-topbar">
+                <div class="admin-topbar-heading d-flex align-items-center gap-3">
+                    <button class="admin-menu-button d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#adminSidebar" aria-controls="adminSidebar" aria-label="Mở menu">☰</button>
+                    <div>
+                        <div class="topbar-eyebrow">QUẢN TRỊ HỆ THỐNG</div>
+                        <div class="topbar-title">@ViewData["Title"]</div>
+                    </div>
+                </div>
+                <div class="admin-user-chip">
+                    <div class="user-avatar">@(User.Identity?.Name?.FirstOrDefault().ToString().ToUpperInvariant() ?? "A")</div>
+                    <div class="d-none d-sm-block">
+                        <div class="user-name">@(User.Identity?.Name ?? "Quản trị viên")</div>
+                        <div class="user-role">Quản trị viên</div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="admin-content @(isCoSoYTeForm ? "admin-form-content" : string.Empty)">
+                @if (TempData["AdminSuccess"] is string success)
+                {
+                    <script>showToast(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(success)), 'success');</script>
+                }
+                @if (TempData["AdminError"] is string error)
+                {
+                    <script>showToast(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(error)), 'error');</script>
+                }
+                @RenderBody()
+            </div>
+
+            <footer class="admin-footer">
+                <div class="admin-footer-brand"><strong>Y TẾ VIỆT</strong><span>· Trung tâm quản trị</span></div>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Page Loader chuan HisSoft -->
+    <div class="d-flex position-fixed top-0 bottom-0 modal-blur fade" id="page-loader-body" tabindex="-1" role="dialog" aria-hidden="true" style="z-index: -1; left: 0; right: 0;">
+        <div class="modal-dialog modal-sm modal-dialog-centered w-20" role="document">
+            <div class="modal-content">
+                <div class="container container-slim py-4">
+                    <div class="text-center">
+                        <div class="mb-3">
+                            <span class="navbar-brand navbar-brand-autodark"><img src="/static/logo12.svg" height="36" alt=""></span>
+                        </div>
+                        <div class="text-dark mb-3 fw-bolder fs-2">Đang tải...</div>
+                        <div class="progress progress-sm">
+                            <div class="progress-bar progress-bar-indeterminate"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Đổi Mật Khẩu Quản Trị Viên -->
+    <div id="modalDoiMatKhauAdminBackdrop" class="modal-sua-hoso-backdrop" style="display: none;" onclick="dongModalDoiMatKhauAdmin(event)">
+        <div class="modal-sua-hoso-card" style="max-width: 440px;" onclick="event.stopPropagation()">
+            <div class="modal-sua-header">
+                <button type="button" class="modal-sua-btn-back" onclick="dongModalDoiMatKhauAdmin()" title="Đóng">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                </button>
+                <div>
+                    <h3 class="modal-sua-title">Đổi mật khẩu quản trị</h3>
+                    <span class="modal-sua-subtitle">Cập nhật mật khẩu đăng nhập Admin</span>
+                </div>
+            </div>
+
+            <form id="formDoiMatKhauAdmin" onsubmit="event.preventDefault(); xacNhanDoiMatKhauAdmin();" class="modal-sua-body">
+                <div class="modal-hs-o">
+                    <label for="adminMatKhauCu">Mật khẩu hiện tại *</label>
+                    <input id="adminMatKhauCu" type="password" required autocomplete="current-password" placeholder="Nhập mật khẩu hiện tại..." />
+                </div>
+
+                <div class="modal-hs-o">
+                    <label for="adminMatKhauMoi">Mật khẩu mới *</label>
+                    <input id="adminMatKhauMoi" type="password" required autocomplete="new-password" minlength="4" placeholder="Nhập mật khẩu mới..." />
+                </div>
+
+                <div class="modal-hs-o">
+                    <label for="adminXacNhanMatKhau">Xác nhận mật khẩu mới *</label>
+                    <input id="adminXacNhanMatKhau" type="password" required autocomplete="new-password" placeholder="Nhập lại mật khẩu mới..." />
+                </div>
+
+                <div id="adminDoiMatKhauError" class="text-danger mb-3 fw-bold" style="font-size: 13px; display: none;"></div>
+
+                <button type="submit" class="modal-hs-btn-submit" id="btnSubmitDoiMatKhauAdmin">Xác nhận đổi mật khẩu</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/dist/datetimepicker/moment.min.js"></script>
+    <script src="~/dist/datetimepicker/moment-with-locales.min.js"></script>
+    <script src="~/dist/datetimepicker/bootstrap-datetimepicker.min.js"></script>
+    <script src="~/lib/tom-select/tom-select.complete.min.js" asp-append-version="true"></script>
+    <script src="~/js/page-loader.js" asp-append-version="true"></script>
+    <script src="~/js/admin.js" asp-append-version="true"></script>
+    <script>
+        function moModalDoiMatKhauAdmin() {
+            const err = document.getElementById('adminDoiMatKhauError');
+            if (err) err.style.display = 'none';
+            const form = document.getElementById('formDoiMatKhauAdmin');
+            if (form) form.reset();
+            const modal = document.getElementById('modalDoiMatKhauAdminBackdrop');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function dongModalDoiMatKhauAdmin(evt) {
+            if (evt && evt.target !== document.getElementById('modalDoiMatKhauAdminBackdrop')) return;
+            const modal = document.getElementById('modalDoiMatKhauAdminBackdrop');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function xacNhanDoiMatKhauAdmin() {
+            const matKhauCu = document.getElementById('adminMatKhauCu')?.value || '';
+            const matKhauMoi = document.getElementById('adminMatKhauMoi')?.value || '';
+            const xacNhan = document.getElementById('adminXacNhanMatKhau')?.value || '';
+            const errBox = document.getElementById('adminDoiMatKhauError');
+            const btn = document.getElementById('btnSubmitDoiMatKhauAdmin');
+
+            if (!matKhauCu) {
+                if (errBox) { errBox.innerText = 'Vui lòng nhập mật khẩu hiện tại.'; errBox.style.display = 'block'; }
+                return;
+            }
+            if (!matKhauMoi) {
+                if (errBox) { errBox.innerText = 'Vui lòng nhập mật khẩu mới.'; errBox.style.display = 'block'; }
+                return;
+            }
+            if (matKhauMoi.length < 4) {
+                if (errBox) { errBox.innerText = 'Mật khẩu mới phải có ít nhất 4 ký tự.'; errBox.style.display = 'block'; }
+                return;
+            }
+            if (matKhauMoi !== xacNhan) {
+                if (errBox) { errBox.innerText = 'Mật khẩu mới và xác nhận mật khẩu không khớp.'; errBox.style.display = 'block'; }
+                return;
+            }
+
+            if (btn) { btn.disabled = true; btn.innerText = 'Đang xử lý...'; }
+            if (errBox) errBox.style.display = 'none';
+
+            try {
+                const resp = await fetch('/Admin/DangNhap/DoiMatKhau', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        matKhauCu: matKhauCu,
+                        matKhauMoi: matKhauMoi
+                    })
+                });
+                const res = await resp.json();
+                if (res.success) {
+                    dongModalDoiMatKhauAdmin();
+                    if (typeof showToast === 'function') {
+                        showToast(res.message || 'Đổi mật khẩu thành công.', 'success');
+                    } else {
+                        alert(res.message || 'Đổi mật khẩu thành công.');
+                    }
+                } else {
+                    if (errBox) {
+                        errBox.innerText = res.message || 'Đổi mật khẩu thất bại.';
+                        errBox.style.display = 'block';
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+                if (errBox) {
+                    errBox.innerText = 'Lỗi kết nối máy chủ. Vui lòng thử lại sau.';
+                    errBox.style.display = 'block';
+                }
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerText = 'Xác nhận đổi mật khẩu'; }
+            }
+        }
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

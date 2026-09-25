@@ -1,0 +1,91 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Thêm hồ sơ</title>
+    <link rel="stylesheet" href="/css/tai-lieu-benh-nhan.css?v=20260908_v8" />
+    <style>
+        .hs-form { padding:16px; }
+        .hs-o { margin-bottom:14px; }
+        .hs-o label { display:block; font-size:13px; color:#374151; margin-bottom:6px; font-weight:600; }
+        .hs-o input, .hs-o select { width:100%; box-sizing:border-box; padding:11px 12px; font-size:15px;
+                      border:1px solid #d1d5db; border-radius:10px; background:#fff; }
+        .hs-o input:focus, .hs-o select:focus { outline:none; border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.12); }
+        .hs-goi-y { font-size:12px; color:#6b7280; margin-top:5px; line-height:1.45; }
+        .hs-gui { width:100%; padding:13px; border:none; border-radius:10px;
+                  background:#2563eb; color:#fff; font-size:15px; font-weight:600; cursor:pointer; }
+        .hs-bao { padding:12px 14px; border-radius:10px; margin-bottom:14px; font-size:14px; line-height:1.55; }
+        .hs-bao-loi { background:#fef2f2; color:#991b1b; border:1px solid #fecaca; }
+    </style>
+</head>
+<body class="tl-trang">
+    <div class="tl-khung">
+
+        <header class="tl-top-bar">
+            <a class="tl-btn-back" href="/benh-nhan/ho-so" title="Quay lại" aria-label="Quay lại">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+            </a>
+            <div class="tl-top-title">
+                <h1>Thêm hồ sơ</h1>
+                <span class="tl-top-subtitle">Cho người thân của bạn</span>
+            </div>
+        </header>
+
+        <main class="hs-form">
+            <div class="hs-bao hs-bao-loi">
+                Chức năng thêm hồ sơ người thân đã tạm dừng. Vui lòng liên hệ cơ sở y tế để được hỗ trợ.
+            </div>
+
+            @* Luồng thêm hồ sơ người thân tạm dừng theo yêu cầu
+            <!--
+            <form method="post" action="/benh-nhan/ho-so/them">
+                @Html.AntiForgeryToken()
+
+                <div class="hs-o">
+                    <label for="hoTen">Họ và tên</label>
+                    <input id="hoTen" name="hoTen" type="text" required maxlength="100"
+                           autocomplete="off" placeholder="Nguyễn Văn A" />
+                </div>
+
+                <div class="hs-o">
+                    <label for="cccd">Số căn cước công dân</label>
+                    <input id="cccd" name="cccd" type="text" required maxlength="20"
+                           inputmode="numeric" autocomplete="off" placeholder="012345678901" />
+                </div>
+
+                <div class="hs-o">
+                    <label for="ngaySinh">Ngày sinh *</label>
+                    <input id="ngaySinh" name="ngaySinh" type="date" required />
+                </div>
+
+                <div class="hs-o">
+                    <label for="gioiTinh">Giới tính *</label>
+                    <select id="gioiTinh" name="gioiTinh" required>
+                        <option value="">— Chọn —</option>
+                        <option value="1">Nam</option>
+                        <option value="2">Nữ</option>
+                        <option value="3">Chưa xác định</option>
+                    </select>
+                </div>
+
+                <div class="hs-o">
+                    <label for="sdt">Số điện thoại *</label>
+                    <input id="sdt" name="sdt" type="tel" maxlength="20" required
+                           inputmode="tel" autocomplete="off" placeholder="09xxxxxxxx" />
+                </div>
+
+                <button type="submit" class="hs-gui">Tạo hồ sơ</button>
+            </form>
+            -->
+            *@
+        </main>
+    </div>
+</body>
+</html>

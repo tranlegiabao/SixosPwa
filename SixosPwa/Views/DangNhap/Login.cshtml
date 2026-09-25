@@ -1,0 +1,433 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "Đăng nhập";
+}
+
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>@(ViewBag.TenCoSo != null ? $"Đăng nhập — {ViewBag.TenCoSo}" : "Đăng nhập — HisSoft")</title>
+
+    <partial name="_PwaHead" />
+
+    <script>
+        (function () {
+            var ua = navigator.userAgent || '';
+            var isZalo = /Zalo/i.test(ua) || /ZaloTheme/i.test(ua);
+            var isAndroid = /Android/i.test(ua);
+            var isIos = /iPhone|iPad|iPod/i.test(ua);
+
+            if (isZalo && isAndroid) {
+                var cleanUrl = window.location.href.replace(/^https?:\/\//i, '');
+                window.location.href = 'intent://' + cleanUrl + '#Intent;scheme=https;action=android.intent.action.VIEW;end;';
+            }
+
+            if (isZalo && isIos) {
+                document.addEventListener('DOMContentLoaded', function () {
+                    var banner = document.getElementById('zaloIosGuideBanner');
+                    if (banner) banner.classList.remove('d-none');
+                });
+            }
+        })();
+    </script>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/show-toast.css" asp-append-version="true" />
+    <script src="~/js/show-toast.js" asp-append-version="true"></script>
+    <link rel="stylesheet" href="~/css/DangNhap/dang-nhap.css" asp-append-version="true" />
+</head>
+<body class="page-center">
+
+    <!-- Banner hướng dẫn mở trình duyệt ngoài khi dùng Zalo trên iOS -->
+    <div id="zaloIosGuideBanner" class="d-none" style="position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #0068ff, #0052cc); color: #fff; padding: 12px 16px; z-index: 999999; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 0.9rem;">
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-2">
+                <span style="font-size: 1.3rem;">👉</span>
+                <div>
+                    <strong>Cài đặt ứng dụng:</strong> Bấm nút <strong>⋯</strong> ở góc trên bên phải &gt; chọn <strong>Mở bằng trình duyệt</strong> để cài ứng dụng vào máy nhé!
+                </div>
+            </div>
+            <button type="button" class="btn-close btn-close-white ms-2" onclick="document.getElementById('zaloIosGuideBanner').remove()" aria-label="Đóng"></button>
+        </div>
+    </div>
+
+    <main class="auth">
+        <div class="auth__brand">
+            <a href="@(string.IsNullOrWhiteSpace(ViewBag.SlugCoSo as string) ? "/" : $"/DangKyOnline/{ViewBag.SlugCoSo}")" class="text-decoration-none text-reset d-inline-block" title="Quay lại @(ViewBag.TenCoSo ?? "Trang chủ")">
+                <img src="@(ViewBag.LogoCoSo ?? "/static/icon-192.png")" alt="@(ViewBag.TenCoSo ?? "HisSoft")" width="72" height="72" />
+                <h1>@(ViewBag.TenCoSo ?? "HisSoft")</h1>
+            </a>
+        </div>
+
+        <div class="card auth__card">
+            <div class="card-body">
+
+                @* Khung này rỗng cho tới khi quét xong; quet-qr.js đổ nội dung vào. Nằm ngoài form để hiển thị cả khi qua bước OTP. *@
+                <div class="mb-3 d-none" id="khungTheQuet"></div>
+
+                <!-- BƯỚC 1: NHẬP SỐ ĐIỆN THOẠI HOẶC EMAIL -->
+                <form id="formStep1" class="step-1" onsubmit="event.preventDefault(); guiOtp();">
+                    @* O "Ma CSKCB" da BO (11/09): no chi de xem, khong ai sua duoc, va ten co so
+                       thi da dung ngay tren dau man o .auth__brand. Giu lai chi ton mot hang tren
+                       man dien thoai, day khoi *Cai dat ung dung vao may* xuong duoi mep. Ma co so
+                       van di theo duong cu — bien maCoSoHienTai doc thang tu ViewBag, KHONG doc o
+                       input nay (da kiem: khong mot dong JS nao cham toi #maCoSo). *@
+
+                    <div class="mb-3">
+                        <label class="form-label" for="soDienThoai">Số điện thoại hoặc Email</label>
+                        <input type="text" class="form-control form-control-lg" id="soDienThoai" 
+                               placeholder="Ví dụ: 0987654321 hoặc ten@domain.com" autocomplete="username" maxlength="50" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="cccd">Số Căn cước công dân</label>
+                        <input type="text" class="form-control form-control-lg" id="cccd" inputmode="numeric"
+                               placeholder="12 số trên thẻ căn cước" autocomplete="off" maxlength="20" required />
+                        <span class="ghi-o-qr d-none" id="ghiOCccd">Lấy từ mã QR — không sửa được</span>
+                    </div>
+
+                    <button type="submit" id="btnGuiOtp" class="btn btn-primary w-100 py-2 fw-bold">
+                        Tiếp tục
+                    </button>
+
+                    <div class="d-flex align-items-center my-3">
+                        <hr class="flex-grow-1 my-0 text-muted opacity-25" />
+                        <span class="px-2 text-muted small fw-medium">HOẶC QUÉT MÃ</span>
+                        <hr class="flex-grow-1 my-0 text-muted opacity-25" />
+                    </div>
+
+                    @* Hai nut rieng cho hai loai ma: MaBN la nvarchar(50) nen khong the
+                       doan loai QR theo hinh dang o thu hai. Nguoi benh tu khai, may chu van
+                       xac minh lai. *@
+                    <button type="button" class="btn btn-bank-qr w-100 d-flex align-items-center justify-content-center gap-2 mb-2" onclick="moModalQuetQr('his')">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 7V5a2 2 0 0 1 2-2h2"/>
+                            <path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+                            <path d="M21 17v2a2 2 0 0 1-2 2h-2"/>
+                            <path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
+                            <rect x="7" y="7" width="10" height="10" rx="1"/>
+                            <line x1="7" y1="12" x2="17" y2="12" stroke-dasharray="2 2"/>
+                        </svg>
+                        <span>Quét mã trên phiếu khám</span>
+                    </button>
+
+                    <button type="button" class="btn btn-bank-qr w-100 d-flex align-items-center justify-content-center gap-2" onclick="moModalQuetQr('cccd')">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="5" width="20" height="14" rx="2"/>
+                            <circle cx="8.5" cy="11" r="2"/>
+                            <path d="M5 16c.7-1.6 2-2.4 3.5-2.4S11.3 14.4 12 16"/>
+                            <line x1="14" y1="10" x2="19" y2="10"/>
+                            <line x1="14" y1="14" x2="19" y2="14"/>
+                        </svg>
+                        <span>Quét CCCD gắn chip</span>
+                    </button>
+                </form>
+
+                <!-- BƯỚC 2: NHẬP MẬT KHẨU -->
+                <form id="formStep2" class="step-2" onsubmit="event.preventDefault(); xacNhanOtp();">
+                    <div class="mb-3 text-center">
+                        <label class="form-label d-block text-start" for="maOtp">Nhập mã xác thực otp</label>
+                        <input type="text" class="form-control form-control-lg mb-2" id="maOtp" 
+                               placeholder="Nhập mã otp" autocomplete="current-password" required />
+                        <span class="text-muted small">Tài khoản: <strong id="lblSoDienThoai"></strong></span>
+                    </div>
+
+                    <button type="submit" id="btnXacNhan" class="btn btn-success w-100 py-2 fw-bold mb-2">
+                        Đăng nhập
+                    </button>
+
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" onclick="quayLaiStep1()">
+                            &larr; Đổi số điện thoại hoặc email
+                        </button>
+                        <button type="button" id="btnGuiLaiOtp" class="btn btn-link btn-sm p-0 text-decoration-none" onclick="guiOtp()">
+                            Gửi lại mã xác thực
+                        </button>
+                    </div>
+                </form>
+
+                <partial name="_PwaInstall" />
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Quét QR Chuẩn VCB Digibank (Full-screen mobile) -->
+    <div id="bankQrModal" class="vcb-qr-modal" role="dialog" aria-modal="true" aria-label="Quét mã QR">
+        <!-- Top Bar -->
+        <div class="vcb-topbar">
+            <div class="vcb-topbar-left">
+                <button type="button" class="vcb-btn-back" onclick="dongModalQuetQr()" title="Quay lại">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m15 18-6-6 6-6"/>
+                    </svg>
+                </button>
+                <div class="vcb-topbar-title" id="tieuDeQuet">Quét mã QR</div>
+            </div>
+            <div class="vcb-topbar-right">
+                <button type="button" class="vcb-topbar-icon-btn" id="btnTorch" onclick="toggleDenFlash()" title="Bật/Tắt đèn Flash">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                </button>
+                <button type="button" class="vcb-topbar-icon-btn" onclick="doiCamera()" title="Đổi camera">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Brand & Slogan -->
+        <div class="vcb-brand-area">
+            <div class="vcb-brand-desc" id="moTaQuet">
+                Quét mã QR để đăng nhập, tra cứu hồ sơ và kết quả khám bệnh
+            </div>
+        </div>
+
+        <!-- Camera Viewfinder -->
+        <div class="vcb-camera-box">
+            <div id="bankQrReader"></div>
+            <div class="vcb-viewfinder-wrap">
+                <div class="vcb-target-frame">
+                    <div class="vcb-laser-line"></div>
+                </div>
+            </div>
+
+            @* Bang bao loi NAM LAI trong khung den. Truoc day loi camera chi di qua toast —
+               toast bay mat sau vai giay, nen tren dien thoai chi con thay mot o den im lim,
+               khong biet la mat quyen, hong camera hay may khong ho tro. *@
+            <div id="loiCamera" class="loi-camera d-none">
+                <div class="loi-camera__tieude">Không mở được camera</div>
+                <div class="loi-camera__ly-do" id="loiCameraLyDo"></div>
+                <div class="loi-camera__goi-y" id="loiCameraGoiY"></div>
+                <button type="button" class="loi-camera__nut" onclick="moLaiCamera()">Thử lại</button>
+            </div>
+        </div>
+
+        <!-- Bottom 3-Tab Bar -->
+        <div class="vcb-bottom-tabs">
+            <label class="vcb-tab-item active mb-0" for="qrImageInput" title="Chọn ảnh từ thư viện">
+                <div class="vcb-tab-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                        <path d="M12 9v6m-3-3l3-3 3 3" stroke-width="2"/>
+                    </svg>
+                </div>
+                <span>Chọn ảnh<br/>mã QR</span>
+                <input type="file" id="qrImageInput" accept="image/*" style="display:none" onchange="xuLyAnhQrTuThuVien(event)" />
+            </label>
+
+            <button type="button" class="vcb-tab-item" onclick="doiCamera()" title="Đổi camera">
+                <div class="vcb-tab-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7" rx="1"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1"/>
+                        <path d="M17 14v6m-3-3h6"/>
+                    </svg>
+                </div>
+                <span>Đổi Camera<br/>máy ảnh</span>
+            </button>
+
+            <button type="button" class="vcb-tab-item" onclick="dongModalQuetQr()" title="Đăng nhập">
+                <div class="vcb-tab-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="3"/>
+                        <path d="M7 7h3v3H7zM14 7h3v3h-3zM7 14h3v3H7z"/>
+                        <circle cx="15.5" cy="15.5" r="1.5"/>
+                    </svg>
+                    <span class="vcb-badge-new">Mới</span>
+                </div>
+                <span>Mã QR<br/>đăng nhập</span>
+            </button>
+        </div>
+    </div>
+
+    @* Tu host: PWA nay khong cache (ADR 0002) nen mang yeu o quay la khong quet duoc. *@
+    <script src="~/lib/html5-qrcode/html5-qrcode.min.js" asp-append-version="true"></script>
+    <script src="~/lib/jsqr/jsQR.min.js" asp-append-version="true"></script>
+    <script src="~/js/quet-qr.js" asp-append-version="true"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/pwa-install.js" asp-append-version="true"></script>
+
+    <!-- Khối reCAPTCHA ẩn cho Firebase Phone Auth -->
+    <div id="recaptcha-container"></div>
+
+    <script>
+        const maCoSoHienTai = '@(ViewBag.MaCoSo as string ?? "")';
+    </script>
+    <script src="~/js/DangNhap/dang-nhap.js" asp-append-version="true"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const urlParams = new URLSearchParams(window.location.search);
+
+            // 🔴 Vua dang xuat thi phai QUEN nguoi cu. 'pwa_patient_cache' giu sdt/cccd
+            // de mo app tu icon khong phai go lai — nhung server khong xoa duoc no, nen
+            // dang xuat xong man nay van nhan ra so cu va nhay thang vao o OTP cua chinh
+            // nguoi vua roi di: dang xuat nhu khong. Don o day, truoc moi doan doc cache.
+            if (urlParams.get('vuaDangXuat') === '1') {
+                try {
+                    localStorage.removeItem('pwa_patient_cache');
+                    sessionStorage.removeItem('on_otp_step');
+                } catch (e) { }
+                deleteCookie('qr_data');
+            }
+
+            const sdtParam = urlParams.get('sdt') || urlParams.get('phone');
+            const cccdParam = urlParams.get('cccd');
+            const hienOtp = urlParams.get('hienOtp');
+
+            // Kiểm tra xem lần tải này có phải là Reload (F5) không
+            let isReload = false;
+            try {
+                const navEntry = performance.getEntriesByType('navigation')[0];
+                if (navEntry && navEntry.type === 'reload') {
+                    isReload = true;
+                }
+            } catch (e) { }
+
+            // Đọc cookie qr_data nếu có
+            let qrCookieData = null;
+            const qrRaw = getCookie('qr_data');
+            if (qrRaw) {
+                try {
+                    qrCookieData = JSON.parse(decodeURIComponent(qrRaw));
+                } catch (e) {
+                    try { qrCookieData = JSON.parse(qrRaw); } catch (err) { }
+                }
+            }
+
+            if (qrCookieData && !window.danhTinhQuet) {
+                window.danhTinhQuet = qrCookieData;
+                if (typeof veTheQuet === 'function') {
+                    veTheQuet(qrCookieData);
+                }
+            }
+
+            // 🔴 Luoi do cuoi cung: dung lai danh tinh quet tu URL khi cookie qr_data
+            // da mat. Cookie do bi xoa ngay tai trang nay o 'pagehide' va o click roi
+            // trang — tren Chrome Android pagehide ban ca khi chuyen app / tat man hinh,
+            // va tab bi thu hoi roi nap lai thi window.danhTinhQuet cung mat. Thieu lai
+            // do nay thi POST XacNhanOtp di tay khong, khong ai dat claim HoSoDangChon,
+            // va nguoi vua quet phieu bi nem vao ho so DAU TIEN cua tai khoan.
+            var mabnTuUrl = urlParams.get('mabn');
+            if (!window.danhTinhQuet && mabnTuUrl) {
+                window.danhTinhQuet = {
+                    maBN: mabnTuUrl,
+                    cccd: cccdParam || '',
+                    dienThoai: sdtParam || '',
+                    nguon: 'his'
+                };
+            }
+
+            // Nếu vào trang bình thường (không phải màn OTP) và không phải là reload: dọn sạch qr_data cũ nếu còn sót
+            if (hienOtp !== '1' && !sessionStorage.getItem('on_otp_step') && !isReload && !window.danhTinhQuet) {
+                deleteCookie('qr_data');
+            }
+
+            if (sdtParam && document.getElementById('soDienThoai')) {
+                document.getElementById('soDienThoai').value = sdtParam;
+            } else if (qrCookieData && qrCookieData.dienThoai && document.getElementById('soDienThoai')) {
+                document.getElementById('soDienThoai').value = qrCookieData.dienThoai;
+            }
+
+            if (cccdParam && document.getElementById('cccd')) {
+                document.getElementById('cccd').value = cccdParam;
+            } else if (qrCookieData && qrCookieData.cccd && document.getElementById('cccd')) {
+                document.getElementById('cccd').value = qrCookieData.cccd;
+            }
+
+            const laTuQr = urlParams.get('tuQr') === '1' || urlParams.get('fromQr') === '1' || !!qrCookieData;
+
+            // 1. Lưu thông tin vào localStorage để khi mở từ icon app trên màn hình chính sẽ tự nhớ
+            if (sdtParam || cccdParam) {
+                try {
+                    localStorage.setItem('pwa_patient_cache', JSON.stringify({
+                        sdt: sdtParam || (qrCookieData ? qrCookieData.dienThoai : '') || '',
+                        cccd: cccdParam || (qrCookieData ? qrCookieData.cccd : '') || '',
+                        coSo: '@(ViewBag.SlugCoSo as string ?? "pkdk-thien-nam")'
+                    }));
+                } catch(e) {}
+            }
+
+            // 🔴 Slug phai nam o COOKIE chu khong chi localStorage: khi app da cai mo
+            // tu icon, duong dan khong mang ?coSo= va SERVER moi la ben dung logo/ten
+            // co so. localStorage thi server khong doc duoc, nen man dang nhap tut ve
+            // thuong hieu HisSoft chung du benh nhan dang o cua Thien Nam.
+            var slugHienTai = '@(ViewBag.SlugCoSo as string ?? "")';
+            if (slugHienTai) {
+                document.cookie = 'pwa_co_so=' + encodeURIComponent(slugHienTai)
+                    + ';path=/;max-age=' + (365 * 24 * 60 * 60) + ';SameSite=Lax';
+            }
+
+            // 2. Kiểm tra nếu đang mở ứng dụng từ icon trên màn hình chính (Standalone mode)
+            let cachedPatient = null;
+            try {
+                const saved = localStorage.getItem('pwa_patient_cache');
+                if (saved) cachedPatient = JSON.parse(saved);
+            } catch(e) {}
+
+            const isStandaloneMode = (typeof window.isPwaStandalone === 'function' && window.isPwaStandalone()) || 
+                                     window.matchMedia('(display-mode: standalone)').matches || 
+                                     window.navigator.standalone === true;
+
+            const finalSdt = sdtParam || (qrCookieData ? qrCookieData.dienThoai : '') || (cachedPatient ? cachedPatient.sdt : '') || '';
+            const finalCccd = cccdParam || (qrCookieData ? qrCookieData.cccd : '') || (cachedPatient ? cachedPatient.cccd : '') || '';
+
+            const canHienOtp = (hienOtp === '1' && (sdtParam || cccdParam)) || 
+                               (isReload && sessionStorage.getItem('on_otp_step') === '1') ||
+                               (isStandaloneMode && (finalSdt || finalCccd));
+
+            if (canHienOtp && (finalSdt || finalCccd)) {
+                currentSdt = finalSdt;
+                currentCccd = finalCccd;
+
+                sessionStorage.setItem('on_otp_step', '1');
+
+                // Thiết lập history state để khi bấm nút Back trình duyệt sẽ quay về bước 1
+                try {
+                    const cleanUrl = new URL(window.location.href);
+                    cleanUrl.searchParams.delete('hienOtp');
+                    cleanUrl.searchParams.delete('sdt');
+                    cleanUrl.searchParams.delete('phone');
+                    cleanUrl.searchParams.delete('tuQr');
+                    cleanUrl.searchParams.delete('fromQr');
+                    const cleanPath = cleanUrl.pathname + (cleanUrl.search ? cleanUrl.search : '');
+                    history.replaceState({ step: 'login' }, document.title, cleanPath);
+                    history.pushState({ step: 'otp' }, document.title, window.location.href);
+                } catch (e) { }
+
+                // Chuyển thẳng sang Bước 2 (Màn hình nhập OTP)
+                document.querySelector('.step-1').style.display = 'none';
+                document.querySelector('.step-2').style.display = 'block';
+                document.getElementById('lblSoDienThoai').innerText = currentSdt;
+                
+                const oOtp = document.getElementById('maOtp');
+                if (oOtp && !oOtp.value) {
+                    oOtp.value = '123456';
+                    oOtp.focus();
+                }
+
+                // 3. Khi quét mã QR lần đầu trên trình duyệt: Hiện popup hỏi Cài đặt ứng dụng (2 nút Bỏ qua / Cài đặt)
+                if (laTuQr && !isStandaloneMode) {
+                    setTimeout(function () {
+                        if (typeof window.hienPopupCaiDatPwa === 'function') {
+                            window.hienPopupCaiDatPwa();
+                        }
+                    }, 400);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
+

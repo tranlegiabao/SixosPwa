@@ -1,0 +1,45 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "Đang cập nhật";
+}
+
+<!doctype html>
+<html lang="vi">
+<head>
+    <title>@ViewBag.TenMuc — HisSoft</title>
+    <partial name="_CongHead" />
+    <style>
+        body.sap-co {
+            background: #f5f7fa;
+            color: #12202e;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        .sc-khung {
+            max-width: 560px; margin: 0 auto; min-height: 100vh;
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: center; gap: 14px; padding: 32px 24px; text-align: center;
+        }
+        .sc-bieutuong {
+            width: 72px; height: 72px; border-radius: 20px;
+            background: #e6effc; color: #0d5bd4;
+            display: flex; align-items: center; justify-content: center; font-size: 30px;
+        }
+        .sc-ten { font-size: 19px; font-weight: 700; }
+        .sc-mota { font-size: 14px; color: #66788a; max-width: 34ch; }
+        .sc-ve {
+            margin-top: 8px; text-decoration: none; font-weight: 600; font-size: 14px;
+            color: #0d5bd4; border: 1px solid #0d5bd4; border-radius: 8px; padding: 10px 18px;
+        }
+        .sc-ve:hover { background: #e6effc; color: #0d5bd4; }
+    </style>
+</head>
+<body class="sap-co">
+    <main class="sc-khung">
+        <div class="sc-bieutuong" aria-hidden="true">@ViewBag.BieuTuong</div>
+        <h1 class="sc-ten">@ViewBag.TenMuc</h1>
+        <p class="sc-mota">Chức năng này đang được hoàn thiện và sẽ có trong bản cập nhật tới.</p>
+        <a class="sc-ve" href="/benh-nhan">&larr; Về trang chủ</a>
+    </main>
+</body>
+</html>

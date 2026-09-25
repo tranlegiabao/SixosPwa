@@ -1,0 +1,35 @@
+@model CoSoYTeEditViewModel
+
+@* 🔴 Cột DM_CSKCB.SoToaNha đã bỏ ở đợt A ⇒ ô này KHÔNG còn bind vào model (không
+   asp-for, không name) — nó chỉ còn là ô gõ phụ để admin-co-so-y-te-address.js ghép
+   ra "Địa chỉ hoàn chỉnh". Số nhà nằm luôn trong DiaChi, không lưu riêng nữa.
+   Giữ lại thẻ vì JS thoát sớm khi không thấy [data-address-building] — bỏ hẳn là
+   chết luôn hai ô Tỉnh/Phường.
+   🔴 Vì không bind được nên ô này được admin-co-so-y-te-address.js NẠP LẠI từ chính
+   DiaChi đang lưu (bóc đuôi "phường, tỉnh"); và vòng ghép chỉ ghi đè DiaChi khi người
+   dùng thực sự đụng vào 3 ô địa chỉ — đừng bỏ hai lớp chống đó. *@
+<div class="col-md-4">
+    <label for="SoNhaTenDuong" class="form-label">Số nhà / tên đường</label>
+    <input type="text" id="SoNhaTenDuong" class="form-control" data-address-building
+           placeholder="Ví dụ: 123 Lê Lợi" autocomplete="address-line1" />
+</div>
+<div class="col-md-4">
+    <label asp-for="Tinh" class="form-label">Tỉnh/thành phố</label>
+    <select asp-for="Tinh" class="form-select" data-address-province data-selected-value="@Model.Tinh">
+        <option value="">Chọn tỉnh/thành phố</option>
+    </select>
+    <span asp-validation-for="Tinh" class="text-danger field-error"></span>
+</div>
+<div class="col-md-4">
+    <label asp-for="PhuongXa" class="form-label">Phường/xã</label>
+    <select asp-for="PhuongXa" class="form-select" data-address-ward data-selected-value="@Model.PhuongXa" disabled>
+        <option value="">Chọn tỉnh/thành phố trước</option>
+    </select>
+    <span asp-validation-for="PhuongXa" class="text-danger field-error"></span>
+</div>
+<div class="col-12"><small class="text-muted" data-address-status role="status"></small></div>
+<div class="col-12">
+    <label asp-for="DiaChi" class="form-label">Địa chỉ hoàn chỉnh</label>
+    <textarea asp-for="DiaChi" class="form-control" rows="2" data-address-result readonly aria-readonly="true"></textarea>
+    <small class="text-muted">Địa chỉ sẽ tự ghép từ các thông tin bên trên.</small>
+</div>

@@ -1,0 +1,1028 @@
+    /* Hide layout parts */
+    .app-nav, .bottom-nav, .app-foot { display: none !important; }
+    html, body { height: 100dvh; overflow: hidden !important; margin: 0; padding: 0 !important; background-color: #f0f4f8; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; flex-direction: column; }
+    .container, main.container { max-width: 100% !important; padding: 0 !important; margin: 0 !important; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* Layout Variables */
+    :root {
+        --ytv-primary: #3b82f6; /* Xanh dương nhạt */
+        --ytv-secondary: #0ea5e9; /* Xanh biển sáng */
+        --ytv-accent: #ffb703;
+        --ytv-text: #334155;
+        --ytv-bg: #f0f9ff;
+    }
+
+    /* HEADER */
+    .ytv-header {
+        flex-shrink: 0;
+        background: linear-gradient(135deg, #3b82f6, #60a5fa);
+        color: white;
+        padding: 15px 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border-bottom: 3px solid var(--ytv-secondary);
+    }
+    .ytv-logo-area {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    .ytv-logo-image {
+        height: 65px;
+        width: 65px;
+        object-fit: cover;
+        background: white;
+        border-radius: 50%;
+        padding: 0;
+    }
+    .bieu-tuong-benh-vien { color: #ef4444 !important; }
+    .bieu-tuong-phong-kham { color: #10b981 !important; }
+    .bieu-tuong-nha-khoa { color: #06b6d4 !important; }
+    .bieu-tuong-phong-mach { color: #8b5cf6 !important; }
+    .bieu-tuong-nha-thuoc { color: #f59e0b !important; }
+    .ytv-logo-circle {
+        width: 60px;
+        height: 60px;
+        border: 2px solid white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        font-weight: bold;
+        background: rgba(255,255,255,0.1);
+    }
+    .ytv-logo-text {
+        font-family: 'Times New Roman', Times, serif;
+        font-size: 34px;
+        font-weight: 900;
+        line-height: 1.05;
+        letter-spacing: 1px;
+        text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.4);
+    }
+    .ytv-header-title {
+        text-align: center;
+    }
+    .ytv-header-title h1 {
+        font-size: 26px;
+        font-weight: 700;
+        margin: 0 0 5px 0;
+        text-transform: uppercase;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    }
+    .ytv-header-title p {
+        font-size: 20px;
+        margin: 0;
+        color: #e0f2f1;
+        font-style: italic;
+    }
+    .ytv-header-menu {
+        font-size: 32px;
+        cursor: pointer;
+        padding: 10px;
+        position: relative;
+    }
+    .ytv-dropdown {
+        display: none;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        min-width: 240px;
+        z-index: 9999;
+        overflow: hidden;
+        animation: fadeDown 0.2s ease;
+    }
+    .ytv-dropdown.open { display: block; }
+    @keyframes fadeDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .ytv-dropdown a {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 15px 20px;
+        color: #334155;
+        font-size: 16px;
+        font-weight: 600;
+        text-decoration: none;
+        white-space: nowrap;
+        border-bottom: 1px solid #f1f5f9;
+        transition: all 0.2s;
+    }
+    .ytv-dropdown a:last-child { border-bottom: none; }
+    .ytv-dropdown a:hover {
+        background: #eff6ff;
+        color: var(--ytv-primary);
+        padding-left: 28px;
+    }
+    .ytv-dropdown a i {
+        font-size: 20px;
+        width: 26px;
+        text-align: center;
+        color: var(--ytv-secondary);
+    }
+
+    /* MAIN CONTAINER */
+    .ytv-main {
+        display: flex;
+        flex-wrap: wrap;
+        min-height: 0;
+        flex: 1;
+        overflow: hidden;
+        background: #f8fafc;
+    }
+
+    /* Desktop: bố cục theo bảng vẽ: đối tác | slideshow + dịch vụ | sản phẩm. */
+    @media (min-width: 993px) {
+        .ytv-main {
+            display: grid;
+            grid-template-columns: 360px minmax(0, 1fr) 190px;
+            grid-template-rows: minmax(0, 1fr) auto;
+        }
+        .ytv-sidebar {
+            grid-column: 1;
+            grid-row: 1 / -1;
+            width: auto;
+        }
+        .ytv-content {
+            grid-column: 2;
+            grid-row: 1;
+        }
+        .ytv-company-info {
+            display: contents;
+        }
+        .ytv-company-info > .sixos-card.primary {
+            display: none;
+        }
+        .ytv-company-info > .sixos-card:not(.primary) {
+            grid-column: 2;
+            grid-row: 2;
+        }
+        .ytv-company-info > .ytv-company-4th-col {
+            grid-column: 3;
+            grid-row: 1 / -1;
+            min-width: 0;
+            height: auto !important;
+            padding: 8px !important;
+        }
+
+        .ytv-company-info > .ytv-company-4th-col .ytv-company-rolling {
+            height: 100% !important;
+            min-height: 0 !important;
+        }
+
+        .ytv-company-info > .ytv-company-4th-col .ytv-company-service.is-active {
+            flex-direction: column !important;
+            gap: 12px !important;
+            padding: 8px !important;
+        }
+
+        .ytv-company-info > .ytv-company-4th-col .ytv-company-service.is-active > a {
+            width: 100%;
+            min-height: 0;
+            padding: 8px !important;
+            border: 1px solid #dbe4ef;
+            border-radius: 10px;
+            box-sizing: border-box;
+        }
+
+        .ytv-company-info > .ytv-company-4th-col .ytv-company-service.is-active > div {
+            width: 70% !important;
+            height: 1px !important;
+            min-height: 1px;
+        }
+    }
+
+    /* SIDEBAR */
+    .ytv-sidebar {
+        width: 300px;
+        background: white;
+        border-right: 1px solid #e2e8f0;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.03);
+        display: flex;
+        flex-direction: column;
+        padding: 20px 0;
+    }
+    .ytv-menu-item {
+        padding: 18px 25px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        color: var(--ytv-primary);
+        font-size: 18px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+    .ytv-menu-item i {
+        font-size: 22px;
+        width: 30px;
+        text-align: center;
+        color: #64748b;
+        transition: all 0.3s ease;
+    }
+    .ytv-menu-item:hover, .ytv-menu-item.active {
+        background: #f1f5f9;
+        border-left-color: var(--ytv-secondary);
+        color: var(--ytv-primary);
+    }
+    .ytv-menu-item:hover i, .ytv-menu-item.active i {
+        color: var(--ytv-secondary);
+        transform: scale(1.1);
+    }
+
+    /* SLIDER AREA */
+    .ytv-content {
+        flex: 1;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow-y: auto;
+    }
+    .ytv-slider {
+        width: 100%;
+        position: relative;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        background: white;
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    .carousel-inner {
+        flex: 1;
+        height: 100%;
+    }
+    .carousel-item {
+        height: 100%;
+    }
+    .carousel-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .ytv-carousel-control-icon {
+        width: 3rem;
+        height: 3rem;
+        background-color: rgba(0, 0, 0, 0.5);
+        border-radius: 50%;
+    }
+
+    /* Parallelogram card styling */
+    .para-card-wrapper {
+        padding: 20px 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        min-height: 0;
+        background: linear-gradient(135deg, #e5e7eb 0%, #9ca3af 100%);
+    }
+    .para-card {
+        width: 90%;
+        height: 100%;
+        min-height: 0;
+        background-size: cover;
+        background-position: center;
+        border-radius: 50% 0 50% 0;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 0 25px 8px rgba(135, 206, 250, 0.5), inset 0 0 20px rgba(135, 206, 250, 0.5);
+        border: 4px solid rgba(255, 255, 255, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.4s ease;
+    }
+    .para-card::before {
+        content: "";
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.7));
+        z-index: 1;
+    }
+    .para-card-content {
+        color: white;
+        padding: 40px 60px;
+        text-align: left;
+        z-index: 2;
+        max-width: 80%;
+        width: 100%;
+    }
+    .para-card-title {
+        font-size: 26px;
+        font-weight: 800;
+        margin-bottom: 15px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.9);
+    }
+    .para-card-text {
+        color: #fff;
+        font-size: 16px;
+        line-height: 1.6;
+        margin-bottom: 25px;
+        max-width: 85%;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);
+        display: -webkit-box;
+        -webkit-line-clamp: 4;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .para-card-text > [style*="#000"],
+    .para-card-text > [style*="rgb(0, 0, 0)"] {
+        color: #fff !important;
+    }
+    .para-card-btn {
+        background-color: var(--ytv-accent, #ffb703);
+        border: none;
+        color: #0f172a;
+        font-weight: 700;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-size: 16px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: 0 4px 10px rgba(255, 183, 3, 0.3);
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+    .para-card-btn:hover {
+        background-color: #e5a500;
+        color: #000;
+        transform: scale(1.05) translateY(-2px);
+        box-shadow: 0 6px 15px rgba(255, 183, 3, 0.5);
+    }
+
+    /* COMPANY INFORMATION */
+    .ytv-company-info {
+        display: grid;
+        flex: 0 0 auto;
+        width: 100%;
+        grid-template-columns: minmax(180px, 1fr) minmax(280px, 1.3fr) minmax(350px, 2.5fr);
+        gap: 16px;
+        align-items: stretch;
+        margin: 0;
+        padding: 6px 24px 6px;
+        box-sizing: border-box;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='none' stroke='white' opacity='0.15' stroke-width='2' d='M0 100 C 20 80 40 100 100 60 M0 90 C 30 70 50 100 100 50 M0 80 C 40 60 60 100 100 40' /%3E%3C/svg%3E") bottom left no-repeat,
+                    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='none' stroke='white' opacity='0.15' stroke-width='2' d='M100 100 C 80 80 60 100 0 60 M100 90 C 70 70 50 100 0 50 M100 80 C 60 60 40 100 0 40' /%3E%3C/svg%3E") bottom right no-repeat,
+                    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath fill='white' opacity='0.4' d='M12 0 h16 v12 h12 v16 h-12 v12 h-16 v-12 h-12 v-16 h12 z'/%3E%3C/svg%3E") top 10px left 10px no-repeat,
+                    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath fill='white' opacity='0.35' d='M12 0 h16 v12 h12 v16 h-12 v12 h-16 v-12 h-12 v-16 h12 z'/%3E%3C/svg%3E") bottom 20px left 20px no-repeat,
+                    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath fill='white' opacity='0.4' d='M12 0 h16 v12 h12 v16 h-12 v12 h-16 v-12 h-12 v-16 h12 z'/%3E%3C/svg%3E") top 10px right 20px no-repeat,
+                    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath fill='white' opacity='0.5' d='M12 0 h16 v12 h12 v16 h-12 v12 h-16 v-12 h-12 v-16 h12 z'/%3E%3C/svg%3E") bottom 10px right 10px no-repeat,
+                    linear-gradient(to right, #6bb8fc, #48b4fb);
+        background-size: 200px, 200px, 25px, 35px, 25px, 40px, auto;
+        border-radius: 12px;
+        border: none;
+        overflow: hidden;
+        color: #0f172a;
+        line-height: 1.45;
+    }
+    .ytv-company-info ul {
+        list-style: none;
+        padding-left: 0;
+    }
+    .ytv-company-name {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 80px;
+        padding: 18px;
+        box-sizing: border-box;
+        text-align: left;
+        font-size: 17px;
+        line-height: 1.35;
+        font-weight: 700;
+        color: #12345b;
+        background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+        border: 1px solid #dbeafe;
+        border-left: 4px solid var(--ytv-primary);
+        border-radius: 14px;
+        box-shadow: 0 8px 20px rgba(30, 64, 175, 0.08);
+    }
+    .ytv-company-list {
+        display: flex;
+        align-items: center;
+        min-height: 80px;
+        padding: 16px 18px;
+        box-sizing: border-box;
+        background: rgba(255, 255, 255, 0.86);
+        border: 1px solid #e2e8f0;
+        border-top: 3px solid #60a5fa;
+        border-radius: 14px;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+    }
+    .ytv-company-list:nth-child(3) {
+        border-top-color: #22c55e;
+    }
+    .ytv-company-list ul {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+    }
+    .ytv-company-list li {
+        padding: 7px 0;
+        color: #334155;
+        font-size: 15px;
+    }
+    .ytv-company-list li + li {
+        border-top: 1px solid #eef2f7;
+    }
+    .ytv-company-rolling {
+        height: 80px;
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        align-items: center;
+        border-radius: 14px;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+    }
+    .ytv-company-rolling::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(to bottom, rgba(255, 255, 255, 0.72), transparent 20%, transparent 80%, rgba(255, 255, 255, 0.72));
+    }
+    .ytv-company-service {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 6px;
+        padding: 0 14px;
+        opacity: 0;
+        transform: translateY(22px) scale(0.92);
+        transform-origin: center left;
+        transition: opacity 0.45s ease, transform 0.45s ease;
+        pointer-events: none;
+        color: #0f172a;
+        text-decoration: none;
+    }
+    .ytv-company-service.is-active {
+        opacity: 1;
+        transform: translateY(0) scale(1.1);
+        font-size: 18px;
+        font-weight: 700;
+        pointer-events: auto;
+    }
+    .ytv-company-service.is-active:hover {
+        color: var(--ytv-primary);
+    }
+    .ytv-company-service:focus-visible {
+        outline: 2px solid var(--ytv-primary);
+        outline-offset: -2px;
+    }
+    .ytv-company-service ul {
+        flex: 1;
+        margin: 0;
+        padding-left: 0;
+    }
+    .ytv-company-service-icon {
+        width: 22px;
+        height: 22px;
+        flex: 0 0 22px;
+        padding: 3px;
+        box-sizing: border-box;
+        border-radius: 7px;
+        background: #eff6ff;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .ytv-company-service { transition: none; }
+    }
+    
+    /* Responsive skew overrides */
+    @media (max-width: 768px) {
+        .para-card-wrapper {
+            padding: 10px 15px;
+            min-height: 0;
+        }
+        .para-card {
+            width: 100%;
+            min-height: 0;
+            border-radius: 80px 0 80px 0;
+        }
+        .para-card-content {
+            padding: 20px;
+        }
+        .para-card-title {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+        .para-card-text {
+            font-size: 14px;
+            max-width: 100%;
+            -webkit-line-clamp: 3;
+            margin-bottom: 15px;
+        }
+        .para-card-btn {
+            padding: 8px 20px;
+            font-size: 14px;
+        }
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 992px) {
+        html, body, .container, main.container { height: auto !important; overflow: auto !important; display: block; }
+        .ytv-main { flex: none; overflow: visible; display: flex; flex-direction: column; }
+        .ytv-content { overflow: visible; padding: 15px; }
+        .ytv-header { position: relative; flex-direction: column; gap: 15px; text-align: center; padding-top: 20px; }
+        .ytv-header-menu { position: absolute; top: 15px; right: 20px; }
+        .ytv-main { flex-direction: column; }
+        .ytv-sidebar { width: 100%; border-right: none; border-bottom: 1px solid #e2e8f0; flex-direction: row; overflow-x: auto; padding: 10px 0; }
+        .ytv-menu-item { flex-direction: column; padding: 10px 20px; white-space: nowrap; border-left: none; border-bottom: 3px solid transparent; gap: 5px; font-size: 14px; }
+        .ytv-menu-item.active, .ytv-menu-item:hover { border-bottom-color: var(--ytv-secondary); }
+        .ytv-contact-row { justify-content: center; }
+        .ytv-slider { min-height: 200px; }
+        .carousel-item { min-height: 200px; }
+        .ytv-company-info {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            flex: 0 0 auto;
+            margin: 0;
+            padding: 14px 18px;
+        }
+    }
+
+@media (max-width: 576px) {
+        html, body, .container, main.container { height: auto !important; overflow: auto !important; display: block; }
+        .ytv-main { flex: none; overflow: visible; }
+        .ytv-content { overflow: visible; }
+        .ytv-company-info {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        .ytv-company-name { min-height: 70px; }
+    }
+/* Decorative Backgrounds for Company Info Cards */
+.ytv-company-info > div {
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    background-color: white; /* Ensure white background */
+}
+
+/* Bố cục Home theo bảng vẽ */
+.ytv-sidebar-company {
+    margin: auto 12px 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    text-align: center;
+    color: #12345b;
+}
+
+.ytv-sidebar-company img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    border-radius: 50%;
+    margin-bottom: 4px;
+}
+
+.ytv-sidebar-company-name {
+    color: #1e40af;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: .4px;
+}
+
+.ytv-sidebar-company-subtitle {
+    margin-top: 3px;
+    color: #0f172a;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+/* Bỏ dải xanh cũ; các card được đặt trực tiếp vào grid 3 cột ở desktop. */
+.ytv-company-info {
+    background: transparent !important;
+    padding: 6px 12px !important;
+}
+
+.ytv-slider .para-card,
+.ytv-slider .para-card-wrapper .para-card {
+    border-radius: 0 !important;
+}
+
+.ytv-company-info > .sixos-card:not(.primary) .sixos-list {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: center;
+    width: 100% !important;
+    gap: 4px 18px !important;
+}
+
+@media (max-width: 992px) {
+    .ytv-sidebar-company {
+        flex: 0 0 160px;
+        margin: 10px 12px;
+    }
+
+    .ytv-company-info {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .ytv-sidebar-company {
+        flex-basis: 140px;
+    }
+
+    .ytv-company-info {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+
+
+
+/* ==========================================================================
+   ===== TRANG CHU - RESPONSIVE + DIEU HUONG (2026-08-22) =====
+   Chot: dien thoai <=767px doi bo cuc; TABLET/DESKTOP GIU Y NGUYEN.
+   Hamburger doi ruot thanh menu TAI KHOAN (5 muc cu lap y het than trang,
+   va ca 5 link deu 404). Khoi SIXOS GIU NGUYEN theo yeu cau.
+   ========================================================================== */
+
+/* --- menu tai khoan trong hamburger (moi be ngang) --- */
+.ytv-dropdown-title {
+    padding: 10px 16px 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+
+/* Nhom "loai co so" trong menu 3 gach: CHI hien tren dien thoai.
+   Tu 768px tro len, 5 loai da co san o sidebar than trang -> an di, khoi lap. */
+.ytv-dropdown-coso { display: none; }
+@media (max-width: 767.98px) {
+    .ytv-dropdown-coso { display: block; }
+    .ytv-dropdown-coso + .ytv-dropdown-title { border-top: 1px solid #e2e8f0; margin-top: 4px; padding-top: 12px; }
+}
+
+.ytv-dropdown a {
+    min-height: 48px;              /* dich cham chuan Android 48dp */
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ytv-dropdown a.ytv-dropdown-thoat,
+.ytv-dropdown a.ytv-dropdown-thoat i { color: #dc2626; }
+
+.ytv-header-menu { cursor: pointer; }
+.ytv-header-menu:focus-visible { outline: 3px solid #fff; outline-offset: 3px; border-radius: 8px; }
+
+/* Cham chi bao slide: vung bam 30x23 -> 30x25 cho dat WCAG 2.2 AA (24px).
+   Bootstrap dung box-sizing:content-box - thanh NHIN THAY chi cao 3px, phan con lai
+   la border trong suot. Chi noi border, TUYET DOI khong dat height/padding:
+   dat height o day lam chinh thanh trang phinh thanh khoi vuong to. */
+.ytv-slider .carousel-indicators [data-bs-target] {
+    border-top-width: 11px !important;
+    border-bottom-width: 11px !important;
+}
+
+/* nguoi dung tat hieu ung chuyen dong thi slider dung han */
+@media (prefers-reduced-motion: reduce) {
+    .ytv-slider .carousel-item { transition: none !important; }
+}
+
+/* ---------------------- CHI DIEN THOAI (<=767.98px) ---------------------- */
+@media (max-width: 767.98px) {
+    /* 5 loai co so da nam trong menu 3 gach -> bo khoi than trang, khoi lap
+       va tra cho trong cho slider. */
+    .ytv-sidebar { display: none !important; }
+
+    /* Slider to ra de chua duoc noi dung ben trong (para-card-text) */
+    .ytv-slider,
+    .ytv-slider .carousel-item,
+    .ytv-slider .para-card-wrapper,
+    .ytv-slider .para-card { min-height: 340px !important; }
+
+    .ytv-content { padding: 12px !important; }
+    .ytv-company-info { margin: 12px 0 4px !important; }
+
+    /* dich cham 48dp - CHI dien thoai, vi tablet/desktop phai giu y nguyen. */
+    .para-card-btn { min-height: 48px; display: inline-flex; align-items: center; justify-content: center; }
+    .sixos-item { min-height: 48px; }
+
+    /* menu tha rong cho de cham */
+    .ytv-dropdown { min-width: 244px; max-height: 78vh; overflow-y: auto; }
+}
+
+/* ========================================================================
+   Trang chu desktop - khung 3 cot dung theo ban ve:
+   [doi tac + logo] [slideshow / dich vu] [san pham xep doc]
+   ======================================================================== */
+@media (min-width: 993px) {
+    .ytv-main {
+        position: relative;
+        display: grid;
+        grid-template-columns: 360px minmax(0, 1fr) 190px;
+        grid-template-rows: minmax(0, 1fr);
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .ytv-sidebar {
+        grid-column: 1;
+        grid-row: 1;
+        width: auto;
+    }
+
+    .ytv-content {
+        grid-column: 2;
+        grid-row: 1;
+        box-sizing: border-box;
+        min-width: 0;
+        padding: 20px 20px 142px;
+    }
+
+    .ytv-company-info {
+        position: absolute;
+        inset: 0;
+        display: block !important;
+        width: auto;
+        margin: 0;
+        padding: 0 !important;
+        background: transparent !important;
+        border: 0;
+        border-radius: 0;
+        overflow: visible;
+        pointer-events: none;
+    }
+
+    .ytv-company-info > .sixos-card.primary {
+        display: none;
+    }
+
+    .ytv-company-info > .sixos-card:not(.primary) {
+        position: absolute;
+        right: 190px;
+        bottom: 0;
+        left: 360px;
+        height: 122px;
+        margin: 0;
+        padding: 12px 20px;
+        border-radius: 0;
+        border-top: 1px solid #dbe4ef;
+        box-shadow: none;
+        pointer-events: auto;
+    }
+
+    .ytv-company-info > .sixos-card:not(.primary) .sixos-list {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-content: center;
+        width: 100% !important;
+        height: 100%;
+        margin: 0 !important;
+        gap: 8px 24px !important;
+    }
+
+    .ytv-company-info > .sixos-card:not(.primary) .sixos-item {
+        min-width: 0;
+        margin: 0;
+        padding: 7px 8px;
+    }
+
+    .ytv-company-info > .ytv-company-4th-col {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 190px;
+        min-width: 0;
+        margin: 0;
+        padding: 12px !important;
+        border-width: 0 0 0 1px !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        pointer-events: auto;
+    }
+
+    .ytv-company-info > .ytv-company-4th-col .ytv-company-rolling {
+        height: 100% !important;
+        min-height: 0 !important;
+        border-radius: 0;
+    }
+
+    .ytv-company-info > .ytv-company-4th-col .ytv-company-rolling::after {
+        display: none;
+    }
+
+    .ytv-company-info > .ytv-company-4th-col .ytv-company-service,
+    .ytv-company-info > .ytv-company-4th-col .ytv-company-service.is-active {
+        flex-direction: column !important;
+        justify-content: space-evenly !important;
+        gap: 12px !important;
+        padding: 0 !important;
+        transform: none !important;
+        font-size: inherit;
+    }
+
+    .ytv-company-info > .ytv-company-4th-col .ytv-company-service > a {
+        width: 100%;
+        flex: 0 0 156px !important;
+        min-height: 156px;
+        padding: 10px 6px !important;
+        border: 1px solid #dbe4ef;
+        border-radius: 10px;
+        box-sizing: border-box;
+    }
+
+    .ytv-company-info > .ytv-company-4th-col .ytv-company-service > a img {
+        max-height: 76px !important;
+    }
+
+    .ytv-company-info > .ytv-company-4th-col .ytv-company-service > div {
+        width: 70% !important;
+        height: 1px !important;
+        min-height: 1px;
+        flex: 0 0 1px;
+    }
+}
+
+/* Footer Home tach rieng voi khung noi dung, khong con dai xanh cua 3 khoi cu. */
+body.co-chan-trang .ytv-footer.ctc {
+    background: #e0f2fe;
+    border-top: 1px solid #dbe4ef;
+}
+
+/* Hiển thị đồng thời bốn sản phẩm, thay cho việc luân phiên từng cặp. */
+.ytv-company-info > .ytv-company-4th-col .ytv-company-rolling {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ytv-company-info > .ytv-company-4th-col .ytv-company-service,
+.ytv-company-info > .ytv-company-4th-col .ytv-company-service.is-active {
+    position: relative !important;
+    inset: auto !important;
+    display: flex !important;
+    flex: 1 1 0;
+    min-height: 0;
+    height: auto !important;
+    opacity: 1 !important;
+    transform: none !important;
+    pointer-events: auto !important;
+}
+
+.ytv-company-info > .ytv-company-4th-col .ytv-company-service > a {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+}
+
+/* Điện thoại: slideshow -> sản phẩm -> dịch vụ -> logo công ty. */
+@media (max-width: 767.98px) {
+    .ytv-company-info {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+
+    .ytv-company-info > .ytv-company-4th-col {
+        order: 1;
+        width: 100%;
+    }
+
+    .ytv-company-info > .sixos-card:not(.primary) {
+        order: 2;
+    }
+
+    .ytv-company-info > .sixos-card.primary {
+        display: flex;
+        order: 3;
+    }
+
+    .ytv-company-info > .ytv-company-4th-col .ytv-company-rolling {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        height: auto !important;
+    }
+
+    .ytv-company-info > .ytv-company-4th-col .ytv-company-service,
+    .ytv-company-info > .ytv-company-4th-col .ytv-company-service.is-active {
+        display: contents !important;
+    }
+
+    .ytv-company-info > .ytv-company-4th-col .ytv-company-service > div {
+        display: none !important;
+    }
+
+    .ytv-company-info > .ytv-company-4th-col .ytv-company-service > a {
+        min-height: 132px !important;
+        padding: 10px 6px !important;
+        border: 1px solid #dbe4ef;
+        border-radius: 10px;
+    }
+}
+
+/* Trang chu: uu tien dien tich slideshow, dich vu gon hon va nhan dien Sixos ro hon. */
+.ytv-main,
+.ytv-content,
+.ytv-slider,
+.para-card-wrapper {
+    background: #fff;
+}
+
+/* Chỉ chữ của bốn dịch vụ trong khối giữa, bằng cỡ hotline ở footer. */
+.ytv-company-info > .sixos-card:not(.primary) .sixos-item-title {
+    font-size: 19px !important;
+    line-height: 1.2;
+}
+
+.para-card-wrapper {
+    padding: 0;
+}
+
+.ytv-slider .para-card,
+.ytv-slider .para-card-wrapper .para-card {
+    width: 100%;
+}
+
+@media (min-width: 993px) {
+    .ytv-content {
+        padding: 0 1px 91px;
+    }
+
+    .ytv-company-info > .sixos-card:not(.primary) {
+        height: 90px;
+        padding: 8px 16px;
+    }
+
+    .ytv-company-info > .sixos-card:not(.primary) .sixos-list {
+        gap: 3px 18px !important;
+    }
+
+    .ytv-company-info > .sixos-card:not(.primary) .sixos-item {
+        padding: 3px 6px;
+    }
+
+    .ytv-sidebar-company {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: auto 22px 18px;
+        text-align: center;
+    }
+
+    .ytv-sidebar-company img {
+        /* File logo chi 68 x 75 px; giu kich thuoc gan native de khong bi mo. */
+        width: 68px;
+        height: 75px;
+        margin: 0 0 8px;
+    }
+
+    .ytv-sidebar-company-name {
+        font-size: 22px;
+        line-height: 1.1;
+    }
+
+    .ytv-sidebar-company-subtitle {
+        margin-top: 5px;
+        font-size: 18px;
+        font-weight: 600;
+        line-height: 1.35;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .sixos-card.primary {
+        padding: 16px;
+    }
+
+    .sixos-card.primary .sixos-logo-box img {
+        width: 72px !important;
+        height: 72px !important;
+    }
+
+    .sixos-card.primary .sixos-title {
+        font-size: 21px;
+    }
+
+    .sixos-card.primary .sixos-subtitle {
+        font-size: 14px;
+        line-height: 1.4;
+    }
+}

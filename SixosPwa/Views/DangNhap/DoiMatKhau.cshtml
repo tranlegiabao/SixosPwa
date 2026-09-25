@@ -1,0 +1,105 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "Đổi mật khẩu";
+}
+
+<!doctype html>
+<html lang="vi">
+<head>
+    <title>Đổi mật khẩu — HisSoft</title>
+    <partial name="_CongHead" />
+</head>
+<body class="page-center">
+
+    <main class="auth">
+        <div class="auth__brand">
+            <a href="@(string.IsNullOrWhiteSpace(ViewBag.SlugCoSo as string) ? "/" : $"/DangKyOnline/{ViewBag.SlugCoSo}")" class="text-decoration-none text-reset d-inline-block" title="Quay lại @(ViewBag.TenCoSo ?? "Trang chủ")">
+                <img src="@(ViewBag.LogoCoSo ?? "/static/icon-192.png")" alt="@(ViewBag.TenCoSo ?? "HisSoft")" width="72" height="72" />
+                <h1>Đổi mật khẩu</h1>
+            </a>
+            <p>@ViewBag.TenCoSo</p>
+        </div>
+
+        <div class="card auth__card">
+            <div class="card-body">
+
+                @* Doi mat khau o day ghi sang CA HAI phia: HIS_CSKH va he cua co so.
+                   Nho vay benh nhan luon biet mat khau cua minh ben do, khong bao
+                   gio bi khoa ngoai trang cua co so (V9). *@
+                <div class="alert alert-light border small mb-3">
+                    Mật khẩu mới sẽ được cập nhật cho <strong>cả HisSoft và @ViewBag.TenCoSo</strong>,
+                    nên bạn vẫn vào được trang của cơ sở như bình thường.
+                </div>
+
+                <form id="formDoiMatKhau" onsubmit="event.preventDefault(); doiMatKhau();">
+                    <div class="mb-3">
+                        <label class="form-label" for="matKhauMoi">Mật khẩu mới</label>
+                        <input type="password" class="form-control form-control-lg" id="matKhauMoi"
+                               autocomplete="new-password" minlength="6" maxlength="50" required />
+                        <div class="form-text">Tối thiểu 6 ký tự.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="xacNhanMatKhau">Nhập lại mật khẩu mới</label>
+                        <input type="password" class="form-control form-control-lg" id="xacNhanMatKhau"
+                               autocomplete="new-password" minlength="6" maxlength="50" required />
+                    </div>
+
+                    <button type="submit" id="btnDoi" class="btn btn-primary w-100 py-2 fw-bold">
+                        Đổi mật khẩu
+                    </button>
+                </form>
+
+            </div>
+        </div>
+
+        <p class="auth__foot">
+            <a href="/benh-nhan" class="text-decoration-none">&larr; Quay lại</a>
+        </p>
+    </main>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        async function doiMatKhau() {
+            const matKhauMoi = document.getElementById('matKhauMoi').value;
+            const xacNhan = document.getElementById('xacNhanMatKhau').value;
+
+            if (matKhauMoi.length < 6) {
+                showToast('Mật khẩu phải có ít nhất 6 ký tự!', 400);
+                return;
+            }
+            if (matKhauMoi !== xacNhan) {
+                showToast('Hai mật khẩu nhập chưa giống nhau!', 400);
+                return;
+            }
+
+            const btn = document.getElementById('btnDoi');
+            btn.disabled = true;
+            btn.innerText = 'Đang cập nhật...';
+
+            try {
+                const phanHoi = await fetch('/DangNhap/LuuMatKhauMoi', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        maCoSo: '@(ViewBag.MaCoSo as string ?? "")',
+                        matKhauMoi: matKhauMoi
+                    })
+                });
+
+                const duLieu = await phanHoi.json();
+                showToast(duLieu.message, duLieu.success ? 200 : 400);
+
+                if (duLieu.success) {
+                    setTimeout(function () { window.location.href = '/benh-nhan'; }, 1200);
+                }
+            } catch (loi) {
+                showToast('Không kết nối được máy chủ, vui lòng thử lại!', 500);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Đổi mật khẩu';
+            }
+        }
+    </script>
+</body>
+</html>

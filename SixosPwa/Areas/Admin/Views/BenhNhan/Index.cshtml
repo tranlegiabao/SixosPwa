@@ -1,0 +1,215 @@
+@model SixosPwa.Areas.Admin.Models.BenhNhanListViewModel
+@{
+    ViewData["Title"] = "Bệnh nhân";
+
+    var danhMucGioiTinh = Model.DanhMucGioiTinh?.ToList() ?? new List<SixosPwa.Models.DMGioiTinh>
+    {
+        new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "1", TenGioiTinh = "Nam" },
+        new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "2", TenGioiTinh = "Nữ" },
+        new SixosPwa.Models.DMGioiTinh { MaGioiTinh = "3", TenGioiTinh = "Chưa xác định" }
+    };
+}
+
+<link rel="stylesheet" href="~/css/QuanLy/quan-ly-benh-nhan.css" asp-append-version="true" />
+
+
+<div class="admin-panel">
+    <form method="get" class="filter-bar tai-khoan-filter-bar" id="benhNhanFilterForm" autocomplete="off">
+        <input type="hidden" name="loc" value="1" />
+        <input type="hidden" name="pageSize" id="filterPageSize" value="@Model.PageSize" />
+        
+        <!-- BỘ LỌC CHUẨN: Cơ sở + CCCD + Số điện thoại + Mã bệnh nhân (Đã bỏ Vai trò) -->
+        <div class="filter-row-top">
+            <!-- 1. Dropdown cơ sở -->
+            <div class="filter-item-group filter-facility-expanded">
+                <label class="filter-label-blue" for="filterLoaiCS">Cơ sở</label>
+                <select name="loaiCS" class="form-select filter-select-square" id="filterLoaiCS" aria-label="Chọn cơ sở">
+                    <option value="">Tất cả cơ sở</option>
+                    @if (Model.DanhSachCoSo != null && Model.DanhSachCoSo.Any())
+                    {
+                        @foreach (var cs in Model.DanhSachCoSo)
+                        {
+                            <option value="cs:@cs.Id" selected="@(Model.LoaiCS == $"cs:{cs.Id}" ? "selected" : null)">@cs.TenCoSo (@(cs.MaCoSo ?? "Chưa có mã"))</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <!-- 2. Ô nhập CCCD -->
+            <div class="filter-item-group">
+                <label class="filter-label-blue" for="filterCCCD">CCCD</label>
+                <input type="search" name="cccd" id="filterCCCD" class="form-control filter-input-square" value="@Model.CCCD" placeholder="Nhập CCCD..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+            </div>
+
+            <!-- 3. Ô nhập SĐT -->
+            <div class="filter-item-group">
+                <label class="filter-label-blue" for="filterSDT">SĐT</label>
+                <input type="search" name="sdt" id="filterSDT" class="form-control filter-input-square" value="@Model.SDT" placeholder="Nhập SĐT..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+            </div>
+
+            <!-- 4. Ô nhập Mã BN -->
+            <div class="filter-item-group">
+                <label class="filter-label-blue" for="filterMaBN">Mã BN</label>
+                <input type="search" name="maBN" id="filterMaBN" class="form-control filter-input-square" value="@Model.MaBN" placeholder="Nhập mã BN..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+            </div>
+
+            <!-- Nút Lọc -->
+            <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                <button class="btn admin-btn-secondary filter-btn" type="submit">Lọc</button>
+            </div>
+        </div>
+    </form>
+
+    <div class="table-meta" id="benhNhanTableMeta">
+        @if (Model.DaLoc)
+        {
+            <span id="benhNhanCountLabel"><strong>@Model.TotalItems.ToString("N0")</strong> nhóm số điện thoại</span>
+            <span id="benhNhanHintLabel">Bấm vào từng dòng để mở/đóng danh sách hồ sơ</span>
+        }
+        else
+        {
+            <span class="text-muted" id="benhNhanCountLabel">Vui lòng chọn cơ sở (hoặc nhập tiêu chí tìm kiếm) và bấm <strong>Lọc</strong> để xem danh sách bệnh nhân</span>
+            <span id="benhNhanHintLabel"></span>
+        }
+    </div>
+
+    <div class="table-responsive position-relative tai-khoan-table-scroll" id="benhNhanTableScrollContainer">
+        <div id="tableLoadingOverlay" class="table-loading-overlay" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Đang tải...</span>
+            </div>
+        </div>
+        <table class="table admin-table align-middle mb-0" id="benhNhanMainTable">
+            <thead>
+                <tr>
+                    <th>Số điện thoại</th>
+                    <th style="width: 150px;">Số lượng hồ sơ</th>
+                    <th>Mã định danh</th>
+                </tr>
+            </thead>
+            <tbody id="benhNhanTableBody">
+                <partial name="_BenhNhanTableBody" model="Model" />
+            </tbody>
+        </table>
+    </div>
+
+    <!-- THANH PHÂN TRANG AJAX GỌN GÀNG -->
+    <div id="benhNhanPaginationContainer" style="@(Model.DaLoc && Model.TotalItems > 0 ? "" : "display: none;")">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 px-3 pb-3">
+            <div class="d-flex align-items-center gap-2">
+                <span class="text-muted" style="font-size: 12.5px; font-weight: 600;">Hiển thị:</span>
+                <div class="btn-group dropup">
+                    <button type="button" class="btn btn-sm page-size-btn dropdown-toggle d-flex align-items-center justify-content-between gap-2" data-bs-toggle="dropdown" aria-expanded="false" id="btnPageSizeDropdown">
+                        <span id="currentSelectedPageSize">@Model.PageSize</span>
+                    </button>
+                    <ul class="dropdown-menu page-size-dropdown-menu shadow" style="min-width: 75px; z-index: 1070;">
+                        <li><button type="button" class="dropdown-item @(Model.PageSize == 20 ? "active" : "")" data-value="20" onclick="doiSoLuongDong(20)">20</button></li>
+                        <li><button type="button" class="dropdown-item @(Model.PageSize == 50 ? "active" : "")" data-value="50" onclick="doiSoLuongDong(50)">50</button></li>
+                        <li><button type="button" class="dropdown-item @(Model.PageSize == 100 ? "active" : "")" data-value="100" onclick="doiSoLuongDong(100)">100</button></li>
+                        <li><button type="button" class="dropdown-item @(Model.PageSize == 500 ? "active" : "")" data-value="500" onclick="doiSoLuongDong(500)">500</button></li>
+                    </ul>
+                </div>
+                <input type="hidden" id="selectPageSize" value="@Model.PageSize" />
+                <span class="text-muted" style="font-size: 12.5px; font-weight: 600;">/ trang</span>
+            </div>
+            <nav class="admin-pagination mb-0" aria-label="Phân trang" id="benhNhanPaginationNav" style="@(Model.TotalPages > 1 ? "" : "display: none;")">
+                <button type="button" class="btn-page-ajax" id="btnPageFirst" onclick="chuyenTrang('first')" title="Trang đầu" @(Model.Page <= 1 ? "disabled" : "")>&laquo;</button>
+                <button type="button" class="btn-page-ajax" id="btnPagePrev" onclick="chuyenTrang('prev')" title="Trang trước" @(Model.Page <= 1 ? "disabled" : "")>&lsaquo;</button>
+                
+                <span class="pagination-current" id="paginationCurrentText">Trang <strong>@Model.Page</strong>/<strong>@Model.TotalPages</strong></span>
+
+                <button type="button" class="btn-page-ajax" id="btnPageNext" onclick="chuyenTrang('next')" title="Trang sau" @(Model.Page >= Model.TotalPages ? "disabled" : "")>&rsaquo;</button>
+                <button type="button" class="btn-page-ajax" id="btnPageLast" onclick="chuyenTrang('last')" title="Trang cuối" @(Model.Page >= Model.TotalPages ? "disabled" : "")>&raquo;</button>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== MODAL SỬA HỒ SƠ ==================== -->
+<div id="modalSuaHoSoBackdrop" class="modal-sua-hoso-backdrop" style="display: none;" onclick="dongModalSuaHoSo(event)">
+    <div class="modal-sua-hoso-card" onclick="event.stopPropagation()">
+        <div class="modal-sua-header">
+            <button type="button" class="modal-sua-btn-back" onclick="dongModalSuaHoSo()" title="Đóng">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+            </button>
+            <div>
+                <h3 class="modal-sua-title">Sửa hồ sơ</h3>
+                <span class="modal-sua-subtitle" id="modalSuaTenSubtitle">LÊ VIỆT HƯNG</span>
+            </div>
+        </div>
+
+        <div class="modal-sua-body">
+            <input type="hidden" id="modalSuaId" value="" />
+            <input type="hidden" id="modalSuaAccountId" value="" />
+            <input type="hidden" id="modalSuaIdHoSoCoSo" value="" />
+            <input type="hidden" id="modalSuaIdCoSo" value="" />
+
+            <!-- 1. Mã bệnh nhân tại cơ sở + Nút Gỡ đồng bộ -->
+            <div class="modal-hs-o">
+                <label for="modalSuaMaBN">Mã bệnh nhân tại cơ sở</label>
+                <div style="display: flex; gap: 10px; align-items: stretch;">
+                    <input id="modalSuaMaBN" type="text" maxlength="30" placeholder="Nhập mã bệnh nhân tại cơ sở..." style="flex: 1 1 auto; min-width: 0;" />
+                    <button type="button" id="modalSuaBtnGoNoi" class="btn btn-outline-danger font-weight-bold" style="display: none; flex: 0 0 auto; min-width: 110px; padding: 0 10px; height: 44px; border-radius: 10px; font-weight: 700; font-size: 14px; align-items: center; justify-content: center; white-space: nowrap;" onclick="goNoiModal()" title="Gỡ đồng bộ mã cơ sở">
+                        Gỡ đồng bộ
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. Số căn cước * -->
+            <div class="modal-hs-o">
+                <label for="modalSuaCCCD">Số căn cước *</label>
+                <input id="modalSuaCCCD" type="text" maxlength="20" placeholder="Số CCCD / Định danh" />
+            </div>
+
+            <!-- 3. Họ và tên * -->
+            <div class="modal-hs-o">
+                <label for="modalSuaTen">Họ và tên *</label>
+                <input id="modalSuaTen" type="text" maxlength="100" placeholder="Họ và tên bệnh nhân" />
+            </div>
+
+            <!-- 4. Ngày sinh * -->
+            <div class="modal-hs-o">
+                <label for="modalSuaNgaySinh">Ngày sinh *</label>
+                <input id="modalSuaNgaySinh" type="text" class="datepicker-input" placeholder="dd/mm/yyyy" />
+            </div>
+
+            <!-- 5. Giới tính * -->
+            <div class="modal-hs-o">
+                <label for="modalSuaGioiTinh">Giới tính *</label>
+                <select id="modalSuaGioiTinh">
+                    <option value="">— Chọn giới tính —</option>
+                    @foreach (var gt in danhMucGioiTinh)
+                    {
+                        <option value="@gt.MaGioiTinh">@gt.TenGioiTinh</option>
+                    }
+                </select>
+            </div>
+
+            <!-- 6. Số điện thoại -->
+            <div class="modal-hs-o">
+                <label for="modalSuaSDT">Số điện thoại <span style="font-weight:400;color:#64748b;">(không bắt buộc)</span></label>
+                <input id="modalSuaSDT" type="tel" maxlength="20" placeholder="09xxxxxxxx" />
+            </div>
+
+            <!-- Gợi ý thông báo -->
+            <div class="modal-hs-goi-y mb-3" id="modalSuaDaNoiNote" style="display: none;">
+                Hồ sơ này đã nối với bệnh án tại cơ sở nên họ tên, ngày sinh, căn cước và giới tính lấy theo cơ sở. Muốn sửa thì báo cơ sở, hoặc gỡ đồng bộ trước.
+            </div>
+
+            <!-- Nút Lưu -->
+            <button type="button" class="modal-hs-btn-submit" id="modalSuaBtnSave" onclick="luuThongTinModal()">Lưu</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let trangHienTai = @Model.Page;
+    let tongSoTrang = @Model.TotalPages;
+    let soLuongMoiTrang = @Model.PageSize;
+</script>
+<script src="~/js/QuanLy/quan-ly-benh-nhan.js" asp-append-version="true"></script>
+}

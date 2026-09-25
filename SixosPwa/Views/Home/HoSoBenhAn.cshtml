@@ -1,0 +1,290 @@
+@{
+    ViewData["Title"] = "Hồ Sơ Bệnh Án";
+}
+
+<style>
+    .app-nav, .bottom-nav, .app-foot { display: none !important; }
+    body {
+        padding-bottom: 0 !important;
+        background-color: #f8f9fa;
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .container { max-width: 100% !important; padding: 0 !important; }
+    main.container { margin: 0 !important; }
+    
+    /* Binh Dan Style CSS */
+    .bd-header { background: #fff; border-bottom: 1px solid #eee; }
+    .bd-top-menu { display: flex; align-items: center; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+    .bd-top-menu::-webkit-scrollbar { display: none; }
+    .bd-top-menu a { color: #333; text-decoration: none; padding: 15px; display: inline-block; font-weight: 500; font-size: 14px; }
+    .bd-top-menu a:hover { color: #009688; }
+    
+    /* Hero Banner */
+    .bd-hero {
+        width: 100%;
+        height: 300px;
+        background: url('https://img.freepik.com/free-photo/doctor-working-with-laptop-clinic_23-2149196328.jpg?w=1380') no-repeat center center/cover;
+        position: relative;
+    }
+    .bd-hero::before {
+        content: "";
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(255,255,255,0.4);
+    }
+    .bd-breadcrumb-box {
+        position: absolute;
+        top: 35%;
+        left: 15%;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 5px 15px;
+        font-size: 13px;
+        color: #555;
+    }
+    .bd-breadcrumb-box a { color: #555; text-decoration: none; }
+    .bd-title-box {
+        position: absolute;
+        top: calc(35% + 35px);
+        left: 15%;
+        background: #1877f2;
+        color: white;
+        padding: 10px 40px;
+        font-size: 32px;
+        font-weight: 300;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    
+    /* Record Cards */
+    .record-container {
+        max-width: 900px;
+        margin: 40px auto 60px auto;
+        padding: 0 15px;
+    }
+    
+    .record-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
+        border-left: 5px solid #1877f2;
+        overflow: hidden;
+    }
+    
+    .record-header {
+        background: #f0f7ff;
+        padding: 15px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #e1effe;
+    }
+    
+    .record-date {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1e40af;
+    }
+    
+    .record-body {
+        padding: 25px 20px;
+    }
+    
+    .info-row {
+        display: flex;
+        margin-bottom: 15px;
+    }
+    .info-icon {
+        width: 40px;
+        color: #6b7280;
+        font-size: 1.2rem;
+        display: flex;
+        align-items: flex-start;
+        padding-top: 2px;
+    }
+    .info-content h6 {
+        margin: 0 0 5px 0;
+        color: #374151;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        font-weight: 700;
+    }
+    .info-content p {
+        margin: 0;
+        color: #111827;
+        font-size: 1.05rem;
+    }
+    
+    .prescription-box {
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 10px;
+    }
+    .prescription-box ul {
+        margin: 0;
+        padding-left: 20px;
+        color: #334155;
+    }
+    
+    .btn-view-detail {
+        background: #fff;
+        border: 1px solid #1877f2;
+        color: #1877f2;
+        padding: 6px 15px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.2s;
+    }
+    .btn-view-detail:hover {
+        background: #1877f2;
+        color: #fff;
+    }
+    
+    @@media (max-width: 768px) {
+        .bd-title-box, .bd-breadcrumb-box { left: 5%; }
+        .record-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+    }
+</style>
+
+<!-- HEADER BÌNH DÂN -->
+<div class="bd-header px-4 py-2 d-flex justify-content-between align-items-center flex-wrap" style="gap: 10px;">
+    <div class="d-flex align-items-center gap-3">
+        <a href="/benh-nhan" class="text-decoration-none h4 mb-0 text-secondary" title="Quay lại">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <img src="/static/icon-192.png" alt="Logo" style="height: 50px;">
+        <div>
+            <small class="text-danger fw-bold d-block" style="font-size: 11px;">SỞ Y TẾ THÀNH PHỐ HỒ CHÍ MINH</small>
+            <h5 class="mb-0 fw-bold" style="color: #009688; text-transform: uppercase; font-size: 1rem;">@ViewData["TenPhongKham"]</h5>
+        </div>
+    </div>
+    <div class="bd-top-menu mt-2 mt-xl-0" style="width: 100%; max-width: 100%;">
+        <a href="#"><i class="fas fa-home text-success"></i></a>
+        <a href="#">Giới thiệu</a>
+        <a href="#">Điều Trị</a>
+        <a href="#">Dịch vụ</a>
+        <a href="#">Hướng dẫn</a>
+        <a href="#">Truyền thông</a>
+        <a href="#">Đào tạo</a>
+        <a href="#">Văn bản</a>
+        <a href="#">Tuyển dụng</a>
+        <a href="#">Liên hệ</a>
+        <a href="#"><i class="fas fa-search"></i></a>
+    </div>
+</div>
+
+<!-- HERO BANNER -->
+<div class="bd-hero">
+    <div class="bd-breadcrumb-box">
+        <a href="#"><i class="fas fa-home"></i></a> &gt; bệnh nhân
+    </div>
+    <div class="bd-title-box">HỒ SƠ BỆNH ÁN</div>
+</div>
+
+<hr style="border-top: 1px solid #eee; margin:0;" />
+
+<!-- LỊCH SỬ KHÁM -->
+<div class="record-container">
+    <h4 class="mb-4 fw-bold" style="color: #1e293b;">Lịch sử khám bệnh gần đây</h4>
+    
+    <!-- Lần khám 1 -->
+    <div class="record-card">
+        <div class="record-header">
+            <div class="record-date"><i class="far fa-calendar-alt me-2"></i> Ngày khám: 15/08/2026</div>
+            <span class="badge bg-success" style="font-size: 0.85rem;"><i class="fas fa-check-circle me-1"></i> Đã hoàn tất</span>
+        </div>
+        <div class="record-body row">
+            <div class="col-md-6">
+                <div class="info-row">
+                    <div class="info-icon"><i class="fas fa-stethoscope text-primary"></i></div>
+                    <div class="info-content">
+                        <h6>Chẩn đoán</h6>
+                        <p class="fw-semibold">Viêm phế quản cấp</p>
+                    </div>
+                </div>
+                <div class="info-row">
+                    <div class="info-icon"><i class="fas fa-user-md text-info"></i></div>
+                    <div class="info-content">
+                        <h6>Bác sĩ khám</h6>
+                        <p>BS. Nguyễn Văn A (Khoa Nội)</p>
+                    </div>
+                </div>
+                <div class="info-row">
+                    <div class="info-icon"><i class="far fa-clock text-warning"></i></div>
+                    <div class="info-content">
+                        <h6>Hẹn tái khám</h6>
+                        <p class="text-danger fw-bold">22/08/2026 (Sau 1 tuần)</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mt-3 mt-md-0">
+                <div class="info-row h-100">
+                    <div class="info-icon"><i class="fas fa-pills text-success"></i></div>
+                    <div class="info-content w-100">
+                        <h6>Toa thuốc đã cấp</h6>
+                        <div class="prescription-box">
+                            <ul>
+                                <li>Amoxicillin 500mg - 20 viên (Sáng 1, Tối 1)</li>
+                                <li>Bromhexin 8mg - 20 viên (Sáng 1, Tối 1)</li>
+                                <li>Paracetamol 500mg - 10 viên (Khi sốt &gt; 38.5)</li>
+                            </ul>
+                            <div class="mt-3 text-end">
+                                <button class="btn-view-detail"><i class="fas fa-print me-1"></i> In toa thuốc</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lần khám 2 -->
+    <div class="record-card" style="border-left-color: #64748b; opacity: 0.9;">
+        <div class="record-header" style="background: #f8fafc; border-bottom-color: #e2e8f0;">
+            <div class="record-date" style="color: #475569;"><i class="far fa-calendar-alt me-2"></i> Ngày khám: 02/02/2026</div>
+            <span class="badge bg-secondary" style="font-size: 0.85rem;"><i class="fas fa-history me-1"></i> Khám cũ</span>
+        </div>
+        <div class="record-body row">
+            <div class="col-md-6">
+                <div class="info-row">
+                    <div class="info-icon"><i class="fas fa-stethoscope text-secondary"></i></div>
+                    <div class="info-content">
+                        <h6>Chẩn đoán</h6>
+                        <p class="fw-semibold">Rối loạn tiêu hóa</p>
+                    </div>
+                </div>
+                <div class="info-row">
+                    <div class="info-icon"><i class="fas fa-user-md text-secondary"></i></div>
+                    <div class="info-content">
+                        <h6>Bác sĩ khám</h6>
+                        <p>BS. Trần Thị B (Khoa Ngoại)</p>
+                    </div>
+                </div>
+                <div class="info-row">
+                    <div class="info-icon"><i class="far fa-clock text-secondary"></i></div>
+                    <div class="info-content">
+                        <h6>Hẹn tái khám</h6>
+                        <p>Không có</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mt-3 mt-md-0">
+                <div class="info-row h-100">
+                    <div class="info-icon"><i class="fas fa-pills text-secondary"></i></div>
+                    <div class="info-content w-100">
+                        <h6>Toa thuốc đã cấp</h6>
+                        <div class="prescription-box">
+                            <ul>
+                                <li>Oresol - 5 gói (Pha uống theo nhu cầu)</li>
+                                <li>Smecta - 10 gói (Ngày 2 lần)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

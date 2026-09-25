@@ -1,0 +1,259 @@
+@{
+    ViewData["ChanTrangCong"] = true;
+    var tenCoSo = Uri.UnescapeDataString(ViewData["TenCoSo"]?.ToString() ?? "Bệnh Viện ĐHYD");
+    var diaChi = Uri.UnescapeDataString(ViewData["DiaChi"]?.ToString() ?? "215 Hồng Bàng, Phường Chợ Lớn");
+    var type = ViewData["Type"]?.ToString() ?? "benhvien";
+    var img = Uri.UnescapeDataString(ViewData["Img"]?.ToString() ?? "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80");
+    var logo = Uri.UnescapeDataString(ViewData["Logo"]?.ToString() ?? "https://tse1.mm.bing.net/th/id/OIP.JgUNpJPll-8BkzE3XN6LggHaHa?r=0&pid=Api&P=0&h=180");
+    var coSoYTe = ViewData["CoSoYTe"] as DMCSKCB;
+    // Gio lam viec nay do controller nap tu bang con DM_CSKCB_GioLamViec roi ma hoa
+    // san vao ViewData["TGLamViec"] — bang co so khong con giu cot gio nao.
+    OperatingHours? parsedOperatingHours = null;
+    OperatingHours.TryParse(ViewData["TGLamViec"]?.ToString(), out parsedOperatingHours);
+
+    var operatingHours = parsedOperatingHours ?? OperatingHours.Default;
+    var noiDungCskcb = ViewData["NoiDungCskcb"] as IReadOnlyDictionary<string, string>
+        ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    var noiDungGioiThieu = noiDungCskcb.GetValueOrDefault(NDCSKCB.GioiThieu);
+    var noiDungDichVu = noiDungCskcb.GetValueOrDefault(NDCSKCB.DichVu);
+    var noiDungDoiNgu = noiDungCskcb.GetValueOrDefault(NDCSKCB.DoiNgu);
+    var noiDungTrangThietBi = noiDungCskcb.GetValueOrDefault(NDCSKCB.TrangThietBi);
+    var noiDungLienHe = noiDungCskcb.GetValueOrDefault(NDCSKCB.LienHe);
+    var previewLoaiND = ViewData["PreviewLoaiND"]?.ToString();
+    var activeLoaiND = NDCSKCB.AllowedLoaiND.Contains(previewLoaiND, StringComparer.OrdinalIgnoreCase)
+        ? previewLoaiND
+        : NDCSKCB.GioiThieu;
+}
+
+<link rel="stylesheet" href="~/css/CoSo/chi-tiet-co-so.css" asp-append-version="true" />
+
+<div class="ytv-header">
+    <a href="/Home/ThongTinBenhNhan" class="ytv-logo-area">
+        <img src="/static/icon-512.png" alt="Logo" style="height: 50px; width: 50px; object-fit: cover; background: white; border-radius: 50%; padding: 0;" />
+        <div class="ytv-logo-text">Y TẾ<br>VIỆT</div>
+    </a>
+    <div class="ytv-header-title">
+        <h1>@tenCoSo</h1>
+        <p>Hotline: 19008198</p>
+    </div>
+    <div class="ytv-header-menu" id="menuBtn" onclick="toggleMenu()">
+        <i class="fas fa-bars"></i>
+        <div class="ytv-dropdown" id="dropdownMenu">
+            <a href="/Home/DanhSachCoSo-benhvien"><i class="fas fa-hospital"></i> Bệnh viện</a>
+            <a href="/Home/DanhSachCoSo-pkdk"><i class="fas fa-clinic-medical"></i> Phòng khám đa khoa</a>
+            <a href="/Home/DanhSachCoSo-nhakhoa"><i class="fas fa-tooth"></i> Nha khoa</a>
+            <a href="/Home/DanhSachCoSo-phongmach"><i class="fas fa-stethoscope"></i> Phòng mạch</a>
+            <a href="/Home/DanhSachCoSo-nhathuoc"><i class="fas fa-pills"></i> Nhà thuốc</a>
+        </div>
+    </div>
+</div>
+
+<div class="ytv-main">
+    <div class="ytv-sidebar">
+        <div class="sidebar-scroll-area">
+        <a class="ytv-menu-item @(activeLoaiND == NDCSKCB.GioiThieu ? "active" : string.Empty)" onclick="showTab('gioi-thieu', this, event)" href="#gioi-thieu">
+            <i class="fas fa-info-circle"></i> Giới thiệu
+        </a>
+        <a class="ytv-menu-item @(activeLoaiND == NDCSKCB.DichVu ? "active" : string.Empty)" onclick="showTab('dich-vu', this, event)" href="#dich-vu">
+            <i class="fas fa-stethoscope"></i> Dịch vụ
+        </a>
+        <a class="ytv-menu-item @(activeLoaiND == NDCSKCB.DoiNgu ? "active" : string.Empty)" onclick="showTab('doi-ngu', this, event)" href="#doi-ngu">
+            <i class="fas fa-user-md"></i> Đội ngũ y bác sĩ
+        </a>
+        <a class="ytv-menu-item @(activeLoaiND == NDCSKCB.TrangThietBi ? "active" : string.Empty)" onclick="showTab('trang-thiet-bi', this, event)" href="#trang-thiet-bi">
+            <i class="fas fa-tools"></i> Các trang thiết bị
+        </a>
+        <a class="ytv-menu-item @(activeLoaiND == NDCSKCB.LienHe ? "active" : string.Empty)" onclick="showTab('lien-he', this, event)" href="#lien-he">
+            <i class="fas fa-headset"></i> Liên hệ
+        </a>
+
+        </div><!-- đóng sidebar-scroll-area -->
+
+        @{
+            // Hai nut di chung MOT cong dang nhap, chi khac cho ha canh
+            // (returnUrl). Ca hai phai mang theo slug co so — thieu no thi man
+            // dang nhap khong biet benh nhan dang o co so nao, phien khong co
+            // claim MaCoSo, va luong ban giao sang doi tac khong bao gio chay.
+            var slugCoSo = ViewData["Slug"] as string;
+            var thamSoCoSo = string.IsNullOrWhiteSpace(slugCoSo)
+                ? string.Empty
+                : $"coSo={Uri.EscapeDataString(slugCoSo)}&";   // Razor tu ma hoa thanh &amp; — viet san &amp; o day la bi ma hoa hai lan
+
+            // Phien dang o mot co so KHAC co so trang nay (ADR 0006): null neu
+            // trung co so hoac chua dang nhap — HomeController.DoDoiChieuPhienCoSoAsync
+            // da tinh san, o day chi doc ra de quyet dinh co chan hai nut khong.
+            var phienCoSoKhac = ViewData["PhienCoSoKhac"] as string;
+            var tuDongMoCanhBao = ViewData["TuDongMoCanhBao"] as bool? ?? false;
+        }
+        <div class="hospital-actions">
+            <a href="/DangNhap/Login?@(thamSoCoSo)returnUrl=%2Fdat-goi-kham" class="btn-outline" style="background-color: #1d4ed8; color:aliceblue"
+               data-returnurl="/dat-goi-kham" @Html.Raw(phienCoSoKhac != null ? "onclick=\"return ccsChanNeuCheoCoSo(event, this)\"" : "")>
+                <i class="fas fa-sign-in-alt" style="color: aliceblue"></i> Đăng ký khám
+            </a>
+            <a href="/DangNhap/Login?@(thamSoCoSo)returnUrl=%2F" class="btn-outline"
+               data-returnurl="/" @Html.Raw(phienCoSoKhac != null ? "onclick=\"return ccsChanNeuCheoCoSo(event, this)\"" : "")>
+                <i class="fas fa-sign-in-alt"></i> Đăng nhập
+            </a>
+        </div>
+
+        <div class="operating-hours-box">
+            <div class="oh-header"><i class="far fa-clock"></i> Giờ hoạt động</div>
+            <div class="oh-days">@operatingHours.Days</div>
+            <div class="oh-time">@operatingHours.OpenTime - @operatingHours.CloseTime</div>
+            <div class="oh-status"><span class="status-dot"></span> Đang mở cửa</div>
+        </div>
+    </div>
+
+
+    <div class="ytv-content">
+        <!-- Intro Sections (Tabs) -->
+        <div class="intro-section @(activeLoaiND == NDCSKCB.GioiThieu ? "active-tab" : string.Empty)" id="gioi-thieu">
+            <div class="intro-content">
+                <div class="intro-title">
+                    <i class="fas fa-info-circle"></i> Giới thiệu
+                </div>
+                @if (!string.IsNullOrWhiteSpace(noiDungGioiThieu))
+                {
+                    <div class="nd-cskcb-text">@Html.Raw(noiDungGioiThieu)</div>
+                }
+            </div>
+            <!-- <img src="https://img.freepik.com/free-vector/hospital-building-concept-illustration_114360-8440.jpg?w=800" alt="Hospital Illustration" class="intro-image" /> -->
+        </div>
+
+        <div class="intro-section @(activeLoaiND == NDCSKCB.DichVu ? "active-tab" : string.Empty)" id="dich-vu">
+            <div class="intro-content">
+                <div class="intro-title">
+                    <i class="fas fa-stethoscope"></i> Dịch vụ khám chữa bệnh
+                </div>
+                @if (!string.IsNullOrWhiteSpace(noiDungDichVu))
+                {
+                    <div class="nd-cskcb-text">@Html.Raw(noiDungDichVu)</div>
+                }
+            </div>
+        </div>
+
+        <div class="intro-section @(activeLoaiND == NDCSKCB.DoiNgu ? "active-tab" : string.Empty)" id="doi-ngu">
+            <div class="intro-content">
+                <div class="intro-title">
+                    <i class="fas fa-user-md"></i> Đội ngũ bác sĩ chuyên khoa
+                </div>
+                @if (!string.IsNullOrWhiteSpace(noiDungDoiNgu))
+                {
+                    <div class="nd-cskcb-text">@Html.Raw(noiDungDoiNgu)</div>
+                }
+            </div>
+        </div>
+
+        <div class="intro-section @(activeLoaiND == NDCSKCB.TrangThietBi ? "active-tab" : string.Empty)" id="trang-thiet-bi">
+            <div class="intro-content">
+                <div class="intro-title">
+                    <i class="fas fa-tools"></i> Trang thiết bị hiện đại
+                </div>
+                @if (!string.IsNullOrWhiteSpace(noiDungTrangThietBi))
+                {
+                    <div class="nd-cskcb-text">@Html.Raw(noiDungTrangThietBi)</div>
+                }
+            </div>
+        </div>
+
+        <div class="intro-section @(activeLoaiND == NDCSKCB.LienHe ? "active-tab" : string.Empty)" id="lien-he">
+            <div class="intro-content">
+                <div class="intro-title">
+                    <i class="fas fa-headset"></i> Chăm sóc & Hỗ trợ khách hàng
+                </div>
+                @if (!string.IsNullOrWhiteSpace(noiDungLienHe))
+                {
+                    <div class="nd-cskcb-text">@Html.Raw(noiDungLienHe)</div>
+                }
+            </div>
+        </div>
+
+
+    </div>
+</div>
+
+@* 2026-08-24 (Nam sua) — da go khoi day hai thu, theo yeu cau:
+   ① man dang nhap noi trang (modal + JS openLoginModal/closeLoginModal/
+     GuiOtp/XacNhanOtp). Do la BAN SAO THU HAI cua /DangNhap/Login: dang
+     nhap bang SDT + OTP, khong co CCCD, khong co ma CSKCB, nen bam vao la
+     ra ngoai luong ban giao sang doi tac. Hai nut ben tren gio deu di ve
+     cung mot cong. (Lan mot go 22/08, bi commit 3b32872 chep de bung lai.)
+   ② khoi gioi thieu SIXOS von bi chon BEN TRONG modal do.
+   Can lay lai: git show 53381ff -- SixosPwa/Views/Home/ChiTietCoSo.cshtml *@
+
+@* Modal chan dang nhap cheo co so (ADR 0006) — BAT BUOC dat O DAY, cap cao
+   nhat cua trang, KHONG duoc long trong .ytv-sidebar: sidebar co
+   "overflow: hidden" (dong 108) nen se GHIM/CAT bat cu con position:fixed
+   nao no chua, du con do co z-index cao bao nhieu — tung dat trong sidebar
+   lam bam-ra-ngoai-hop khong dong duoc vi footer .ytv-footer.ctc (z-index
+   1000, KHONG bi sidebar giam giu) ve de len tren. *@
+@if (phienCoSoKhac != null)
+{
+    <div class="ccs-lop-phu" id="ccsLopPhu" hidden>
+        <div class="ccs-hop">
+            <div class="ccs-than">
+                <div class="ccs-bieu-tuong">!</div>
+                <h4>Bạn đang đăng nhập ở cơ sở khác</h4>
+                <p>Tài khoản đang dùng tại</p>
+                <p class="ccs-ten-co-so">@phienCoSoKhac</p>
+                <p>Để đăng nhập tại <b>@tenCoSo</b>, vui lòng đăng xuất trước.</p>
+            </div>
+            <div class="ccs-nut">
+                <a href="#" id="ccsNutDangXuat" class="ccs-chinh">Đăng xuất và đăng nhập lại</a>
+                <button type="button" class="ccs-phu" onclick="ccsDongModal()">Quay lại</button>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="stats-footer-bar">
+    <div class="stats-grid">
+        <div class="stat-card stat-card-blue">
+            <div class="stat-icon blue"><i class="fas fa-headset"></i></div>
+            <div class="stat-info">
+                <div class="value">24/7</div>
+                <div class="title">Hỗ trợ</div>
+                <div class="desc">Luôn sẵn sàng</div>
+            </div>
+        </div>
+        <div class="stat-card stat-card-green">
+            <div class="stat-icon green"><i class="far fa-star"></i></div>
+            <div class="stat-info">
+                <div class="value">4.8/5</div>
+                <div class="title">Đánh giá</div>
+                <div class="desc">Từ 1.248 khách hàng</div>
+            </div>
+        </div>
+        <div class="stat-card stat-card-purple">
+            <div class="stat-icon purple"><i class="fas fa-user-friends"></i></div>
+            <div class="stat-info">
+                <div class="value">50+</div>
+                <div class="title">Bác sĩ</div>
+                <div class="desc">Giàu kinh nghiệm</div>
+            </div>
+        </div>
+        <div class="stat-card stat-card-orange">
+            <div class="stat-icon orange"><i class="fas fa-briefcase-medical"></i></div>
+            <div class="stat-info">
+                <div class="value">20+</div>
+                <div class="title">Dịch vụ</div>
+                <div class="desc">Đa dạng chuyên khoa</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Floating Action Button (Đăng ký khám)
+<a href="/DangNhap/Login" class="fab-btn">
+    <i class="far fa-calendar-plus"></i>
+    <span class="fab-text">ĐĂNG<br>KÝ<br>KHÁM</span>
+</a> -->
+
+<script>
+    var ccsPhienCoSoKhac = @Html.Raw(Json.Serialize(phienCoSoKhac));
+    var ccsTuDongMo = @Html.Raw(Json.Serialize(tuDongMoCanhBao));
+    var ccsSlugTrang = @Html.Raw(Json.Serialize(slugCoSo));
+</script>
+<script src="~/js/CoSo/chi-tiet-co-so.js" asp-append-version="true"></script>
+

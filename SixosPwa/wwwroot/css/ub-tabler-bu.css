@@ -1,0 +1,455 @@
+/*
+ * Bu cac lop Tabler ma bo man cua doi tac Ung Buou dua vao.
+ *
+ * SixosPwa chay Bootstrap 5 thuan; DangKyOnlineUB chay Tabler (xay TREN Bootstrap 5)
+ * nen phan lon lop da khop san. Tep nay chi chep lai dung nhung lop CON THIEU,
+ * lay NGUYEN VAN tu wwwroot/dist/css/tabler.css cua ho — khong tu che.
+ *
+ * Do bang cach doi chieu tung lop trong markup voi bootstrap.min.css + site.css:
+ * chi 3 nhom duoi day thuc su anh huong bo cuc, phan con lai (icon-tabler-*,
+ * icons-tabler-*) chi la hook tren the <svg> da co width/height inline.
+ *
+ * Xem ADR 0014.
+ */
+
+/* --- THANG CO CHU (quan trong nhat) -----------------------------------
+ * Doi tac viet markup theo thang cua Tabler, ma thang do NHO HON Bootstrap
+ * nhieu. Khong bu thi moi chu deu phinh to ~1,5 lan tren dien thoai:
+ *
+ *      lop      Tabler        Bootstrap 5            ti le
+ *      .fs-4    0.875rem      calc(1.275rem+.3vw)    ~1,53x
+ *      .fs-3    1rem          calc(1.3rem+.6vw)      ~1,44x
+ *      body     0.875rem      1rem                   1,14x
+ *      h2       1.25rem       2rem                   1,60x
+ *
+ * Markup cua ho rai .fs-4 khap nhan va lien ket, nen day la cho lech nang nhat.
+ * Chep NGUYEN VAN tu tabler.css cua ho.
+ */
+body {
+    font-size: 0.875rem;
+}
+
+.fs-1 { font-size: 1.5rem !important; }
+.fs-2 { font-size: 1.25rem !important; }
+.fs-3 { font-size: 1rem !important; }
+.fs-4 { font-size: 0.875rem !important; }
+.fs-5 { font-size: 0.75rem !important; }
+.fs-6 { font-size: 0.625rem !important; }
+
+/* Nut: Tabler --tblr-btn-font-size = 0.875rem, Bootstrap .btn = 1rem. */
+.btn {
+    font-size: 0.875rem;
+}
+
+h1, .h1 { font-size: 1.5rem; }
+h2, .h2 { font-size: 1.25rem; }
+h3, .h3 { font-size: 1rem; }
+h4, .h4 { font-size: 0.875rem; }
+h5, .h5 { font-size: 0.75rem; }
+h6, .h6 { font-size: 0.625rem; }
+
+/* --- O nhap co icon ben trong (man Dang ky) --------------------------- */
+.input-icon {
+    position: relative;
+}
+
+.input-icon .form-control:not(:last-child),
+.input-icon .form-select:not(:last-child) {
+    padding-right: 2.5rem;
+}
+
+.input-icon .form-control:not(:first-child),
+.input-icon .form-select:not(:last-child) {
+    padding-left: 2.5rem;
+}
+
+.input-icon-addon {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.5rem;
+    color: var(--tblr-icon-color, #667382);
+    pointer-events: none;
+    font-size: 1.2em;
+}
+
+.input-icon-addon:last-child {
+    right: 0;
+    left: auto;
+}
+
+/* --- Dau * do sau nhan bat buoc (man Quen mat khau) -------------------- */
+.required:after,
+.form-label.required:after {
+    content: "*";
+    margin-left: 0.25rem;
+    color: #d63939;
+}
+
+/* --- Lop tien ich con lai --------------------------------------------- */
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.text-small {
+    font-size: 0.875rem;
+}
+
+.text-left {
+    text-align: left;
+}
+
+.blue-text {
+    color: #206bc4;
+}
+
+@media (min-width: 768px) {
+    .w-md-auto {
+        width: auto !important;
+    }
+
+    .mt-md-10 {
+        margin-top: 5rem !important;
+    }
+
+    .mb-md-8 {
+        margin-bottom: 4rem !important;
+    }
+}
+
+/* ======================================================================
+ * DON CHO GON (dot 2)
+ *
+ * Khac han phan tren: tren la BU cho lech framework (Tabler vs Bootstrap),
+ * duoi day la sua HINH THAI. Nguoi dung thu tren dien thoai that va chot
+ * "tuy lam giong UB nhung no phai dep hon" — giu mau xanh va bo cuc cua ho
+ * de benh nhan van nhan ra, chi don nhung cho tho.
+ * ====================================================================== */
+
+/* --- Logo co so ------------------------------------------------------
+ * Anh trong DM_CSKCB.Logo thuong la anh vuong NEN TRANG. Dat thang len dai
+ * xanh thi thanh mot o trang cham goc, nen boc trong mot khung tron co vien
+ * mo — logo nen trang hay nen trong deu vao duoc.
+ */
+.ub-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    text-align: center;
+}
+
+.ub-header__logo {
+    width: 68px;
+    height: 68px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+    overflow: hidden;
+    flex: 0 0 auto;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ub-header__logo:hover {
+    transform: scale(1.06);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+}
+
+.ub-header__ten {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    opacity: 0.9;
+    line-height: 1.3;
+}
+
+.ub-header__tieude {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: 0.03em;
+}
+
+/* --- Hai nut ve cung mot hang ---------------------------------------
+ * Ban goc xep doc: mot khoi xam kin be ngang roi mot khoi xanh ngay duoi,
+ * nhin nang va kho biet dau la hanh dong chinh.
+ */
+.ub-nut {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+}
+
+.ub-nut__quaylai {
+    padding-left: 0;
+    padding-right: 0;
+    text-decoration: none;
+    white-space: nowrap;
+    flex: 0 0 auto;
+}
+
+.ub-nut__gui {
+    flex: 1 1 auto;
+    max-width: 60%;
+    white-space: nowrap;
+}
+
+/* --- O nhap & nut: bot cao ------------------------------------------
+ * Khuon goc dung padding 1.3rem (o kho may tinh thi vua). Tren dien thoai
+ * moi o cao gan 60px, day trang dai ra va nhin tho.
+ *
+ * font-size GIU 16px co y: duoi 16px thi iOS Safari TU PHONG TO ca trang
+ * khi benh nhan bam vao o nhap.
+ */
+.ub-header ~ .card-body .form-control,
+.register-model .form-control,
+.login-modal .form-control {
+    padding: 0.625rem 0.875rem !important;
+    font-size: 16px !important;
+    min-height: 44px;
+}
+
+/* O nhap co icon ben trong van phai chua chan cho icon. */
+.input-icon .form-control {
+    padding-left: 2.5rem !important;
+}
+
+.btn {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    min-height: 42px;
+}
+
+/* Bon o ma xac thuc la o vuong, khong ap luat o nhap thuong. */
+.input_XacThuc {
+    min-height: 52px;
+    padding: 0.5rem !important;
+    font-size: 1.25rem !important;
+}
+
+/* --- Khung logo dung chung cho man Dang nhap & Dang ky ----------------
+ * Cung y voi .ub-header__logo cua man Quen mat khau, chi khac la o day nen
+ * trang nen dung vien mo thay vi do bong.
+ */
+.ub-logo {
+    width: 72px;
+    height: 72px;
+    margin-left: auto;
+    margin-right: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border: 1px solid rgba(32, 107, 196, 0.15);
+    border-radius: 50%;
+    overflow: hidden;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ub-logo:hover {
+    transform: scale(1.06);
+    box-shadow: 0 4px 12px rgba(32, 107, 196, 0.2);
+}
+
+.ub-logo img {
+    width: 100%;
+    height: 100%;
+    max-width: none !important;
+    object-fit: contain;
+    padding: 8px;
+    margin: 0 !important;
+}
+
+/* --- Nut con mat trong o mat khau ------------------------------------
+ * Khung boc do ub-hien-mat-khau.js tu dung quanh moi input[type=password].
+ * Nut nam de len o nhap ben phai, nen phai chua chan cho no.
+ */
+.ub-mk {
+    position: relative;
+    display: block;
+}
+
+.ub-mk .form-control {
+    padding-right: 2.75rem !important;
+}
+
+.ub-mk__nut {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 2.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #7c8f93;
+    cursor: pointer;
+    /* De khong bi .btn o muc tren keo cao len */
+    min-height: 0;
+}
+
+.ub-mk__nut:hover,
+.ub-mk__nut:focus-visible {
+    color: #206bc4;
+}
+
+.ub-mk__nut:focus-visible {
+    outline: 2px solid #206bc4;
+    outline-offset: -2px;
+    border-radius: 6px;
+}
+
+/* ======================================================================
+ * PANEL QUANG BA CUA DOI TAC — CHI O KHO MAY TINH
+ *
+ * Ban dien thoai giu nguyen mot cot (nguoi dung chot: "mobile de nhu hien
+ * tai la on roi"). Tu breakpoint lg tro len moi hien panel nay ben trai,
+ * lay dang tu cot col-md-7 nen #393be7 trong Login.cshtml cua ho.
+ * ====================================================================== */
+
+.ub-panel {
+    background-color: #2b42f6;
+    color: #fff;
+    padding: 1.5rem 2rem;
+    gap: 1rem;
+    max-height: 100vh;
+    overflow-y: auto;
+}
+
+.ub-panel__dau {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.ub-panel__logo {
+    max-height: 60px;
+    max-width: 260px;
+    object-fit: contain;
+}
+
+.ub-panel__hotline {
+    background: #dc3545;
+    border-radius: 0.75rem;
+    padding: 0.4rem 0.85rem;
+    font-size: 0.9rem;
+}
+
+.ub-panel__anh img {
+    border-radius: 1rem;
+    /* Anh nam ben trang doi tac; ho doi anh thi ben minh tu theo. */
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.ub-panel__coso {
+    display: flex;
+    gap: 0.85rem;
+    align-items: stretch;
+}
+
+.ub-coso {
+    flex: 1 1 0;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1.5px solid #6c9df6;
+    border-radius: 8px;
+    padding: 0.75rem 0.875rem;
+    font-size: 0.825rem;
+    line-height: 1.45;
+}
+
+.ub-coso__ten {
+    font-weight: 700;
+    font-size: 0.825rem;
+    text-transform: uppercase;
+    padding-bottom: 0.4rem;
+    margin-bottom: 0.45rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.ub-coso__dong {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+    margin-bottom: 0.3rem;
+    opacity: 0.95;
+    font-size: 0.825rem;
+    line-height: 1.35;
+}
+
+.ub-panel__chan {
+    margin-top: auto;
+    padding-top: 0.25rem;
+}
+
+.ub-panel__chan-tieude {
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    padding-bottom: 0.25rem;
+    margin-bottom: 0.4rem;
+    border-bottom: 1.5px solid rgba(255, 255, 255, 0.6);
+    display: inline-block;
+    width: 80px;
+}
+
+.ub-panel__chan ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.ub-panel__chan a {
+    color: #fff;
+    text-decoration: none;
+    opacity: 0.9;
+    font-size: 0.825rem;
+}
+
+.ub-panel__chan a:hover {
+    text-decoration: underline;
+    opacity: 1;
+}
+
+/* Cot form: chiem phan con lai va cuon rieng, de panel trai dung yen. */
+@media (min-width: 992px) {
+    .ub-khung {
+        min-height: 100vh;
+    }
+
+    /* Ba cot form phai dung chung mot be ngang. Cot ma xac thuc (#otpCol) la cot
+       THU HAI cua man Dang ky: thieu ten no o day thi no giu col-12 = 100%, cong
+       voi panel 58,3% la qua mot hang, nen bi day XUONG DUOI panel. */
+    .ub-khung > .login-modal,
+    .ub-khung > .register-model,
+    .ub-khung > .ub-cot-otp {
+        flex: 0 0 auto;
+        width: 41.66666667%;
+        max-height: 100vh;
+        overflow-y: auto;
+        justify-content: center;
+    }
+}

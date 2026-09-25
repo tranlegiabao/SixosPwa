@@ -1,0 +1,288 @@
+@model List<SixosPwa.Models.TaiLieuBenhNhan>
+@{
+    Layout = null;
+    // V9 phan trang: countAll = TONG THAT tu may chu (badge), daNap = so the me dau.
+    var daNap = Model?.Count ?? 0;
+    var countAll = (int)(ViewBag.TongSo ?? daNap);
+    var mocId = (long)(ViewBag.MocId ?? 0L);
+    var nhomHienTai = ViewBag.Nhom as string ?? "";
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>@(ViewBag.TieuDeTrang ?? "Tài liệu y tế") - @ViewBag.TenCoSo</title>
+    <link rel="stylesheet" href="/css/tai-lieu-benh-nhan.css?v=20260917_v9" />
+    <style>
+        .tl-empty {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 24px 60px;
+            text-align: center;
+            color: var(--tl-chu-phu);
+            gap: 14px;
+            min-height: calc(100vh - 180px);
+            min-height: calc(100dvh - 180px);
+            box-sizing: border-box;
+            margin: auto 0;
+        }
+        .tl-empty-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 2px;
+        }
+        .tl-empty-title {
+            font-size: 16.5px;
+            font-weight: 700;
+            color: var(--tl-chu-dam);
+        }
+        .tl-empty-desc {
+            font-size: 13.5px;
+            max-width: 360px;
+            line-height: 1.55;
+            color: #64748b;
+        }
+        .tl-btn-empty-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+            padding: 9px 20px;
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            color: #ffffff !important;
+            font-size: 13.5px;
+            font-weight: 600;
+            border-radius: 9999px;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+            transition: all 0.2s ease;
+        }
+        .tl-btn-empty-action:hover {
+            background: linear-gradient(135deg, #0369a1, #075985);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(2, 132, 199, 0.35);
+        }
+    </style>
+</head>
+<body class="tl-trang">
+    <div class="tl-khung">
+
+        <!-- Top Bar -->
+        <header class="tl-top-bar">
+            <a class="tl-btn-back" href="/benh-nhan" title="Quay lại cổng bệnh nhân" aria-label="Quay lại">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+            </a>
+            <div class="tl-top-title">
+                <h1>@(ViewBag.TieuDeTrang ?? "Tài liệu y tế")</h1>
+                <span class="tl-top-subtitle">@ViewBag.TenCoSo</span>
+            </div>
+            <div class="tl-top-actions">
+                <span class="tl-badge-total">@countAll tài liệu</span>
+            </div>
+        </header>
+
+        <!-- Thong tin benh nhan banner -->
+        <div class="tl-header-info">
+            <div class="tl-bn-avatar-circle">
+                @((ViewBag.TenBenhNhan as string)?.Substring(0, 1)?.ToUpper() ?? "B")
+            </div>
+            <div class="tl-bn-text-info">
+                <div class="tl-bn-name">@ViewBag.TenBenhNhan</div>
+                <div class="tl-bn-id">Mã BN: @(string.IsNullOrWhiteSpace(ViewBag.MaBN as string) ? "######" : ViewBag.MaBN)</div>
+            </div>
+            <div class="tl-bn-stats">
+                <span class="tl-stat-label">Kho lưu trữ số</span>
+                <span class="tl-stat-val">Bảo mật y tế</span>
+            </div>
+        </div>
+
+        <!-- Danh sach tai lieu dang Grid Cards (Phong cach Google Drive) -->
+        <main class="tl-grid-container" id="tlGridList"
+              data-nhom="@nhomHienTai" data-moc-id="@mocId" data-tong-so="@countAll" data-da-nap="@daNap"
+              style="@(countAll == 0 ? "display:none;" : "")">
+            @if (Model != null && Model.Count > 0)
+            {
+                @await Html.PartialAsync("_TheTaiLieu", Model)
+            }
+            <div class="tl-sentinel" id="tlSentinel" style="display:none;"></div>
+        </main>
+
+        <!-- Empty State -->
+        <div id="tlEmptyState" class="tl-empty" style="@(countAll == 0 ? "display:flex;" : "display:none;")">
+            @if (string.IsNullOrWhiteSpace(ViewBag.MaBN as string))
+            {
+                <div class="tl-empty-icon" style="color: #f59e0b;">
+                    <svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                </div>
+                <div class="tl-empty-title">Chưa liên kết mã bệnh nhân</div>
+                <div class="tl-empty-desc">Hồ sơ của bạn chưa được liên kết với mã bệnh nhân tại cơ sở khám chữa bệnh. Vui lòng cập nhật hồ sơ để tra cứu tài liệu.</div>
+                <a href="/benh-nhan/ho-so" class="tl-btn-empty-action">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>Liên kết ngay</span>
+                </a>
+            }
+            else
+            {
+                <div class="tl-empty-icon">
+                    <svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="9" y1="15" x2="15" y2="15"></line>
+                    </svg>
+                </div>
+                <div class="tl-empty-title">Chưa có tài liệu</div>
+                <div class="tl-empty-desc">Khi cơ sở khám chữa bệnh cập nhật đơn thuốc hoặc kết quả khám, tài liệu sẽ tự động xuất hiện tại đây.</div>
+            }
+        </div>
+
+    </div>
+
+    <!-- ==================== MODAL PHONG TO PDF KEM NUT CHUYEN TAI LIEU CUNG LOAI ==================== -->
+    <div id="tlModalViewer" class="tl-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="tlModalDocTitle">
+        <div class="tl-modal-box">
+
+            <!-- Toolbar Header -->
+            <div class="tl-modal-toolbar">
+                <div class="tl-toolbar-left">
+                    <button type="button" class="tl-modal-close" id="tlBtnCloseModal" aria-label="Đóng (Esc)" title="Đóng trình xem (Esc)">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                    <div class="tl-title-col">
+                        <span class="tl-modal-doc-title" id="tlModalDocTitle">Đang mở tài liệu...</span>
+                        <span class="tl-modal-doc-subtitle" id="tlModalDocSubtitle">Tài liệu y tế</span>
+                    </div>
+                </div>
+
+                <!-- Bo dieu huong chuyen qua lai giua cac tai lieu cung loai -->
+                <div class="tl-doc-nav-bar" id="tlDocNavBar">
+                    <button type="button" class="tl-btn-nav-doc" id="tlBtnPrevDocTop" title="Tài liệu trước cùng loại (Phím ←)" aria-label="Tài liệu trước">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                        <span class="tl-nav-text">Trước</span>
+                    </button>
+
+                    <div class="tl-doc-counter-badge" id="tlDocCounter">
+                        <span id="tlCurrentDocIndex">1</span> / <span id="tlTotalDocs">1</span>
+                    </div>
+
+                    <button type="button" class="tl-btn-nav-doc" id="tlBtnNextDocTop" title="Tài liệu kế tiếp cùng loại (Phím →)" aria-label="Tài liệu sau">
+                        <span class="tl-nav-text">Sau</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="tl-toolbar-right">
+                    <!-- Page navigation noi bo cua PDF (Trang 1/2) -->
+                    <div class="tl-page-nav" id="tlPageNav">
+                        <button type="button" class="tl-btn-page" id="tlBtnPrevPage" aria-label="Trang trước">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg>
+                        </button>
+                        <span id="tlPageInfo">1 / 1</span>
+                        <button type="button" class="tl-btn-page" id="tlBtnNextPage" aria-label="Trang sau">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Chỉ giữ nút TẢI ẢNH (đã bỏ nút tải PDF) -->
+                    <button type="button" class="tl-btn-tool tl-btn-tool-png" id="tlBtnDownloadPng" title="Tải trang tài liệu đang xem thành hình ảnh PNG">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <span>Tải ảnh</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Khung Canvas View Container -->
+            <div class="tl-viewer-container" id="tlViewerContainer">
+                <!-- 2 Nut Mũi Tên Chuyển Tài Liệu Nổi (Floating Navigation Arrows) ở 2 bên mép -->
+                <button type="button" class="tl-floating-nav tl-floating-prev" id="tlBtnFloatPrev" title="Tài liệu trước cùng loại (←)" aria-label="Tài liệu trước">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+
+                <button type="button" class="tl-floating-nav tl-floating-next" id="tlBtnFloatNext" title="Tài liệu kế tiếp cùng loại (→)" aria-label="Tài liệu sau">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+
+                <div class="tl-viewer-loader" id="tlViewerLoader">
+                    <div class="tl-spinner"></div>
+                    <div>Đang tải tài liệu...</div>
+                </div>
+
+                <div class="tl-pages-container" id="tlPagesContainer">
+                    <!-- Danh sách các trang PDF sẽ được render cuộn liên tục tại đây -->
+                </div>
+            </div>
+
+            <!-- Footer Toolbar: Quick Jump & Thông báo tài liệu cùng loại -->
+            <div class="tl-viewer-bottom-bar">
+                <div class="tl-bottom-info" id="tlBottomDocInfo">
+                    Cùng loại: <strong id="tlCurrentGroupLabel">Tất cả</strong>
+                </div>
+                <div class="tl-key-hint">
+                    Dùng phím <kbd>←</kbd> <kbd>→</kbd> để chuyển tài liệu khác cùng loại
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Dropdown Menu 3 chấm hành động nhanh -->
+    <div id="tlDropdownMenu" class="tl-dropdown-menu">
+        <button type="button" class="tl-dropdown-item" id="tlMenuBtnView">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <span>Phóng to xem</span>
+        </button>
+        <button type="button" class="tl-dropdown-item" id="tlMenuBtnDownloadPng">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>Tải ảnh</span>
+        </button>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="tlToast" class="tl-toast"></div>
+
+    <!-- Thu vien PDF.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- Script chuc nang -->
+    <script src="/js/tai-lieu-benh-nhan.js?v=20260917_v9"></script>
+</body>
+</html>
